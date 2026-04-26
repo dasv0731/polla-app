@@ -100,6 +100,9 @@ export class ApiService {
   deleteGroup(groupId: string) {
     return apiClient.mutations.deleteGroup({ groupId });
   }
+  emailGroupInvite(groupId: string, emails: string[]) {
+    return apiClient.mutations.emailGroupInvite({ groupId, emails });
+  }
 
   // ----- Custom query -----
   pendingMatches(tournamentId: string, beforeHours: number) {

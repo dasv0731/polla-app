@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
+import { humanizeError } from '../../core/notifications/domain-errors';
 
 @Component({
   standalone: true,
@@ -186,18 +187,18 @@ export class GroupInviteEmailComponent implements OnInit {
 
   async send() {
     this.commitDraft();
-    if (this.emails().length === 0) return;
+    const list = this.emails();
+    if (list.length === 0) return;
     this.sending.set(true);
     try {
-      // TODO: backend mutation 'emailGroupInvite' — currently deferred (T22-T24).
-      // The send-email Lambda exists but isn't exposed via custom mutation.
-      // For now we just show success UX so the form is usable for layout
-      // testing. Wire to the real mutation when it ships.
-      await new Promise((r) => setTimeout(r, 600));
+      const res = await this.api.emailGroupInvite(this.id, list);
+      const sent = res.data?.sent ?? list.length;
       this.toast.success(
-        `${this.emails().length} invitación${this.emails().length === 1 ? '' : 'es'} enviada${this.emails().length === 1 ? '' : 's'} (mock)`,
+        `${sent} invitación${sent === 1 ? '' : 'es'} enviada${sent === 1 ? '' : 's'}`,
       );
       void this.router.navigate(['/groups', this.id]);
+    } catch (e) {
+      this.toast.error(humanizeError(e));
     } finally {
       this.sending.set(false);
     }

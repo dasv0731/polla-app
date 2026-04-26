@@ -9,6 +9,7 @@ export const DOMAIN_ERROR_COPY: Record<string, string> = {
   CODE_GENERATION_FAILED: 'No se pudo generar un código único, intenta de nuevo.',
   GROUP_NOT_FOUND: 'No encontramos el grupo.',
   ADMIN_REQUIRED: 'Solo el admin del grupo puede hacer esto.',
+  VALIDATION_ERROR: 'Datos inválidos. Revisa los campos.',
 };
 
 export function humanizeError(e: unknown): string {
