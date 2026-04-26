@@ -28,14 +28,19 @@ interface GroupHeader {
         <header class="group-detail__header">
           <h1>{{ g.name }}</h1>
           <p class="group-detail__meta">{{ rows().length }} miembro{{ rows().length === 1 ? '' : 's' }}</p>
-          <div class="invite-code">
-            <span class="invite-code__label">Código de invitación</span>
-            <strong class="invite-code__code">{{ g.joinCode }}</strong>
-            <button class="btn btn--ghost btn--sm" (click)="copyLink()">{{ copied() ? 'Copiado ✓' : 'Copiar link' }}</button>
-          </div>
         </header>
 
-        <app-group-leaderboard [rows]="rows()" [currentUserId]="currentUserId" />
+        <article class="invite-code">
+          <span class="invite-code__label">Código de invitación</span>
+          <strong class="invite-code__value">{{ g.joinCode }}</strong>
+          <div class="invite-code__actions">
+            <button class="btn btn--ghost btn--sm" (click)="copyLink()">{{ copied() ? 'Copiado ✓' : 'Copiar link' }}</button>
+          </div>
+        </article>
+
+        <div class="standings-wrap">
+          <app-group-leaderboard [rows]="rows()" [currentUserId]="currentUserId" />
+        </div>
 
         @if (isAdminOfGroup()) {
           <section class="danger-zone">

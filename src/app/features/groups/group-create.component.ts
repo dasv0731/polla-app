@@ -18,9 +18,9 @@ const TOURNAMENT_ID = 'mundial-2026';
 
       @if (g !== null) {
         <article class="invite-code">
-          <h1>¡Grupo creado!</h1>
-          <p>Comparte este código con tus amigos:</p>
-          <strong class="invite-code__code">{{ g.joinCode }}</strong>
+          <span class="invite-code__label">¡Grupo creado!</span>
+          <strong class="invite-code__value">{{ g.joinCode }}</strong>
+          <p class="invite-code__url">{{ inviteUrl() }}</p>
           <div class="invite-code__actions">
             <button class="btn btn--primary" (click)="copyLink()">{{ copied() ? 'Copiado ✓' : 'Copiar link' }}</button>
             <a class="btn btn--ghost" [routerLink]="['/groups', g.id]">Ir al grupo</a>
@@ -59,6 +59,11 @@ export class GroupCreateComponent {
   error = signal<string | null>(null);
   created = signal<{ id: string; joinCode: string } | null>(null);
   copied = signal(false);
+
+  inviteUrl(): string {
+    const g = this.created();
+    return g ? `${location.origin}/groups/join/${g.joinCode}` : '';
+  }
 
   async submit() {
     if (!this.name.trim()) return;

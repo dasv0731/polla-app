@@ -13,10 +13,16 @@ const TOURNAMENT_ID = 'mundial-2026';
   template: `
     @if (visible()) {
       <aside class="pending-banner" role="status">
-        <p class="pending-banner__copy">
-          Tienes <strong>{{ count() }}</strong> partido{{ count() === 1 ? '' : 's' }} sin pick que cierra{{ count() === 1 ? '' : 'n' }} en las próximas 12h.
-        </p>
-        <a class="btn btn--primary btn--sm" routerLink="/picks">Hacer mis picks</a>
+        <span class="pending-banner__icon">{{ count() }}</span>
+        <div class="pending-banner__body">
+          <p class="pending-banner__title">Picks pendientes</p>
+          <p class="pending-banner__lead">
+            Tienes {{ count() }} partido{{ count() === 1 ? '' : 's' }} sin pick que cierra{{ count() === 1 ? '' : 'n' }} en las próximas 12h.
+          </p>
+        </div>
+        <div class="pending-banner__actions">
+          <a class="btn btn--primary btn--sm" routerLink="/picks">Hacer mis picks</a>
+        </div>
         <button class="pending-banner__close" (click)="dismiss()" aria-label="cerrar">×</button>
       </aside>
     }

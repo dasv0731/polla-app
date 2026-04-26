@@ -1011,23 +1011,10 @@
    scroll-snap a cada ronda. Cada ronda ocupa ~50% del ancho,
    así que se ven 2 rondas a la vez (R32+R16, R16+QF, etc.) y el
    usuario scrollea hacia la derecha para ver siguientes fases.
-
-   Producción: JS detecta la ronda activa y hace scrollIntoView()
-   con behavior:'smooth', inline:'start'. El mockup sólo muestra
-   el estado visual con la clase .is-active.
-
-   Cada round:
-     - max(280px, 50% - gap/2) → respeta 2-rondas-a-la-vez en tablet+
-       y nunca aplasta cards en mobile (mínimo 280px).
-     - scroll-snap-align: start → snap limpio al borde de la ronda.
-     - Active round: borde verde inferior 4px + summary en bold.
    ============================================================ */
 .bracket {
   display: grid;
   grid-auto-flow: column;
-  /* clamp: en mobile cada ronda mide al menos 280px (1 ronda visible
-     + peek de la siguiente); en tablet/desktop cada ronda = 50% del
-     contenedor menos medio gap (2 rondas visibles exactas). */
   grid-auto-columns: max(280px, calc(50% - var(--space-md) / 2));
   gap: var(--space-md);
   padding: var(--space-lg);
@@ -1051,7 +1038,6 @@
   background: var(--color-primary-green);
 }
 
-/* Cada ronda = columna del grid + flex column interno */
 .bracket__round {
   scroll-snap-align: start;
   background: transparent;
@@ -1062,13 +1048,10 @@
   min-width: 0;
 }
 
-/* Forzar visibilidad de matches incluso si <details> no tiene [open]
-   (la UA stylesheet por defecto oculta children no-summary). */
 .bracket__round > .bracket__matches {
   display: flex !important;
 }
 
-/* Round header — siempre column header, no toggle */
 .bracket__round summary {
   list-style: none;
   cursor: default;
@@ -1094,7 +1077,6 @@
 .bracket__round summary::-webkit-details-marker { display: none; }
 .bracket__round summary::after { display: none; }
 
-/* Round activa — borde verde 4px y label kicker */
 .bracket__round.is-active summary {
   border-bottom-color: var(--color-primary-green);
   border-bottom-width: 4px;
@@ -1118,16 +1100,6 @@
   font-weight: var(--fw-bold);
 }
 
-/* Matches: flex column con space-around. La clave del bracket clásico
-   es esta: si todos los rounds tienen la MISMA altura total H, y
-   cada uno usa space-around para distribuir N cards equiespaciadas,
-   entonces los centros de los cards quedan en posiciones (i+0.5)·H/N.
-   Cuando un round tiene N cards y el siguiente tiene N/2, el centro
-   del card i del segundo round = ((2i+0.5+2i+1.5)/2)·H/N = (2i+1)·H/N
-   = (i+0.5)·H/(N/2) — exactamente en el midpoint de su par alimentador.
-   Producción y mockup funcionan igual sin importar los counts; sólo
-   requiere que todos los rounds compartan altura (lo garantiza el
-   align-items:stretch del grid padre .bracket). */
 .bracket__matches {
   flex: 1;
   display: flex !important;
@@ -1141,8 +1113,6 @@
   min-height: 0;
 }
 
-/* Conector → triángulo verde apuntando a la siguiente ronda.
-   Solo en rondas que tienen sucesora (no en la última). */
 .bracket__round:not(:last-child) .bracket__match::after {
   content: "";
   position: absolute;
@@ -1157,8 +1127,6 @@
   opacity: 0.6;
 }
 
-/* Línea horizontal del match al triángulo (refuerza visualmente que
-   el match conecta con la siguiente ronda) */
 .bracket__round:not(:last-child) .bracket__match::before {
   content: "";
   position: absolute;
@@ -1172,12 +1140,9 @@
   opacity: 0.4;
 }
 
-/* Final + 3er puesto: span 8 cada uno (final arriba, 3er puesto abajo).
-   No tienen siguiente ronda, así que no hay ::after */
 .bracket__round[data-round="final"] .bracket__match::after,
 .bracket__round[data-round="final"] .bracket__match::before { display: none; }
 
-/* Match card */
 .bracket__match {
   background: var(--color-primary-white);
   border: var(--border-grey);
@@ -1198,7 +1163,6 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
-/* Final card destacada con borde verde, gradiente y star */
 .bracket__match--final {
   border: 2px solid var(--color-primary-green);
   background: linear-gradient(180deg, var(--color-primary-white) 0%, rgba(2, 204, 116, 0.04) 100%);
@@ -1221,7 +1185,6 @@
   box-shadow: 0 2px 6px rgba(2, 204, 116, 0.4);
 }
 
-/* Match meta (fecha + sede) */
 .bracket__match-meta {
   display: flex;
   justify-content: space-between;
@@ -1237,9 +1200,6 @@
   gap: var(--space-xs);
 }
 
-/* Teams stacked, con separador entre filas.
-   grid-template-columns con minmax(0, 1fr) en el name para permitir
-   shrink debajo del min-content y evitar que el score se salga del card. */
 .bracket__team {
   display: grid;
   grid-template-columns: 32px minmax(0, 1fr) auto;
@@ -1269,7 +1229,6 @@
   overflow-wrap: break-word;
   word-break: break-word;
   hyphens: auto;
-  /* truncar a 2 líneas con elipsis si es muy largo */
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -1302,7 +1261,6 @@
   color: var(--color-text-muted);
 }
 
-/* Pick row — bloque verde claro destacado, no separador */
 .bracket__pick {
   display: flex;
   justify-content: space-between;
@@ -1334,7 +1292,6 @@
   font-weight: var(--fw-regular);
 }
 
-/* Tablet+: cards más espaciosas (mantenemos auto-fit para 1-col cuando hace falta) */
 @media (min-width: 480px) {
   .bracket__match { padding: var(--space-lg); gap: var(--space-md); }
   .bracket__team { grid-template-columns: 36px minmax(0, 1fr) auto; gap: var(--space-md); }

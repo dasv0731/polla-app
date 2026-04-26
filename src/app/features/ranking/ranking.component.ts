@@ -14,10 +14,10 @@ const TOURNAMENT_ID = 'mundial-2026';
       <h1>Ranking</h1>
 
       <div class="view-mode-toggle">
-        <button class="view-mode-toggle__btn"
+        <button class="view-mode-toggle__option"
                 [class.is-active]="scope() === 'global'"
                 (click)="scope.set('global')">Global</button>
-        <button class="view-mode-toggle__btn"
+        <button class="view-mode-toggle__option"
                 [class.is-active]="scope() === 'my-groups'"
                 (click)="scope.set('my-groups')">Solo mis grupos</button>
       </div>
@@ -27,7 +27,9 @@ const TOURNAMENT_ID = 'mundial-2026';
       } @else if (visibleRows().length === 0) {
         <p>Aún no hay datos en este ranking.</p>
       } @else {
-        <app-group-leaderboard [rows]="visibleRows()" [currentUserId]="currentUserId" />
+        <div class="standings-wrap">
+          <app-group-leaderboard [rows]="visibleRows()" [currentUserId]="currentUserId" />
+        </div>
         @if (myRank() !== null && !inTop()) {
           <p class="ranking__me">
             Tú estás en posición #{{ myRank() }} con {{ myPoints() }} pts.

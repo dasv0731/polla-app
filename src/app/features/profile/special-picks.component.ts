@@ -41,17 +41,34 @@ interface TeamItem {
       } @else {
         <div class="special-picks">
           @for (t of types; track t.key) {
-            <fieldset class="special-picks__card" [disabled]="locked() || saving()[t.key]">
-              <legend class="special-picks__legend">{{ t.label }} <span class="special-picks__points">+{{ t.points }} pts</span></legend>
-              <select class="form-card__input"
-                      [value]="picksByType()[t.key] ?? ''"
-                      (change)="setPick(t.key, $any($event.target).value)">
-                <option value="">— elegir —</option>
+            <article class="special-pick" [class.special-pick--locked]="locked()">
+              <header class="special-pick__header">
+                <h3 class="special-pick__type">{{ t.label }}</h3>
+                <span class="special-pick__points">+{{ t.points }} pts</span>
+              </header>
+
+              @let selected = picksByType()[t.key];
+              @if (selected) {
+                <div class="special-pick__current">
+                  <span class="special-pick__current-name">{{ teamName(selected) }}</span>
+                </div>
+              } @else {
+                <div class="special-pick__current special-pick__current--empty">
+                  Aún no elegiste
+                </div>
+              }
+
+              <div class="special-pick__teams">
                 @for (team of teams(); track team.slug) {
-                  <option [value]="team.slug">{{ team.name }}</option>
+                  <button class="special-pick__team"
+                          [class.is-selected]="picksByType()[t.key] === team.slug"
+                          [disabled]="locked() || saving()[t.key]"
+                          (click)="setPick(t.key, team.slug)">
+                    <span class="special-pick__team-name">{{ team.name }}</span>
+                  </button>
                 }
-              </select>
-            </fieldset>
+              </div>
+            </article>
           }
         </div>
       }
@@ -108,6 +125,10 @@ export class SpecialPicksComponent implements OnInit {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  teamName(slug: string): string {
+    return this.teams().find((t) => t.slug === slug)?.name ?? slug;
   }
 
   async setPick(type: SpecialKey, teamId: string) {

@@ -36,10 +36,10 @@ interface MatchWithMeta {
       <h1>Mundial 2026 — Mis picks</h1>
 
       <div class="view-mode-toggle">
-        <button class="view-mode-toggle__btn"
+        <button class="view-mode-toggle__option"
                 [class.is-active]="tab() === 'upcoming'"
                 (click)="tab.set('upcoming')">Próximos ({{ upcomingCount() }})</button>
-        <button class="view-mode-toggle__btn"
+        <button class="view-mode-toggle__option"
                 [class.is-active]="tab() === 'played'"
                 (click)="tab.set('played')">Jugados ({{ playedCount() }})</button>
       </div>
