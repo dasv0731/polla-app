@@ -46,6 +46,15 @@ export class ApiService {
   getUser(sub: string) {
     return apiClient.models.User.get({ sub });
   }
+  listUsers(limit = 1000) {
+    return apiClient.models.User.list({ limit });
+  }
+  listAllPicks(tournamentId: string, limit = 5000) {
+    return apiClient.models.Pick.list({
+      filter: { tournamentId: { eq: tournamentId } },
+      limit,
+    });
+  }
 
   // ----- Authenticated reads (JWT) -----
   myPicks(userId: string) {

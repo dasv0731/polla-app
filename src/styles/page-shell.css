@@ -1839,3 +1839,114 @@
   width: 56px;
   height: 56px;
 }
+
+/* ============================================================
+   Admin · Users page (matches mockup: filters, table, badges)
+   ============================================================ */
+.admin-filters {
+  background: var(--color-primary-white);
+  border: var(--border-grey);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  align-items: center;
+}
+.admin-filters input,
+.admin-filters select {
+  padding: 8px 12px;
+  border: var(--border-grey);
+  border-radius: var(--radius-md);
+  font-family: var(--font-primary);
+  font-size: var(--fs-sm);
+  background: var(--color-primary-white);
+}
+.admin-filters input[type='search'] { flex: 1; min-width: 240px; }
+
+.users-table {
+  background: var(--color-primary-white);
+  border: var(--border-grey);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.users-table__scroll { overflow-x: auto; }
+.users-table table { width: 100%; border-collapse: collapse; }
+.users-table th {
+  background: var(--color-primary-black);
+  color: var(--color-primary-white);
+  padding: 10px var(--space-md);
+  text-align: left;
+  font-family: var(--font-primary);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: var(--fw-semibold);
+}
+.users-table td {
+  padding: 10px var(--space-md);
+  border-top: 1px solid var(--color-primary-grey);
+  font-size: var(--fs-sm);
+}
+.users-table tr:hover td { background: var(--color-green-5); }
+.users-table tr.is-bounced td { background: rgba(231, 76, 60, 0.04); }
+.users-table tr.is-bounced:hover td { background: rgba(231, 76, 60, 0.08); }
+.users-table .handle {
+  font-family: var(--font-primary);
+  font-weight: var(--fw-semibold);
+}
+.users-table .pts {
+  font-family: var(--font-display);
+  color: var(--color-primary-green);
+  font-size: var(--fs-md);
+}
+.users-table .email { color: var(--color-text-muted); }
+.users-table .actions a {
+  font-size: var(--fs-xs);
+  color: var(--color-primary-green);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-right: var(--space-sm);
+  cursor: pointer;
+}
+.users-table .actions a.danger { color: var(--color-lost); }
+.users-table .status--bounced { color: var(--color-lost); }
+
+.badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-left: 4px;
+}
+.badge--admin { background: var(--color-draw); color: var(--color-primary-black); }
+.badge--bounced { background: var(--color-lost); color: var(--color-primary-white); }
+
+.admin-main__head {
+  margin-bottom: var(--space-xl);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+.admin-main__head h1 {
+  font-family: var(--font-display);
+  font-size: var(--fs-3xl);
+  line-height: 1;
+  text-transform: uppercase;
+}
+.admin-main__head small {
+  display: block;
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: var(--fw-bold);
+  margin-bottom: 4px;
+}

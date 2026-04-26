@@ -17,7 +17,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
         <a routerLink="/admin/results" routerLinkActive="is-active">🏆 Resultados</a>
         <a routerLink="/admin/teams" routerLinkActive="is-active">🏳️ Equipos</a>
         <a routerLink="/admin/special-results" routerLinkActive="is-active">★ Especiales</a>
-        <a routerLink="/admin/users" routerLinkActive="is-active">👥 Jugadores</a>
+        <a routerLink="/admin/users" routerLinkActive="is-active">👥 Users</a>
       </aside>
       <main class="admin-content">
         <router-outlet />
