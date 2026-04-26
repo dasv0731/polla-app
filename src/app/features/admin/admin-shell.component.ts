@@ -12,7 +12,8 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
         <a routerLink="/admin" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">
           📊 Dashboard
         </a>
-        <a routerLink="/admin/fixtures" routerLinkActive="is-active">⚽ Partidos</a>
+        <a routerLink="/admin/fixtures" routerLinkActive="is-active">⚽ Partidos (grupos)</a>
+        <a routerLink="/admin/bracket" routerLinkActive="is-active">🌳 Llaves (eliminatorias)</a>
         <a routerLink="/admin/results" routerLinkActive="is-active">🏆 Resultados</a>
         <a routerLink="/admin/teams" routerLinkActive="is-active">🏳️ Equipos</a>
         <a routerLink="/admin/special-results" routerLinkActive="is-active">★ Especiales</a>

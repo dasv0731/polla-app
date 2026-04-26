@@ -17,6 +17,10 @@ export const adminRoutes: Routes = [
         loadComponent: () => import('./admin-fixtures.component').then((m) => m.AdminFixturesComponent),
       },
       {
+        path: 'bracket',
+        loadComponent: () => import('./admin-bracket.component').then((m) => m.AdminBracketComponent),
+      },
+      {
         path: 'fixtures/new',
         loadComponent: () => import('./admin-fixture-edit.component').then((m) => m.AdminFixtureEditComponent),
       },
