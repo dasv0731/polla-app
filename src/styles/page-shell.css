@@ -227,6 +227,145 @@
   color: var(--color-primary-black);
 }
 
+/* -------- Page header actions row -------- */
+.page-header__actions {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+/* -------- Container app — sección de contenido bajo el page-header -------- */
+.container-app {
+  padding: var(--space-md) var(--section-x-mobile) var(--space-2xl);
+  max-width: var(--container-wide);
+  margin-inline: auto;
+}
+@media (min-width: 992px) {
+  .container-app {
+    padding: var(--space-md) var(--section-x-desktop) var(--space-2xl);
+  }
+}
+
+/* -------- Group row (lista de grupos del usuario) -------- */
+.group-row {
+  background: var(--color-primary-white);
+  border: var(--border-grey);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--space-md);
+  align-items: center;
+  transition: border-color var(--transition-normal), transform var(--transition-normal);
+  text-decoration: none;
+  color: inherit;
+}
+.group-row:hover {
+  border-color: var(--color-primary-green);
+  transform: translateY(-2px);
+}
+.group-row + .group-row { margin-top: var(--space-md); }
+
+.group-row__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-green);
+  color: var(--color-primary-white);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  flex-shrink: 0;
+}
+.group-row__icon--admin { background: var(--color-primary-black); }
+
+.group-row__body { min-width: 0; }
+.group-row__name {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+.group-row__meta {
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 4px;
+}
+.group-row__meta strong { color: var(--color-primary-green); }
+
+.group-row__pos { text-align: right; }
+.group-row__pos-num {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  color: var(--color-primary-green);
+  line-height: 1;
+}
+.group-row__pos-label {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: var(--fw-bold);
+}
+
+/* -------- Empty CTA — cards de Crear / Unirme bajo la lista -------- */
+.empty-cta {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: 1fr;
+  margin-top: var(--space-xl);
+}
+@media (min-width: 480px) {
+  .empty-cta { grid-template-columns: 1fr 1fr; }
+}
+.empty-cta__card {
+  background: var(--color-primary-grey);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  border-left: 4px solid var(--color-primary-green);
+}
+.empty-cta__card h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  text-transform: uppercase;
+  line-height: 1;
+  margin-bottom: var(--space-sm);
+}
+.empty-cta__card p {
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--space-lg);
+  line-height: var(--lh-body);
+}
+
+/* -------- Inline join code form -------- */
+.join-form {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+.join-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px;
+  border: var(--border-grey);
+  background: var(--color-primary-white);
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-align: center;
+}
+.join-form input:focus-visible {
+  border-color: var(--color-primary-green);
+  outline: none;
+}
+
 /* -------- Empty state -------- */
 .empty-state {
   text-align: center;

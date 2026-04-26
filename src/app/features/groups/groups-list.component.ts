@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -8,6 +8,9 @@ interface GroupRow {
   name: string;
   members: number;
   myRank: number | null;
+  isAdmin: boolean;
+  adminHandle: string | null;
+  createdAt: string;
 }
 
 @Component({
@@ -15,48 +18,76 @@ interface GroupRow {
   selector: 'app-groups-list',
   imports: [RouterLink],
   template: `
-    <section class="container">
-      <header class="page-header">
-        <h1>Mis grupos</h1>
-        <a class="btn btn--primary" routerLink="/groups/new">Crear grupo</a>
-      </header>
-
-      <section class="quick-join">
-        <h2 class="quick-join__title">Unirme a un grupo</h2>
-        <div class="quick-join__row">
-          <input class="form-card__input"
-                 placeholder="A2K9MP" maxlength="6"
-                 [value]="code()"
-                 (input)="code.set($any($event.target).value.toUpperCase())">
-          <button class="btn btn--primary" (click)="join()" [disabled]="joining()">
-            {{ joining() ? 'Validando…' : 'Unirme' }}
-          </button>
+    <header class="page-header">
+      <div class="page-header__top">
+        <div class="page-header__title">
+          <small>{{ countLabel() }} · Mundial 2026</small>
+          <h1>Mis grupos</h1>
         </div>
-        @if (joinError()) {
-          <p class="form-card__hint" style="color: var(--color-error, #c00);">{{ joinError() }}</p>
-        }
-      </section>
+        <div class="page-header__actions">
+          <a class="btn btn--primary" routerLink="/groups/new">+ Crear grupo</a>
+          <a class="btn btn--ghost" href="#unirme">Unirme con código</a>
+        </div>
+      </div>
+    </header>
 
+    <div class="container-app">
       @if (loading()) {
         <p>Cargando…</p>
-      } @else if (groups().length === 0) {
-        <p class="empty-state">Aún no estás en ningún grupo. Crea uno o únete con un código.</p>
       } @else {
-        <ul class="group-list">
-          @for (g of groups(); track g.id) {
-            <li class="group-card">
-              <a class="group-card__link" [routerLink]="['/groups', g.id]">
-                <span class="group-card__name">{{ g.name }}</span>
-                <span class="group-card__meta">
-                  {{ g.members }} miembro{{ g.members === 1 ? '' : 's' }}
-                  · #{{ g.myRank ?? '?' }}
-                </span>
-              </a>
-            </li>
-          }
-        </ul>
+        @for (g of groups(); track g.id) {
+          <a class="group-row" [routerLink]="['/groups', g.id]">
+            <span class="group-row__icon" [class.group-row__icon--admin]="g.isAdmin"
+                  [attr.aria-label]="g.isAdmin ? 'Admin del grupo' : 'Miembro'">
+              {{ icon(g) }}
+            </span>
+            <div class="group-row__body">
+              <p class="group-row__name">{{ g.name }}</p>
+              <p class="group-row__meta">
+                {{ g.members }} miembros
+                @if (g.isAdmin) {
+                   · Eres <strong>admin</strong>
+                } @else if (g.adminHandle) {
+                   · creado por <strong>{{ '@' + g.adminHandle }}</strong>
+                }
+                @if (g.createdAt) {
+                   · creado el {{ formatDate(g.createdAt) }}
+                }
+              </p>
+            </div>
+            <div class="group-row__pos">
+              <p class="group-row__pos-num">#{{ g.myRank ?? '?' }}</p>
+              <p class="group-row__pos-label">de {{ g.members }}</p>
+            </div>
+          </a>
+        }
       }
-    </section>
+
+      <section class="empty-cta" id="unirme" style="margin-top: var(--space-2xl);">
+        <article class="empty-cta__card">
+          <h3>Crear un nuevo grupo</h3>
+          <p>Arma un grupo privado con tus amigos. Recibes un código de 6 caracteres para invitar a quien quieras.</p>
+          <a class="btn btn--primary" routerLink="/groups/new">+ Crear grupo</a>
+        </article>
+
+        <article class="empty-cta__card">
+          <h3>Unirme con código</h3>
+          <p>¿Te invitaron? Pega el código que te enviaron. 6 caracteres del alfabeto seguro (sin 0/O/1/I).</p>
+          <form class="join-form" (ngSubmit)="join()">
+            <input type="text" placeholder="K7P2QM" maxlength="6"
+                   pattern="[A-Z2-9]{6}" required
+                   [value]="code()"
+                   (input)="code.set($any($event.target).value.toUpperCase())">
+            <button class="btn btn--primary" type="submit" [disabled]="joining()">
+              {{ joining() ? 'Validando…' : 'Unirme' }}
+            </button>
+          </form>
+          @if (joinError()) {
+            <p class="form-card__hint" style="color: var(--color-lost); margin-top: var(--space-sm);">{{ joinError() }}</p>
+          }
+        </article>
+      </section>
+    </div>
   `,
 })
 export class GroupsListComponent implements OnInit {
@@ -69,6 +100,12 @@ export class GroupsListComponent implements OnInit {
   code = signal('');
   joinError = signal<string | null>(null);
   joining = signal(false);
+
+  countLabel = computed(() => {
+    const n = this.groups().length;
+    if (n === 0) return 'Aún no estás en ningún grupo';
+    return n === 1 ? '1 grupo activo' : `${n} grupos activos`;
+  });
 
   async ngOnInit() {
     const userId = this.auth.user()?.sub;
@@ -88,23 +125,55 @@ export class GroupsListComponent implements OnInit {
           if (!grp.data) return null;
           const sorted = (lb.data ?? []).sort((a, b) => (b.points ?? 0) - (a.points ?? 0));
           const myRank = sorted.findIndex((t) => t.userId === userId);
+          const isAdmin = grp.data.adminUserId === userId;
+
+          let adminHandle: string | null = null;
+          if (!isAdmin) {
+            try {
+              const owner = await this.api.getUser(grp.data.adminUserId);
+              adminHandle = owner.data?.handle ?? null;
+            } catch {
+              // ignore
+            }
+          }
+
           return {
             id: m.groupId,
             name: grp.data.name,
             members: (members.data ?? []).length,
             myRank: myRank >= 0 ? myRank + 1 : null,
+            isAdmin,
+            adminHandle,
+            createdAt: grp.data.createdAt,
           };
         }),
       );
-      this.groups.set(enriched.filter((x): x is GroupRow => x !== null));
+      this.groups.set(
+        enriched
+          .filter((x): x is GroupRow => x !== null)
+          .sort((a, b) => a.name.localeCompare(b.name)),
+      );
     } finally {
       this.loading.set(false);
     }
   }
 
+  icon(g: GroupRow): string {
+    if (g.isAdmin) return '★';
+    return (g.name[0] ?? '·').toUpperCase();
+  }
+
+  formatDate(iso: string): string {
+    try {
+      return new Date(iso).toLocaleDateString('es-EC', { day: '2-digit', month: 'short' });
+    } catch {
+      return '—';
+    }
+  }
+
   async join() {
     if (this.code().length !== 6) {
-      this.joinError.set('El código debe ser 6 caracteres');
+      this.joinError.set('El código debe tener 6 caracteres');
       return;
     }
     this.joinError.set(null);
