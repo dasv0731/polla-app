@@ -75,6 +75,14 @@ const TOURNAMENT_ID = 'mundial-2026';
           </select>
         </div>
 
+        <div class="form-card__field">
+          <label class="form-card__label" for="venue">Sede</label>
+          <input class="form-card__input" id="venue" name="venue" type="text"
+                 [(ngModel)]="venue" maxlength="80"
+                 placeholder="Ej. Azteca · CDMX">
+          <span class="form-card__hint">Estadio · ciudad. Aparece en la tabla de fixtures.</span>
+        </div>
+
         @if (showBracketField()) {
           <div class="form-card__field">
             <label class="form-card__label" for="bracketPos">Posición en la llave</label>
@@ -119,6 +127,7 @@ export class AdminFixtureEditComponent implements OnInit {
   kickoffLocal = '';
   status = 'SCHEDULED';
   bracketPosition: number | null = null;
+  venue = '';
   fromBracket = false;
   private version = 1;
 
@@ -151,6 +160,7 @@ export class AdminFixtureEditComponent implements OnInit {
           this.version = m.data.version ?? 1;
           this.kickoffLocal = isoToLocalInput(m.data.kickoffAt);
           this.bracketPosition = m.data.bracketPosition ?? null;
+          this.venue = (m.data as { venue?: string | null }).venue ?? '';
         }
         if (qpPos) this.bracketPosition = Number(qpPos);
       } else {
@@ -175,6 +185,7 @@ export class AdminFixtureEditComponent implements OnInit {
     try {
       const kickoffAt = localInputToIso(this.kickoffLocal);
       const bracketPos = this.showBracketField() ? this.bracketPosition : null;
+      const venue = this.venue.trim() || null;
       if (this.id) {
         await apiClient.models.Match.update({
           id: this.id,
@@ -185,6 +196,7 @@ export class AdminFixtureEditComponent implements OnInit {
           status: this.status as 'SCHEDULED' | 'LIVE' | 'FINAL',
           version: this.version + 1,
           bracketPosition: bracketPos,
+          venue,
         });
         this.toast.success('Partido actualizado');
       } else {
@@ -198,6 +210,7 @@ export class AdminFixtureEditComponent implements OnInit {
           pointsCalculated: false,
           version: 1,
           bracketPosition: bracketPos,
+          venue,
         });
         this.toast.success('Partido creado');
       }
