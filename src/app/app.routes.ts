@@ -16,6 +16,13 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/forgot-password.component').then((m) => m.ForgotPasswordComponent),
   },
   {
+    // Join via shared code — standalone layout (auth-shell), not the
+    // site-header shell. Auth-gated; bounces to /register otherwise.
+    path: 'groups/join/:code',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/groups/group-join.component').then((m) => m.GroupJoinComponent),
+  },
+  {
     path: '',
     component: ShellComponent,
     canActivate: [authGuard],
@@ -36,10 +43,6 @@ export const routes: Routes = [
       {
         path: 'groups/new',
         loadComponent: () => import('./features/groups/group-create.component').then((m) => m.GroupCreateComponent),
-      },
-      {
-        path: 'groups/join/:code',
-        loadComponent: () => import('./features/groups/group-join.component').then((m) => m.GroupJoinComponent),
       },
       {
         path: 'groups/:id',
