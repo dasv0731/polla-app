@@ -10,7 +10,7 @@ const TOURNAMENT_ID = 'mundial-2026';
 const TYPES = [
   { key: 'CHAMPION', label: 'Campeón', points: 30 },
   { key: 'RUNNER_UP', label: 'Subcampeón', points: 15 },
-  { key: 'DARK_HORSE', label: 'Equipo revelación', points: 10 },
+  { key: 'DARK_HORSE', label: 'Revelación', points: 10 },
 ] as const;
 
 type SpecialKey = (typeof TYPES)[number]['key'];
@@ -26,15 +26,34 @@ interface TeamItem {
   selector: 'app-special-picks',
   imports: [RouterLink],
   template: `
-    <section class="container">
-      <a routerLink="/profile" class="back-link">← Volver al perfil</a>
+    <header class="page-header">
+      <small>
+        <a routerLink="/profile" style="color: var(--color-primary-green);">← Mi perfil</a>
+        · {{ totalPotential }} puntos potenciales
+      </small>
       <h1>Picks especiales</h1>
+      <p style="color: var(--color-text-muted); font-size: var(--fs-md); margin-top: var(--space-md); max-width: 720px;">
+        Eliges 3 selecciones <strong>antes del kickoff del primer partido</strong> del Mundial.
+        Una vez que arranque el torneo, no podrás editar.
+      </p>
+    </header>
 
-      @if (locked()) {
-        <p class="form-card__hint">Las picks especiales están bloqueadas — el torneo ya empezó.</p>
-      } @else if (lockAt()) {
-        <p class="form-card__hint">Cierra el {{ lockAt() }}.</p>
-      }
+    <main class="container-app">
+      <div class="lock-banner">
+        <span class="lock-banner__icon">⏰</span>
+        <div class="lock-banner__body">
+          @if (locked()) {
+            <h3>Bloqueados — el torneo ya empezó</h3>
+            <p>Las picks especiales se cerraron al kickoff del primer partido.</p>
+          } @else {
+            <h3>Cierra el {{ lockDate() }}</h3>
+            <p>
+              Te quedan <strong>{{ daysUntilLock() }}</strong> días para definir tus picks.
+              Después del primer partido los selectors se bloquean.
+            </p>
+          }
+        </div>
+      </div>
 
       @if (loading()) {
         <p>Cargando equipos…</p>
@@ -42,14 +61,15 @@ interface TeamItem {
         <div class="special-picks">
           @for (t of types; track t.key) {
             <article class="special-pick" [class.special-pick--locked]="locked()">
-              <header class="special-pick__header">
+              <div class="special-pick__header">
                 <h3 class="special-pick__type">{{ t.label }}</h3>
-                <span class="special-pick__points">+{{ t.points }} pts</span>
-              </header>
+                <span class="special-pick__points">{{ t.points }} pts</span>
+              </div>
 
               @let selected = picksByType()[t.key];
               @if (selected) {
                 <div class="special-pick__current">
+                  <span class="flag" [class]="flagClassForSlug(selected)" style="width: 32px; height: 32px;"></span>
                   <span class="special-pick__current-name">{{ teamName(selected) }}</span>
                 </div>
               } @else {
@@ -60,10 +80,11 @@ interface TeamItem {
 
               <div class="special-pick__teams">
                 @for (team of teams(); track team.slug) {
-                  <button class="special-pick__team"
+                  <button class="special-pick__team" type="button"
                           [class.is-selected]="picksByType()[t.key] === team.slug"
                           [disabled]="locked() || saving()[t.key]"
                           (click)="setPick(t.key, team.slug)">
+                    <span class="flag" [class]="flagClass(team.flagCode)"></span>
                     <span class="special-pick__team-name">{{ team.name }}</span>
                   </button>
                 }
@@ -71,8 +92,18 @@ interface TeamItem {
             </article>
           }
         </div>
+
+        <div style="text-align: center; margin-top: var(--space-2xl);">
+          @if (lastSavedAt()) {
+            <p style="color: var(--color-text-muted); font-size: var(--fs-sm); margin-bottom: var(--space-md);">
+              Auto-guarda al cambiar la selección.
+              <strong style="color: var(--color-primary-green);">Última edición: {{ lastSavedAt() }}</strong>
+            </p>
+          }
+          <a routerLink="/profile" class="btn btn--ghost">Volver a perfil</a>
+        </div>
       }
-    </section>
+    </main>
   `,
 })
 export class SpecialPicksComponent implements OnInit {
@@ -82,19 +113,33 @@ export class SpecialPicksComponent implements OnInit {
 
   types = TYPES;
   teams = signal<TeamItem[]>([]);
+  teamMap = signal<Map<string, TeamItem>>(new Map());
   picksByType = signal<Partial<Record<SpecialKey, string>>>({});
   saving = signal<Partial<Record<SpecialKey, boolean>>>({});
   tournamentLockAt = signal<string | null>(null);
   loading = signal(true);
+  lastSavedAt = signal<string | null>(null);
+
+  totalPotential = TYPES.reduce((s, t) => s + t.points, 0);
 
   locked = computed(() => {
     const lock = this.tournamentLockAt();
     return lock ? Date.now() >= Date.parse(lock) : false;
   });
-  lockAt = computed(() => {
+
+  daysUntilLock = computed(() => {
     const lock = this.tournamentLockAt();
-    if (!lock) return null;
-    return new Date(lock).toLocaleString('es-EC', { timeZone: 'America/Guayaquil' });
+    if (!lock) return 0;
+    return Math.max(0, Math.ceil((Date.parse(lock) - Date.now()) / 86_400_000));
+  });
+
+  lockDate = computed(() => {
+    const lock = this.tournamentLockAt();
+    if (!lock) return '—';
+    return new Date(lock).toLocaleString('es-EC', {
+      timeZone: 'America/Guayaquil',
+      day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
+    });
   });
 
   async ngOnInit() {
@@ -110,29 +155,41 @@ export class SpecialPicksComponent implements OnInit {
         this.api.mySpecialPicks(TOURNAMENT_ID),
       ]);
 
-      this.teams.set(
-        (teamsRes.data ?? [])
-          .map((t) => ({ slug: t.slug, name: t.name, flagCode: t.flagCode }))
-          .sort((a, b) => a.name.localeCompare(b.name)),
-      );
+      const list = (teamsRes.data ?? [])
+        .map((t) => ({ slug: t.slug, name: t.name, flagCode: t.flagCode }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+      this.teams.set(list);
+      const map = new Map<string, TeamItem>();
+      for (const t of list) map.set(t.slug, t);
+      this.teamMap.set(map);
+
       this.tournamentLockAt.set(tour.data?.specialsLockAt ?? null);
 
-      const map: Partial<Record<SpecialKey, string>> = {};
+      const pmap: Partial<Record<SpecialKey, string>> = {};
       for (const p of picks.data ?? []) {
-        if (p.type && p.teamId) map[p.type as SpecialKey] = p.teamId;
+        if (p.type && p.teamId) pmap[p.type as SpecialKey] = p.teamId;
       }
-      this.picksByType.set(map);
+      this.picksByType.set(pmap);
     } finally {
       this.loading.set(false);
     }
   }
 
   teamName(slug: string): string {
-    return this.teams().find((t) => t.slug === slug)?.name ?? slug;
+    return this.teamMap().get(slug)?.name ?? slug;
+  }
+
+  flagClassForSlug(slug: string): string {
+    const code = this.teamMap().get(slug)?.flagCode;
+    return code ? `flag--${code.toLowerCase()}` : 'flag';
+  }
+
+  flagClass(code: string): string {
+    return `flag--${code.toLowerCase()}`;
   }
 
   async setPick(type: SpecialKey, teamId: string) {
-    if (!teamId) return;
+    if (!teamId || this.locked()) return;
     const userId = this.auth.user()?.sub;
     if (!userId) return;
 
@@ -140,7 +197,8 @@ export class SpecialPicksComponent implements OnInit {
     try {
       await this.api.upsertSpecialPick(userId, type, teamId, TOURNAMENT_ID);
       this.picksByType.update((p) => ({ ...p, [type]: teamId }));
-      this.toast.success('Pick especial guardado');
+      this.lastSavedAt.set(`hace unos segundos`);
+      this.toast.success(`${TYPES.find((t) => t.key === type)?.label} actualizado`);
     } catch (e) {
       this.toast.error(humanizeError(e));
     } finally {
