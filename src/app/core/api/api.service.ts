@@ -104,14 +104,17 @@ export class ApiService {
   }
 
   // ----- SpecialPick upsert (owner-based auto-CRUD) -----
-  async upsertSpecialPick(type: SpecialType, teamId: string, tournamentId: string) {
+  // userId must be passed explicitly even though allow.ownerDefinedIn('userId')
+  // would auto-fill it server-side: the generated TS signature for create()
+  // marks userId as required. Caller passes auth.user()!.sub.
+  async upsertSpecialPick(userId: string, type: SpecialType, teamId: string, tournamentId: string) {
     const existing = await apiClient.models.SpecialPick.list({
       filter: { tournamentId: { eq: tournamentId }, type: { eq: type } },
       limit: 1,
     });
     const found = (existing.data ?? [])[0];
     if (found) return apiClient.models.SpecialPick.update({ id: found.id, teamId });
-    return apiClient.models.SpecialPick.create({ type, teamId, tournamentId });
+    return apiClient.models.SpecialPick.create({ userId, type, teamId, tournamentId });
   }
   mySpecialPicks(tournamentId: string) {
     return apiClient.models.SpecialPick.list({

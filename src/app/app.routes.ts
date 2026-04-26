@@ -25,6 +25,10 @@ export const routes: Routes = [
         path: 'picks',
         loadComponent: () => import('./features/picks/picks-list.component').then((m) => m.PicksListComponent),
       },
+      {
+        path: 'picks/match/:id',
+        loadComponent: () => import('./features/picks/pick-detail.component').then((m) => m.PickDetailComponent),
+      },
     ],
   },
   { path: '**', redirectTo: 'picks' },
