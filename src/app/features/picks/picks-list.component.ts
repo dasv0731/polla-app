@@ -18,6 +18,8 @@ interface MatchWithMeta {
   phaseLabel: string;
   homeTeamName: string;
   awayTeamName: string;
+  homeFlag: string;
+  awayFlag: string;
   pick: {
     homeScorePred: number;
     awayScorePred: number;
@@ -27,39 +29,78 @@ interface MatchWithMeta {
   } | null;
 }
 
+interface Totals {
+  points: number;
+  exactCount: number;
+  resultCount: number;
+  globalRank: number | null;
+}
+
 @Component({
   standalone: true,
   selector: 'app-picks-list',
   imports: [PickCardComponent],
   template: `
-    <section class="container">
-      <h1>Mundial 2026 — Mis picks</h1>
-
-      <div class="view-mode-toggle">
-        <button class="view-mode-toggle__option"
-                [class.is-active]="tab() === 'upcoming'"
-                (click)="tab.set('upcoming')">Próximos ({{ upcomingCount() }})</button>
-        <button class="view-mode-toggle__option"
-                [class.is-active]="tab() === 'played'"
-                (click)="tab.set('played')">Jugados ({{ playedCount() }})</button>
+    <header class="page-header">
+      <div class="page-header__top">
+        <div class="page-header__title">
+          <small>Mundial 2026 · Tu polla</small>
+          <h1>Mis picks</h1>
+        </div>
+        <div class="page-header__counts">
+          <div><strong>{{ totals().points }}</strong><small>Pts totales</small></div>
+          <div><strong>{{ totals().exactCount }}</strong><small>Exactos</small></div>
+          <div><strong>{{ totals().resultCount }}</strong><small>Resultados</small></div>
+          <div><strong>{{ totals().globalRank ? '#' + totals().globalRank : '—' }}</strong><small>Ranking global</small></div>
+        </div>
       </div>
 
-      @if (loading()) {
-        <p>Cargando partidos…</p>
-      } @else if (visible().length === 0) {
-        <p>No hay partidos en esta vista.</p>
-      } @else {
-        <div class="picks-stack">
-          @for (m of visible(); track m.id) {
-            <app-pick-card
-              [match]="m"
-              [phaseLabel]="m.phaseLabel"
-              [existingPick]="m.pick"
-              [pointsEarned]="m.pick?.pointsEarned" />
-          }
+      <div class="page-header__controls">
+        <div class="view-mode-toggle" role="tablist" aria-label="Modo de vista">
+          <button class="view-mode-toggle__option is-active" type="button">📅 Cronológico</button>
+          <button class="view-mode-toggle__option" type="button" disabled title="Próximamente">🏆 Por grupo</button>
+          <button class="view-mode-toggle__option" type="button" disabled title="Próximamente">🌳 Llaves</button>
         </div>
-      }
-    </section>
+
+        <nav class="subnav" role="tablist" aria-label="Tabs de picks" style="margin-left: auto;">
+          <button type="button"
+                  [class.is-active]="tab() === 'upcoming'"
+                  (click)="tab.set('upcoming')">
+            Próximos<span class="subnav__count">{{ upcomingCount() }}</span>
+          </button>
+          <button type="button"
+                  [class.is-active]="tab() === 'played'"
+                  (click)="tab.set('played')">
+            Jugados<span class="subnav__count">{{ playedCount() }}</span>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    @if (loading()) {
+      <div class="empty-state"><h3>Cargando…</h3></div>
+    } @else if (visible().length === 0) {
+      <div class="empty-state">
+        <h3>{{ tab() === 'upcoming' ? 'No hay partidos próximos' : 'Aún no jugaste partidos' }}</h3>
+        <p>
+          @if (tab() === 'upcoming') {
+            Cuando admin cargue los fixtures, aparecerán aquí.
+          } @else {
+            Tus picks jugados aparecerán acá con el resultado y los puntos.
+          }
+        </p>
+      </div>
+    } @else {
+      <section class="picks-grid">
+        @for (m of visible(); track m.id) {
+          <app-pick-card
+            [match]="m"
+            [phaseLabel]="m.phaseLabel"
+            [existingPick]="m.pick"
+            [pointsEarned]="m.pick?.pointsEarned" />
+        }
+      </section>
+    }
   `,
 })
 export class PicksListComponent implements OnInit {
@@ -70,6 +111,7 @@ export class PicksListComponent implements OnInit {
   tab = signal<'upcoming' | 'played'>('upcoming');
   matches = signal<MatchWithMeta[]>([]);
   loading = signal(true);
+  totals = signal<Totals>({ points: 0, exactCount: 0, resultCount: 0, globalRank: null });
 
   upcomingCount = computed(() => this.matches().filter((m) => !this.time.isPast(m.kickoffAt)).length);
   playedCount = computed(() => this.matches().filter((m) => this.time.isPast(m.kickoffAt)).length);
@@ -87,18 +129,20 @@ export class PicksListComponent implements OnInit {
     }
 
     try {
-      const [matchesRes, picksRes, phasesRes, teamsRes] = await Promise.all([
+      const [matchesRes, picksRes, phasesRes, teamsRes, totalsRes, leaderboardRes] = await Promise.all([
         this.api.listMatches(TOURNAMENT_ID),
         this.api.myPicks(userId),
         this.api.listPhases(TOURNAMENT_ID),
         this.api.listTeams(TOURNAMENT_ID),
+        this.api.myTotal(userId, TOURNAMENT_ID),
+        this.api.listLeaderboard(TOURNAMENT_ID, 200),
       ]);
 
       const phaseLabels = new Map<string, string>(
         (phasesRes.data ?? []).map((p) => [p.id, p.name]),
       );
-      const teamNames = new Map<string, string>(
-        (teamsRes.data ?? []).map((t) => [t.slug, t.name]),
+      const teamMap = new Map<string, { name: string; flagCode: string }>(
+        (teamsRes.data ?? []).map((t) => [t.slug, { name: t.name, flagCode: t.flagCode }]),
       );
       const pickByMatch = new Map(
         (picksRes.data ?? []).map((p) => [
@@ -114,23 +158,40 @@ export class PicksListComponent implements OnInit {
       );
 
       const enriched: MatchWithMeta[] = (matchesRes.data ?? [])
-        .map((m) => ({
-          id: m.id,
-          kickoffAt: m.kickoffAt,
-          phaseId: m.phaseId,
-          homeTeamId: m.homeTeamId,
-          awayTeamId: m.awayTeamId,
-          homeScore: m.homeScore,
-          awayScore: m.awayScore,
-          status: m.status ?? undefined,
-          phaseLabel: phaseLabels.get(m.phaseId) ?? '',
-          homeTeamName: teamNames.get(m.homeTeamId) ?? m.homeTeamId,
-          awayTeamName: teamNames.get(m.awayTeamId) ?? m.awayTeamId,
-          pick: pickByMatch.get(m.id) ?? null,
-        }))
+        .map((m) => {
+          const home = teamMap.get(m.homeTeamId);
+          const away = teamMap.get(m.awayTeamId);
+          return {
+            id: m.id,
+            kickoffAt: m.kickoffAt,
+            phaseId: m.phaseId,
+            homeTeamId: m.homeTeamId,
+            awayTeamId: m.awayTeamId,
+            homeScore: m.homeScore,
+            awayScore: m.awayScore,
+            status: m.status ?? undefined,
+            phaseLabel: phaseLabels.get(m.phaseId) ?? '',
+            homeTeamName: home?.name ?? m.homeTeamId,
+            awayTeamName: away?.name ?? m.awayTeamId,
+            homeFlag: home?.flagCode ?? '',
+            awayFlag: away?.flagCode ?? '',
+            pick: pickByMatch.get(m.id) ?? null,
+          };
+        })
         .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt));
 
       this.matches.set(enriched);
+
+      // Totals + global rank
+      const myTotal = (totalsRes.data ?? [])[0];
+      const sorted = (leaderboardRes.data ?? []).sort((a, b) => (b.points ?? 0) - (a.points ?? 0));
+      const rankIdx = sorted.findIndex((t) => t.userId === userId);
+      this.totals.set({
+        points: myTotal?.points ?? 0,
+        exactCount: myTotal?.exactCount ?? 0,
+        resultCount: myTotal?.resultCount ?? 0,
+        globalRank: rankIdx >= 0 ? rankIdx + 1 : null,
+      });
     } finally {
       this.loading.set(false);
     }

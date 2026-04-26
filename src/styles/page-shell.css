@@ -1,0 +1,190 @@
+/* ============================================================
+   Page shell — patrones del flow autenticado
+   page-header (con stats + view-mode + subnav tabs), picks-grid,
+   subnav (tabs pill), empty-state, flags placeholder
+   Extraído de mockups/picks.html (inline <style>).
+   ============================================================ */
+
+/* -------- Page header -------- */
+.page-header {
+  padding: var(--space-xl) var(--section-x-mobile) var(--space-md);
+}
+@media (min-width: 992px) {
+  .page-header {
+    padding: var(--space-2xl) var(--section-x-desktop) var(--space-lg);
+  }
+}
+.page-header__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+.page-header__title h1 {
+  font-family: var(--font-display);
+  font-size: 56px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+@media (min-width: 480px) {
+  .page-header__title h1 { font-size: 72px; }
+}
+.page-header__title small {
+  display: block;
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: var(--fw-bold);
+  margin-bottom: 4px;
+}
+.page-header__counts {
+  display: flex;
+  gap: var(--space-md);
+  font-size: var(--fs-sm);
+  flex-wrap: wrap;
+}
+.page-header__counts strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  color: var(--color-primary-green);
+  line-height: 1;
+}
+.page-header__counts small {
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+}
+.page-header__controls {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  align-items: center;
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--color-primary-grey);
+}
+
+/* -------- Subnav (tabs pill) -------- */
+.subnav { display: inline-flex; gap: var(--space-xs); }
+.subnav a,
+.subnav button {
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+.subnav a:hover,
+.subnav button:hover {
+  background: var(--color-primary-grey);
+  color: var(--color-primary-black);
+}
+.subnav a.is-active,
+.subnav button.is-active {
+  background: var(--color-primary-black);
+  color: var(--color-primary-white);
+}
+.subnav__count {
+  background: var(--color-primary-green);
+  color: var(--color-primary-white);
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  margin-left: 6px;
+  font-family: var(--font-primary);
+}
+
+/* -------- Picks grid -------- */
+.picks-grid {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: 1fr;
+  padding: var(--space-md) var(--section-x-mobile) var(--space-2xl);
+}
+@media (min-width: 480px) {
+  .picks-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 992px) {
+  .picks-grid {
+    grid-template-columns: repeat(3, 1fr);
+    padding-inline: var(--section-x-desktop);
+  }
+}
+
+/* -------- Empty state -------- */
+.empty-state {
+  text-align: center;
+  padding: var(--space-3xl) var(--space-lg);
+  color: var(--color-text-muted);
+}
+.empty-state h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  text-transform: uppercase;
+  line-height: 1;
+  margin-bottom: var(--space-md);
+  color: var(--color-primary-black);
+}
+
+/* -------- Flag placeholders (inline gradients ad-hoc por código)
+   Para banderas desconocidas el fallback es el background gris.
+   Cuando haya assets reales, reemplazar por <img>. -------- */
+.flag {
+  background: var(--color-primary-grey);
+  border-radius: var(--radius-sm);
+  display: inline-block;
+  width: 56px;
+  height: 56px;
+}
+.flag--ec { background: linear-gradient(180deg, #FFCF24 50%, #003DA5 50%, #003DA5 75%, #E74C3C 75%); }
+.flag--mx { background: linear-gradient(90deg, #006847 33%, #fff 33%, #fff 66%, #CE1126 66%); }
+.flag--ar { background: linear-gradient(180deg, #6cace4 33%, #fff 33%, #fff 66%, #6cace4 66%); }
+.flag--ma { background: #C1272D; }
+.flag--es { background: linear-gradient(180deg, #C60B1E 25%, #FFC400 25%, #FFC400 75%, #C60B1E 75%); }
+.flag--cr { background: linear-gradient(180deg, #002B7F 25%, #fff 25%, #fff 75%, #002B7F 75%); }
+.flag--de { background: linear-gradient(180deg, #000 33%, #DD0000 33%, #DD0000 66%, #FFCE00 66%); }
+.flag--us { background: #B22234; }
+.flag--br { background: #FFDF00; }
+.flag--co { background: linear-gradient(180deg, #FFCD00 50%, #003893 50%); }
+.flag--fr { background: linear-gradient(90deg, #002395 33%, #fff 33%, #fff 66%, #ED2939 66%); }
+.flag--gb { background: #012169; }
+.flag--it { background: linear-gradient(90deg, #009246 33%, #fff 33%, #fff 66%, #CE2B37 66%); }
+.flag--nl { background: linear-gradient(180deg, #AE1C28 33%, #fff 33%, #fff 66%, #21468B 66%); }
+.flag--pt { background: linear-gradient(90deg, #006600 30%, #FF0000 30%); }
+.flag--be { background: linear-gradient(90deg, #000 33%, #FFD90C 33%, #FFD90C 66%, #C8102E 66%); }
+.flag--ch { background: #DA291C; }
+.flag--cl { background: linear-gradient(180deg, #fff 50%, #D52B1E 50%); }
+.flag--uy { background: linear-gradient(90deg, #fff, #0038A8); }
+.flag--py { background: linear-gradient(180deg, #D52B1E 33%, #fff 33%, #fff 66%, #0038A8 66%); }
+.flag--pe { background: linear-gradient(90deg, #D91023 33%, #fff 33%, #fff 66%, #D91023 66%); }
+.flag--ca { background: linear-gradient(90deg, #FF0000 25%, #fff 25%, #fff 75%, #FF0000 75%); }
+.flag--jp { background: #fff; position: relative; }
+.flag--jp::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 50%; height: 50%;
+  background: #BC002D;
+  border-radius: 50%;
+}
+.flag--kr { background: #fff; }
+.flag--au { background: #00008B; }
+.flag--sa { background: #006C35; }
+.flag--ir { background: linear-gradient(180deg, #239F40 33%, #fff 33%, #fff 66%, #DA0000 66%); }
+.flag--qa { background: #8D1B3D; }
+
+/* Pick card __team con la bandera ya como hijo del bloque pick-card__team */
+.pick-card__team .flag {
+  width: 56px;
+  height: 56px;
+}
