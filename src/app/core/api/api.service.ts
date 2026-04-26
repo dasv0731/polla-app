@@ -55,6 +55,12 @@ export class ApiService {
       limit,
     });
   }
+  listGroups(tournamentId: string, limit = 500) {
+    return apiClient.models.Group.list({
+      filter: { tournamentId: { eq: tournamentId } },
+      limit,
+    });
+  }
 
   // ----- Authenticated reads (JWT) -----
   myPicks(userId: string) {

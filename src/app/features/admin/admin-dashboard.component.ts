@@ -3,88 +3,122 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 
 const TOURNAMENT_ID = 'mundial-2026';
+const DAY_MS = 86_400_000;
+
+interface ActivityItem {
+  kind: 'result' | 'group' | 'bounce';
+  message: string;
+  highlight: string;
+  detail: string;
+  timestamp: number;
+}
 
 @Component({
   standalone: true,
   selector: 'app-admin-dashboard',
   imports: [RouterLink],
   template: `
-    <header class="page-header" style="padding: 0 0 var(--space-md);">
-      <small>Mundial 2026 · Panel admin</small>
-      <h1 style="font-family: var(--font-display); font-size: 56px; line-height: 1; text-transform: uppercase;">Dashboard</h1>
+    <header class="admin-main__head">
+      <div>
+        <small>Admin · Mundial 2026</small>
+        <h1>Dashboard</h1>
+      </div>
+      <p style="font-size: var(--fs-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: var(--fw-bold);">
+        Última actualización: {{ lastUpdatedLabel() }}
+      </p>
     </header>
 
     @if (loading()) {
-      <p>Cargando KPIs…</p>
+      <p>Cargando dashboard…</p>
     } @else {
       <section class="kpi-grid">
         <article class="kpi-card">
-          <p class="kpi-card__label">Partidos cargados</p>
-          <p class="kpi-card__value">{{ totalMatches() }}</p>
-          <p class="kpi-card__hint">de 104 esperados (Mundial 2026)</p>
-        </article>
-        <article class="kpi-card kpi-card--warn">
-          <p class="kpi-card__label">Pendientes de resultado</p>
-          <p class="kpi-card__value">{{ pendingResults() }}</p>
-          <p class="kpi-card__hint">SCHEDULED + LIVE en el pasado</p>
-        </article>
-        <article class="kpi-card">
-          <p class="kpi-card__label">Finalizados con scoring</p>
-          <p class="kpi-card__value">{{ finalScored() }}</p>
-          <p class="kpi-card__hint">FINAL con pointsCalculated=true</p>
-        </article>
-        <article class="kpi-card kpi-card--danger">
-          <p class="kpi-card__label">FINAL sin scoring</p>
-          <p class="kpi-card__value">{{ finalUnscored() }}</p>
-          <p class="kpi-card__hint">Necesitan correr 'Calcular puntos'</p>
-        </article>
-      </section>
-
-      <section class="kpi-grid">
-        <article class="kpi-card">
-          <p class="kpi-card__label">Equipos cargados</p>
-          <p class="kpi-card__value">{{ totalTeams() }}</p>
-          <p class="kpi-card__hint">de 48 selecciones del Mundial 2026</p>
-        </article>
-        <article class="kpi-card">
-          <p class="kpi-card__label">Jugadores registrados</p>
-          <p class="kpi-card__value">{{ totalUsers() }}</p>
-          <p class="kpi-card__hint">Cuentas Cognito + User row</p>
-        </article>
-        <article class="kpi-card">
-          <p class="kpi-card__label">Picks recibidos</p>
-          <p class="kpi-card__value">{{ totalPicks() }}</p>
-          <p class="kpi-card__hint">en todos los partidos</p>
-        </article>
-        <article class="kpi-card">
-          <p class="kpi-card__label">Grupos privados</p>
-          <p class="kpi-card__value">{{ totalGroups() }}</p>
-          <p class="kpi-card__hint">creados por usuarios</p>
-        </article>
-      </section>
-
-      <section style="margin-top: var(--space-2xl);">
-        <header class="section-heading">
-          <div class="section-heading__text">
-            <p class="kicker">Acciones rápidas</p>
-            <h2 class="h2">¿Qué hacer ahora?</h2>
-          </div>
-        </header>
-        <div class="empty-cta">
-          <a class="empty-cta__card" routerLink="/admin/fixtures" style="display: block; text-decoration: none; color: inherit;">
-            <h3>+ Cargar partidos</h3>
-            <p>Faltan {{ Math.max(0, 104 - totalMatches()) }} para los 104 oficiales del Mundial 2026.</p>
-            <span class="link-green">Ir a partidos →</span>
-          </a>
-          @if (pendingResults() > 0) {
-            <a class="empty-cta__card" routerLink="/admin/results" style="display: block; text-decoration: none; color: inherit;">
-              <h3>⚠ Publicar {{ pendingResults() }} resultado{{ pendingResults() === 1 ? '' : 's' }}</h3>
-              <p>Hay matches con kickoff pasado sin resultado. Súbelos para que el scoring corra.</p>
-              <span class="link-green">Ir a resultados →</span>
-            </a>
+          <small>Users registrados</small>
+          <div class="kpi-card__value">{{ formatNumber(totalUsers()) }}</div>
+          @if (newUsersLast24h() > 0) {
+            <span class="kpi-card__delta kpi-card__delta--up">↑ +{{ newUsersLast24h() }} últimas 24h</span>
+          } @else {
+            <span class="kpi-card__delta" style="color: var(--color-text-muted);">Sin altas en últimas 24h</span>
           }
-        </div>
+        </article>
+
+        <article class="kpi-card">
+          <small>Picks totales</small>
+          <div class="kpi-card__value">{{ formatNumber(totalPicks()) }}</div>
+          @if (newPicksLast24h() > 0) {
+            <span class="kpi-card__delta kpi-card__delta--up">↑ +{{ newPicksLast24h() }} últimas 24h</span>
+          } @else {
+            <span class="kpi-card__delta" style="color: var(--color-text-muted);">Sin movimiento últimas 24h</span>
+          }
+        </article>
+
+        <article class="kpi-card kpi-card--warn">
+          <small>Resultados pendientes</small>
+          <div class="kpi-card__value">{{ pendingResults() }}</div>
+          <span class="kpi-card__delta kpi-card__delta--down">
+            {{ pendingResults() === 0 ? 'Todo al día' : (pendingResults() + ' partidos finalizados sin publicar') }}
+          </span>
+        </article>
+
+        <article class="kpi-card kpi-card--danger">
+          <small>SES bounces</small>
+          <div class="kpi-card__value">{{ totalBounces() }}</div>
+          <span class="kpi-card__delta kpi-card__delta--down">
+            {{ totalBounces() === 0 ? 'Sin bounces — todo OK' : 'Acumulado · revisar' }}
+          </span>
+        </article>
       </section>
+
+      <h2 style="font-family: var(--font-display); font-size: var(--fs-xl); text-transform: uppercase; line-height: 1; margin-bottom: var(--space-md);">
+        Acciones rápidas
+      </h2>
+      <div class="quick-actions">
+        <a routerLink="/admin/results" class="quick-action">
+          <span class="quick-action__icon">⚽</span>
+          <h3>Publicar resultado</h3>
+          <p>
+            {{ pendingResults() === 0
+              ? 'Todos los partidos pasados ya tienen resultado.'
+              : pendingResults() + ' partido' + (pendingResults() === 1 ? '' : 's') + ' sin resultado oficial. Dispara recalc de puntos.' }}
+          </p>
+        </a>
+        <a routerLink="/admin/fixtures" class="quick-action">
+          <span class="quick-action__icon">📅</span>
+          <h3>Editar fixture</h3>
+          <p>Cambiar horario, sede o equipos. Aviso si afecta picks ya hechos.</p>
+        </a>
+        <a routerLink="/admin/special-results" class="quick-action">
+          <span class="quick-action__icon">🏆</span>
+          <h3>Adjudicar specials</h3>
+          <p>Disponible al cierre del torneo. Define campeón, subcampeón y revelación.</p>
+        </a>
+        <a routerLink="/admin/users" class="quick-action">
+          <span class="quick-action__icon">👥</span>
+          <h3>Gestionar users</h3>
+          <p>Buscar, reset password, marcar emails con bounce.</p>
+        </a>
+      </div>
+
+      @if (activity().length > 0) {
+        <div class="activity">
+          <h3>Actividad reciente</h3>
+          <ul>
+            @for (a of activity(); track a.timestamp + a.message) {
+              <li>
+                <span class="activity__dot"
+                      [class.activity__dot--warn]="a.kind === 'group'"
+                      [class.activity__dot--danger]="a.kind === 'bounce'"></span>
+                <span>
+                  {{ a.message }}
+                  <strong>{{ a.highlight }}</strong>
+                  @if (a.detail) { · {{ a.detail }} }
+                </span>
+                <span class="activity__time">{{ relativeTime(a.timestamp) }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+      }
     }
   `,
 })
@@ -92,44 +126,112 @@ export class AdminDashboardComponent implements OnInit {
   private api = inject(ApiService);
 
   loading = signal(true);
-  totalMatches = signal(0);
-  pendingResults = signal(0);
-  finalScored = signal(0);
-  finalUnscored = signal(0);
-  totalTeams = signal(0);
-  totalUsers = signal(0);
-  totalPicks = signal(0);
-  totalGroups = signal(0);
+  loadedAt = signal(Date.now());
 
-  Math = Math; // expose for template
+  totalUsers = signal(0);
+  newUsersLast24h = signal(0);
+  totalPicks = signal(0);
+  newPicksLast24h = signal(0);
+  pendingResults = signal(0);
+  totalBounces = signal(0);
+
+  activity = signal<ActivityItem[]>([]);
+
+  lastUpdatedLabel = computed(() => this.relativeTime(this.loadedAt()));
 
   async ngOnInit() {
     try {
-      const [matchesRes, teamsRes] = await Promise.all([
+      const cutoff = Date.now() - DAY_MS;
+      const [usersRes, matchesRes, picksRes, groupsRes] = await Promise.all([
+        this.api.listUsers(1000),
         this.api.listMatches(TOURNAMENT_ID),
-        this.api.listTeams(TOURNAMENT_ID),
+        this.api.listAllPicks(TOURNAMENT_ID, 5000),
+        this.api.listGroups(TOURNAMENT_ID, 500),
       ]);
-      const matches = matchesRes.data ?? [];
-      const now = Date.now();
-      this.totalMatches.set(matches.length);
-      this.pendingResults.set(matches.filter((m) => m.status !== 'FINAL' && Date.parse(m.kickoffAt) < now).length);
-      this.finalScored.set(matches.filter((m) => m.status === 'FINAL' && m.pointsCalculated).length);
-      this.finalUnscored.set(matches.filter((m) => m.status === 'FINAL' && !m.pointsCalculated).length);
-      this.totalTeams.set((teamsRes.data ?? []).length);
 
-      // Lighter counts via UTT (one row per registered user) and Pick / Group lists
-      const [uttRes, picksRes, groupsRes] = await Promise.all([
-        this.api.listLeaderboard(TOURNAMENT_ID, 1000),
-        // Picks list — leverage admin-only access. apiClient.models.Pick.list returns all.
-        this.api.myPicks('all').catch(() => ({ data: [] as unknown[] })), // fallback empty
-        // Groups list
-        Promise.resolve({ data: [] as unknown[] }),
-      ]);
-      this.totalUsers.set((uttRes.data ?? []).length);
-      this.totalPicks.set((picksRes.data ?? []).length);
-      this.totalGroups.set((groupsRes.data ?? []).length);
+      const users = usersRes.data ?? [];
+      const matches = matchesRes.data ?? [];
+      const picks = picksRes.data ?? [];
+      const groups = groupsRes.data ?? [];
+
+      this.totalUsers.set(users.length);
+      this.newUsersLast24h.set(
+        users.filter((u) => u.createdAt && Date.parse(u.createdAt) >= cutoff).length,
+      );
+
+      this.totalPicks.set(picks.length);
+      this.newPicksLast24h.set(
+        picks.filter((p) => p.createdAt && Date.parse(p.createdAt) >= cutoff).length,
+      );
+
+      const now = Date.now();
+      this.pendingResults.set(
+        matches.filter((m) =>
+          (m.status !== 'FINAL' && Date.parse(m.kickoffAt) < now) ||
+          (m.status === 'FINAL' && !m.pointsCalculated),
+        ).length,
+      );
+
+      this.totalBounces.set(users.filter((u) => u.emailStatus === 'BOUNCED').length);
+
+      // Build activity feed from heuristics: most recent FINAL matches, group creations,
+      // and bounced users. Sorted desc by timestamp, top 6.
+      const teamsRes = await this.api.listTeams(TOURNAMENT_ID);
+      const teamName = new Map<string, string>(
+        (teamsRes.data ?? []).map((t) => [t.slug, t.name]),
+      );
+
+      const items: ActivityItem[] = [];
+      for (const m of matches) {
+        if (m.status === 'FINAL' && m.homeScore != null && m.awayScore != null) {
+          items.push({
+            kind: 'result',
+            message: 'Resultado publicado',
+            highlight: `${teamName.get(m.homeTeamId) ?? m.homeTeamId} ${m.homeScore}-${m.awayScore} ${teamName.get(m.awayTeamId) ?? m.awayTeamId}`,
+            detail: m.pointsCalculated ? 'puntos recalculados' : 'pendiente de scoring',
+            timestamp: Date.parse(m.kickoffAt),
+          });
+        }
+      }
+      for (const g of groups) {
+        items.push({
+          kind: 'group',
+          message: 'Nuevo grupo creado',
+          highlight: `"${g.name}"`,
+          detail: '',
+          timestamp: g.createdAt ? Date.parse(g.createdAt) : 0,
+        });
+      }
+      for (const u of users) {
+        if (u.emailStatus === 'BOUNCED') {
+          items.push({
+            kind: 'bounce',
+            message: 'SES bounce notification:',
+            highlight: u.email,
+            detail: 'marcado como BOUNCED',
+            timestamp: u.createdAt ? Date.parse(u.createdAt) : 0,
+          });
+        }
+      }
+
+      items.sort((a, b) => b.timestamp - a.timestamp);
+      this.activity.set(items.slice(0, 6));
     } finally {
       this.loading.set(false);
+      this.loadedAt.set(Date.now());
     }
+  }
+
+  formatNumber(n: number): string {
+    return n.toLocaleString('es-EC');
+  }
+
+  relativeTime(ts: number): string {
+    const diff = Date.now() - ts;
+    if (diff < 60_000) return `hace ${Math.max(1, Math.floor(diff / 1000))} s`;
+    if (diff < 3_600_000) return `hace ${Math.floor(diff / 60_000)} min`;
+    if (diff < 86_400_000) return `hace ${Math.floor(diff / 3_600_000)} h`;
+    const days = Math.floor(diff / 86_400_000);
+    return `hace ${days} día${days === 1 ? '' : 's'}`;
   }
 }
