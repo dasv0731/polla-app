@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
@@ -8,12 +9,12 @@ import { apiClient } from '../../core/api/client';
 const TOURNAMENT_ID = 'mundial-2026';
 const GROUP_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
 
-interface TeamRow { slug: string; name: string; flagCode: string; groupLetter: string | null; }
+interface TeamRow { slug: string; name: string; flagCode: string; groupLetter: string | null; crestUrl: string | null; }
 
 @Component({
   standalone: true,
   selector: 'app-admin-teams',
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   template: `
     <header class="page-header" style="padding: 0 0 var(--space-md); display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: var(--space-md);">
       <div>
@@ -76,7 +77,14 @@ interface TeamRow { slug: string; name: string; flagCode: string; groupLetter: s
           <tbody>
             @for (t of teams(); track t.slug) {
               <tr>
-                <td><span class="flag" [class]="flagClass(t.flagCode)" style="display: inline-block; vertical-align: middle; width: 32px; height: 32px;"></span></td>
+                <td>
+                  @if (t.crestUrl) {
+                    <img [src]="t.crestUrl" [alt]="t.name + ' escudo'"
+                         style="display: inline-block; vertical-align: middle; width: 32px; height: 32px; object-fit: contain; border-radius: var(--radius-sm); background: var(--color-primary-white);">
+                  } @else {
+                    <span class="flag" [class]="flagClass(t.flagCode)" style="display: inline-block; vertical-align: middle; width: 32px; height: 32px;"></span>
+                  }
+                </td>
                 <td><code>{{ t.slug }}</code></td>
                 <td>{{ t.name }}</td>
                 <td>{{ t.flagCode }}</td>
@@ -95,6 +103,8 @@ interface TeamRow { slug: string; name: string; flagCode: string; groupLetter: s
                   }
                 </td>
                 <td>
+                  <a class="link-green" [routerLink]="['/admin/teams', t.slug, 'edit']">Editar</a>
+                  ·
                   <a class="link-green" style="color: var(--color-lost); cursor: pointer;" (click)="del(t, $event)">Borrar</a>
                 </td>
               </tr>
@@ -137,6 +147,7 @@ export class AdminTeamsComponent implements OnInit {
             name: t.name,
             flagCode: t.flagCode,
             groupLetter: t.groupLetter ?? null,
+            crestUrl: t.crestUrl ?? null,
           }))
           .sort((a, b) => {
             // Group teams together (sort by group letter, then name)

@@ -33,6 +33,10 @@ export const adminRoutes: Routes = [
         loadComponent: () => import('./admin-teams.component').then((m) => m.AdminTeamsComponent),
       },
       {
+        path: 'teams/:slug/edit',
+        loadComponent: () => import('./admin-team-edit.component').then((m) => m.AdminTeamEditComponent),
+      },
+      {
         path: 'special-results',
         loadComponent: () => import('./admin-special-results.component').then((m) => m.AdminSpecialResultsComponent),
       },
