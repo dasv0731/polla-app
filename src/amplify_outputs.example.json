@@ -1,0 +1,16 @@
+{
+  "version": "1",
+  "auth": {
+    "user_pool_id": "REPLACE",
+    "aws_region": "us-east-1",
+    "user_pool_client_id": "REPLACE",
+    "identity_pool_id": "REPLACE"
+  },
+  "data": {
+    "url": "REPLACE",
+    "aws_region": "us-east-1",
+    "default_authorization_type": "AMAZON_COGNITO_USER_POOLS",
+    "authorization_types": ["API_KEY", "AMAZON_COGNITO_USER_POOLS"],
+    "api_key": "REPLACE"
+  }
+}

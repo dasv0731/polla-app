@@ -40,3 +40,6 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Amplify outputs (live, contains real keys — replaced by CI from S3)
+src/amplify_outputs.json
