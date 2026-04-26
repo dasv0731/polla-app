@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { TimeService } from '../../core/time/time.service';
@@ -39,7 +40,7 @@ interface Totals {
 @Component({
   standalone: true,
   selector: 'app-picks-list',
-  imports: [PickCardComponent],
+  imports: [PickCardComponent, RouterLink],
   template: `
     <header class="page-header">
       <div class="page-header__top">
@@ -58,7 +59,7 @@ interface Totals {
       <div class="page-header__controls">
         <div class="view-mode-toggle" role="tablist" aria-label="Modo de vista">
           <button class="view-mode-toggle__option is-active" type="button">📅 Cronológico</button>
-          <button class="view-mode-toggle__option" type="button" disabled title="Próximamente">🏆 Por grupo</button>
+          <a class="view-mode-toggle__option" routerLink="/picks/by-group">🏆 Por grupo</a>
           <button class="view-mode-toggle__option" type="button" disabled title="Próximamente">🌳 Llaves</button>
         </div>
 
