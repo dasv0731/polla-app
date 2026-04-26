@@ -366,6 +366,259 @@
   outline: none;
 }
 
+/* -------- Register perks callout (highlight box "qué obtienes") -------- */
+.perks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin: var(--space-lg) 0 var(--space-md);
+  padding: var(--space-md);
+  background: var(--color-green-5);
+  border: 1px solid rgba(2, 204, 116, 0.2);
+  border-radius: var(--radius-md);
+}
+.perks li {
+  display: flex;
+  gap: var(--space-sm);
+  font-size: var(--fs-sm);
+  color: var(--color-primary-black);
+  align-items: flex-start;
+}
+.perks li::before {
+  content: "✓";
+  color: var(--color-primary-green);
+  font-weight: var(--fw-bold);
+  flex-shrink: 0;
+}
+
+/* -------- Forgot-password two-step layout -------- */
+.step-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin: var(--space-2xl) 0 var(--space-lg);
+}
+.step-divider hr {
+  flex: 1;
+  border: 0;
+  height: 1px;
+  background: var(--color-primary-grey);
+  margin: 0;
+}
+.step-divider span {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: var(--fw-bold);
+  color: var(--color-text-muted);
+}
+
+.step-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 10px;
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-primary-green);
+  margin-bottom: var(--space-xs);
+}
+.step-mark::before {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-primary-green);
+  color: var(--color-primary-white);
+  font-family: var(--font-display);
+  font-size: 11px;
+  text-align: center;
+  line-height: 18px;
+}
+.step-mark--1::before { content: "1"; }
+.step-mark--2::before { content: "2"; }
+
+/* -------- Profile hero (verde) -------- */
+.profile-hero {
+  background: var(--color-primary-green);
+  color: var(--color-primary-white);
+  padding: var(--space-2xl) var(--section-x-mobile);
+}
+@media (min-width: 992px) {
+  .profile-hero { padding: var(--space-3xl) var(--section-x-desktop); }
+}
+.profile-hero__content {
+  max-width: var(--container-wide);
+  margin-inline: auto;
+  display: grid;
+  gap: var(--space-lg);
+  grid-template-columns: 1fr;
+}
+@media (min-width: 992px) {
+  .profile-hero__content {
+    grid-template-columns: auto 1fr;
+    align-items: center;
+  }
+}
+.profile-hero__avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: var(--color-primary-black);
+  color: var(--color-primary-green);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 56px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+}
+.profile-hero__handle {
+  font-family: var(--font-display);
+  font-size: 56px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+@media (min-width: 480px) {
+  .profile-hero__handle { font-size: 80px; }
+}
+.profile-hero__email {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: var(--fs-md);
+  margin-top: var(--space-xs);
+}
+.profile-hero__since {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: var(--fs-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: var(--space-xs);
+}
+
+/* -------- Profile stats row -------- */
+.stats-row {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: repeat(2, 1fr);
+  padding: var(--space-xl) var(--section-x-mobile);
+  max-width: var(--container-wide);
+  margin-inline: auto;
+}
+@media (min-width: 480px) {
+  .stats-row { grid-template-columns: repeat(4, 1fr); }
+}
+@media (min-width: 992px) {
+  .stats-row { padding-inline: var(--section-x-desktop); }
+}
+.stat-card {
+  background: var(--color-primary-white);
+  border: var(--border-grey);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  text-align: center;
+}
+.stat-card strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 56px;
+  color: var(--color-primary-green);
+  line-height: 1;
+}
+.stat-card small {
+  display: block;
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: var(--fw-bold);
+  margin-top: var(--space-xs);
+}
+
+/* -------- Settings sections (profile body) -------- */
+.settings-section {
+  background: var(--color-primary-white);
+  border: var(--border-grey);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.settings-section h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  text-transform: uppercase;
+  line-height: 1;
+  padding: var(--space-md) var(--space-lg);
+  background: var(--color-primary-grey);
+  border-bottom: var(--border-grey);
+}
+.settings-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-md);
+  align-items: center;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px dashed var(--color-primary-grey);
+}
+.settings-row:last-child { border-bottom: 0; }
+.settings-row__label small {
+  display: block;
+  font-size: 10px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: var(--fw-bold);
+  margin-bottom: 2px;
+}
+.settings-row__label strong {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+}
+.settings-row__action {
+  font-size: var(--fs-sm);
+  color: var(--color-primary-green);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+.settings-row__action--danger { color: var(--color-lost); }
+
+/* -------- Toggle switch (CSS-only) -------- */
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.toggle__track {
+  position: absolute;
+  inset: 0;
+  background: var(--color-primary-grey);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background var(--transition-normal);
+}
+.toggle__track::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 20px;
+  height: 20px;
+  background: var(--color-primary-white);
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  transition: transform var(--transition-normal);
+}
+.toggle input:checked + .toggle__track { background: var(--color-primary-green); }
+.toggle input:checked + .toggle__track::before { transform: translateX(20px); }
+
 /* -------- Empty state -------- */
 .empty-state {
   text-align: center;
