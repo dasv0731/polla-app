@@ -30,6 +30,7 @@
     "@angular-devkit/build-angular": "^18.2.21",
     "@angular/cli": "^18.2.21",
     "@angular/compiler-cli": "^18.2.0",
+    "@aws-amplify/backend": "^1.22.0",
     "@types/jasmine": "~5.1.0",
     "@types/jest": "^30.0.0",
     "autoprefixer": "^10.5.0",
