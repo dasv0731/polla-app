@@ -27,6 +27,9 @@ export class ApiService {
   }
 
   // ----- Single-item reads -----
+  getTournament(slug: string) {
+    return apiClient.models.Tournament.get({ slug }, { authMode: 'apiKey' });
+  }
   getGroup(id: string) {
     return apiClient.models.Group.get({ id });
   }

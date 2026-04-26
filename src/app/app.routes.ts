@@ -45,6 +45,18 @@ export const routes: Routes = [
         path: 'groups/:id',
         loadComponent: () => import('./features/groups/group-detail.component').then((m) => m.GroupDetailComponent),
       },
+      {
+        path: 'ranking',
+        loadComponent: () => import('./features/ranking/ranking.component').then((m) => m.RankingComponent),
+      },
+      {
+        path: 'profile',
+        loadComponent: () => import('./features/profile/profile.component').then((m) => m.ProfileComponent),
+      },
+      {
+        path: 'profile/special-picks',
+        loadComponent: () => import('./features/profile/special-picks.component').then((m) => m.SpecialPicksComponent),
+      },
     ],
   },
   { path: '**', redirectTo: 'picks' },
