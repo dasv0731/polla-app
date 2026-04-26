@@ -4,6 +4,7 @@ import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
+import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
 
 const TOURNAMENT_ID = 'mundial-2026';
 
@@ -19,12 +20,13 @@ interface TeamItem {
   slug: string;
   name: string;
   flagCode: string;
+  crestUrl: string | null;
 }
 
 @Component({
   standalone: true,
   selector: 'app-special-picks',
-  imports: [RouterLink],
+  imports: [RouterLink, TeamFlagComponent],
   template: `
     <header class="page-header">
       <small>
@@ -69,7 +71,8 @@ interface TeamItem {
               @let selected = picksByType()[t.key];
               @if (selected) {
                 <div class="special-pick__current">
-                  <span class="flag" [class]="flagClassForSlug(selected)" style="width: 32px; height: 32px;"></span>
+                  <app-team-flag [flagCode]="teamFlagFromSlug(selected)" [crestUrl]="teamCrestFromSlug(selected)"
+                                 [name]="teamName(selected)" [size]="32" />
                   <span class="special-pick__current-name">{{ teamName(selected) }}</span>
                 </div>
               } @else {
@@ -84,7 +87,7 @@ interface TeamItem {
                           [class.is-selected]="picksByType()[t.key] === team.slug"
                           [disabled]="locked() || saving()[t.key]"
                           (click)="setPick(t.key, team.slug)">
-                    <span class="flag" [class]="flagClass(team.flagCode)"></span>
+                    <app-team-flag [flagCode]="team.flagCode" [crestUrl]="team.crestUrl" [name]="team.name" [size]="28" />
                     <span class="special-pick__team-name">{{ team.name }}</span>
                   </button>
                 }
@@ -156,7 +159,7 @@ export class SpecialPicksComponent implements OnInit {
       ]);
 
       const list = (teamsRes.data ?? [])
-        .map((t) => ({ slug: t.slug, name: t.name, flagCode: t.flagCode }))
+        .map((t) => ({ slug: t.slug, name: t.name, flagCode: t.flagCode, crestUrl: t.crestUrl ?? null }))
         .sort((a, b) => a.name.localeCompare(b.name));
       this.teams.set(list);
       const map = new Map<string, TeamItem>();
@@ -182,6 +185,13 @@ export class SpecialPicksComponent implements OnInit {
   flagClassForSlug(slug: string): string {
     const code = this.teamMap().get(slug)?.flagCode;
     return code ? `flag--${code.toLowerCase()}` : 'flag';
+  }
+
+  teamFlagFromSlug(slug: string): string {
+    return this.teamMap().get(slug)?.flagCode ?? '';
+  }
+  teamCrestFromSlug(slug: string): string | null {
+    return this.teamMap().get(slug)?.crestUrl ?? null;
   }
 
   flagClass(code: string): string {

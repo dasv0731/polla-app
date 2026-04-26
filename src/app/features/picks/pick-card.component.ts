@@ -4,6 +4,7 @@ import { TimeService } from '../../core/time/time.service';
 import { ApiService } from '../../core/api/api.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
+import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
 
 interface DisplayMatch {
   id: string;
@@ -14,6 +15,8 @@ interface DisplayMatch {
   awayTeamName?: string;
   homeFlag?: string;
   awayFlag?: string;
+  homeCrestUrl?: string | null;
+  awayCrestUrl?: string | null;
   homeScore?: number | null;
   awayScore?: number | null;
   status?: string;
@@ -30,7 +33,7 @@ interface ExistingPick {
 @Component({
   standalone: true,
   selector: 'app-pick-card',
-  imports: [RouterLink],
+  imports: [RouterLink, TeamFlagComponent],
   template: `
     <article class="pick-card" [class.pick-card--open]="state() === 'open'"
                                 [class.pick-card--saved]="state() === 'saved'"
@@ -46,12 +49,14 @@ interface ExistingPick {
 
       <div class="pick-card__teams">
         <div class="pick-card__team">
-          <span class="flag" [class]="homeFlagClass()"></span>
+          <app-team-flag [flagCode]="match.homeFlag ?? ''" [crestUrl]="match.homeCrestUrl ?? null"
+                         [name]="match.homeTeamName ?? null" [size]="56" />
           <span class="pick-card__team-name">{{ match.homeTeamName || match.homeTeamId }}</span>
         </div>
         <div class="pick-card__center">{{ centerLabel() }}</div>
         <div class="pick-card__team">
-          <span class="flag" [class]="awayFlagClass()"></span>
+          <app-team-flag [flagCode]="match.awayFlag ?? ''" [crestUrl]="match.awayCrestUrl ?? null"
+                         [name]="match.awayTeamName ?? null" [size]="56" />
           <span class="pick-card__team-name">{{ match.awayTeamName || match.awayTeamId }}</span>
         </div>
       </div>
@@ -151,9 +156,6 @@ export class PickCardComponent implements OnInit, OnDestroy {
   );
 
   canSave = computed(() => this.home() !== null && this.away() !== null);
-
-  homeFlagClass = computed(() => 'flag--' + (this.match.homeFlag ?? this.match.homeTeamId).toLowerCase());
-  awayFlagClass = computed(() => 'flag--' + (this.match.awayFlag ?? this.match.awayTeamId).toLowerCase());
 
   centerLabel = computed(() => {
     if (this.hasFinalResult()) return 'FT';

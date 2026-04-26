@@ -6,6 +6,7 @@ import { TimeService } from '../../core/time/time.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
 import { apiClient } from '../../core/api/client';
+import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
 
 interface MatchData {
   id: string;
@@ -27,14 +28,14 @@ interface PickData {
   correctResult?: boolean | null;
 }
 
-interface TeamInfo { name: string; flagCode: string; }
+interface TeamInfo { name: string; flagCode: string; crestUrl: string | null; }
 interface PhaseInfo { name: string; multiplier: number; }
 interface AggregateStats { exactPct: number; resultPct: number; total: number; }
 
 @Component({
   standalone: true,
   selector: 'app-pick-detail',
-  imports: [RouterLink],
+  imports: [RouterLink, TeamFlagComponent],
   template: `
     @let m = match();
     @let p = pick();
@@ -53,7 +54,7 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
 
             <div class="mh__teams">
               <div class="mh__side" [class.mh__side--winner]="(m.homeScore ?? 0) > (m.awayScore ?? 0)">
-                <span class="flag" [class]="flagClass(m.homeTeamId)"></span>
+                <app-team-flag [flagCode]="teamFlag(m.homeTeamId)" [crestUrl]="teamCrest(m.homeTeamId)" [name]="teamName(m.homeTeamId)" [size]="160" />
                 <strong>{{ teamName(m.homeTeamId) }}</strong>
                 <small>{{ resultLabel('home') }}</small>
               </div>
@@ -61,7 +62,7 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
                 <div class="mh__score">{{ m.homeScore }} — {{ m.awayScore }}</div>
               </div>
               <div class="mh__side" [class.mh__side--winner]="(m.awayScore ?? 0) > (m.homeScore ?? 0)">
-                <span class="flag" [class]="flagClass(m.awayTeamId)"></span>
+                <app-team-flag [flagCode]="teamFlag(m.awayTeamId)" [crestUrl]="teamCrest(m.awayTeamId)" [name]="teamName(m.awayTeamId)" [size]="160" />
                 <strong>{{ teamName(m.awayTeamId) }}</strong>
                 <small>{{ resultLabel('away') }}</small>
               </div>
@@ -70,7 +71,7 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
             <p class="mh__competition">Mundial 2026 · {{ phaseName() ?? 'Por definir' }}</p>
             <div class="mh__teams">
               <div class="mh__side">
-                <span class="flag" [class]="flagClass(m.homeTeamId)"></span>
+                <app-team-flag [flagCode]="teamFlag(m.homeTeamId)" [crestUrl]="teamCrest(m.homeTeamId)" [name]="teamName(m.homeTeamId)" [size]="160" />
                 <strong>{{ teamName(m.homeTeamId) }}</strong>
               </div>
               <div class="mh__vs">
@@ -81,7 +82,7 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
                 </div>
               </div>
               <div class="mh__side">
-                <span class="flag" [class]="flagClass(m.awayTeamId)"></span>
+                <app-team-flag [flagCode]="teamFlag(m.awayTeamId)" [crestUrl]="teamCrest(m.awayTeamId)" [name]="teamName(m.awayTeamId)" [size]="160" />
                 <strong>{{ teamName(m.awayTeamId) }}</strong>
               </div>
             </div>
@@ -214,12 +215,12 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
 
               <div class="pick-form__teams">
                 <div class="pick-form__team">
-                  <span class="flag" [class]="flagClass(m.homeTeamId)"></span>
+                  <app-team-flag [flagCode]="teamFlag(m.homeTeamId)" [crestUrl]="teamCrest(m.homeTeamId)" [name]="teamName(m.homeTeamId)" [size]="160" />
                   <strong>{{ teamName(m.homeTeamId) }}</strong>
                 </div>
                 <span class="pick-form__divider">VS</span>
                 <div class="pick-form__team">
-                  <span class="flag" [class]="flagClass(m.awayTeamId)"></span>
+                  <app-team-flag [flagCode]="teamFlag(m.awayTeamId)" [crestUrl]="teamCrest(m.awayTeamId)" [name]="teamName(m.awayTeamId)" [size]="160" />
                   <strong>{{ teamName(m.awayTeamId) }}</strong>
                 </div>
               </div>
@@ -400,6 +401,8 @@ export class PickDetailComponent implements OnInit, OnDestroy {
   phaseMultiplier = computed(() => this.phase()?.multiplier);
 
   teamName(slug: string): string { return this.teams().get(slug)?.name ?? slug; }
+  teamFlag(slug: string): string { return this.teams().get(slug)?.flagCode ?? ''; }
+  teamCrest(slug: string): string | null { return this.teams().get(slug)?.crestUrl ?? null; }
   flagClass(slug: string): string {
     const code = this.teams().get(slug)?.flagCode;
     return code ? `flag--${code.toLowerCase()}` : 'flag';
@@ -454,7 +457,7 @@ export class PickDetailComponent implements OnInit, OnDestroy {
       ]);
       const tm = new Map<string, TeamInfo>();
       for (const t of teamsRes.data ?? []) {
-        tm.set(t.slug, { name: t.name, flagCode: t.flagCode });
+        tm.set(t.slug, { name: t.name, flagCode: t.flagCode, crestUrl: t.crestUrl ?? null });
       }
       this.teams.set(tm);
 

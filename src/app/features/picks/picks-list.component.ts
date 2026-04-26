@@ -21,6 +21,8 @@ interface MatchWithMeta {
   awayTeamName: string;
   homeFlag: string;
   awayFlag: string;
+  homeCrestUrl: string | null;
+  awayCrestUrl: string | null;
   pick: {
     homeScorePred: number;
     awayScorePred: number;
@@ -142,8 +144,12 @@ export class PicksListComponent implements OnInit {
       const phaseLabels = new Map<string, string>(
         (phasesRes.data ?? []).map((p) => [p.id, p.name]),
       );
-      const teamMap = new Map<string, { name: string; flagCode: string }>(
-        (teamsRes.data ?? []).map((t) => [t.slug, { name: t.name, flagCode: t.flagCode }]),
+      const teamMap = new Map<string, { name: string; flagCode: string; crestUrl: string | null }>(
+        (teamsRes.data ?? []).map((t) => [t.slug, {
+          name: t.name,
+          flagCode: t.flagCode,
+          crestUrl: t.crestUrl ?? null,
+        }]),
       );
       const pickByMatch = new Map(
         (picksRes.data ?? []).map((p) => [
@@ -176,6 +182,8 @@ export class PicksListComponent implements OnInit {
             awayTeamName: away?.name ?? m.awayTeamId,
             homeFlag: home?.flagCode ?? '',
             awayFlag: away?.flagCode ?? '',
+            homeCrestUrl: home?.crestUrl ?? null,
+            awayCrestUrl: away?.crestUrl ?? null,
             pick: pickByMatch.get(m.id) ?? null,
           };
         })

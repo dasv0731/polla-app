@@ -5,12 +5,13 @@ import { AuthService } from '../../core/auth/auth.service';
 import { TimeService } from '../../core/time/time.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
+import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
 
 const TOURNAMENT_ID = 'mundial-2026';
 
 const GROUP_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
 
-interface TeamInfo { slug: string; name: string; flagCode: string; groupLetter: string | null; }
+interface TeamInfo { slug: string; name: string; flagCode: string; groupLetter: string | null; crestUrl: string | null; }
 interface MatchItem {
   id: string; phaseId: string; homeTeamId: string; awayTeamId: string;
   kickoffAt: string; status?: string;
@@ -48,7 +49,7 @@ interface PendingEdit {
 @Component({
   standalone: true,
   selector: 'app-picks-grupo',
-  imports: [RouterLink],
+  imports: [RouterLink, TeamFlagComponent],
   template: `
     <header class="page-header">
       <div class="page-header__top">
@@ -90,7 +91,8 @@ interface PendingEdit {
               @for (row of g.standings; track row.team.slug; let i = $index) {
                 <div class="group-card__team">
                   <span class="group-card__team-pos">{{ row.played > 0 ? (i + 1) : '—' }}</span>
-                  <span class="flag" [class]="flagClass(row.team.flagCode)"></span>
+                  <app-team-flag [flagCode]="row.team.flagCode" [crestUrl]="row.team.crestUrl"
+                                 [name]="row.team.name" [size]="24" />
                   <span class="group-card__team-name">{{ row.team.name }}</span>
                   <span class="group-card__team-played">{{ row.played }}</span>
                   <span class="group-card__team-pts">{{ row.points }}</span>
@@ -151,9 +153,9 @@ interface PendingEdit {
                     <tr>
                       <td class="pos">{{ i + 1 }}</td>
                       <td>
-                        <span class="flag" [class]="flagClass(row.team.flagCode)"
-                              style="display: inline-block; vertical-align: middle; margin-right: 6px; width: 24px; height: 24px;"></span>
-                        {{ row.team.name }}
+                        <app-team-flag [flagCode]="row.team.flagCode" [crestUrl]="row.team.crestUrl"
+                                       [name]="row.team.name" [size]="24" />
+                        <span style="margin-left: 6px;">{{ row.team.name }}</span>
                       </td>
                       <td>{{ row.played }}</td>
                       <td>{{ row.won }}</td>
@@ -198,7 +200,8 @@ interface PendingEdit {
 
                   <div class="pick-card__teams" style="grid-template-columns: 1fr auto 1fr;">
                     <div class="pick-card__team">
-                      <span class="flag" [class]="teamFlagClass(m.homeTeamId)" style="width: 32px; height: 32px;"></span>
+                      <app-team-flag [flagCode]="teamFlagCode(m.homeTeamId)" [crestUrl]="teamCrest(m.homeTeamId)"
+                                     [name]="teamName(m.homeTeamId)" [size]="32" />
                       <span class="pick-card__team-name">{{ teamName(m.homeTeamId) }}</span>
                     </div>
 
@@ -239,7 +242,8 @@ interface PendingEdit {
                     }
 
                     <div class="pick-card__team">
-                      <span class="flag" [class]="teamFlagClass(m.awayTeamId)" style="width: 32px; height: 32px;"></span>
+                      <app-team-flag [flagCode]="teamFlagCode(m.awayTeamId)" [crestUrl]="teamCrest(m.awayTeamId)"
+                                     [name]="teamName(m.awayTeamId)" [size]="32" />
                       <span class="pick-card__team-name">{{ teamName(m.awayTeamId) }}</span>
                     </div>
                   </div>
@@ -352,6 +356,7 @@ export class PicksGrupoComponent implements OnInit {
           name: t.name,
           flagCode: t.flagCode,
           groupLetter: t.groupLetter ?? null,
+          crestUrl: t.crestUrl ?? null,
         });
       }
       this.teams.set(tm);
@@ -454,11 +459,9 @@ export class PicksGrupoComponent implements OnInit {
 
   // ---- helpers ----
   teamName(slug: string): string { return this.teams().get(slug)?.name ?? slug; }
-  teamFlagClass(slug: string): string {
-    const code = this.teams().get(slug)?.flagCode;
-    return code ? `flag--${code.toLowerCase()}` : 'flag';
-  }
-  flagClass(code: string): string { return `flag--${code.toLowerCase()}`; }
+  teamFlagCode(slug: string): string { return this.teams().get(slug)?.flagCode ?? ''; }
+  teamCrest(slug: string): string | null { return this.teams().get(slug)?.crestUrl ?? null; }
+  flagClass(code: string): string { return code ? `flag--${code.toLowerCase()}` : 'flag'; }
 
   fillTbd(currentLen: number): number[] {
     const need = Math.max(0, 4 - currentLen);
