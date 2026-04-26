@@ -3,6 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
+import { humanizeError } from '../../core/notifications/domain-errors';
 import { GroupLeaderboardComponent, type LeaderboardRow } from './group-leaderboard.component';
 
 interface GroupHeader {
@@ -10,6 +11,7 @@ interface GroupHeader {
   name: string;
   joinCode: string;
   adminUserId: string;
+  createdAt: string;
 }
 
 @Component({
@@ -17,43 +19,105 @@ interface GroupHeader {
   selector: 'app-group-detail',
   imports: [GroupLeaderboardComponent, RouterLink],
   template: `
-    <section class="container">
-      <a routerLink="/groups" class="back-link">← Mis grupos</a>
+    @let g = group();
 
-      @let g = group();
-
-      @if (loading()) {
-        <p>Cargando grupo…</p>
-      } @else if (g !== null) {
-        <header class="group-detail__header">
-          <h1>{{ g.name }}</h1>
-          <p class="group-detail__meta">{{ rows().length }} miembro{{ rows().length === 1 ? '' : 's' }}</p>
-        </header>
-
-        <article class="invite-code">
-          <span class="invite-code__label">Código de invitación</span>
-          <strong class="invite-code__value">{{ g.joinCode }}</strong>
-          <div class="invite-code__actions">
-            <button class="btn btn--ghost btn--sm" (click)="copyLink()">{{ copied() ? 'Copiado ✓' : 'Copiar link' }}</button>
+    @if (loading()) {
+      <p style="padding: var(--space-2xl); text-align: center;">Cargando grupo…</p>
+    } @else if (g !== null) {
+      <!-- HERO -->
+      <section class="group-hero">
+        <div class="group-hero__content">
+          <div class="group-hero__title">
+            <span class="group-hero__icon">{{ icon() }}</span>
+            <div>
+              <h1 class="group-hero__name">{{ g.name }}</h1>
+              <p class="group-hero__meta">
+                {{ rows().length }} miembros
+                @if (isAdminOfGroup()) {
+                   · Eres <strong>admin</strong>
+                }
+                · creado el {{ formatDate(g.createdAt) }}
+              </p>
+            </div>
           </div>
-        </article>
-
-        <div class="standings-wrap">
-          <app-group-leaderboard [rows]="rows()" [currentUserId]="currentUserId" />
+          <div class="group-hero__stats">
+            <div class="group-hero__stat">
+              <strong>{{ myPos() ? '#' + myPos() : '—' }}</strong>
+              <small>Tu posición</small>
+            </div>
+            <div class="group-hero__stat">
+              <strong>{{ myPoints() }}</strong>
+              <small>Tus puntos</small>
+            </div>
+            <div class="group-hero__stat">
+              <strong>{{ gapToLeader() }}</strong>
+              <small>Al líder</small>
+            </div>
+          </div>
         </div>
+      </section>
 
-        @if (isAdminOfGroup()) {
-          <section class="danger-zone">
-            <h3>Zona admin del grupo</h3>
-            <button class="btn btn--danger" (click)="del()" [disabled]="deleting()">
-              {{ deleting() ? 'Eliminando…' : 'Eliminar grupo' }}
-            </button>
-          </section>
-        }
-      } @else {
-        <p>Grupo no encontrado.</p>
-      }
-    </section>
+      <nav class="breadcrumb" style="padding-inline: var(--section-x-mobile);">
+        <a routerLink="/groups">Mis grupos</a>
+        <span class="breadcrumb__sep">/</span>
+        <span aria-current="page">{{ g.name }}</span>
+      </nav>
+
+      <div class="container-app group-detail-grid" style="display: grid;">
+        <!-- LEADERBOARD principal -->
+        <section>
+          <header class="section-heading">
+            <div class="section-heading__text">
+              <p class="kicker">Leaderboard del grupo</p>
+              <h2 class="h2">Ranking interno</h2>
+            </div>
+            <a class="link-green section-heading__cta" routerLink="/ranking">Ver ranking global →</a>
+          </header>
+
+          <div class="standings-wrap">
+            <app-group-leaderboard [rows]="rows()" [currentUserId]="currentUserId" />
+          </div>
+
+          <p style="margin-top: var(--space-md); font-size: var(--fs-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.08em;">
+            Tabla refresca automáticamente al publicar resultados
+          </p>
+        </section>
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+          <div class="invite-mini">
+            <h3>Código del grupo</h3>
+            <span class="invite-mini__code">{{ g.joinCode }}</span>
+            <p class="invite-mini__url">{{ inviteUrl() }}</p>
+            <div class="invite-mini__actions">
+              <button class="btn btn--primary btn--sm" type="button" (click)="copyLink()">
+                {{ copied() ? 'Copiado ✓' : '📋 Copiar' }}
+              </button>
+              @if (isAdminOfGroup()) {
+                <a class="btn btn--ghost btn--sm" [routerLink]="['/groups', g.id, 'invite']">📧 Email</a>
+              }
+            </div>
+          </div>
+
+          @if (isAdminOfGroup()) {
+            <div class="admin-actions">
+              <h3>Acciones de admin</h3>
+              <ul>
+                <li><a [routerLink]="['/groups', g.id, 'invite']"><span>Invitar por email</span><span>→</span></a></li>
+                <li><a (click)="comingSoon('Renovar código', $event)"><span>Renovar código</span><span>→</span></a></li>
+                <li><a (click)="comingSoon('Editar nombre', $event)"><span>Editar nombre</span><span>→</span></a></li>
+                <li><a class="is-danger" (click)="del($event)"><span>Eliminar grupo</span><span>×</span></a></li>
+              </ul>
+              <p style="margin-top: var(--space-md); font-size: var(--fs-xs); color: var(--color-text-muted); line-height: var(--lh-body);">
+                Estas acciones solo aparecen porque eres admin del grupo.
+              </p>
+            </div>
+          }
+        </aside>
+      </div>
+    } @else {
+      <p style="padding: var(--space-2xl); text-align: center;">Grupo no encontrado.</p>
+    }
   `,
 })
 export class GroupDetailComponent implements OnInit {
@@ -67,11 +131,28 @@ export class GroupDetailComponent implements OnInit {
   group = signal<GroupHeader | null>(null);
   rows = signal<LeaderboardRow[]>([]);
   loading = signal(true);
-  deleting = signal(false);
   copied = signal(false);
   currentUserId = '';
 
   isAdminOfGroup = computed(() => this.group()?.adminUserId === this.currentUserId);
+  icon = computed(() => (this.isAdminOfGroup() ? '★' : (this.group()?.name?.[0] ?? '·').toUpperCase()));
+  inviteUrl = computed(() => {
+    const g = this.group();
+    return g ? `${location.origin}/groups/join/${g.joinCode}` : '';
+  });
+
+  myPos = computed(() => {
+    const i = this.rows().findIndex((r) => r.userId === this.currentUserId);
+    return i >= 0 ? i + 1 : null;
+  });
+  myPoints = computed(() => this.rows().find((r) => r.userId === this.currentUserId)?.points ?? 0);
+  gapToLeader = computed(() => {
+    const me = this.rows().find((r) => r.userId === this.currentUserId);
+    const leader = this.rows()[0];
+    if (!me || !leader || me.userId === leader.userId) return '—';
+    const gap = leader.points - me.points;
+    return gap > 0 ? `−${gap}` : '0';
+  });
 
   async ngOnInit() {
     this.currentUserId = this.auth.user()?.sub ?? '';
@@ -87,6 +168,7 @@ export class GroupDetailComponent implements OnInit {
           name: grp.data.name,
           joinCode: grp.data.joinCode,
           adminUserId: grp.data.adminUserId,
+          createdAt: grp.data.createdAt,
         });
       }
 
@@ -113,24 +195,36 @@ export class GroupDetailComponent implements OnInit {
     }
   }
 
+  formatDate(iso: string): string {
+    try {
+      return new Date(iso).toLocaleDateString('es-EC', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch {
+      return '—';
+    }
+  }
+
   async copyLink() {
-    const g = this.group();
-    if (!g) return;
-    await navigator.clipboard.writeText(`${location.origin}/groups/join/${g.joinCode}`);
+    await navigator.clipboard.writeText(this.inviteUrl());
     this.copied.set(true);
     setTimeout(() => this.copied.set(false), 2000);
   }
 
-  async del() {
-    if (!confirm('¿Eliminar el grupo? Esto borra a todos los miembros y el historial.')) return;
-    this.deleting.set(true);
+  comingSoon(label: string, event: Event) {
+    event.preventDefault();
+    this.toast.info(`${label} — próximamente`);
+  }
+
+  async del(event: Event) {
+    event.preventDefault();
+    if (!confirm('¿Eliminar el grupo? Todos los miembros perderán el acceso. Esta acción no se puede deshacer.')) {
+      return;
+    }
     try {
       await this.api.deleteGroup(this.id);
       this.toast.success('Grupo eliminado');
       void this.router.navigate(['/groups']);
     } catch (e) {
-      this.toast.error((e as Error).message ?? 'No se pudo eliminar el grupo');
-      this.deleting.set(false);
+      this.toast.error(humanizeError(e));
     }
   }
 }

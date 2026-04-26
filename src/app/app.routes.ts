@@ -45,6 +45,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/groups/group-create.component').then((m) => m.GroupCreateComponent),
       },
       {
+        path: 'groups/:id/invite',
+        loadComponent: () => import('./features/groups/group-invite-email.component').then((m) => m.GroupInviteEmailComponent),
+      },
+      {
         path: 'groups/:id',
         loadComponent: () => import('./features/groups/group-detail.component').then((m) => m.GroupDetailComponent),
       },
