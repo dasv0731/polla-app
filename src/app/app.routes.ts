@@ -29,6 +29,22 @@ export const routes: Routes = [
         path: 'picks/match/:id',
         loadComponent: () => import('./features/picks/pick-detail.component').then((m) => m.PickDetailComponent),
       },
+      {
+        path: 'groups',
+        loadComponent: () => import('./features/groups/groups-list.component').then((m) => m.GroupsListComponent),
+      },
+      {
+        path: 'groups/new',
+        loadComponent: () => import('./features/groups/group-create.component').then((m) => m.GroupCreateComponent),
+      },
+      {
+        path: 'groups/join/:code',
+        loadComponent: () => import('./features/groups/group-join.component').then((m) => m.GroupJoinComponent),
+      },
+      {
+        path: 'groups/:id',
+        loadComponent: () => import('./features/groups/group-detail.component').then((m) => m.GroupDetailComponent),
+      },
     ],
   },
   { path: '**', redirectTo: 'picks' },

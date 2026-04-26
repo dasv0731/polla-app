@@ -26,6 +26,24 @@ export class ApiService {
     });
   }
 
+  // ----- Single-item reads -----
+  getGroup(id: string) {
+    return apiClient.models.Group.get({ id });
+  }
+  getInviteCode(code: string) {
+    return apiClient.models.InviteCode.get({ code });
+  }
+  getUserByHandle(handle: string) {
+    return apiClient.models.User.list({
+      filter: { handle: { eq: handle } },
+      authMode: 'apiKey',
+      limit: 1,
+    });
+  }
+  getUser(sub: string) {
+    return apiClient.models.User.get({ sub });
+  }
+
   // ----- Authenticated reads (JWT) -----
   myPicks(userId: string) {
     return apiClient.models.Pick.list({
