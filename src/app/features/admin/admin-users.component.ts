@@ -2,6 +2,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/api/api.service';
 import { ToastService } from '../../core/notifications/toast.service';
+import { humanizeError } from '../../core/notifications/domain-errors';
 
 const TOURNAMENT_ID = 'mundial-2026';
 
@@ -90,11 +91,13 @@ interface UserRow {
                       {{ u.emailStatus === 'BOUNCED' ? 'Email bounced' : 'Activo' }}
                     </td>
                     <td class="actions">
-                      <a (click)="actionView(u)">Ver</a>
-                      @if (u.emailStatus === 'BOUNCED') {
-                        <a class="danger" (click)="actionSuspend(u)">Suspender</a>
+                      @if (isBusy(u.sub)) {
+                        <span style="color: var(--color-text-muted); text-transform: uppercase; font-size: var(--fs-xs); letter-spacing: 0.06em;">Procesando…</span>
                       } @else {
+                        <a (click)="actionView(u)">Ver</a>
                         <a (click)="actionResetPwd(u)">Reset pwd</a>
+                        <a class="danger" (click)="actionSuspend(u)">Suspender</a>
+                        <a (click)="actionEnable(u)" title="Reactivar usuario suspendido">↺</a>
                       }
                     </td>
                   </tr>
@@ -206,13 +209,37 @@ export class AdminUsersComponent implements OnInit {
     });
   }
 
+  busy = signal<Record<string, boolean>>({});
+
+  isBusy(sub: string): boolean { return !!this.busy()[sub]; }
+
   actionView(u: UserRow) {
     this.toast.info(`@${u.handle} · ${u.email} · sub=${u.sub.slice(0, 8)}…`);
   }
-  actionResetPwd(u: UserRow) {
-    this.toast.info(`Reset password de @${u.handle} — disponible en próxima versión.`);
+
+  async actionResetPwd(u: UserRow) {
+    if (!confirm(`¿Enviar email de reset a @${u.handle} (${u.email})?`)) return;
+    await this.runAction(u, 'reset_password');
   }
-  actionSuspend(u: UserRow) {
-    this.toast.info(`Suspender a @${u.handle} — disponible en próxima versión.`);
+
+  async actionSuspend(u: UserRow) {
+    if (!confirm(`¿Suspender a @${u.handle}? No podrá iniciar sesión hasta que lo reactives.`)) return;
+    await this.runAction(u, 'disable');
+  }
+
+  async actionEnable(u: UserRow) {
+    await this.runAction(u, 'enable');
+  }
+
+  private async runAction(u: UserRow, action: 'reset_password' | 'disable' | 'enable') {
+    this.busy.update((m) => ({ ...m, [u.sub]: true }));
+    try {
+      const res = await this.api.adminUserAction(u.sub, action);
+      this.toast.success(res.data?.message ?? 'OK');
+    } catch (e) {
+      this.toast.error(humanizeError(e));
+    } finally {
+      this.busy.update((m) => ({ ...m, [u.sub]: false }));
+    }
   }
 }

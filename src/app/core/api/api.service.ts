@@ -118,6 +118,9 @@ export class ApiService {
   emailGroupInvite(groupId: string, emails: string[]) {
     return apiClient.mutations.emailGroupInvite({ groupId, emails });
   }
+  adminUserAction(userSub: string, action: 'reset_password' | 'disable' | 'enable') {
+    return apiClient.mutations.adminUserAction({ userSub, action });
+  }
 
   // ----- Custom query -----
   pendingMatches(tournamentId: string, beforeHours: number) {
