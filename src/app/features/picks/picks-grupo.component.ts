@@ -8,21 +8,9 @@ import { humanizeError } from '../../core/notifications/domain-errors';
 
 const TOURNAMENT_ID = 'mundial-2026';
 
-// Hardcoded team→group mapping for the demo. In production this would come
-// from a Team.groupLetter field added to the backend schema. Teams not in
-// this map fall through to no group (won't appear in any card).
-const TEAM_GROUP: Record<string, string> = {
-  ecuador: 'A', mexico: 'A', marruecos: 'A', argentina: 'A',
-  espana: 'B', 'costa-rica': 'B', alemania: 'B', 'estados-unidos': 'B',
-  brasil: 'C', colombia: 'C', francia: 'C', inglaterra: 'C',
-  italia: 'D', 'paises-bajos': 'D', portugal: 'D', belgica: 'D',
-  suiza: 'E', chile: 'E', uruguay: 'E', paraguay: 'E',
-  japon: 'F', 'corea-del-sur': 'F', peru: 'F', canada: 'F',
-  australia: 'G', 'arabia-saudita': 'G', iran: 'G', qatar: 'G',
-};
 const GROUP_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
 
-interface TeamInfo { slug: string; name: string; flagCode: string; }
+interface TeamInfo { slug: string; name: string; flagCode: string; groupLetter: string | null; }
 interface MatchItem {
   id: string; phaseId: string; homeTeamId: string; awayTeamId: string;
   kickoffAt: string; status?: string;
@@ -314,10 +302,10 @@ export class PicksGrupoComponent implements OnInit {
     const picks = this.pickByMatchId();
     return GROUP_LETTERS.map((letter) => {
       const teamsInGroup = Array.from(teamMap.values())
-        .filter((t) => TEAM_GROUP[t.slug] === letter);
+        .filter((t) => t.groupLetter === letter);
       const matchesInGroup = matches.filter((m) => {
-        const homeG = TEAM_GROUP[m.homeTeamId];
-        const awayG = TEAM_GROUP[m.awayTeamId];
+        const homeG = teamMap.get(m.homeTeamId)?.groupLetter;
+        const awayG = teamMap.get(m.awayTeamId)?.groupLetter;
         return homeG === letter && awayG === letter;
       });
       const standings = this.computeStandings(teamsInGroup, matchesInGroup);
@@ -359,7 +347,12 @@ export class PicksGrupoComponent implements OnInit {
       ]);
       const tm = new Map<string, TeamInfo>();
       for (const t of teamsRes.data ?? []) {
-        tm.set(t.slug, { slug: t.slug, name: t.name, flagCode: t.flagCode });
+        tm.set(t.slug, {
+          slug: t.slug,
+          name: t.name,
+          flagCode: t.flagCode,
+          groupLetter: t.groupLetter ?? null,
+        });
       }
       this.teams.set(tm);
 
