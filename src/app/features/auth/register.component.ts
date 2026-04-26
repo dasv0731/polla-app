@@ -132,6 +132,23 @@ export class RegisterComponent {
       await this.auth.confirm(this.email, this.code);
       // Auto-login after confirm
       await this.auth.login(this.email, this.password);
+      // Create User row (post-confirmation Lambda is a no-op — see backend
+      // handler comment: model_introspection isn't available in Lambda
+      // Amplify config, so we self-create from the frontend where it is)
+      const u = this.auth.user();
+      if (u) {
+        try {
+          await apiClient.models.User.create({
+            sub: u.sub,
+            handle: u.handle,
+            email: u.email,
+            emailStatus: 'OK',
+            createdAt: new Date().toISOString(),
+          });
+        } catch {
+          // Already exists (re-confirm flow) — non-fatal
+        }
+      }
       void this.router.navigate(['/picks']);
     } catch (e) {
       this.error.set((e as Error).message ?? 'Código inválido');
