@@ -68,6 +68,10 @@ export const routes: Routes = [
         path: 'profile/special-picks',
         loadComponent: () => import('./features/profile/special-picks.component').then((m) => m.SpecialPicksComponent),
       },
+      {
+        path: 'admin',
+        loadChildren: () => import('./features/admin/admin.routes').then((m) => m.adminRoutes),
+      },
     ],
   },
   { path: '**', redirectTo: 'picks' },
