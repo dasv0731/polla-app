@@ -2,13 +2,14 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { AuthShellComponent } from '../../shared/layout/auth-shell.component';
 
 @Component({
   selector: 'app-forgot-password',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, AuthShellComponent],
   template: `
-    <main class="auth-main">
+    <app-auth-shell>
       @if (step() === 'request') {
         <form class="form-card auth-card" (ngSubmit)="requestCode()">
           <h2 class="form-card__title">Recuperar acceso</h2>
@@ -57,7 +58,7 @@ import { AuthService } from '../../core/auth/auth.service';
           </button>
         </form>
       }
-    </main>
+    </app-auth-shell>
   `,
 })
 export class ForgotPasswordComponent {

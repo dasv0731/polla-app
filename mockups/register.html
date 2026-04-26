@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es-EC">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Crear cuenta — Polla Mundial 2026 · Golgana</title>
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="../styles/components.css">
+  <link rel="stylesheet" href="../styles/polla.css">
+  <link rel="icon" type="image/png" href="../assets/logo-golgana.png">
+
+  <style>
+    body { background: var(--color-primary-grey); min-height: 100vh; display: flex; flex-direction: column; }
+    .auth-header { background: var(--color-primary-black); color: var(--color-primary-white); padding: var(--space-md) var(--section-x-mobile); }
+    @media (min-width: 992px) { .auth-header { padding: var(--space-md) var(--section-x-desktop); } }
+    .auth-header__inner { max-width: var(--container-wide); margin-inline: auto; display: flex; justify-content: space-between; align-items: center; }
+    .auth-header__logo img { height: 40px; }
+    .auth-header__back { color: var(--color-on-dark-muted); font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: 0.08em; font-weight: var(--fw-semibold); }
+    .auth-header__back:hover { color: var(--color-primary-green); }
+
+    .auth-main { flex: 1; display: flex; align-items: center; justify-content: center; padding: var(--space-2xl) var(--section-x-mobile); }
+    .auth-card { box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+
+    .auth-footer { padding: var(--space-md) var(--section-x-mobile); text-align: center; font-size: var(--fs-xs); color: var(--color-text-muted); border-top: 1px solid rgba(0,0,0,0.05); }
+    .auth-footer a { color: var(--color-primary-green); }
+
+    /* Highlight box "qué obtienes" */
+    .perks { display: flex; gap: var(--space-sm); flex-direction: column; margin: var(--space-lg) 0 var(--space-md); padding: var(--space-md); background: var(--color-green-5); border: 1px solid rgba(2, 204, 116, 0.2); border-radius: var(--radius-md); }
+    .perks li { display: flex; gap: var(--space-sm); font-size: var(--fs-sm); color: var(--color-primary-black); align-items: flex-start; }
+    .perks li::before { content: "✓"; color: var(--color-primary-green); font-weight: var(--fw-bold); flex-shrink: 0; }
+  </style>
+</head>
+<body>
+  <header class="auth-header">
+    <div class="auth-header__inner">
+      <a href="../public/index.html" class="auth-header__logo" aria-label="Polla Mundial 2026">
+        <img src="../assets/logo-golgana.png" alt="Golgana">
+      </a>
+      <a href="../public/index.html" class="auth-header__back">← Volver al inicio</a>
+    </div>
+  </header>
+
+  <main class="auth-main">
+    <form class="form-card auth-card" data-mock data-mock-message="Cuenta creada · revisa tu email para confirmar">
+      <h2 class="form-card__title">Crear cuenta</h2>
+      <p class="form-card__lead">30 segundos. Gratis. Sin tarjeta.</p>
+
+      <ul class="perks">
+        <li>104 partidos del Mundial 2026 para predecir</li>
+        <li>Grupos privados con tus amigos</li>
+        <li>Ranking global y por grupo en vivo</li>
+      </ul>
+
+      <div class="form-card__field">
+        <label class="form-card__label" for="reg-handle">Tu handle público</label>
+        <input class="form-card__input" id="reg-handle" type="text" placeholder="@tu_usuario" autocomplete="username" required pattern="[a-zA-Z0-9_]{3,20}">
+        <span class="form-card__hint">Visible en leaderboards. 3-20 caracteres, letras y números.</span>
+      </div>
+
+      <div class="form-card__field">
+        <label class="form-card__label" for="reg-email">Email</label>
+        <input class="form-card__input" id="reg-email" type="email" placeholder="tu@email.com" autocomplete="email" required>
+        <span class="form-card__hint">Te enviamos un código de confirmación.</span>
+      </div>
+
+      <div class="form-card__field">
+        <label class="form-card__label" for="reg-pwd">Password</label>
+        <input class="form-card__input" id="reg-pwd" type="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password" required minlength="8">
+      </div>
+
+      <button class="btn btn--primary form-card__submit">Crear cuenta gratis</button>
+
+      <p class="form-card__hint" style="text-align: center; margin-top: var(--space-md);">Al crear cuenta aceptas nuestras <a href="#" style="color: var(--color-primary-green); font-weight: var(--fw-semibold);">reglas</a> y <a href="#" style="color: var(--color-primary-green); font-weight: var(--fw-semibold);">política de privacidad</a>.</p>
+
+      <p class="form-card__alt">¿Ya tienes cuenta? <a href="./login.html">Inicia sesión</a></p>
+    </form>
+  </main>
+
+  <footer class="auth-footer">
+    © 2026 Golgana — <a href="../public/reglas.html">Reglas</a> · <a href="../public/privacidad.html">Privacidad</a> · <a href="../public/terminos.html">Términos</a>
+  </footer>
+
+  <script src="../scripts/polla.js" defer></script>
+</body>
+</html>

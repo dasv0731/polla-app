@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es-EC">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Iniciar sesión — Polla Mundial 2026 · Golgana</title>
+  <meta name="description" content="Inicia sesión en la Polla Mundial 2026.">
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="../styles/components.css">
+  <link rel="stylesheet" href="../styles/polla.css">
+  <link rel="icon" type="image/png" href="../assets/logo-golgana.png">
+
+  <style>
+    /* Auth shell — fondo gris claro, header minimal */
+    body { background: var(--color-primary-grey); min-height: 100vh; display: flex; flex-direction: column; }
+    .auth-header { background: var(--color-primary-black); color: var(--color-primary-white); padding: var(--space-md) var(--section-x-mobile); }
+    @media (min-width: 992px) { .auth-header { padding: var(--space-md) var(--section-x-desktop); } }
+    .auth-header__inner { max-width: var(--container-wide); margin-inline: auto; display: flex; justify-content: space-between; align-items: center; }
+    .auth-header__logo img { height: 40px; }
+    .auth-header__back { color: var(--color-on-dark-muted); font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: 0.08em; font-weight: var(--fw-semibold); }
+    .auth-header__back:hover { color: var(--color-primary-green); }
+
+    .auth-main { flex: 1; display: flex; align-items: center; justify-content: center; padding: var(--space-2xl) var(--section-x-mobile); }
+
+    /* Form-card override para auth: ancho un poco mayor + sombra */
+    .auth-card { box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06); }
+
+    .auth-footer { padding: var(--space-md) var(--section-x-mobile); text-align: center; font-size: var(--fs-xs); color: var(--color-text-muted); border-top: 1px solid rgba(0,0,0,0.05); }
+    .auth-footer a { color: var(--color-primary-green); }
+    .auth-footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <header class="auth-header">
+    <div class="auth-header__inner">
+      <a href="../public/index.html" class="auth-header__logo" aria-label="Polla Mundial 2026">
+        <img src="../assets/logo-golgana.png" alt="Golgana">
+      </a>
+      <a href="../public/index.html" class="auth-header__back">← Volver al inicio</a>
+    </div>
+  </header>
+
+  <main class="auth-main">
+    <form class="form-card auth-card" data-mock data-mock-message="Sesión iniciada · redirigiendo a /picks">
+      <h2 class="form-card__title">Iniciar sesión</h2>
+      <p class="form-card__lead">Ingresa con tu email para volver a tu polla.</p>
+
+      <div class="form-card__field">
+        <label class="form-card__label" for="login-email">Email</label>
+        <input class="form-card__input" id="login-email" type="email" placeholder="tu@email.com" autocomplete="email" required>
+      </div>
+
+      <div class="form-card__field">
+        <label class="form-card__label" for="login-pwd" style="display: flex; justify-content: space-between; align-items: baseline;">
+          <span>Password</span>
+          <a href="./forgot-password.html" style="font-size: 10px; font-weight: var(--fw-bold); letter-spacing: 0.08em; color: var(--color-primary-green); text-transform: uppercase;">¿Olvidaste?</a>
+        </label>
+        <input class="form-card__input" id="login-pwd" type="password" placeholder="Mínimo 8 caracteres" autocomplete="current-password" required>
+      </div>
+
+      <button class="btn btn--primary form-card__submit">Entrar</button>
+
+      <p class="form-card__alt">¿No tienes cuenta? <a href="./register.html">Crea una gratis</a></p>
+    </form>
+  </main>
+
+  <footer class="auth-footer">
+    © 2026 Golgana — <a href="../public/reglas.html">Reglas</a> · <a href="../public/privacidad.html">Privacidad</a> · <a href="../public/terminos.html">Términos</a>
+  </footer>
+
+  <script src="../scripts/polla.js" defer></script>
+</body>
+</html>

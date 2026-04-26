@@ -8,17 +8,22 @@ import { AuthService } from '../../core/auth/auth.service';
   imports: [RouterLink, RouterLinkActive],
   template: `
     <header class="site-header site-header--auth">
-      <a routerLink="/picks" class="site-header__logo">Polla</a>
-      <nav class="site-header__nav">
-        <a routerLink="/picks" routerLinkActive="is-active">Picks</a>
-        <a routerLink="/groups" routerLinkActive="is-active">Grupos</a>
-        <a routerLink="/ranking" routerLinkActive="is-active">Ranking</a>
-        <a routerLink="/profile" routerLinkActive="is-active">Perfil</a>
-        @if (isAdmin()) { <a routerLink="/admin" routerLinkActive="is-active">Admin</a> }
-      </nav>
-      <div class="site-header__userbox">
-        <span>{{ '@' + (handle() ?? '') }}</span>
-        <button class="btn btn--ghost btn--sm" (click)="logout()">Salir</button>
+      <div class="site-header__inner">
+        <a routerLink="/picks" class="site-header__logo" aria-label="Polla Mundial 2026">
+          <img src="assets/logo-golgana.png" alt="Golgana">
+        </a>
+        <nav class="site-header__nav" aria-label="Principal">
+          <a routerLink="/picks" routerLinkActive="is-active">Picks</a>
+          <a routerLink="/groups" routerLinkActive="is-active">Mis grupos</a>
+          <a routerLink="/ranking" routerLinkActive="is-active">Ranking</a>
+          @if (isAdmin()) {
+            <a routerLink="/admin" routerLinkActive="is-active">Admin</a>
+          }
+        </nav>
+        <button class="site-header__user" aria-label="Cuenta" (click)="goProfile()">
+          <span class="site-header__avatar">{{ avatar() }}</span>
+          <span class="site-header__handle">{{ '@' + (handle() ?? '') }}</span>
+        </button>
       </div>
     </header>
   `,
@@ -29,9 +34,9 @@ export class NavComponent {
 
   isAdmin = computed(() => this.auth.user()?.isAdmin ?? false);
   handle = computed(() => this.auth.user()?.handle ?? null);
+  avatar = computed(() => (this.handle() ?? '?')[0]?.toUpperCase() ?? '?');
 
-  async logout() {
-    await this.auth.logout();
-    void this.router.navigate(['/login']);
+  goProfile() {
+    void this.router.navigate(['/profile']);
   }
 }

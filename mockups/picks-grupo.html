@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="es-EC">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Picks por grupo — Polla Mundial 2026</title>
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="../styles/components.css">
+  <link rel="stylesheet" href="../styles/polla.css">
+  <link rel="icon" type="image/png" href="../assets/logo-golgana.png">
+
+  <style>
+    .page-header { padding: var(--space-xl) var(--section-x-mobile) var(--space-md); }
+    @media (min-width: 992px) { .page-header { padding: var(--space-2xl) var(--section-x-desktop) var(--space-lg); } }
+    .page-header__top { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: var(--space-md); margin-bottom: var(--space-lg); }
+    .page-header__title h1 { font-family: var(--font-display); font-size: 56px; line-height: 1; text-transform: uppercase; }
+    @media (min-width: 480px) { .page-header__title h1 { font-size: 72px; } }
+    .page-header__title small { display: block; font-size: var(--fs-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.12em; font-weight: var(--fw-bold); margin-bottom: 4px; }
+
+    .page-header__controls { display: flex; gap: var(--space-md); flex-wrap: wrap; align-items: center; padding-bottom: var(--space-md); border-bottom: 1px solid var(--color-primary-grey); }
+
+    /* Group cards grid — 12 grupos del Mundial 2026 */
+    .groups-grid { display: grid; gap: var(--space-md); grid-template-columns: 1fr; padding: var(--space-md) var(--section-x-mobile) var(--space-2xl); }
+    @media (min-width: 480px) { .groups-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 992px) { .groups-grid { grid-template-columns: repeat(4, 1fr); padding-inline: var(--section-x-desktop); } }
+
+    .flag { background: var(--color-primary-grey); border-radius: var(--radius-sm); width: 24px; height: 24px; }
+    .flag--mx { background: linear-gradient(90deg, #006847 33%, #fff 33%, #fff 66%, #CE1126 66%); }
+    .flag--ec { background: linear-gradient(180deg, #FFCF24 50%, #003DA5 50%, #003DA5 75%, #E74C3C 75%); }
+    .flag--ma { background: #C1272D; }
+    .flag--jp { background: #fff; border: 1px solid var(--color-primary-grey); }
+    .flag--ar { background: linear-gradient(180deg, #6cace4 33%, #fff 33%, #fff 66%, #6cace4 66%); }
+    .flag--us { background: #B22234; }
+    .flag--cr { background: linear-gradient(180deg, #002B7F 25%, #fff 25%, #fff 75%, #002B7F 75%); }
+    .flag--sn { background: linear-gradient(90deg, #00853F 33%, #FDEF42 33%, #FDEF42 66%, #E31B23 66%); }
+    .flag--br { background: #FFDF00; }
+    .flag--co { background: linear-gradient(180deg, #FFCD00 50%, #003893 50%); }
+    .flag--kr { background: #fff; border: 1px solid var(--color-primary-grey); }
+    .flag--be { background: linear-gradient(90deg, #000 33%, #FAE042 33%, #FAE042 66%, #ED2939 66%); }
+    .flag--es { background: linear-gradient(180deg, #C60B1E 25%, #FFC400 25%, #FFC400 75%, #C60B1E 75%); }
+    .flag--ca { background: #FF0000; }
+    .flag--gh { background: linear-gradient(180deg, #CE1126 33%, #FCD116 33%, #FCD116 66%, #006B3F 66%); }
+    .flag--uy { background: linear-gradient(180deg, #fff 50%, #4F77AC 50%); }
+    .flag--de { background: linear-gradient(180deg, #000 33%, #DD0000 33%, #DD0000 66%, #FFCE00 66%); }
+    .flag--pl { background: linear-gradient(180deg, #fff 50%, #DC143C 50%); }
+    .flag--au { background: #00008B; }
+    .flag--cm { background: linear-gradient(90deg, #007A5E 33%, #CE1126 33%, #CE1126 66%, #FCD116 66%); }
+    .flag--fr { background: linear-gradient(90deg, #002395 33%, #fff 33%, #fff 66%, #ED2939 66%); }
+    .flag--tn { background: #E70013; }
+    .flag--gb { background: #012169; }
+    .flag--cl { background: linear-gradient(180deg, #fff 50%, #DA291C 50%); }
+    .flag--it { background: linear-gradient(90deg, #009246 33%, #fff 33%, #fff 66%, #CE2B37 66%); }
+    .flag--nl { background: linear-gradient(180deg, #AE1C28 33%, #fff 33%, #fff 66%, #21468B 66%); }
+    .flag--pe { background: linear-gradient(90deg, #D91023 33%, #fff 33%, #fff 66%, #D91023 66%); }
+    .flag--ng { background: linear-gradient(90deg, #008751 33%, #fff 33%, #fff 66%, #008751 66%); }
+    .flag--pt { background: #006600; }
+    .flag--qa { background: #8A1538; }
+    .flag--zw { background: linear-gradient(180deg, #008000 16%, #fce300 16%, #fce300 33%, #ce1126 33%); }
+    .flag--cr2 { background: #002B7F; }
+    .flag--gr { background: linear-gradient(180deg, #0d5eaf 50%, #fff 50%); }
+    .flag--ie { background: linear-gradient(90deg, #009A49 33%, #fff 33%, #fff 66%, #FF7900 66%); }
+    .flag--ch { background: #DA291C; }
+    .flag--py { background: linear-gradient(180deg, #D52B1E 33%, #fff 33%, #fff 66%, #0038A8 66%); }
+  </style>
+</head>
+<body>
+
+  <input type="checkbox" id="drawer" class="drawer-toggle sr-only">
+  <header class="site-header site-header--auth">
+    <div class="site-header__inner">
+      <a href="./picks.html" class="site-header__logo"><img src="../assets/logo-golgana.png" alt="Golgana"></a>
+      <nav class="site-header__nav">
+        <a href="./picks.html" class="is-active">Picks</a>
+        <a href="#">Mis grupos</a>
+        <a href="#">Ranking</a>
+        <a href="../public/reglas.html">Reglas</a>
+      </nav>
+      <button class="site-header__user" aria-label="Cuenta">
+        <span class="site-header__avatar">M</span>
+        <span class="site-header__handle">@marke</span>
+      </button>
+      <label for="drawer" class="drawer-btn"><span></span><span></span><span></span></label>
+    </div>
+  </header>
+  <label for="drawer" class="drawer-backdrop" aria-hidden="true"></label>
+  <aside class="drawer">
+    <a href="./picks.html">Picks</a>
+    <a href="#">Mis grupos</a>
+    <a href="#">Ranking</a>
+    <a href="../public/reglas.html">Reglas</a>
+  </aside>
+
+  <main>
+    <header class="page-header">
+      <div class="page-header__top">
+        <div class="page-header__title">
+          <small>Mundial 2026 · 12 grupos · 72 partidos de fase de grupos</small>
+          <h1>Picks por grupo</h1>
+        </div>
+      </div>
+
+      <div class="page-header__controls">
+        <div class="view-mode-toggle">
+          <a class="view-mode-toggle__option" href="./picks.html" data-mode="cronologico">📅 Cronológico</a>
+          <button class="view-mode-toggle__option is-active" data-mode="grupos">🏆 Por grupo</button>
+          <a class="view-mode-toggle__option" href="#" data-mode="llaves">🌳 Llaves</a>
+        </div>
+        <p style="margin-left: auto; font-size: var(--fs-sm); color: var(--color-text-muted);">Click en un grupo para hacer/editar los 6 picks de esa fase.</p>
+      </div>
+    </header>
+
+    <!-- Modal toggle: en el showcase está pre-abierto -->
+    <input type="checkbox" id="group-modal" class="modal-toggle sr-only" checked>
+
+    <!-- Grid de 12 grupos del Mundial -->
+    <div class="groups-grid">
+      <!-- A -->
+      <label for="group-modal" class="group-card">
+        <header class="group-card__header">
+          <span class="group-card__letter">A</span>
+          <span class="group-card__meta">3 / 6 jugados</span>
+        </header>
+        <div class="group-card__teams">
+          <div class="group-card__team"><span class="group-card__team-pos">1</span><span class="flag flag--mx"></span><span class="group-card__team-name">México</span><span class="group-card__team-played">2</span><span class="group-card__team-pts">6</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">2</span><span class="flag flag--ec"></span><span class="group-card__team-name">Ecuador</span><span class="group-card__team-played">2</span><span class="group-card__team-pts">4</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">3</span><span class="flag flag--ma"></span><span class="group-card__team-name">Marruecos</span><span class="group-card__team-played">2</span><span class="group-card__team-pts">1</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">4</span><span class="flag flag--jp"></span><span class="group-card__team-name">Japón</span><span class="group-card__team-played">2</span><span class="group-card__team-pts">0</span></div>
+        </div>
+        <footer class="group-card__footer"><span>4 picks tuyos</span><span class="group-card__cta">Ver →</span></footer>
+      </label>
+
+      <!-- B -->
+      <label for="group-modal" class="group-card">
+        <header class="group-card__header"><span class="group-card__letter">B</span><span class="group-card__meta">2 / 6 jugados</span></header>
+        <div class="group-card__teams">
+          <div class="group-card__team"><span class="group-card__team-pos">1</span><span class="flag flag--ar"></span><span class="group-card__team-name">Argentina</span><span class="group-card__team-played">1</span><span class="group-card__team-pts">3</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">2</span><span class="flag flag--us"></span><span class="group-card__team-name">EE.UU.</span><span class="group-card__team-played">1</span><span class="group-card__team-pts">3</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">3</span><span class="flag flag--cr"></span><span class="group-card__team-name">Costa Rica</span><span class="group-card__team-played">1</span><span class="group-card__team-pts">0</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">4</span><span class="flag flag--sn"></span><span class="group-card__team-name">Senegal</span><span class="group-card__team-played">1</span><span class="group-card__team-pts">0</span></div>
+        </div>
+        <footer class="group-card__footer"><span>2 picks · 1 pendiente</span><span class="group-card__cta">Ver →</span></footer>
+      </label>
+
+      <!-- C -->
+      <label for="group-modal" class="group-card">
+        <header class="group-card__header"><span class="group-card__letter">C</span><span class="group-card__meta">0 / 6 jugados</span></header>
+        <div class="group-card__teams">
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag flag--br"></span><span class="group-card__team-name">Brasil</span><span class="group-card__team-played">0</span><span class="group-card__team-pts">0</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag flag--co"></span><span class="group-card__team-name">Colombia</span><span class="group-card__team-played">0</span><span class="group-card__team-pts">0</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag flag--kr"></span><span class="group-card__team-name">Corea</span><span class="group-card__team-played">0</span><span class="group-card__team-pts">0</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag flag--be"></span><span class="group-card__team-name">Bélgica</span><span class="group-card__team-played">0</span><span class="group-card__team-pts">0</span></div>
+        </div>
+        <footer class="group-card__footer"><span style="color: var(--color-lost);">0 picks · 6 pendientes</span><span class="group-card__cta">Ver →</span></footer>
+      </label>
+
+      <!-- D -->
+      <label for="group-modal" class="group-card">
+        <header class="group-card__header"><span class="group-card__letter">D</span><span class="group-card__meta">1 / 6 jugados</span></header>
+        <div class="group-card__teams">
+          <div class="group-card__team"><span class="group-card__team-pos">1</span><span class="flag flag--es"></span><span class="group-card__team-name">España</span><span class="group-card__team-played">1</span><span class="group-card__team-pts">3</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">2</span><span class="flag flag--ca"></span><span class="group-card__team-name">Canadá</span><span class="group-card__team-played">0</span><span class="group-card__team-pts">0</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">3</span><span class="flag flag--gh"></span><span class="group-card__team-name">Ghana</span><span class="group-card__team-played">1</span><span class="group-card__team-pts">0</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">4</span><span class="flag flag--uy"></span><span class="group-card__team-name">Uruguay</span><span class="group-card__team-played">0</span><span class="group-card__team-pts">0</span></div>
+        </div>
+        <footer class="group-card__footer"><span>3 picks · 3 pendientes</span><span class="group-card__cta">Ver →</span></footer>
+      </label>
+
+      <!-- E -->
+      <label for="group-modal" class="group-card">
+        <header class="group-card__header"><span class="group-card__letter">E</span><span class="group-card__meta">0 / 6 jugados</span></header>
+        <div class="group-card__teams">
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag flag--de"></span><span class="group-card__team-name">Alemania</span><span class="group-card__team-played">0</span><span class="group-card__team-pts">0</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag flag--pl"></span><span class="group-card__team-name">Polonia</span><span class="group-card__team-played">0</span><span class="group-card__team-pts">0</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag flag--au"></span><span class="group-card__team-name">Australia</span><span class="group-card__team-played">0</span><span class="group-card__team-pts">0</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag flag--cm"></span><span class="group-card__team-name">Camerún</span><span class="group-card__team-played">0</span><span class="group-card__team-pts">0</span></div>
+        </div>
+        <footer class="group-card__footer"><span>0 picks · 6 pendientes</span><span class="group-card__cta">Ver →</span></footer>
+      </label>
+
+      <!-- F -->
+      <label for="group-modal" class="group-card">
+        <header class="group-card__header"><span class="group-card__letter">F</span><span class="group-card__meta">0 / 6 jugados</span></header>
+        <div class="group-card__teams">
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag flag--fr"></span><span class="group-card__team-name">Francia</span><span class="group-card__team-played">0</span><span class="group-card__team-pts">0</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag flag--tn"></span><span class="group-card__team-name">Túnez</span><span class="group-card__team-played">0</span><span class="group-card__team-pts">0</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag flag--gb"></span><span class="group-card__team-name">Inglaterra</span><span class="group-card__team-played">0</span><span class="group-card__team-pts">0</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag flag--cl"></span><span class="group-card__team-name">Chile</span><span class="group-card__team-played">0</span><span class="group-card__team-pts">0</span></div>
+        </div>
+        <footer class="group-card__footer"><span>0 picks · 6 pendientes</span><span class="group-card__cta">Ver →</span></footer>
+      </label>
+
+      <!-- G -->
+      <label for="group-modal" class="group-card">
+        <header class="group-card__header"><span class="group-card__letter">G</span><span class="group-card__meta">0 / 6 jugados</span></header>
+        <div class="group-card__teams">
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag flag--it"></span><span class="group-card__team-name">Italia</span><span class="group-card__team-played">0</span><span class="group-card__team-pts">0</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag flag--nl"></span><span class="group-card__team-name">Países Bajos</span><span class="group-card__team-played">0</span><span class="group-card__team-pts">0</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag flag--pe"></span><span class="group-card__team-name">Perú</span><span class="group-card__team-played">0</span><span class="group-card__team-pts">0</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag flag--ng"></span><span class="group-card__team-name">Nigeria</span><span class="group-card__team-played">0</span><span class="group-card__team-pts">0</span></div>
+        </div>
+        <footer class="group-card__footer"><span>0 picks · 6 pendientes</span><span class="group-card__cta">Ver →</span></footer>
+      </label>
+
+      <!-- H -->
+      <label for="group-modal" class="group-card">
+        <header class="group-card__header"><span class="group-card__letter">H</span><span class="group-card__meta">0 / 6 jugados</span></header>
+        <div class="group-card__teams">
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag flag--pt"></span><span class="group-card__team-name">Portugal</span><span class="group-card__team-played">0</span><span class="group-card__team-pts">0</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag flag--qa"></span><span class="group-card__team-name">Catar</span><span class="group-card__team-played">0</span><span class="group-card__team-pts">0</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag flag--zw"></span><span class="group-card__team-name">Zimbabue</span><span class="group-card__team-played">0</span><span class="group-card__team-pts">0</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag flag--cr2"></span><span class="group-card__team-name">Costa de Marfil</span><span class="group-card__team-played">0</span><span class="group-card__team-pts">0</span></div>
+        </div>
+        <footer class="group-card__footer"><span>0 picks · 6 pendientes</span><span class="group-card__cta">Ver →</span></footer>
+      </label>
+
+      <!-- I, J, K, L (TBD) -->
+      <label for="group-modal" class="group-card">
+        <header class="group-card__header"><span class="group-card__letter">I</span><span class="group-card__meta">Por sortear</span></header>
+        <div class="group-card__teams">
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag"></span><span class="group-card__team-name">TBD</span><span class="group-card__team-played">—</span><span class="group-card__team-pts">—</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag"></span><span class="group-card__team-name">TBD</span><span class="group-card__team-played">—</span><span class="group-card__team-pts">—</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag"></span><span class="group-card__team-name">TBD</span><span class="group-card__team-played">—</span><span class="group-card__team-pts">—</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag"></span><span class="group-card__team-name">TBD</span><span class="group-card__team-played">—</span><span class="group-card__team-pts">—</span></div>
+        </div>
+        <footer class="group-card__footer"><span>—</span><span class="group-card__cta">Ver →</span></footer>
+      </label>
+
+      <label for="group-modal" class="group-card">
+        <header class="group-card__header"><span class="group-card__letter">J</span><span class="group-card__meta">Por sortear</span></header>
+        <div class="group-card__teams">
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag"></span><span class="group-card__team-name">TBD</span><span class="group-card__team-played">—</span><span class="group-card__team-pts">—</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag"></span><span class="group-card__team-name">TBD</span><span class="group-card__team-played">—</span><span class="group-card__team-pts">—</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag"></span><span class="group-card__team-name">TBD</span><span class="group-card__team-played">—</span><span class="group-card__team-pts">—</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag"></span><span class="group-card__team-name">TBD</span><span class="group-card__team-played">—</span><span class="group-card__team-pts">—</span></div>
+        </div>
+        <footer class="group-card__footer"><span>—</span><span class="group-card__cta">Ver →</span></footer>
+      </label>
+
+      <label for="group-modal" class="group-card">
+        <header class="group-card__header"><span class="group-card__letter">K</span><span class="group-card__meta">Por sortear</span></header>
+        <div class="group-card__teams">
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag"></span><span class="group-card__team-name">TBD</span><span class="group-card__team-played">—</span><span class="group-card__team-pts">—</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag"></span><span class="group-card__team-name">TBD</span><span class="group-card__team-played">—</span><span class="group-card__team-pts">—</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag"></span><span class="group-card__team-name">TBD</span><span class="group-card__team-played">—</span><span class="group-card__team-pts">—</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag"></span><span class="group-card__team-name">TBD</span><span class="group-card__team-played">—</span><span class="group-card__team-pts">—</span></div>
+        </div>
+        <footer class="group-card__footer"><span>—</span><span class="group-card__cta">Ver →</span></footer>
+      </label>
+
+      <label for="group-modal" class="group-card">
+        <header class="group-card__header"><span class="group-card__letter">L</span><span class="group-card__meta">Por sortear</span></header>
+        <div class="group-card__teams">
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag"></span><span class="group-card__team-name">TBD</span><span class="group-card__team-played">—</span><span class="group-card__team-pts">—</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag"></span><span class="group-card__team-name">TBD</span><span class="group-card__team-played">—</span><span class="group-card__team-pts">—</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag"></span><span class="group-card__team-name">TBD</span><span class="group-card__team-played">—</span><span class="group-card__team-pts">—</span></div>
+          <div class="group-card__team"><span class="group-card__team-pos">—</span><span class="flag"></span><span class="group-card__team-name">TBD</span><span class="group-card__team-played">—</span><span class="group-card__team-pts">—</span></div>
+        </div>
+        <footer class="group-card__footer"><span>—</span><span class="group-card__cta">Ver →</span></footer>
+      </label>
+    </div>
+
+    <!-- MODAL: detalle del Grupo A con sus 6 partidos + mini standings -->
+    <label for="group-modal" class="modal-backdrop" aria-hidden="true"></label>
+    <div class="modal" role="dialog" aria-labelledby="grupo-modal-title" aria-modal="true">
+      <header class="modal__header">
+        <div>
+          <p style="font-size: var(--fs-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: var(--fw-bold);">Grupo A · 6 partidos</p>
+          <h3 class="modal__title" id="grupo-modal-title">Picks del Grupo A</h3>
+        </div>
+        <label for="group-modal" class="modal__close" aria-label="Cerrar">×</label>
+      </header>
+      <div class="modal__body">
+        <!-- Mini standings -->
+        <div class="standings-wrap" style="margin-bottom: var(--space-lg);">
+          <table class="standings standings--group">
+            <thead><tr><th>#</th><th>Equipo</th><th>J</th><th>G</th><th>E</th><th>P</th><th>Pts</th></tr></thead>
+            <tbody>
+              <tr><td class="pos">1</td><td><span class="flag flag--mx" style="display: inline-block; vertical-align: middle; margin-right: 6px;"></span>México</td><td>2</td><td>2</td><td>0</td><td>0</td><td><strong>6</strong></td></tr>
+              <tr><td class="pos">2</td><td><span class="flag flag--ec" style="display: inline-block; vertical-align: middle; margin-right: 6px;"></span>Ecuador</td><td>2</td><td>1</td><td>1</td><td>0</td><td><strong>4</strong></td></tr>
+              <tr><td class="pos">3</td><td><span class="flag flag--ma" style="display: inline-block; vertical-align: middle; margin-right: 6px;"></span>Marruecos</td><td>2</td><td>0</td><td>1</td><td>1</td><td><strong>1</strong></td></tr>
+              <tr><td class="pos">4</td><td><span class="flag flag--jp" style="display: inline-block; vertical-align: middle; margin-right: 6px;"></span>Japón</td><td>2</td><td>0</td><td>0</td><td>2</td><td><strong>0</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4 style="font-family: var(--font-display); font-size: var(--fs-md); text-transform: uppercase; margin-bottom: var(--space-md);">6 partidos del grupo</h4>
+
+        <div style="display: flex; flex-direction: column; gap: var(--space-sm);">
+          <!-- Match 1 — finalizado -->
+          <article class="pick-card pick-card--saved" style="padding: var(--space-md);">
+            <div class="pick-card__header">
+              <span class="pick-card__phase">J1 · Vie 11 jun · 16:00</span>
+              <span style="color: var(--color-primary-green); font-weight: var(--fw-bold);">FT · +5 pts</span>
+            </div>
+            <div class="pick-card__teams" style="grid-template-columns: 1fr 80px 1fr;">
+              <div class="pick-card__team">
+                <span class="flag flag--mx" style="width: 32px; height: 32px;"></span>
+                <span class="pick-card__team-name">México</span>
+              </div>
+              <div class="pick-card__center" style="font-family: var(--font-display); font-size: var(--fs-2xl);">2 — 1</div>
+              <div class="pick-card__team">
+                <span class="flag flag--ec" style="width: 32px; height: 32px;"></span>
+                <span class="pick-card__team-name">Ecuador</span>
+              </div>
+            </div>
+            <div class="pick-card__footer">
+              <span style="color: var(--color-primary-green); font-weight: var(--fw-bold); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.08em;">Tu pick: 2-1 · Marcador exacto</span>
+            </div>
+          </article>
+
+          <!-- Match 2 — finalizado -->
+          <article class="pick-card pick-card--saved" style="padding: var(--space-md);">
+            <div class="pick-card__header">
+              <span class="pick-card__phase">J1 · Sáb 12 jun · 13:00</span>
+              <span style="color: var(--color-primary-green); font-weight: var(--fw-bold);">FT · +3 pts</span>
+            </div>
+            <div class="pick-card__teams" style="grid-template-columns: 1fr 80px 1fr;">
+              <div class="pick-card__team">
+                <span class="flag flag--ma" style="width: 32px; height: 32px;"></span>
+                <span class="pick-card__team-name">Marruecos</span>
+              </div>
+              <div class="pick-card__center" style="font-family: var(--font-display); font-size: var(--fs-2xl);">1 — 1</div>
+              <div class="pick-card__team">
+                <span class="flag flag--jp" style="width: 32px; height: 32px;"></span>
+                <span class="pick-card__team-name">Japón</span>
+              </div>
+            </div>
+            <div class="pick-card__footer">
+              <span style="color: var(--color-primary-green); font-weight: var(--fw-bold); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.08em;">Tu pick: 1-1 · Resultado correcto</span>
+            </div>
+          </article>
+
+          <!-- Match 3 — programado, sin pick (open) -->
+          <article class="pick-card pick-card--open" style="padding: var(--space-md);">
+            <div class="pick-card__header">
+              <span class="pick-card__phase">J2 · Mié 16 jun · 16:00</span>
+              <span>Cierra en 22h</span>
+            </div>
+            <div class="pick-card__teams" style="grid-template-columns: 1fr auto 1fr;">
+              <div class="pick-card__team">
+                <span class="flag flag--ec" style="width: 32px; height: 32px;"></span>
+                <span class="pick-card__team-name">Ecuador</span>
+              </div>
+              <div class="score-input" style="gap: var(--space-sm);">
+                <div class="score-input__field">
+                  <div class="score-input__stepper">
+                    <button class="score-input__btn">−</button>
+                    <input class="score-input__value" type="text" value="—">
+                    <button class="score-input__btn">+</button>
+                  </div>
+                </div>
+                <span class="score-input__sep">vs</span>
+                <div class="score-input__field">
+                  <div class="score-input__stepper">
+                    <button class="score-input__btn">−</button>
+                    <input class="score-input__value" type="text" value="—">
+                    <button class="score-input__btn">+</button>
+                  </div>
+                </div>
+              </div>
+              <div class="pick-card__team">
+                <span class="flag flag--ma" style="width: 32px; height: 32px;"></span>
+                <span class="pick-card__team-name">Marruecos</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Match 4 — saved -->
+          <article class="pick-card pick-card--saved" style="padding: var(--space-md);">
+            <div class="pick-card__header">
+              <span class="pick-card__phase">J2 · Mié 16 jun · 19:00</span>
+              <span>Cierra en 1d 1h</span>
+            </div>
+            <div class="pick-card__teams" style="grid-template-columns: 1fr auto 1fr;">
+              <div class="pick-card__team">
+                <span class="flag flag--mx" style="width: 32px; height: 32px;"></span>
+                <span class="pick-card__team-name">México</span>
+              </div>
+              <div class="score-input" style="gap: var(--space-sm);">
+                <div class="score-input__field"><div class="score-input__stepper"><button class="score-input__btn">−</button><input class="score-input__value" type="text" value="2"><button class="score-input__btn">+</button></div></div>
+                <span class="score-input__sep">vs</span>
+                <div class="score-input__field"><div class="score-input__stepper"><button class="score-input__btn">−</button><input class="score-input__value" type="text" value="0"><button class="score-input__btn">+</button></div></div>
+              </div>
+              <div class="pick-card__team">
+                <span class="flag flag--jp" style="width: 32px; height: 32px;"></span>
+                <span class="pick-card__team-name">Japón</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Match 5 + 6 — open -->
+          <article class="pick-card pick-card--open" style="padding: var(--space-md);">
+            <div class="pick-card__header">
+              <span class="pick-card__phase">J3 · Dom 21 jun · 16:00</span>
+              <span>Cierra en 5d</span>
+            </div>
+            <div class="pick-card__teams" style="grid-template-columns: 1fr auto 1fr;">
+              <div class="pick-card__team"><span class="flag flag--mx" style="width: 32px; height: 32px;"></span><span class="pick-card__team-name">México</span></div>
+              <div class="score-input" style="gap: var(--space-sm);">
+                <div class="score-input__field"><div class="score-input__stepper"><button class="score-input__btn">−</button><input class="score-input__value" type="text" value="—"><button class="score-input__btn">+</button></div></div>
+                <span class="score-input__sep">vs</span>
+                <div class="score-input__field"><div class="score-input__stepper"><button class="score-input__btn">−</button><input class="score-input__value" type="text" value="—"><button class="score-input__btn">+</button></div></div>
+              </div>
+              <div class="pick-card__team"><span class="flag flag--ma" style="width: 32px; height: 32px;"></span><span class="pick-card__team-name">Marruecos</span></div>
+            </div>
+          </article>
+
+          <article class="pick-card pick-card--open" style="padding: var(--space-md);">
+            <div class="pick-card__header">
+              <span class="pick-card__phase">J3 · Dom 21 jun · 16:00</span>
+              <span>Cierra en 5d</span>
+            </div>
+            <div class="pick-card__teams" style="grid-template-columns: 1fr auto 1fr;">
+              <div class="pick-card__team"><span class="flag flag--ec" style="width: 32px; height: 32px;"></span><span class="pick-card__team-name">Ecuador</span></div>
+              <div class="score-input" style="gap: var(--space-sm);">
+                <div class="score-input__field"><div class="score-input__stepper"><button class="score-input__btn">−</button><input class="score-input__value" type="text" value="—"><button class="score-input__btn">+</button></div></div>
+                <span class="score-input__sep">vs</span>
+                <div class="score-input__field"><div class="score-input__stepper"><button class="score-input__btn">−</button><input class="score-input__value" type="text" value="—"><button class="score-input__btn">+</button></div></div>
+              </div>
+              <div class="pick-card__team"><span class="flag flag--jp" style="width: 32px; height: 32px;"></span><span class="pick-card__team-name">Japón</span></div>
+            </div>
+          </article>
+        </div>
+      </div>
+      <footer class="modal__footer">
+        <label for="group-modal" class="btn btn--ghost">Cerrar</label>
+        <button class="btn btn--primary">Guardar todos los picks</button>
+      </footer>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__grid">
+      <div class="site-footer__brand">
+        <img src="../assets/logo-golgana.png" alt="Golgana">
+        <p>Polla Mundialista — Mundial FIFA 2026.</p>
+      </div>
+      <div class="site-footer__col">
+        <h4>App</h4>
+        <a href="./picks.html">Mis picks</a>
+        <a href="#">Mis grupos</a>
+      </div>
+      <div class="site-footer__col">
+        <h4>Cuenta</h4>
+        <a href="#">Mi perfil</a>
+        <a href="../public/index.html">Cerrar sesión</a>
+      </div>
+      <div class="site-footer__col">
+        <h4>Ayuda</h4>
+        <a href="../public/reglas.html">Reglas</a>
+      </div>
+    </div>
+    <hr class="site-footer__divider">
+    <p class="site-footer__copy">© 2026 Golgana — Polla Mundialista</p>
+  </footer>
+
+  <script src="../scripts/polla.js" defer></script>
+</body>
+</html>

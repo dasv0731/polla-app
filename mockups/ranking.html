@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es-EC">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Ranking — Polla Mundial 2026</title>
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="../styles/components.css">
+  <link rel="stylesheet" href="../styles/polla.css">
+  <link rel="icon" type="image/png" href="../assets/logo-golgana.png">
+
+  <style>
+    .page-header { padding: var(--space-xl) var(--section-x-mobile) var(--space-md); }
+    @media (min-width: 992px) { .page-header { padding: var(--space-2xl) var(--section-x-desktop) var(--space-lg); } }
+    .page-header__top { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: var(--space-md); margin-bottom: var(--space-lg); }
+    .page-header__title h1 { font-family: var(--font-display); font-size: 56px; line-height: 1; text-transform: uppercase; }
+    @media (min-width: 480px) { .page-header__title h1 { font-size: 72px; } }
+    .page-header__title small { display: block; font-size: var(--fs-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.12em; font-weight: var(--fw-bold); margin-bottom: 4px; }
+    .page-header__refresh { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--color-primary-green); text-transform: uppercase; letter-spacing: 0.08em; font-weight: var(--fw-bold); }
+    .page-header__refresh::before { content: "●"; animation: pulse 1.5s ease-in-out infinite; }
+
+    .page-header__controls { display: flex; gap: var(--space-md); flex-wrap: wrap; align-items: center; padding-bottom: var(--space-md); border-bottom: 1px solid var(--color-primary-grey); }
+
+    .container-app { padding: var(--space-md) var(--section-x-mobile) var(--space-2xl); max-width: var(--container-wide); margin-inline: auto; }
+    @media (min-width: 992px) { .container-app { padding-inline: var(--section-x-desktop); } }
+
+    /* Mi posición sticky cuando está fuera del top-100 */
+    .my-position-sticky { position: sticky; bottom: 0; background: var(--color-primary-black); color: var(--color-primary-white); padding: var(--space-md) var(--space-lg); border-radius: var(--radius-md); margin-block: var(--space-lg); border-left: 4px solid var(--color-primary-green); display: grid; grid-template-columns: auto 1fr auto; gap: var(--space-md); align-items: center; box-shadow: 0 8px 24px rgba(0,0,0,0.15); z-index: var(--z-sticky); }
+    .my-position-sticky__pos { font-family: var(--font-display); font-size: var(--fs-3xl); color: var(--color-primary-green); line-height: 1; }
+    .my-position-sticky__handle { font-family: var(--font-primary); font-weight: var(--fw-semibold); font-size: var(--fs-base); }
+    .my-position-sticky__handle small { display: block; font-size: var(--fs-xs); color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; font-weight: var(--fw-regular); }
+    .my-position-sticky__pts { font-family: var(--font-display); font-size: var(--fs-2xl); color: var(--color-primary-green); }
+
+    /* Pagination */
+    .pagination { display: flex; justify-content: center; align-items: center; gap: var(--space-sm); padding: var(--space-xl) 0; flex-wrap: wrap; }
+    .pagination__btn { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; height: 44px; padding: 0 var(--space-md); border: var(--border-grey); background: var(--color-primary-white); border-radius: var(--radius-md); font-family: var(--font-primary); font-weight: var(--fw-semibold); font-size: var(--fs-sm); cursor: pointer; transition: all var(--transition-normal); }
+    .pagination__btn:hover { border-color: var(--color-primary-green); color: var(--color-primary-green); }
+    .pagination__btn.is-active { background: var(--color-primary-black); color: var(--color-primary-white); border-color: var(--color-primary-black); }
+    .pagination__btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .pagination__sep { color: var(--color-text-muted); }
+
+    /* Group select para "Solo mis grupos" mode */
+    [data-view-mode="grupos"] { display: none; }
+    .group-tabs { display: flex; gap: var(--space-xs); flex-wrap: wrap; padding-bottom: var(--space-md); border-bottom: 1px solid var(--color-primary-grey); margin-bottom: var(--space-md); overflow-x: auto; }
+    .group-tabs button { padding: 6px 14px; background: var(--color-primary-grey); border-radius: 999px; font-size: var(--fs-xs); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: 0.08em; cursor: pointer; transition: all var(--transition-normal); white-space: nowrap; }
+    .group-tabs button:hover { background: var(--color-primary-green); color: var(--color-primary-white); }
+    .group-tabs button.is-active { background: var(--color-primary-black); color: var(--color-primary-white); }
+  </style>
+</head>
+<body>
+
+  <input type="checkbox" id="drawer" class="drawer-toggle sr-only">
+  <header class="site-header site-header--auth">
+    <div class="site-header__inner">
+      <a href="./picks.html" class="site-header__logo"><img src="../assets/logo-golgana.png" alt="Golgana"></a>
+      <nav class="site-header__nav">
+        <a href="./picks.html">Picks</a>
+        <a href="./groups.html">Mis grupos</a>
+        <a href="./ranking.html" class="is-active">Ranking</a>
+        <a href="../public/reglas.html">Reglas</a>
+      </nav>
+      <button class="site-header__user" aria-label="Cuenta">
+        <span class="site-header__avatar">M</span>
+        <span class="site-header__handle">@marke</span>
+      </button>
+      <label for="drawer" class="drawer-btn"><span></span><span></span><span></span></label>
+    </div>
+  </header>
+  <label for="drawer" class="drawer-backdrop" aria-hidden="true"></label>
+  <aside class="drawer">
+    <a href="./picks.html">Picks</a>
+    <a href="./groups.html">Mis grupos</a>
+    <a href="./ranking.html">Ranking</a>
+  </aside>
+
+  <main>
+    <header class="page-header">
+      <div class="page-header__top">
+        <div class="page-header__title">
+          <small>Mundial 2026 · 1.247 jugadores activos</small>
+          <h1>Ranking</h1>
+        </div>
+        <span class="page-header__refresh">EN VIVO · hace 2 min</span>
+      </div>
+
+      <div class="page-header__controls">
+        <div class="view-mode-toggle" role="tablist" aria-label="Ámbito del ranking">
+          <button class="view-mode-toggle__option is-active" data-mode="global">🌐 Global</button>
+          <button class="view-mode-toggle__option" data-mode="grupos">★ Solo mis grupos</button>
+        </div>
+        <p style="margin-left: auto; font-size: var(--fs-sm); color: var(--color-text-muted);">Mi posición: <strong style="color: var(--color-primary-green);">#142 global</strong></p>
+      </div>
+    </header>
+
+    <div class="container-app">
+      <!-- VIEW: Global -->
+      <div data-view-mode="global">
+        <div class="standings-wrap">
+          <table class="standings standings--group">
+            <thead>
+              <tr><th>#</th><th>Jugador</th><th>Pts</th><th>Exactos</th><th>Resultados</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="pos">1</td><td>@carlos_seo</td><td>87</td><td>4</td><td>15</td></tr>
+              <tr><td class="pos">2</td><td>@mariaf</td><td>78</td><td>3</td><td>14</td></tr>
+              <tr><td class="pos">3</td><td>@andresm</td><td>72</td><td>2</td><td>15</td></tr>
+              <tr><td class="pos">4</td><td>@joseignacio</td><td>69</td><td>2</td><td>14</td></tr>
+              <tr><td class="pos">5</td><td>@danielac</td><td>64</td><td>1</td><td>14</td></tr>
+              <tr><td class="pos">6</td><td>@lupita</td><td>58</td><td>2</td><td>11</td></tr>
+              <tr><td class="pos">7</td><td>@pablov</td><td>52</td><td>0</td><td>13</td></tr>
+              <tr><td class="pos">8</td><td>@martap</td><td>48</td><td>1</td><td>10</td></tr>
+              <tr><td class="pos">9</td><td>@juansse</td><td>45</td><td>0</td><td>11</td></tr>
+              <tr><td class="pos">10</td><td>@gabita</td><td>42</td><td>1</td><td>9</td></tr>
+              <tr><td class="pos">11</td><td>@xavi_e</td><td>40</td><td>0</td><td>10</td></tr>
+              <tr><td class="pos">12</td><td>@laurita</td><td>38</td><td>0</td><td>10</td></tr>
+              <tr><td class="pos">13</td><td>@robcr</td><td>36</td><td>1</td><td>8</td></tr>
+              <tr><td class="pos">14</td><td>@sofic</td><td>34</td><td>0</td><td>9</td></tr>
+              <tr><td class="pos">15</td><td>@nicom</td><td>32</td><td>0</td><td>8</td></tr>
+              <tr><td class="pos">16</td><td>@aleg</td><td>30</td><td>0</td><td>8</td></tr>
+              <tr><td class="pos">17</td><td>@cami</td><td>28</td><td>0</td><td>8</td></tr>
+              <tr><td class="pos">18</td><td>@diegoh</td><td>27</td><td>1</td><td>6</td></tr>
+              <tr><td class="pos">19</td><td>@luisa_z</td><td>26</td><td>0</td><td>7</td></tr>
+              <tr><td class="pos">20</td><td>@toni</td><td>25</td><td>0</td><td>7</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <nav class="pagination" aria-label="Navegación de páginas">
+          <button class="pagination__btn" disabled>« Anterior</button>
+          <button class="pagination__btn is-active">1</button>
+          <button class="pagination__btn">2</button>
+          <button class="pagination__btn">3</button>
+          <span class="pagination__sep">…</span>
+          <button class="pagination__btn">13</button>
+          <button class="pagination__btn">Siguiente »</button>
+        </nav>
+
+        <!-- Sticky bottom: mi posición -->
+        <div class="my-position-sticky" role="status">
+          <span class="my-position-sticky__pos">#142</span>
+          <div class="my-position-sticky__handle">@marke<small>Tu posición global · sube +18 con un acierto exacto</small></div>
+          <span class="my-position-sticky__pts">42 pts</span>
+        </div>
+      </div>
+
+      <!-- VIEW: Solo mis grupos -->
+      <div data-view-mode="grupos">
+        <div class="group-tabs" role="tablist">
+          <button class="is-active">Mis amigos del barrio (8)</button>
+          <button>Oficina Q1 2026 (15)</button>
+          <button>La familia mundialista (12)</button>
+        </div>
+
+        <div class="standings-wrap">
+          <table class="standings standings--group">
+            <thead>
+              <tr><th>#</th><th>Jugador</th><th>Pts</th><th>Exactos</th><th>Resultados</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="pos">1</td><td>@joseignacio</td><td>87</td><td>4</td><td>15</td></tr>
+              <tr class="is-me"><td class="pos">2</td><td>@marke</td><td>69</td><td>2</td><td>14</td></tr>
+              <tr><td class="pos">3</td><td>@danielac</td><td>64</td><td>1</td><td>14</td></tr>
+              <tr><td class="pos">4</td><td>@andresm</td><td>58</td><td>2</td><td>11</td></tr>
+              <tr><td class="pos">5</td><td>@mariaf</td><td>52</td><td>0</td><td>13</td></tr>
+              <tr><td class="pos">6</td><td>@lupita</td><td>48</td><td>1</td><td>10</td></tr>
+              <tr><td class="pos">7</td><td>@fer_g</td><td>41</td><td>0</td><td>11</td></tr>
+              <tr><td class="pos">8</td><td>@johnny</td><td>32</td><td>0</td><td>9</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__grid">
+      <div class="site-footer__brand">
+        <img src="../assets/logo-golgana.png" alt="Golgana">
+        <p>Polla Mundialista — Mundial FIFA 2026.</p>
+      </div>
+      <div class="site-footer__col"><h4>App</h4><a href="./picks.html">Mis picks</a><a href="./groups.html">Mis grupos</a><a href="./ranking.html">Ranking</a></div>
+      <div class="site-footer__col"><h4>Cuenta</h4><a href="../public/index.html">Cerrar sesión</a></div>
+      <div class="site-footer__col"><h4>Ayuda</h4><a href="../public/reglas.html">Reglas</a></div>
+    </div>
+    <hr class="site-footer__divider">
+    <p class="site-footer__copy">© 2026 Golgana — Polla Mundialista</p>
+  </footer>
+
+  <script src="../scripts/polla.js" defer></script>
+</body>
+</html>

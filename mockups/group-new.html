@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es-EC">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Crear grupo — Polla Mundial 2026</title>
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="../styles/components.css">
+  <link rel="stylesheet" href="../styles/polla.css">
+  <link rel="icon" type="image/png" href="../assets/logo-golgana.png">
+
+  <style>
+    body { background: var(--color-primary-grey); }
+    .page-header { padding: var(--space-xl) var(--section-x-mobile) var(--space-md); background: var(--color-primary-white); }
+    @media (min-width: 992px) { .page-header { padding: var(--space-2xl) var(--section-x-desktop) var(--space-lg); } }
+    .page-header h1 { font-family: var(--font-display); font-size: 56px; line-height: 1; text-transform: uppercase; }
+    @media (min-width: 480px) { .page-header h1 { font-size: 72px; } }
+    .page-header small { display: block; font-size: var(--fs-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.12em; font-weight: var(--fw-bold); margin-bottom: 4px; }
+
+    .container-app { padding: var(--space-2xl) var(--section-x-mobile); max-width: var(--container-narrow); margin-inline: auto; display: grid; gap: var(--space-2xl); }
+    @media (min-width: 992px) { .container-app { padding-inline: var(--section-x-desktop); } }
+
+    /* Two stages: form + post-create. Mostramos los dos para mock */
+    .stage { display: grid; gap: var(--space-md); }
+    .stage-mark { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: 0.12em; color: var(--color-primary-green); margin-bottom: var(--space-xs); }
+    .stage-mark::before { content: ""; display: inline-block; width: 18px; height: 18px; border-radius: 50%; background: var(--color-primary-green); color: var(--color-primary-white); font-family: var(--font-display); font-size: 11px; text-align: center; line-height: 18px; }
+    .stage-mark--1::before { content: "1"; }
+    .stage-mark--2::before { content: "2"; }
+  </style>
+</head>
+<body>
+
+  <input type="checkbox" id="drawer" class="drawer-toggle sr-only">
+  <header class="site-header site-header--auth">
+    <div class="site-header__inner">
+      <a href="./picks.html" class="site-header__logo"><img src="../assets/logo-golgana.png" alt="Golgana"></a>
+      <nav class="site-header__nav">
+        <a href="./picks.html">Picks</a>
+        <a href="./groups.html" class="is-active">Mis grupos</a>
+        <a href="#">Ranking</a>
+        <a href="../public/reglas.html">Reglas</a>
+      </nav>
+      <button class="site-header__user" aria-label="Cuenta">
+        <span class="site-header__avatar">M</span>
+        <span class="site-header__handle">@marke</span>
+      </button>
+      <label for="drawer" class="drawer-btn"><span></span><span></span><span></span></label>
+    </div>
+  </header>
+  <label for="drawer" class="drawer-backdrop" aria-hidden="true"></label>
+  <aside class="drawer">
+    <a href="./picks.html">Picks</a>
+    <a href="./groups.html">Mis grupos</a>
+    <a href="#">Ranking</a>
+  </aside>
+
+  <header class="page-header">
+    <small><a href="./groups.html" style="color: var(--color-primary-green);">← Mis grupos</a></small>
+    <h1>Crear grupo</h1>
+  </header>
+
+  <main class="container-app">
+    <!-- STAGE 1: Form -->
+    <section class="stage">
+      <span class="stage-mark stage-mark--1">Paso 1 · Datos del grupo</span>
+
+      <form class="form-card" data-mock data-mock-message="Grupo creado · invita amigos con el código">
+        <h2 class="form-card__title">Define tu grupo</h2>
+        <p class="form-card__lead">Solo necesitas un nombre. El torneo se asigna automáticamente al Mundial 2026.</p>
+
+        <div class="form-card__field">
+          <label class="form-card__label" for="grp-name">Nombre del grupo</label>
+          <input class="form-card__input" id="grp-name" type="text" placeholder="Ej. Oficina Q1 2026" required maxlength="40">
+          <span class="form-card__hint">3-40 caracteres. Visible solo para los miembros del grupo.</span>
+        </div>
+
+        <div class="form-card__field">
+          <label class="form-card__label" for="grp-tournament">Torneo</label>
+          <select class="form-card__select" id="grp-tournament" disabled>
+            <option>Mundial FIFA 2026 · 11 jun — 19 jul</option>
+          </select>
+          <span class="form-card__hint">El único torneo activo. Otros torneos vienen en Fase 2.</span>
+        </div>
+
+        <button type="submit" class="btn btn--primary form-card__submit">Crear grupo</button>
+
+        <p class="form-card__alt">Al crear el grupo te asignamos automáticamente como <strong>admin</strong>.</p>
+      </form>
+    </section>
+
+    <!-- STAGE 2: Post-create con invite-code -->
+    <section class="stage">
+      <span class="stage-mark stage-mark--2">Paso 2 · Comparte con tus amigos</span>
+
+      <div class="invite-code">
+        <span class="invite-code__label">Tu código de invitación</span>
+        <span class="invite-code__value">K7P2QM</span>
+        <p class="invite-code__url">https://app.polla.golgana.net/groups/join/K7P2QM</p>
+        <div class="invite-code__actions">
+          <button class="btn btn--primary btn--sm" data-copy="K7P2QM">📋 Copiar código</button>
+          <button class="btn btn--primary btn--sm" data-copy="https://app.polla.golgana.net/groups/join/K7P2QM" style="background: var(--color-primary-white); color: var(--color-primary-black); border-color: var(--color-primary-white);">🔗 Copiar link</button>
+          <a href="./group-invite-email.html" class="btn btn--ghost btn--sm" style="background: rgba(255,255,255,0.08); color: var(--color-primary-white); border-color: rgba(255,255,255,0.3);">📧 Email</a>
+        </div>
+      </div>
+
+      <p style="text-align: center; color: var(--color-text-muted); font-size: var(--fs-sm);">¿Listo? <a href="./group-detail.html" class="link-green">Ir al grupo →</a></p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__grid">
+      <div class="site-footer__brand">
+        <img src="../assets/logo-golgana.png" alt="Golgana">
+        <p>Polla Mundialista — Mundial FIFA 2026.</p>
+      </div>
+      <div class="site-footer__col"><h4>App</h4><a href="./picks.html">Mis picks</a><a href="./groups.html">Mis grupos</a></div>
+      <div class="site-footer__col"><h4>Cuenta</h4><a href="../public/index.html">Cerrar sesión</a></div>
+      <div class="site-footer__col"><h4>Ayuda</h4><a href="../public/reglas.html">Reglas</a></div>
+    </div>
+    <hr class="site-footer__divider">
+    <p class="site-footer__copy">© 2026 Golgana — Polla Mundialista</p>
+  </footer>
+
+  <script src="../scripts/polla.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+/* Auth-shell layout — used by login, register, forgot-password.
+   Extracted from the inline <style> in mockups/{login,register,forgot-password}.html. */
+
+.auth-shell {
+  background: var(--color-primary-grey);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-header {
+  background: var(--color-primary-black);
+  color: var(--color-primary-white);
+  padding: var(--space-md) var(--section-x-mobile);
+}
+@media (min-width: 992px) {
+  .auth-header {
+    padding: var(--space-md) var(--section-x-desktop);
+  }
+}
+.auth-header__inner {
+  max-width: var(--container-wide);
+  margin-inline: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.auth-header__logo img { height: 40px; }
+.auth-header__back {
+  color: var(--color-on-dark-muted);
+  font-size: var(--fs-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: var(--fw-semibold);
+}
+.auth-header__back:hover { color: var(--color-primary-green); }
+
+.auth-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xl) var(--section-x-mobile);
+}
+
+.auth-card {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+.auth-footer {
+  padding: var(--space-md) var(--section-x-mobile);
+  text-align: center;
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+.auth-footer a { color: var(--color-primary-green); }
+.auth-footer a:hover { text-decoration: underline; }

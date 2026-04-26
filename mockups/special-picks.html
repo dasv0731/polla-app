@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es-EC">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Picks especiales — Polla Mundial 2026</title>
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="../styles/components.css">
+  <link rel="stylesheet" href="../styles/polla.css">
+  <link rel="icon" type="image/png" href="../assets/logo-golgana.png">
+
+  <style>
+    .page-header { padding: var(--space-xl) var(--section-x-mobile) var(--space-md); }
+    @media (min-width: 992px) { .page-header { padding: var(--space-2xl) var(--section-x-desktop) var(--space-lg); } }
+    .page-header h1 { font-family: var(--font-display); font-size: 56px; line-height: 1; text-transform: uppercase; }
+    @media (min-width: 480px) { .page-header h1 { font-size: 72px; } }
+    .page-header small { display: block; font-size: var(--fs-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.12em; font-weight: var(--fw-bold); margin-bottom: 4px; }
+    .page-header p { color: var(--color-text-muted); font-size: var(--fs-md); margin-top: var(--space-md); max-width: 720px; }
+
+    .container-app { padding: var(--space-md) var(--section-x-mobile) var(--space-2xl); max-width: var(--container-wide); margin-inline: auto; }
+    @media (min-width: 992px) { .container-app { padding-inline: var(--section-x-desktop); } }
+
+    /* Lock-after-kickoff banner */
+    .lock-banner { background: var(--color-primary-black); color: var(--color-primary-white); padding: var(--space-md) var(--space-lg); border-radius: var(--radius-md); border-left: 4px solid var(--color-primary-green); display: flex; gap: var(--space-md); align-items: center; flex-wrap: wrap; margin-bottom: var(--space-xl); }
+    .lock-banner__icon { width: 48px; height: 48px; border-radius: 50%; background: var(--color-primary-green); color: var(--color-primary-black); display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: var(--fs-xl); flex-shrink: 0; }
+    .lock-banner__body { flex: 1; min-width: 200px; }
+    .lock-banner h3 { font-family: var(--font-primary); font-size: var(--fs-base); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-primary-white); }
+    .lock-banner p { font-size: var(--fs-sm); color: var(--color-on-dark-muted); }
+    .lock-banner strong { color: var(--color-primary-green); }
+
+    /* Flag placeholders (12 selecciones top) */
+    .flag { background: var(--color-primary-grey); border-radius: var(--radius-sm); }
+    .flag--ec { background: linear-gradient(180deg, #FFCF24 50%, #003DA5 50%, #003DA5 75%, #E74C3C 75%); }
+    .flag--ar { background: linear-gradient(180deg, #6cace4 33%, #fff 33%, #fff 66%, #6cace4 66%); }
+    .flag--br { background: #FFDF00; }
+    .flag--fr { background: linear-gradient(90deg, #002395 33%, #fff 33%, #fff 66%, #ED2939 66%); }
+    .flag--de { background: linear-gradient(180deg, #000 33%, #DD0000 33%, #DD0000 66%, #FFCE00 66%); }
+    .flag--es { background: linear-gradient(180deg, #C60B1E 25%, #FFC400 25%, #FFC400 75%, #C60B1E 75%); }
+    .flag--gb { background: #012169; }
+    .flag--pt { background: #006600; }
+    .flag--it { background: linear-gradient(90deg, #009246 33%, #fff 33%, #fff 66%, #CE2B37 66%); }
+    .flag--nl { background: linear-gradient(180deg, #AE1C28 33%, #fff 33%, #fff 66%, #21468B 66%); }
+    .flag--uy { background: linear-gradient(180deg, #fff 50%, #4F77AC 50%); }
+    .flag--co { background: linear-gradient(180deg, #FFCD00 50%, #003893 50%); }
+    .flag--mx { background: linear-gradient(90deg, #006847 33%, #fff 33%, #fff 66%, #CE1126 66%); }
+    .flag--ma { background: #C1272D; }
+    .flag--cr { background: linear-gradient(180deg, #002B7F 25%, #fff 25%, #fff 75%, #002B7F 75%); }
+    .flag--jp { background: #fff; border: 1px solid var(--color-primary-grey); }
+    .flag--kr { background: #fff; border: 1px solid var(--color-primary-grey); }
+    .flag--sn { background: linear-gradient(90deg, #00853F 33%, #FDEF42 33%, #FDEF42 66%, #E31B23 66%); }
+    .flag--us { background: #B22234; }
+    .flag--ca { background: #FF0000; }
+    .flag--pe { background: linear-gradient(90deg, #D91023 33%, #fff 33%, #fff 66%, #D91023 66%); }
+    .flag--cl { background: linear-gradient(180deg, #fff 50%, #DA291C 50%); }
+  </style>
+</head>
+<body>
+
+  <input type="checkbox" id="drawer" class="drawer-toggle sr-only">
+  <header class="site-header site-header--auth">
+    <div class="site-header__inner">
+      <a href="./picks.html" class="site-header__logo"><img src="../assets/logo-golgana.png" alt="Golgana"></a>
+      <nav class="site-header__nav">
+        <a href="./picks.html">Picks</a>
+        <a href="./groups.html">Mis grupos</a>
+        <a href="./ranking.html">Ranking</a>
+        <a href="../public/reglas.html">Reglas</a>
+      </nav>
+      <button class="site-header__user" aria-label="Cuenta">
+        <span class="site-header__avatar">M</span>
+        <span class="site-header__handle">@marke</span>
+      </button>
+      <label for="drawer" class="drawer-btn"><span></span><span></span><span></span></label>
+    </div>
+  </header>
+  <label for="drawer" class="drawer-backdrop" aria-hidden="true"></label>
+  <aside class="drawer">
+    <a href="./picks.html">Picks</a>
+    <a href="./groups.html">Mis grupos</a>
+    <a href="./ranking.html">Ranking</a>
+    <a href="./profile.html">Mi perfil</a>
+    <a href="./special-picks.html">Picks especiales</a>
+  </aside>
+
+  <header class="page-header">
+    <small><a href="./profile.html" style="color: var(--color-primary-green);">← Mi perfil</a> · 55 puntos potenciales</small>
+    <h1>Picks especiales</h1>
+    <p>Eliges 3 selecciones <strong>antes del kickoff del primer partido</strong> del Mundial. Una vez que arranque el torneo, no podrás editar.</p>
+  </header>
+
+  <main class="container-app">
+    <!-- Lock banner -->
+    <div class="lock-banner">
+      <span class="lock-banner__icon">⏰</span>
+      <div class="lock-banner__body">
+        <h3>Cierra el 11 de junio · 16:00 ET</h3>
+        <p>Te quedan <strong>47 días</strong> para definir tus picks. Después del primer partido (México vs Ecuador) los selectors se bloquean.</p>
+      </div>
+    </div>
+
+    <!-- 3 special picks selectors -->
+    <div class="special-picks">
+
+      <!-- CAMPEÓN -->
+      <article class="special-pick">
+        <div class="special-pick__header">
+          <span class="special-pick__type">Campeón</span>
+          <span class="special-pick__points">30 pts</span>
+        </div>
+        <div class="special-pick__current">
+          <span class="flag flag--ar" style="width: 32px; height: 32px;"></span>
+          <span class="special-pick__current-name">Argentina</span>
+        </div>
+        <div class="special-pick__teams">
+          <button class="special-pick__team"><span class="flag flag--ec"></span><span class="special-pick__team-name">Ecuador</span></button>
+          <button class="special-pick__team is-selected"><span class="flag flag--ar"></span><span class="special-pick__team-name">Argentina</span></button>
+          <button class="special-pick__team"><span class="flag flag--br"></span><span class="special-pick__team-name">Brasil</span></button>
+          <button class="special-pick__team"><span class="flag flag--fr"></span><span class="special-pick__team-name">Francia</span></button>
+          <button class="special-pick__team"><span class="flag flag--de"></span><span class="special-pick__team-name">Alemania</span></button>
+          <button class="special-pick__team"><span class="flag flag--es"></span><span class="special-pick__team-name">España</span></button>
+          <button class="special-pick__team"><span class="flag flag--gb"></span><span class="special-pick__team-name">Inglaterra</span></button>
+          <button class="special-pick__team"><span class="flag flag--pt"></span><span class="special-pick__team-name">Portugal</span></button>
+          <button class="special-pick__team"><span class="flag flag--it"></span><span class="special-pick__team-name">Italia</span></button>
+          <button class="special-pick__team"><span class="flag flag--nl"></span><span class="special-pick__team-name">Países Bajos</span></button>
+          <button class="special-pick__team"><span class="flag flag--uy"></span><span class="special-pick__team-name">Uruguay</span></button>
+          <button class="special-pick__team"><span class="flag flag--co"></span><span class="special-pick__team-name">Colombia</span></button>
+        </div>
+      </article>
+
+      <!-- SUBCAMPEÓN -->
+      <article class="special-pick">
+        <div class="special-pick__header">
+          <span class="special-pick__type">Subcampeón</span>
+          <span class="special-pick__points">15 pts</span>
+        </div>
+        <div class="special-pick__current">
+          <span class="flag flag--fr" style="width: 32px; height: 32px;"></span>
+          <span class="special-pick__current-name">Francia</span>
+        </div>
+        <div class="special-pick__teams">
+          <button class="special-pick__team"><span class="flag flag--ec"></span><span class="special-pick__team-name">Ecuador</span></button>
+          <button class="special-pick__team"><span class="flag flag--ar"></span><span class="special-pick__team-name">Argentina</span></button>
+          <button class="special-pick__team"><span class="flag flag--br"></span><span class="special-pick__team-name">Brasil</span></button>
+          <button class="special-pick__team is-selected"><span class="flag flag--fr"></span><span class="special-pick__team-name">Francia</span></button>
+          <button class="special-pick__team"><span class="flag flag--de"></span><span class="special-pick__team-name">Alemania</span></button>
+          <button class="special-pick__team"><span class="flag flag--es"></span><span class="special-pick__team-name">España</span></button>
+          <button class="special-pick__team"><span class="flag flag--gb"></span><span class="special-pick__team-name">Inglaterra</span></button>
+          <button class="special-pick__team"><span class="flag flag--pt"></span><span class="special-pick__team-name">Portugal</span></button>
+          <button class="special-pick__team"><span class="flag flag--it"></span><span class="special-pick__team-name">Italia</span></button>
+          <button class="special-pick__team"><span class="flag flag--nl"></span><span class="special-pick__team-name">Países Bajos</span></button>
+          <button class="special-pick__team"><span class="flag flag--uy"></span><span class="special-pick__team-name">Uruguay</span></button>
+          <button class="special-pick__team"><span class="flag flag--co"></span><span class="special-pick__team-name">Colombia</span></button>
+        </div>
+      </article>
+
+      <!-- REVELACIÓN -->
+      <article class="special-pick">
+        <div class="special-pick__header">
+          <span class="special-pick__type">Revelación</span>
+          <span class="special-pick__points">10 pts</span>
+        </div>
+        <div class="special-pick__current">
+          <span class="flag flag--ec" style="width: 32px; height: 32px;"></span>
+          <span class="special-pick__current-name">Ecuador</span>
+        </div>
+        <div class="special-pick__teams">
+          <button class="special-pick__team is-selected"><span class="flag flag--ec"></span><span class="special-pick__team-name">Ecuador</span></button>
+          <button class="special-pick__team"><span class="flag flag--ma"></span><span class="special-pick__team-name">Marruecos</span></button>
+          <button class="special-pick__team"><span class="flag flag--cr"></span><span class="special-pick__team-name">Costa Rica</span></button>
+          <button class="special-pick__team"><span class="flag flag--jp"></span><span class="special-pick__team-name">Japón</span></button>
+          <button class="special-pick__team"><span class="flag flag--kr"></span><span class="special-pick__team-name">Corea</span></button>
+          <button class="special-pick__team"><span class="flag flag--sn"></span><span class="special-pick__team-name">Senegal</span></button>
+          <button class="special-pick__team"><span class="flag flag--us"></span><span class="special-pick__team-name">EE.UU.</span></button>
+          <button class="special-pick__team"><span class="flag flag--ca"></span><span class="special-pick__team-name">Canadá</span></button>
+          <button class="special-pick__team"><span class="flag flag--mx"></span><span class="special-pick__team-name">México</span></button>
+          <button class="special-pick__team"><span class="flag flag--co"></span><span class="special-pick__team-name">Colombia</span></button>
+          <button class="special-pick__team"><span class="flag flag--pe"></span><span class="special-pick__team-name">Perú</span></button>
+          <button class="special-pick__team"><span class="flag flag--cl"></span><span class="special-pick__team-name">Chile</span></button>
+        </div>
+      </article>
+    </div>
+
+    <!-- Save -->
+    <div style="text-align: center; margin-top: var(--space-2xl);">
+      <p style="color: var(--color-text-muted); font-size: var(--fs-sm); margin-bottom: var(--space-md);">Auto-guarda al cambiar la selección. <strong style="color: var(--color-primary-green);">Última edición: hace 3 días</strong></p>
+      <a href="./profile.html" class="btn btn--ghost">Volver a perfil</a>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__grid">
+      <div class="site-footer__brand"><img src="../assets/logo-golgana.png" alt="Golgana"><p>Polla Mundialista — Mundial FIFA 2026.</p></div>
+      <div class="site-footer__col"><h4>App</h4><a href="./picks.html">Mis picks</a><a href="./groups.html">Mis grupos</a><a href="./ranking.html">Ranking</a></div>
+      <div class="site-footer__col"><h4>Cuenta</h4><a href="./profile.html">Mi perfil</a><a href="./special-picks.html">Picks especiales</a></div>
+      <div class="site-footer__col"><h4>Ayuda</h4><a href="../public/reglas.html">Reglas</a></div>
+    </div>
+    <hr class="site-footer__divider">
+    <p class="site-footer__copy">© 2026 Golgana — Polla Mundialista</p>
+  </footer>
+
+  <script src="../scripts/polla.js" defer></script>
+</body>
+</html>

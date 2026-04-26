@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es-EC">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Mi perfil — Polla Mundial 2026</title>
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="../styles/components.css">
+  <link rel="stylesheet" href="../styles/polla.css">
+  <link rel="icon" type="image/png" href="../assets/logo-golgana.png">
+
+  <style>
+    /* Profile hero verde */
+    .profile-hero { background: var(--color-primary-green); color: var(--color-primary-white); padding: var(--space-2xl) var(--section-x-mobile); }
+    @media (min-width: 992px) { .profile-hero { padding: var(--space-3xl) var(--section-x-desktop); } }
+    .profile-hero__content { max-width: var(--container-wide); margin-inline: auto; display: grid; gap: var(--space-lg); grid-template-columns: 1fr; }
+    @media (min-width: 992px) { .profile-hero__content { grid-template-columns: auto 1fr; align-items: center; } }
+    .profile-hero__avatar { width: 120px; height: 120px; border-radius: 50%; background: var(--color-primary-black); color: var(--color-primary-green); display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 56px; border: 4px solid rgba(255,255,255,0.3); flex-shrink: 0; }
+    .profile-hero__handle { font-family: var(--font-display); font-size: 56px; line-height: 1; text-transform: uppercase; }
+    @media (min-width: 480px) { .profile-hero__handle { font-size: 80px; } }
+    .profile-hero__email { color: rgba(255,255,255,0.85); font-size: var(--fs-md); margin-top: var(--space-xs); }
+    .profile-hero__since { color: rgba(255,255,255,0.7); font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: 0.08em; margin-top: var(--space-xs); }
+
+    /* Stats grid */
+    .stats-row { display: grid; gap: var(--space-md); grid-template-columns: repeat(2, 1fr); padding: var(--space-xl) var(--section-x-mobile); max-width: var(--container-wide); margin-inline: auto; }
+    @media (min-width: 480px) { .stats-row { grid-template-columns: repeat(4, 1fr); } }
+    @media (min-width: 992px) { .stats-row { padding-inline: var(--section-x-desktop); } }
+    .stat-card { background: var(--color-primary-white); border: var(--border-grey); border-radius: var(--radius-lg); padding: var(--space-lg); text-align: center; }
+    .stat-card strong { display: block; font-family: var(--font-display); font-size: 56px; color: var(--color-primary-green); line-height: 1; }
+    .stat-card small { display: block; font-size: var(--fs-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: var(--fw-bold); margin-top: var(--space-xs); }
+
+    /* Sections */
+    .container-app { padding: var(--space-md) var(--section-x-mobile) var(--space-2xl); max-width: var(--container-medium); margin-inline: auto; display: grid; gap: var(--space-2xl); }
+    @media (min-width: 992px) { .container-app { padding-inline: var(--section-x-desktop); } }
+
+    /* Settings sections */
+    .settings-section { background: var(--color-primary-white); border: var(--border-grey); border-radius: var(--radius-lg); overflow: hidden; }
+    .settings-section h3 { font-family: var(--font-display); font-size: var(--fs-xl); text-transform: uppercase; line-height: 1; padding: var(--space-md) var(--space-lg); background: var(--color-primary-grey); border-bottom: var(--border-grey); }
+    .settings-row { display: grid; grid-template-columns: 1fr auto; gap: var(--space-md); align-items: center; padding: var(--space-md) var(--space-lg); border-bottom: 1px dashed var(--color-primary-grey); }
+    .settings-row:last-child { border-bottom: 0; }
+    .settings-row__label small { display: block; font-size: 10px; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: var(--fw-bold); margin-bottom: 2px; }
+    .settings-row__label strong { font-size: var(--fs-base); font-weight: var(--fw-semibold); }
+    .settings-row__action { font-size: var(--fs-sm); color: var(--color-primary-green); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: 0.06em; }
+    .settings-row__action--danger { color: var(--color-lost); }
+
+    /* Toggle switch (CSS only) */
+    .toggle { position: relative; display: inline-block; width: 44px; height: 24px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle__track { position: absolute; inset: 0; background: var(--color-primary-grey); border-radius: 999px; cursor: pointer; transition: background var(--transition-normal); }
+    .toggle__track::before { content: ""; position: absolute; left: 2px; top: 2px; width: 20px; height: 20px; background: var(--color-primary-white); border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.15); transition: transform var(--transition-normal); }
+    .toggle input:checked + .toggle__track { background: var(--color-primary-green); }
+    .toggle input:checked + .toggle__track::before { transform: translateX(20px); }
+  </style>
+</head>
+<body>
+
+  <input type="checkbox" id="drawer" class="drawer-toggle sr-only">
+  <header class="site-header site-header--auth">
+    <div class="site-header__inner">
+      <a href="./picks.html" class="site-header__logo"><img src="../assets/logo-golgana.png" alt="Golgana"></a>
+      <nav class="site-header__nav">
+        <a href="./picks.html">Picks</a>
+        <a href="./groups.html">Mis grupos</a>
+        <a href="./ranking.html">Ranking</a>
+        <a href="../public/reglas.html">Reglas</a>
+      </nav>
+      <button class="site-header__user" aria-label="Cuenta">
+        <span class="site-header__avatar">M</span>
+        <span class="site-header__handle">@marke</span>
+      </button>
+      <label for="drawer" class="drawer-btn"><span></span><span></span><span></span></label>
+    </div>
+  </header>
+  <label for="drawer" class="drawer-backdrop" aria-hidden="true"></label>
+  <aside class="drawer">
+    <a href="./picks.html">Picks</a>
+    <a href="./groups.html">Mis grupos</a>
+    <a href="./ranking.html">Ranking</a>
+    <a href="./profile.html">Mi perfil</a>
+  </aside>
+
+  <main>
+    <!-- HERO -->
+    <section class="profile-hero">
+      <div class="profile-hero__content">
+        <span class="profile-hero__avatar">M</span>
+        <div>
+          <h1 class="profile-hero__handle">@marke</h1>
+          <p class="profile-hero__email">marke@email.com</p>
+          <p class="profile-hero__since">Miembro desde 22 de marzo 2026</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat-card"><strong>69</strong><small>Puntos totales</small></div>
+      <div class="stat-card"><strong>2</strong><small>Marcadores exactos</small></div>
+      <div class="stat-card"><strong>14</strong><small>Resultados acertados</small></div>
+      <div class="stat-card"><strong>#142</strong><small>Ranking global</small></div>
+    </div>
+
+    <div class="container-app">
+      <!-- LINKS RÁPIDOS -->
+      <section style="display: grid; gap: var(--space-md); grid-template-columns: 1fr;">
+        <a href="./special-picks.html" class="empty-cta__card" style="background: var(--color-primary-grey); border-radius: var(--radius-lg); padding: var(--space-xl); border-left: 4px solid var(--color-primary-green); text-decoration: none; color: inherit;">
+          <h3 style="font-family: var(--font-display); font-size: var(--fs-xl); text-transform: uppercase; line-height: 1; margin-bottom: var(--space-sm);">Picks especiales</h3>
+          <p style="color: var(--color-text-muted); font-size: var(--fs-sm); margin-bottom: var(--space-md);">Campeón · Subcampeón · Equipo revelación. Editable hasta el kickoff del primer partido del torneo (47 días).</p>
+          <span class="link-green" style="font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: 0.08em; font-size: var(--fs-sm);">Editar mis picks especiales →</span>
+        </a>
+      </section>
+
+      <!-- DATOS DE LA CUENTA -->
+      <section class="settings-section">
+        <h3>Datos de la cuenta</h3>
+        <div class="settings-row">
+          <div class="settings-row__label"><small>Handle público</small><strong>@marke</strong></div>
+          <a href="#" class="settings-row__action">Cambiar →</a>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row__label"><small>Email</small><strong>marke@email.com</strong></div>
+          <a href="#" class="settings-row__action">Cambiar →</a>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row__label"><small>Password</small><strong>••••••••••</strong></div>
+          <a href="./forgot-password.html" class="settings-row__action">Resetear →</a>
+        </div>
+      </section>
+
+      <!-- NOTIFICACIONES -->
+      <section class="settings-section">
+        <h3>Notificaciones</h3>
+        <div class="settings-row">
+          <div class="settings-row__label">
+            <small>Email transaccional</small>
+            <strong>Welcome, invitaciones, password reset</strong>
+          </div>
+          <label class="toggle"><input type="checkbox" checked><span class="toggle__track"></span></label>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row__label">
+            <small>Recordatorio de picks</small>
+            <strong>Email diario con picks pendientes</strong>
+          </div>
+          <label class="toggle"><input type="checkbox"><span class="toggle__track"></span></label>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row__label">
+            <small>Banner in-app de picks pendientes</small>
+            <strong>Mostrar al entrar a la app</strong>
+          </div>
+          <label class="toggle"><input type="checkbox" checked><span class="toggle__track"></span></label>
+        </div>
+      </section>
+
+      <!-- CUENTA -->
+      <section class="settings-section">
+        <h3>Cuenta</h3>
+        <div class="settings-row">
+          <div class="settings-row__label"><small>Cerrar sesión</small><strong>Salir de esta sesión en este dispositivo</strong></div>
+          <a href="../public/index.html" class="settings-row__action">Salir →</a>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row__label"><small>Eliminar cuenta</small><strong>Borra todos tus datos. Esta acción es irreversible.</strong></div>
+          <a href="#" class="settings-row__action settings-row__action--danger" data-confirm="¿Eliminar tu cuenta? Esto borra tus picks, grupos y datos personales.">Eliminar →</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__grid">
+      <div class="site-footer__brand"><img src="../assets/logo-golgana.png" alt="Golgana"><p>Polla Mundialista — Mundial FIFA 2026.</p></div>
+      <div class="site-footer__col"><h4>App</h4><a href="./picks.html">Mis picks</a><a href="./groups.html">Mis grupos</a><a href="./ranking.html">Ranking</a></div>
+      <div class="site-footer__col"><h4>Cuenta</h4><a href="./profile.html">Mi perfil</a><a href="./special-picks.html">Picks especiales</a></div>
+      <div class="site-footer__col"><h4>Ayuda</h4><a href="../public/reglas.html">Reglas</a></div>
+    </div>
+    <hr class="site-footer__divider">
+    <p class="site-footer__copy">© 2026 Golgana — Polla Mundialista</p>
+  </footer>
+
+  <script src="../scripts/polla.js" defer></script>
+</body>
+</html>

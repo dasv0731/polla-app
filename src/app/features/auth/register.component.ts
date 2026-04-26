@@ -3,13 +3,14 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { apiClient } from '../../core/api/client';
+import { AuthShellComponent } from '../../shared/layout/auth-shell.component';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, AuthShellComponent],
   template: `
-    <main class="auth-main">
+    <app-auth-shell>
       @if (step() === 'form') {
         <form class="form-card auth-card" (ngSubmit)="submitForm()" #f="ngForm">
           <h2 class="form-card__title">Crear cuenta</h2>
@@ -80,7 +81,7 @@ import { apiClient } from '../../core/api/client';
           </p>
         </form>
       }
-    </main>
+    </app-auth-shell>
   `,
 })
 export class RegisterComponent {

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es-EC">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Ecuador vs México — Tu pick · Polla Mundial 2026</title>
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="../styles/components.css">
+  <link rel="stylesheet" href="../styles/polla.css">
+  <link rel="icon" type="image/png" href="../assets/logo-golgana.png">
+
+  <style>
+    /* Match hero scheduled (mismo patrón que public/partido-scheduled) */
+    .mh { background: var(--color-primary-black); color: var(--color-primary-white); position: relative; overflow: hidden; padding: var(--space-2xl) var(--section-x-mobile); }
+    .mh::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 25% 50%, rgba(255,207,36,0.2) 0%, transparent 55%), radial-gradient(circle at 75% 50%, rgba(0,104,71,0.25) 0%, transparent 55%); }
+    .mh__content { position: relative; max-width: var(--container-wide); margin-inline: auto; }
+    .mh__competition { color: var(--color-primary-green); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.12em; font-weight: var(--fw-bold); text-align: center; }
+    .mh__teams { display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--space-md); align-items: center; margin: var(--space-lg) 0; }
+    .mh__side { display: flex; flex-direction: column; align-items: center; gap: var(--space-sm); text-align: center; }
+    .mh__side .flag { width: 96px; height: 96px; border-radius: var(--radius-md); }
+    .mh__side strong { font-family: var(--font-display); font-size: var(--fs-2xl); line-height: 1; text-transform: uppercase; color: var(--color-primary-white); }
+    .mh__side small { color: rgba(255,255,255,0.6); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.1em; }
+    .mh__vs { display: flex; flex-direction: column; align-items: center; gap: var(--space-sm); }
+    .mh__status { padding: 6px 14px; background: var(--color-primary-grey); color: var(--color-primary-black); font-size: var(--fs-xs); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: 0.12em; border-radius: 999px; }
+    .mh__time { font-family: var(--font-display); font-size: var(--fs-2xl); color: var(--color-primary-green); line-height: 1; text-align: center; }
+    .mh__time small { display: block; font-size: var(--fs-xs); color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px; font-family: var(--font-primary); }
+    @media (min-width: 480px) { .mh__side .flag { width: 130px; height: 130px; } .mh__side strong { font-size: var(--fs-3xl); } .mh__time { font-size: 56px; } }
+    @media (min-width: 992px) { .mh { padding: var(--space-3xl) var(--section-x-desktop); } .mh__side .flag { width: 160px; height: 160px; } .mh__time { font-size: 72px; } }
+
+    /* Pick form prominent (más grande que el del listing) */
+    .pick-form { background: var(--color-primary-white); border: 2px solid var(--color-primary-green); border-radius: var(--radius-lg); padding: var(--space-2xl); max-width: 720px; margin: var(--space-xl) auto; box-shadow: 0 8px 32px rgba(2, 204, 116, 0.12); }
+    .pick-form h2 { font-family: var(--font-display); font-size: var(--fs-2xl); text-transform: uppercase; line-height: 1; margin-bottom: var(--space-xs); text-align: center; }
+    .pick-form__lead { text-align: center; color: var(--color-text-muted); font-size: var(--fs-sm); margin-bottom: var(--space-xl); }
+    .pick-form__teams { display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--space-md); align-items: center; margin-bottom: var(--space-lg); }
+    .pick-form__team { display: flex; flex-direction: column; align-items: center; gap: var(--space-sm); }
+    .pick-form__team .flag { width: 64px; height: 64px; border-radius: var(--radius-md); }
+    .pick-form__team strong { font-family: var(--font-display); font-size: var(--fs-xl); text-transform: uppercase; line-height: 1; }
+    .pick-form__divider { font-family: var(--font-display); font-size: var(--fs-2xl); color: var(--color-text-muted); }
+    .pick-form__inputs { display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--space-md); align-items: center; padding: var(--space-lg); background: var(--color-primary-grey); border-radius: var(--radius-md); }
+    .pick-form__inputs .score-input { justify-content: center; }
+    .pick-form__inputs > .score-input__sep { text-align: center; }
+    .pick-form__actions { display: flex; gap: var(--space-md); justify-content: center; flex-wrap: wrap; margin-top: var(--space-xl); }
+    .pick-form__hint { text-align: center; font-size: var(--fs-xs); color: var(--color-text-muted); margin-top: var(--space-md); }
+
+    /* Match info grid */
+    .match-info { display: grid; gap: var(--space-md); grid-template-columns: repeat(2, 1fr); margin-block: var(--space-xl); }
+    @media (min-width: 480px) { .match-info { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 992px) { .match-info { grid-template-columns: repeat(6, 1fr); } }
+    .match-info__item { background: var(--color-primary-grey); border-radius: var(--radius-md); padding: var(--space-md); }
+    .match-info__item small { display: block; font-size: var(--fs-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; font-weight: var(--fw-bold); }
+    .match-info__item strong { font-family: var(--font-display); font-size: var(--fs-md); line-height: 1.1; display: block; }
+
+    /* Stats compare (forma reciente, h2h) */
+    .stats-block { background: var(--color-primary-white); border: var(--border-grey); border-radius: var(--radius-lg); padding: var(--space-xl); }
+    .stats-block h3 { font-family: var(--font-display); font-size: var(--fs-xl); text-transform: uppercase; line-height: 1; margin-bottom: var(--space-md); border-bottom: 2px solid var(--color-primary-green); padding-bottom: var(--space-sm); }
+    .compare-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--space-md); align-items: center; padding: var(--space-sm) 0; border-bottom: 1px dashed var(--color-primary-grey); }
+    .compare-row:last-child { border-bottom: 0; }
+    .compare-row__home, .compare-row__away { font-family: var(--font-display); font-size: var(--fs-xl); line-height: 1; }
+    .compare-row__home { text-align: right; color: var(--color-primary-green); }
+    .compare-row__away { color: var(--color-text-muted); }
+    .compare-row__label { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-muted); text-align: center; font-weight: var(--fw-bold); }
+
+    /* Flags */
+    .flag { background: var(--color-primary-grey); border-radius: var(--radius-sm); }
+    .flag--ec { background: linear-gradient(180deg, #FFCF24 50%, #003DA5 50%, #003DA5 75%, #E74C3C 75%); }
+    .flag--mx { background: linear-gradient(90deg, #006847 33%, #fff 33%, #fff 66%, #CE1126 66%); }
+  </style>
+</head>
+<body>
+
+  <input type="checkbox" id="drawer" class="drawer-toggle sr-only">
+  <header class="site-header site-header--auth">
+    <div class="site-header__inner">
+      <a href="./picks.html" class="site-header__logo"><img src="../assets/logo-golgana.png" alt="Golgana"></a>
+      <nav class="site-header__nav">
+        <a href="./picks.html" class="is-active">Picks</a>
+        <a href="#">Mis grupos</a>
+        <a href="#">Ranking</a>
+        <a href="../public/reglas.html">Reglas</a>
+      </nav>
+      <button class="site-header__user" aria-label="Cuenta">
+        <span class="site-header__avatar">M</span>
+        <span class="site-header__handle">@marke</span>
+      </button>
+      <label for="drawer" class="drawer-btn"><span></span><span></span><span></span></label>
+    </div>
+  </header>
+  <label for="drawer" class="drawer-backdrop" aria-hidden="true"></label>
+  <aside class="drawer">
+    <a href="./picks.html">Picks</a>
+    <a href="#">Mis grupos</a>
+    <a href="#">Ranking</a>
+    <a href="../public/reglas.html">Reglas</a>
+  </aside>
+
+  <div class="state-banner" role="note">
+    <span class="state-banner__label">Mock · estados:</span>
+    <a href="./pick-match-scheduled.html" class="is-active">Programado</a>
+    <a href="./pick-match-finished.html">Finalizado</a>
+  </div>
+
+  <main>
+    <!-- HERO MATCH -->
+    <section class="mh">
+      <div class="mh__content">
+        <p class="mh__competition">Mundial 2026 · Grupo A · Jornada 1</p>
+        <div class="mh__teams">
+          <div class="mh__side">
+            <span class="flag flag--ec"></span>
+            <strong>Ecuador</strong>
+            <small>FIFA #36</small>
+          </div>
+          <div class="mh__vs">
+            <span class="mh__status">Cierra hoy</span>
+            <div class="mh__time">16:00<small>Hoy · 25 abr</small></div>
+          </div>
+          <div class="mh__side">
+            <span class="flag flag--mx"></span>
+            <strong>México</strong>
+            <small>FIFA #14</small>
+          </div>
+        </div>
+
+        <div class="countdown" data-countdown="2026-06-11T20:00:00Z" style="max-width: 480px; margin-inline: auto;">
+          <div class="countdown__cell"><span class="countdown__value">00</span><span class="countdown__label">Días</span></div>
+          <div class="countdown__cell"><span class="countdown__value">04</span><span class="countdown__label">Horas</span></div>
+          <div class="countdown__cell"><span class="countdown__value">22</span><span class="countdown__label">Min</span></div>
+          <div class="countdown__cell"><span class="countdown__value">07</span><span class="countdown__label">Seg</span></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <nav class="breadcrumb">
+        <a href="./picks.html">Mis picks</a><span class="breadcrumb__sep">/</span>
+        <a href="#">Grupo A</a><span class="breadcrumb__sep">/</span>
+        <span aria-current="page">Ecuador vs México</span>
+      </nav>
+
+      <!-- PICK FORM PROMINENTE -->
+      <section>
+        <form class="pick-form" data-mock data-mock-message="Pick guardado · puedes editarlo hasta el kickoff">
+          <h2>Tu pick</h2>
+          <p class="pick-form__lead">Predice el marcador <strong>al final del tiempo reglamentario</strong>. Editable hasta las 16:00 (kickoff).</p>
+
+          <div class="pick-form__teams">
+            <div class="pick-form__team">
+              <span class="flag flag--ec"></span>
+              <strong>Ecuador</strong>
+            </div>
+            <span class="pick-form__divider">VS</span>
+            <div class="pick-form__team">
+              <span class="flag flag--mx"></span>
+              <strong>México</strong>
+            </div>
+          </div>
+
+          <div class="pick-form__inputs">
+            <div class="score-input">
+              <div class="score-input__field">
+                <div class="score-input__stepper">
+                  <button class="score-input__btn" type="button" data-dir="down" aria-label="Bajar Ecuador">−</button>
+                  <input class="score-input__value" type="text" value="2" inputmode="numeric" aria-label="Goles Ecuador">
+                  <button class="score-input__btn" type="button" data-dir="up" aria-label="Subir Ecuador">+</button>
+                </div>
+                <span class="score-input__label">Ecuador</span>
+              </div>
+            </div>
+            <span class="score-input__sep">—</span>
+            <div class="score-input">
+              <div class="score-input__field">
+                <div class="score-input__stepper">
+                  <button class="score-input__btn" type="button" data-dir="down" aria-label="Bajar México">−</button>
+                  <input class="score-input__value" type="text" value="1" inputmode="numeric" aria-label="Goles México">
+                  <button class="score-input__btn" type="button" data-dir="up" aria-label="Subir México">+</button>
+                </div>
+                <span class="score-input__label">México</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pick-form__actions">
+            <button type="submit" class="btn btn--primary btn--lg">Guardar pick</button>
+            <a href="./picks.html" class="btn btn--ghost">Volver al listado</a>
+          </div>
+          <p class="pick-form__hint">Pick guardado por última vez hace 5 minutos. Auto-guarda cada vez que cambias el marcador.</p>
+        </form>
+      </section>
+
+      <!-- DATOS DEL PARTIDO -->
+      <section>
+        <header class="section-heading" style="margin-bottom: var(--space-md);">
+          <div class="section-heading__text">
+            <p class="kicker">Datos del partido</p>
+            <h2 class="h2">Sobre Ecuador vs México</h2>
+          </div>
+        </header>
+        <div class="match-info">
+          <div class="match-info__item"><small>Fase</small><strong>Grupo A · J1</strong></div>
+          <div class="match-info__item"><small>Multiplicador</small><strong>x1 · max 5 pts</strong></div>
+          <div class="match-info__item"><small>Estadio</small><strong>Azteca</strong></div>
+          <div class="match-info__item"><small>Sede</small><strong>CDMX</strong></div>
+          <div class="match-info__item"><small>Capacidad</small><strong>87,000</strong></div>
+          <div class="match-info__item"><small>Árbitro</small><strong>Por confirmar</strong></div>
+        </div>
+      </section>
+
+      <!-- STATS COMPARE -->
+      <section style="margin-bottom: var(--space-2xl);">
+        <header class="section-heading" style="margin-bottom: var(--space-md);">
+          <div class="section-heading__text">
+            <p class="kicker">Comparativa</p>
+            <h2 class="h2">Forma reciente — últimos 5</h2>
+          </div>
+        </header>
+
+        <div class="stats-block">
+          <h3 style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="display: flex; align-items: center; gap: var(--space-sm);"><span class="flag flag--ec" style="width: 32px; height: 32px;"></span>Ecuador</span>
+            <span style="display: flex; align-items: center; gap: var(--space-sm);">México<span class="flag flag--mx" style="width: 32px; height: 32px;"></span></span>
+          </h3>
+
+          <div class="compare-row">
+            <span class="compare-row__home">3W 1D 1L</span>
+            <span class="compare-row__label">Forma últimos 5</span>
+            <span class="compare-row__away">2W 2D 1L</span>
+          </div>
+          <div class="compare-row">
+            <span class="compare-row__home">8</span>
+            <span class="compare-row__label">Goles a favor</span>
+            <span class="compare-row__away">7</span>
+          </div>
+          <div class="compare-row">
+            <span class="compare-row__home">3</span>
+            <span class="compare-row__label">Goles en contra</span>
+            <span class="compare-row__away">5</span>
+          </div>
+          <div class="compare-row">
+            <span class="compare-row__home">62%</span>
+            <span class="compare-row__label">Posesión promedio</span>
+            <span class="compare-row__away">55%</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__grid">
+      <div class="site-footer__brand">
+        <img src="../assets/logo-golgana.png" alt="Golgana">
+        <p>Polla Mundialista — Mundial FIFA 2026.</p>
+      </div>
+      <div class="site-footer__col">
+        <h4>App</h4>
+        <a href="./picks.html">Mis picks</a>
+        <a href="#">Mis grupos</a>
+        <a href="#">Ranking</a>
+      </div>
+      <div class="site-footer__col">
+        <h4>Cuenta</h4>
+        <a href="#">Mi perfil</a>
+        <a href="../public/index.html">Cerrar sesión</a>
+      </div>
+      <div class="site-footer__col">
+        <h4>Ayuda</h4>
+        <a href="../public/reglas.html">Reglas</a>
+      </div>
+    </div>
+    <hr class="site-footer__divider">
+    <p class="site-footer__copy">© 2026 Golgana — Polla Mundialista</p>
+  </footer>
+
+  <script src="../scripts/polla.js" defer></script>
+</body>
+</html>

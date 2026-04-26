@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es-EC">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Mis amigos del barrio — Polla Mundial 2026</title>
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="../styles/components.css">
+  <link rel="stylesheet" href="../styles/polla.css">
+  <link rel="icon" type="image/png" href="../assets/logo-golgana.png">
+
+  <style>
+    /* Group hero */
+    .group-hero { background: var(--color-primary-black); color: var(--color-primary-white); padding: var(--space-2xl) var(--section-x-mobile); position: relative; overflow: hidden; }
+    .group-hero::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 20% 50%, rgba(2,204,116,0.25) 0%, transparent 60%); }
+    .group-hero__content { position: relative; max-width: var(--container-wide); margin-inline: auto; display: grid; gap: var(--space-lg); grid-template-columns: 1fr; }
+    @media (min-width: 992px) { .group-hero { padding: var(--space-3xl) var(--section-x-desktop); } .group-hero__content { grid-template-columns: 1fr auto; align-items: center; } }
+    .group-hero__title { display: flex; gap: var(--space-md); align-items: center; }
+    .group-hero__icon { width: 80px; height: 80px; border-radius: var(--radius-md); background: var(--color-primary-black); border: 2px solid var(--color-primary-green); color: var(--color-primary-green); display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: var(--fs-3xl); flex-shrink: 0; }
+    .group-hero__name { font-family: var(--font-display); font-size: 56px; line-height: 1; color: var(--color-primary-white); text-transform: uppercase; }
+    @media (min-width: 480px) { .group-hero__name { font-size: 72px; } }
+    .group-hero__meta { color: rgba(255,255,255,0.7); font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 4px; }
+    .group-hero__meta strong { color: var(--color-primary-green); }
+    .group-hero__stats { display: grid; gap: var(--space-md); grid-template-columns: repeat(2, 1fr); }
+    @media (min-width: 480px) { .group-hero__stats { grid-template-columns: repeat(3, 1fr); } }
+    .group-hero__stat { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-md); padding: var(--space-md); text-align: center; min-width: 100px; }
+    .group-hero__stat strong { display: block; font-family: var(--font-display); font-size: var(--fs-2xl); color: var(--color-primary-green); line-height: 1; }
+    .group-hero__stat small { display: block; font-size: 10px; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
+
+    .container-app { padding: var(--space-xl) var(--section-x-mobile); max-width: var(--container-wide); margin-inline: auto; display: grid; gap: var(--space-2xl); grid-template-columns: 1fr; }
+    @media (min-width: 992px) { .container-app { padding-inline: var(--section-x-desktop); grid-template-columns: 2fr 1fr; gap: var(--space-2xl); } }
+
+    /* Sidebar with invite + admin actions */
+    .sidebar { display: grid; gap: var(--space-md); align-content: start; }
+    .invite-mini { background: var(--color-primary-grey); border-radius: var(--radius-lg); padding: var(--space-lg); }
+    .invite-mini h3 { font-family: var(--font-display); font-size: var(--fs-md); text-transform: uppercase; line-height: 1; margin-bottom: var(--space-sm); }
+    .invite-mini__code { font-family: var(--font-display); font-size: var(--fs-3xl); letter-spacing: 0.16em; color: var(--color-primary-black); margin-bottom: var(--space-xs); display: block; }
+    .invite-mini__url { font-family: ui-monospace, monospace; font-size: 11px; color: var(--color-text-muted); word-break: break-all; margin-bottom: var(--space-md); }
+    .invite-mini__actions { display: flex; gap: var(--space-xs); flex-wrap: wrap; }
+
+    /* Admin actions */
+    .admin-actions { background: var(--color-primary-white); border: var(--border-grey); border-radius: var(--radius-lg); padding: var(--space-lg); }
+    .admin-actions h3 { font-family: var(--font-display); font-size: var(--fs-md); text-transform: uppercase; line-height: 1; margin-bottom: var(--space-md); display: flex; gap: var(--space-xs); align-items: baseline; }
+    .admin-actions h3::before { content: "★"; color: var(--color-primary-green); }
+    .admin-actions ul { list-style: none; padding: 0; }
+    .admin-actions li + li { margin-top: var(--space-sm); }
+    .admin-actions a { display: flex; align-items: center; justify-content: space-between; padding: var(--space-sm) var(--space-md); border: 1px solid var(--color-primary-grey); border-radius: var(--radius-md); font-size: var(--fs-sm); font-weight: var(--fw-semibold); transition: border-color var(--transition-normal); }
+    .admin-actions a:hover { border-color: var(--color-primary-green); color: var(--color-primary-green); }
+    .admin-actions a--danger { color: var(--color-lost); }
+    .admin-actions a--danger:hover { border-color: var(--color-lost); color: var(--color-lost); }
+  </style>
+</head>
+<body>
+
+  <input type="checkbox" id="drawer" class="drawer-toggle sr-only">
+  <header class="site-header site-header--auth">
+    <div class="site-header__inner">
+      <a href="./picks.html" class="site-header__logo"><img src="../assets/logo-golgana.png" alt="Golgana"></a>
+      <nav class="site-header__nav">
+        <a href="./picks.html">Picks</a>
+        <a href="./groups.html" class="is-active">Mis grupos</a>
+        <a href="#">Ranking</a>
+        <a href="../public/reglas.html">Reglas</a>
+      </nav>
+      <button class="site-header__user" aria-label="Cuenta">
+        <span class="site-header__avatar">M</span>
+        <span class="site-header__handle">@marke</span>
+      </button>
+      <label for="drawer" class="drawer-btn"><span></span><span></span><span></span></label>
+    </div>
+  </header>
+  <label for="drawer" class="drawer-backdrop" aria-hidden="true"></label>
+  <aside class="drawer">
+    <a href="./picks.html">Picks</a>
+    <a href="./groups.html">Mis grupos</a>
+    <a href="#">Ranking</a>
+  </aside>
+
+  <main>
+    <!-- HERO -->
+    <section class="group-hero">
+      <div class="group-hero__content">
+        <div class="group-hero__title">
+          <span class="group-hero__icon">★</span>
+          <div>
+            <h1 class="group-hero__name">Mis amigos del barrio</h1>
+            <p class="group-hero__meta">8 miembros · Eres <strong>admin</strong> · creado el 22 mar 2026</p>
+          </div>
+        </div>
+        <div class="group-hero__stats">
+          <div class="group-hero__stat"><strong>#2</strong><small>Tu posición</small></div>
+          <div class="group-hero__stat"><strong>69</strong><small>Tus puntos</small></div>
+          <div class="group-hero__stat"><strong>−18</strong><small>Al líder</small></div>
+        </div>
+      </div>
+    </section>
+
+    <nav class="breadcrumb" style="padding-inline: var(--section-x-mobile);">
+      <a href="./groups.html">Mis grupos</a><span class="breadcrumb__sep">/</span>
+      <span aria-current="page">Mis amigos del barrio</span>
+    </nav>
+
+    <div class="container-app">
+      <!-- LEADERBOARD principal -->
+      <section>
+        <header class="section-heading">
+          <div class="section-heading__text">
+            <p class="kicker">Leaderboard del grupo</p>
+            <h2 class="h2">Ranking interno</h2>
+          </div>
+          <a href="#" class="link-green section-heading__cta">Ver ranking global →</a>
+        </header>
+
+        <div class="standings-wrap">
+          <table class="standings standings--group">
+            <thead>
+              <tr><th>#</th><th>Jugador</th><th>Pts</th><th>Exactos</th><th>Resultados</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="pos">1</td><td>@joseignacio</td><td>87</td><td>4</td><td>15</td></tr>
+              <tr class="is-me"><td class="pos">2</td><td>@marke</td><td>69</td><td>2</td><td>14</td></tr>
+              <tr><td class="pos">3</td><td>@danielac</td><td>64</td><td>1</td><td>14</td></tr>
+              <tr><td class="pos">4</td><td>@andresm</td><td>58</td><td>2</td><td>11</td></tr>
+              <tr><td class="pos">5</td><td>@mariaf</td><td>52</td><td>0</td><td>13</td></tr>
+              <tr><td class="pos">6</td><td>@lupita</td><td>48</td><td>1</td><td>10</td></tr>
+              <tr><td class="pos">7</td><td>@fer_g</td><td>41</td><td>0</td><td>11</td></tr>
+              <tr><td class="pos">8</td><td>@johnny</td><td>32</td><td>0</td><td>9</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p style="margin-top: var(--space-md); font-size: var(--fs-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.08em;">
+          Última actualización: hace 12 minutos · Tabla refresca automáticamente al publicar resultados
+        </p>
+      </section>
+
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <!-- Invite mini -->
+        <div class="invite-mini">
+          <h3>Código del grupo</h3>
+          <span class="invite-mini__code" id="invite-mini-code">K7P2QM</span>
+          <p class="invite-mini__url">app.polla.golgana.net/groups/join/K7P2QM</p>
+          <div class="invite-mini__actions">
+            <button class="btn btn--primary btn--sm" data-copy-target="#invite-mini-code">📋 Copiar</button>
+            <a href="./group-invite-email.html" class="btn btn--ghost btn--sm">📧 Email</a>
+          </div>
+        </div>
+
+        <!-- Admin actions -->
+        <div class="admin-actions">
+          <h3>Acciones de admin</h3>
+          <ul>
+            <li><a href="./group-invite-email.html"><span>Invitar por email</span><span>→</span></a></li>
+            <li><a href="#"><span>Renovar código</span><span>→</span></a></li>
+            <li><a href="#"><span>Editar nombre</span><span>→</span></a></li>
+            <li><a href="#" class="a--danger" data-confirm="¿Eliminar grupo? Todos los miembros perderán el acceso. Esta acción no se puede deshacer."><span>Eliminar grupo</span><span>×</span></a></li>
+          </ul>
+          <p style="margin-top: var(--space-md); font-size: var(--fs-xs); color: var(--color-text-muted); line-height: var(--lh-body);">
+            Estas acciones solo aparecen porque eres admin del grupo.
+          </p>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__grid">
+      <div class="site-footer__brand">
+        <img src="../assets/logo-golgana.png" alt="Golgana">
+        <p>Polla Mundialista — Mundial FIFA 2026.</p>
+      </div>
+      <div class="site-footer__col"><h4>App</h4><a href="./picks.html">Mis picks</a><a href="./groups.html">Mis grupos</a></div>
+      <div class="site-footer__col"><h4>Cuenta</h4><a href="../public/index.html">Cerrar sesión</a></div>
+      <div class="site-footer__col"><h4>Ayuda</h4><a href="../public/reglas.html">Reglas</a></div>
+    </div>
+    <hr class="site-footer__divider">
+    <p class="site-footer__copy">© 2026 Golgana — Polla Mundialista</p>
+  </footer>
+
+  <script src="../scripts/polla.js" defer></script>
+</body>
+</html>

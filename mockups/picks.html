@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="es-EC">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Mis picks — Polla Mundial 2026</title>
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="../styles/components.css">
+  <link rel="stylesheet" href="../styles/polla.css">
+  <link rel="icon" type="image/png" href="../assets/logo-golgana.png">
+
+  <style>
+    /* Page header del flow autenticado */
+    .page-header { padding: var(--space-xl) var(--section-x-mobile) var(--space-md); }
+    @media (min-width: 992px) { .page-header { padding: var(--space-2xl) var(--section-x-desktop) var(--space-lg); } }
+    .page-header__top { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: var(--space-md); margin-bottom: var(--space-lg); }
+    .page-header__title h1 { font-family: var(--font-display); font-size: 56px; line-height: 1; text-transform: uppercase; }
+    @media (min-width: 480px) { .page-header__title h1 { font-size: 72px; } }
+    .page-header__title small { display: block; font-size: var(--fs-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.12em; font-weight: var(--fw-bold); margin-bottom: 4px; }
+    .page-header__counts { display: flex; gap: var(--space-md); font-size: var(--fs-sm); }
+    .page-header__counts strong { display: block; font-family: var(--font-display); font-size: var(--fs-2xl); color: var(--color-primary-green); line-height: 1; }
+    .page-header__counts small { color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-size: var(--fs-xs); font-weight: var(--fw-bold); }
+
+    .page-header__controls { display: flex; gap: var(--space-md); flex-wrap: wrap; align-items: center; padding-bottom: var(--space-md); border-bottom: 1px solid var(--color-primary-grey); }
+
+    /* Tabs Próximos/Jugados — extiende .subnav del manual */
+    .subnav { display: inline-flex; gap: var(--space-xs); }
+    .subnav a { padding: 8px 16px; border-radius: 999px; font-size: var(--fs-sm); font-weight: var(--fw-semibold); text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); cursor: pointer; transition: all var(--transition-normal); }
+    .subnav a:hover { background: var(--color-primary-grey); color: var(--color-primary-black); }
+    .subnav a.is-active { background: var(--color-primary-black); color: var(--color-primary-white); }
+    .subnav__count { background: var(--color-primary-green); color: var(--color-primary-white); padding: 2px 6px; border-radius: 999px; font-size: 10px; margin-left: 6px; font-family: var(--font-primary); }
+
+    /* Pick cards grid */
+    .picks-grid { display: grid; gap: var(--space-md); grid-template-columns: 1fr; padding: var(--space-md) var(--section-x-mobile) var(--space-2xl); }
+    @media (min-width: 480px) { .picks-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 992px) { .picks-grid { grid-template-columns: repeat(3, 1fr); padding-inline: var(--section-x-desktop); } }
+
+    /* Empty state for tab */
+    .empty-state { text-align: center; padding: var(--space-3xl) var(--space-lg); color: var(--color-text-muted); }
+    .empty-state h3 { font-family: var(--font-display); font-size: var(--fs-2xl); text-transform: uppercase; line-height: 1; margin-bottom: var(--space-md); color: var(--color-primary-black); }
+
+    /* Flags */
+    .flag { background: var(--color-primary-grey); border-radius: var(--radius-sm); }
+    .flag--ec { background: linear-gradient(180deg, #FFCF24 50%, #003DA5 50%, #003DA5 75%, #E74C3C 75%); }
+    .flag--mx { background: linear-gradient(90deg, #006847 33%, #fff 33%, #fff 66%, #CE1126 66%); }
+    .flag--ar { background: linear-gradient(180deg, #6cace4 33%, #fff 33%, #fff 66%, #6cace4 66%); }
+    .flag--ma { background: #C1272D; }
+    .flag--es { background: linear-gradient(180deg, #C60B1E 25%, #FFC400 25%, #FFC400 75%, #C60B1E 75%); }
+    .flag--cr { background: linear-gradient(180deg, #002B7F 25%, #fff 25%, #fff 75%, #002B7F 75%); }
+    .flag--de { background: linear-gradient(180deg, #000 33%, #DD0000 33%, #DD0000 66%, #FFCE00 66%); }
+    .flag--us { background: #B22234; }
+    .flag--br { background: #FFDF00; }
+    .flag--co { background: linear-gradient(180deg, #FFCD00 50%, #003893 50%); }
+    .flag--fr { background: linear-gradient(90deg, #002395 33%, #fff 33%, #fff 66%, #ED2939 66%); }
+    .flag--gb { background: #012169; }
+  </style>
+</head>
+<body>
+
+  <!-- Header autenticado con avatar -->
+  <input type="checkbox" id="drawer" class="drawer-toggle sr-only">
+  <header class="site-header site-header--auth">
+    <div class="site-header__inner">
+      <a href="./picks.html" class="site-header__logo" aria-label="Polla Mundial 2026"><img src="../assets/logo-golgana.png" alt="Golgana"></a>
+      <nav class="site-header__nav" aria-label="Principal">
+        <a href="./picks.html" class="is-active">Picks</a>
+        <a href="#">Mis grupos</a>
+        <a href="#">Ranking</a>
+        <a href="../public/reglas.html">Reglas</a>
+      </nav>
+      <button class="site-header__user" aria-label="Cuenta" aria-haspopup="true">
+        <span class="site-header__avatar">M</span>
+        <span class="site-header__handle">@marke</span>
+      </button>
+      <label for="drawer" class="drawer-btn"><span></span><span></span><span></span></label>
+    </div>
+  </header>
+  <label for="drawer" class="drawer-backdrop" aria-hidden="true"></label>
+  <aside class="drawer">
+    <a href="./picks.html">Picks</a>
+    <a href="#">Mis grupos</a>
+    <a href="#">Ranking</a>
+    <a href="../public/reglas.html">Reglas</a>
+    <hr style="border:0;border-top:1px solid rgba(255,255,255,0.15); margin:var(--space-md) 0;">
+    <a href="#">Mi perfil</a>
+    <a href="#">Picks especiales</a>
+    <a href="../public/index.html">Cerrar sesión</a>
+  </aside>
+
+  <!-- Pending banner (dismissable + persisted in localStorage) -->
+  <div style="padding: var(--space-md) var(--section-x-mobile) 0;">
+    <div class="container" style="padding: 0;">
+      <div class="pending-banner" data-id="picks-pending">
+        <span class="pending-banner__icon">3</span>
+        <div class="pending-banner__body">
+          <p class="pending-banner__title">3 picks pendientes</p>
+          <p class="pending-banner__lead">El primero (Ecuador vs México) cierra en 4 horas. Termina antes del kickoff para no perder puntos.</p>
+        </div>
+        <div class="pending-banner__actions">
+          <a href="#proximos" class="btn btn--primary btn--sm">Ir a próximos</a>
+        </div>
+        <button class="pending-banner__close" aria-label="Cerrar por hoy">×</button>
+      </div>
+    </div>
+  </div>
+
+  <main>
+    <!-- Page header con título + counts + view-mode + tabs -->
+    <header class="page-header">
+      <div class="page-header__top">
+        <div class="page-header__title">
+          <small>Mundial 2026 · Tu polla</small>
+          <h1>Mis picks</h1>
+        </div>
+        <div class="page-header__counts">
+          <div><strong>69</strong><small>Pts totales</small></div>
+          <div><strong>2</strong><small>Exactos</small></div>
+          <div><strong>14</strong><small>Resultados</small></div>
+          <div><strong>#4</strong><small>Ranking global</small></div>
+        </div>
+      </div>
+
+      <div class="page-header__controls">
+        <!-- View-mode toggle -->
+        <div class="view-mode-toggle" role="tablist" aria-label="Modo de vista">
+          <button class="view-mode-toggle__option is-active" data-mode="cronologico">📅 Cronológico</button>
+          <a class="view-mode-toggle__option" href="./picks-grupo.html" data-mode="grupos">🏆 Por grupo</a>
+          <a class="view-mode-toggle__option" href="#" data-mode="llaves">🌳 Llaves</a>
+        </div>
+
+        <!-- Tabs próximos/jugados -->
+        <nav class="subnav" data-tabs role="tablist" aria-label="Tabs de picks" style="margin-left: auto;">
+          <a href="#proximos" data-tab="proximos" class="is-active">Próximos<span class="subnav__count">6</span></a>
+          <a href="#jugados" data-tab="jugados">Jugados<span class="subnav__count">3</span></a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Tab panel: Próximos -->
+    <section data-tab-panel="proximos" id="proximos">
+      <div class="picks-grid">
+
+        <!-- Pick OPEN — sin pick -->
+        <article class="pick-card pick-card--open">
+          <div class="pick-card__header">
+            <span class="pick-card__phase">Grupos · J1 · Grupo A</span>
+            <span>Hoy · 16:00</span>
+          </div>
+          <div class="pick-card__teams">
+            <div class="pick-card__team">
+              <span class="flag flag--ec" style="width: 56px; height: 56px;"></span>
+              <span class="pick-card__team-name">Ecuador</span>
+            </div>
+            <div class="pick-card__center">vs</div>
+            <div class="pick-card__team">
+              <span class="flag flag--mx" style="width: 56px; height: 56px;"></span>
+              <span class="pick-card__team-name">México</span>
+            </div>
+          </div>
+          <div class="pick-card__inputs">
+            <div class="score-input">
+              <div class="score-input__field">
+                <div class="score-input__stepper">
+                  <button class="score-input__btn" data-dir="down">−</button>
+                  <input class="score-input__value" type="text" value="—" inputmode="numeric" aria-label="Goles Ecuador">
+                  <button class="score-input__btn" data-dir="up">+</button>
+                </div>
+              </div>
+              <span class="score-input__sep">vs</span>
+              <div class="score-input__field">
+                <div class="score-input__stepper">
+                  <button class="score-input__btn" data-dir="down">−</button>
+                  <input class="score-input__value" type="text" value="—" inputmode="numeric" aria-label="Goles México">
+                  <button class="score-input__btn" data-dir="up">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="pick-card__footer">
+            <span class="pick-card__footer-status">Sin pick</span>
+            <a href="./pick-match-scheduled.html" class="link-green">Detalle →</a>
+          </div>
+        </article>
+
+        <!-- Pick SAVED — con pick guardado -->
+        <article class="pick-card pick-card--saved">
+          <div class="pick-card__header">
+            <span class="pick-card__phase">Grupos · J1 · Grupo B</span>
+            <span>Mañana · 13:00</span>
+          </div>
+          <div class="pick-card__teams">
+            <div class="pick-card__team">
+              <span class="flag flag--ar" style="width: 56px; height: 56px;"></span>
+              <span class="pick-card__team-name">Argentina</span>
+            </div>
+            <div class="pick-card__center">vs</div>
+            <div class="pick-card__team">
+              <span class="flag flag--ma" style="width: 56px; height: 56px;"></span>
+              <span class="pick-card__team-name">Marruecos</span>
+            </div>
+          </div>
+          <div class="pick-card__inputs">
+            <div class="score-input">
+              <div class="score-input__field">
+                <div class="score-input__stepper">
+                  <button class="score-input__btn" data-dir="down">−</button>
+                  <input class="score-input__value" type="text" value="2">
+                  <button class="score-input__btn" data-dir="up">+</button>
+                </div>
+              </div>
+              <span class="score-input__sep">vs</span>
+              <div class="score-input__field">
+                <div class="score-input__stepper">
+                  <button class="score-input__btn" data-dir="down">−</button>
+                  <input class="score-input__value" type="text" value="0">
+                  <button class="score-input__btn" data-dir="up">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="pick-card__footer">
+            <span class="pick-card__footer-status">Guardado · hace 5 min</span>
+            <a href="./pick-match-scheduled.html" class="link-green">Detalle →</a>
+          </div>
+        </article>
+
+        <!-- Pick OPEN — sin pick -->
+        <article class="pick-card pick-card--open">
+          <div class="pick-card__header">
+            <span class="pick-card__phase">Grupos · J1 · Grupo C</span>
+            <span>Vie 12 · 13:00</span>
+          </div>
+          <div class="pick-card__teams">
+            <div class="pick-card__team">
+              <span class="flag flag--es" style="width: 56px; height: 56px;"></span>
+              <span class="pick-card__team-name">España</span>
+            </div>
+            <div class="pick-card__center">vs</div>
+            <div class="pick-card__team">
+              <span class="flag flag--cr" style="width: 56px; height: 56px;"></span>
+              <span class="pick-card__team-name">Costa Rica</span>
+            </div>
+          </div>
+          <div class="pick-card__inputs">
+            <div class="score-input">
+              <div class="score-input__field">
+                <div class="score-input__stepper">
+                  <button class="score-input__btn" data-dir="down">−</button>
+                  <input class="score-input__value" type="text" value="—">
+                  <button class="score-input__btn" data-dir="up">+</button>
+                </div>
+              </div>
+              <span class="score-input__sep">vs</span>
+              <div class="score-input__field">
+                <div class="score-input__stepper">
+                  <button class="score-input__btn" data-dir="down">−</button>
+                  <input class="score-input__value" type="text" value="—">
+                  <button class="score-input__btn" data-dir="up">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="pick-card__footer">
+            <span class="pick-card__footer-status">Sin pick</span>
+            <a href="./pick-match-scheduled.html" class="link-green">Detalle →</a>
+          </div>
+        </article>
+
+        <!-- Pick SAVED -->
+        <article class="pick-card pick-card--saved">
+          <div class="pick-card__header">
+            <span class="pick-card__phase">Grupos · J1 · Grupo D</span>
+            <span>Vie 12 · 19:00</span>
+          </div>
+          <div class="pick-card__teams">
+            <div class="pick-card__team">
+              <span class="flag flag--de" style="width: 56px; height: 56px;"></span>
+              <span class="pick-card__team-name">Alemania</span>
+            </div>
+            <div class="pick-card__center">vs</div>
+            <div class="pick-card__team">
+              <span class="flag flag--us" style="width: 56px; height: 56px;"></span>
+              <span class="pick-card__team-name">EE.UU.</span>
+            </div>
+          </div>
+          <div class="pick-card__inputs">
+            <div class="score-input">
+              <div class="score-input__field">
+                <div class="score-input__stepper">
+                  <button class="score-input__btn" data-dir="down">−</button>
+                  <input class="score-input__value" type="text" value="2">
+                  <button class="score-input__btn" data-dir="up">+</button>
+                </div>
+              </div>
+              <span class="score-input__sep">vs</span>
+              <div class="score-input__field">
+                <div class="score-input__stepper">
+                  <button class="score-input__btn" data-dir="down">−</button>
+                  <input class="score-input__value" type="text" value="1">
+                  <button class="score-input__btn" data-dir="up">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="pick-card__footer">
+            <span class="pick-card__footer-status">Guardado · hace 1 día</span>
+            <a href="./pick-match-scheduled.html" class="link-green">Detalle →</a>
+          </div>
+        </article>
+
+        <!-- Pick OPEN -->
+        <article class="pick-card pick-card--open">
+          <div class="pick-card__header">
+            <span class="pick-card__phase">Grupos · J1 · Grupo E</span>
+            <span>Sáb 13 · 13:00</span>
+          </div>
+          <div class="pick-card__teams">
+            <div class="pick-card__team">
+              <span class="flag flag--br" style="width: 56px; height: 56px;"></span>
+              <span class="pick-card__team-name">Brasil</span>
+            </div>
+            <div class="pick-card__center">vs</div>
+            <div class="pick-card__team">
+              <span class="flag flag--co" style="width: 56px; height: 56px;"></span>
+              <span class="pick-card__team-name">Colombia</span>
+            </div>
+          </div>
+          <div class="pick-card__inputs">
+            <div class="score-input">
+              <div class="score-input__field">
+                <div class="score-input__stepper">
+                  <button class="score-input__btn">−</button>
+                  <input class="score-input__value" type="text" value="—">
+                  <button class="score-input__btn">+</button>
+                </div>
+              </div>
+              <span class="score-input__sep">vs</span>
+              <div class="score-input__field">
+                <div class="score-input__stepper">
+                  <button class="score-input__btn">−</button>
+                  <input class="score-input__value" type="text" value="—">
+                  <button class="score-input__btn">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="pick-card__footer">
+            <span class="pick-card__footer-status">Sin pick</span>
+            <a href="./pick-match-scheduled.html" class="link-green">Detalle →</a>
+          </div>
+        </article>
+
+        <!-- Pick LOCKED — kickoff ya pasó sin pick -->
+        <article class="pick-card pick-card--locked">
+          <div class="pick-card__header">
+            <span class="pick-card__phase">Grupos · J1 · Grupo F</span>
+            <span style="color: var(--color-lost);">Empezó hace 2 h</span>
+          </div>
+          <div class="pick-card__teams">
+            <div class="pick-card__team">
+              <span class="flag flag--fr" style="width: 56px; height: 56px;"></span>
+              <span class="pick-card__team-name">Francia</span>
+            </div>
+            <div class="pick-card__center">vs</div>
+            <div class="pick-card__team">
+              <span class="flag flag--gb" style="width: 56px; height: 56px;"></span>
+              <span class="pick-card__team-name">Inglaterra</span>
+            </div>
+          </div>
+          <div class="pick-card__footer">
+            <span class="pick-card__footer-status">Sin pick · cerrado</span>
+            <span style="color: var(--color-lost); font-weight: var(--fw-bold); text-transform: uppercase; font-size: 10px; letter-spacing: 0.08em;">0 pts garantizados</span>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- Tab panel: Jugados -->
+    <section data-tab-panel="jugados" id="jugados" hidden>
+      <div class="picks-grid">
+
+        <!-- Jugado · acertó exacto -->
+        <article class="pick-card pick-card--saved">
+          <div class="pick-card__header">
+            <span class="pick-card__phase">Grupos · J1 · Grupo A</span>
+            <span>Vie 11 · 16:00</span>
+          </div>
+          <div class="pick-card__teams">
+            <div class="pick-card__team">
+              <span class="flag flag--us" style="width: 56px; height: 56px;"></span>
+              <span class="pick-card__team-name">EE.UU.</span>
+            </div>
+            <div class="pick-card__center">FT</div>
+            <div class="pick-card__team">
+              <span class="flag flag--ec" style="width: 56px; height: 56px;"></span>
+              <span class="pick-card__team-name">Ecuador</span>
+            </div>
+          </div>
+          <div class="pick-card__result">
+            <div class="pick-card__result-cell">
+              <span class="pick-card__result-label">Tu pick</span>
+              <span class="pick-card__result-score">2 — 1</span>
+            </div>
+            <div class="pick-card__result-cell">
+              <span class="pick-card__result-label">Resultado</span>
+              <span class="pick-card__result-score">2 — 1</span>
+            </div>
+          </div>
+          <div class="pick-card__footer">
+            <span class="pick-card__points">+5 pts · Marcador exacto</span>
+            <span style="color: var(--color-text-muted); font-size: var(--fs-xs);">Mult. x1</span>
+          </div>
+        </article>
+
+        <!-- Jugado · acertó resultado, no exacto -->
+        <article class="pick-card pick-card--saved">
+          <div class="pick-card__header">
+            <span class="pick-card__phase">Grupos · J1 · Grupo D</span>
+            <span>Sáb 12 · 13:00</span>
+          </div>
+          <div class="pick-card__teams">
+            <div class="pick-card__team">
+              <span class="flag flag--es" style="width: 56px; height: 56px;"></span>
+              <span class="pick-card__team-name">España</span>
+            </div>
+            <div class="pick-card__center">FT</div>
+            <div class="pick-card__team">
+              <span class="flag flag--cr" style="width: 56px; height: 56px;"></span>
+              <span class="pick-card__team-name">Costa Rica</span>
+            </div>
+          </div>
+          <div class="pick-card__result">
+            <div class="pick-card__result-cell">
+              <span class="pick-card__result-label">Tu pick</span>
+              <span class="pick-card__result-score">2 — 0</span>
+            </div>
+            <div class="pick-card__result-cell">
+              <span class="pick-card__result-label">Resultado</span>
+              <span class="pick-card__result-score">3 — 0</span>
+            </div>
+          </div>
+          <div class="pick-card__footer">
+            <span class="pick-card__points">+3 pts · Resultado correcto</span>
+            <span style="color: var(--color-text-muted); font-size: var(--fs-xs);">Mult. x1</span>
+          </div>
+        </article>
+
+        <!-- Jugado · falló -->
+        <article class="pick-card pick-card--locked">
+          <div class="pick-card__header">
+            <span class="pick-card__phase">Grupos · J1 · Grupo F</span>
+            <span>Sáb 12 · 16:00</span>
+          </div>
+          <div class="pick-card__teams">
+            <div class="pick-card__team">
+              <span class="flag flag--de" style="width: 56px; height: 56px;"></span>
+              <span class="pick-card__team-name">Alemania</span>
+            </div>
+            <div class="pick-card__center">FT</div>
+            <div class="pick-card__team">
+              <span class="flag flag--us" style="width: 56px; height: 56px;"></span>
+              <span class="pick-card__team-name">EE.UU.</span>
+            </div>
+          </div>
+          <div class="pick-card__result">
+            <div class="pick-card__result-cell">
+              <span class="pick-card__result-label">Tu pick</span>
+              <span class="pick-card__result-score" style="color: var(--color-lost);">2 — 1</span>
+            </div>
+            <div class="pick-card__result-cell">
+              <span class="pick-card__result-label">Resultado</span>
+              <span class="pick-card__result-score">1 — 2</span>
+            </div>
+          </div>
+          <div class="pick-card__footer">
+            <span class="pick-card__points pick-card__points--zero">0 pts · Falló</span>
+            <span style="color: var(--color-text-muted); font-size: var(--fs-xs);">Mult. x1</span>
+          </div>
+        </article>
+
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__grid">
+      <div class="site-footer__brand">
+        <img src="../assets/logo-golgana.png" alt="Golgana">
+        <p>Polla Mundialista — Mundial FIFA 2026.</p>
+      </div>
+      <div class="site-footer__col">
+        <h4>App</h4>
+        <a href="./picks.html">Mis picks</a>
+        <a href="#">Mis grupos</a>
+        <a href="#">Ranking</a>
+      </div>
+      <div class="site-footer__col">
+        <h4>Cuenta</h4>
+        <a href="#">Mi perfil</a>
+        <a href="#">Picks especiales</a>
+        <a href="../public/index.html">Cerrar sesión</a>
+      </div>
+      <div class="site-footer__col">
+        <h4>Ayuda</h4>
+        <a href="../public/reglas.html">Reglas</a>
+        <a href="#">Soporte</a>
+      </div>
+    </div>
+    <hr class="site-footer__divider">
+    <p class="site-footer__copy">© 2026 Golgana — Polla Mundialista</p>
+  </footer>
+
+  <script src="../scripts/polla.js" defer></script>
+</body>
+</html>

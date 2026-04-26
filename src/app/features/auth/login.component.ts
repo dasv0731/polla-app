@@ -2,14 +2,15 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { AuthShellComponent } from '../../shared/layout/auth-shell.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, AuthShellComponent],
   template: `
-    <main class="auth-main">
-      <form class="form-card auth-card" (ngSubmit)="submit()" #f="ngForm">
+    <app-auth-shell>
+      <form class="form-card auth-card" (ngSubmit)="submit()">
         <h2 class="form-card__title">Iniciar sesión</h2>
         <p class="form-card__lead">Ingresa con tu email para volver a tu polla.</p>
 
@@ -40,7 +41,7 @@ import { AuthService } from '../../core/auth/auth.service';
 
         <p class="form-card__alt">¿No tienes cuenta? <a routerLink="/register">Crea una gratis</a></p>
       </form>
-    </main>
+    </app-auth-shell>
   `,
 })
 export class LoginComponent {
