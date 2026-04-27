@@ -23,11 +23,17 @@ interface ResultMatch {
   standalone: true,
   selector: 'app-admin-results',
   template: `
-    <header class="admin-main__head">
+    <header class="admin-main__head" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--space-md);">
       <div>
         <small>Admin · {{ pending().length }} {{ pending().length === 1 ? 'partido pendiente' : 'partidos pendientes' }}</small>
         <h1>Publicar resultado</h1>
       </div>
+      <button class="btn btn--primary" type="button"
+              [disabled]="calculating() || unscored().length === 0"
+              (click)="calculatePointsAll()"
+              [title]="unscored().length === 0 ? 'No hay partidos finalizados pendientes de scoring' : 'Corre score-match Lambda para los ' + unscored().length + ' partidos guardados'">
+        {{ calculating() ? 'Calculando…' : 'Calcular puntos (' + unscored().length + ')' }}
+      </button>
     </header>
 
     @if (loading()) {
@@ -35,7 +41,7 @@ interface ResultMatch {
     } @else if (pending().length === 0 && unscored().length === 0) {
       <p class="empty-state">
         No hay partidos pendientes de resultado o scoring.
-        <br>Cuando un partido pase su kickoff, aparecerá aquí.
+        <br>Marca un partido como <strong>FINAL</strong> en su edición para verlo aquí.
       </p>
     } @else {
       @if (pending().length > 0) {
@@ -186,16 +192,21 @@ export class AdminResultsComponent implements OnInit {
   awayScore = signal(0);
   publishing = signal(false);
   rescoring = signal<Record<string, boolean>>({});
+  calculating = signal(false);
 
+  // Pending = FINAL + sin score todavía. El admin marca FINAL en
+  // /admin/fixtures/:id/edit cuando termina el partido y aparece aquí.
   pending = computed(() =>
     this.matches()
-      .filter((m) => m.status !== 'FINAL' && Date.parse(m.kickoffAt) < Date.now())
+      .filter((m) => m.status === 'FINAL' && (m.homeScore === null || m.awayScore === null))
       .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt)),
   );
 
+  // Unscored = FINAL + score guardado + Lambda no corrido. El botón
+  // "Calcular puntos" del header los procesa en bloque.
   unscored = computed(() =>
     this.matches()
-      .filter((m) => m.status === 'FINAL' && !m.pointsCalculated)
+      .filter((m) => m.status === 'FINAL' && !m.pointsCalculated && m.homeScore !== null && m.awayScore !== null)
       .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt)),
   );
 
@@ -299,18 +310,50 @@ export class AdminResultsComponent implements OnInit {
   async publish(m: ResultMatch) {
     this.publishing.set(true);
     try {
-      await this.api.updateMatchResult(m.id, this.homeScore(), this.awayScore(), m.version);
-      const res = await this.api.scoreMatch(m.id);
-      const updated = res.data?.updated ?? 0;
-      this.toast.success(
-        `Publicado · ${updated} pick${updated === 1 ? '' : 's'} actualizado${updated === 1 ? '' : 's'}`,
-      );
+      const res = await this.api.updateMatchResult(m.id, this.homeScore(), this.awayScore(), m.version);
+      if (res?.errors && res.errors.length > 0) {
+        // eslint-disable-next-line no-console
+        console.error('[updateMatchResult] GraphQL errors:', res.errors);
+        this.toast.error(res.errors[0]!.message ?? 'No se pudo guardar el resultado');
+        return;
+      }
+      this.toast.success('Resultado guardado · usa "Calcular puntos" para procesar picks');
       this.cancelSelect();
       void this.load();
     } catch (e) {
       this.toast.error(humanizeError(e));
     } finally {
       this.publishing.set(false);
+    }
+  }
+
+  async calculatePointsAll() {
+    const targets = this.unscored();
+    if (targets.length === 0) return;
+    this.calculating.set(true);
+    let totalUpdated = 0;
+    let errored = 0;
+    try {
+      for (const m of targets) {
+        try {
+          const res = await this.api.scoreMatch(m.id);
+          totalUpdated += res.data?.updated ?? 0;
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.error(`[scoreMatch ${m.id}] failed`, e);
+          errored++;
+        }
+      }
+      if (errored > 0) {
+        this.toast.error(`${targets.length - errored}/${targets.length} OK · ${errored} fallaron — ver consola`);
+      } else {
+        this.toast.success(
+          `Puntos calculados · ${totalUpdated} pick${totalUpdated === 1 ? '' : 's'} en ${targets.length} partido${targets.length === 1 ? '' : 's'}`,
+        );
+      }
+      void this.load();
+    } finally {
+      this.calculating.set(false);
     }
   }
 
