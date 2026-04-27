@@ -176,10 +176,25 @@ export class GroupJoinComponent implements OnInit {
     this.joining.set(true);
     try {
       const res = await this.api.joinGroup(this.code);
+      // Amplify Gen 2 returns { data, errors? }; GraphQL-level errors come
+      // through `errors`, not as throws — same gotcha as createGroup.
+      if (res.errors && res.errors.length > 0) {
+        const msg = res.errors[0]!.message ?? 'Error desconocido';
+        // eslint-disable-next-line no-console
+        console.error('[joinGroup] GraphQL errors:', res.errors);
+        if (msg.toUpperCase().includes('ALREADY_MEMBER')) {
+          this.alreadyMember.set(true);
+        } else {
+          this.joinError.set(humanizeError(new Error(msg)));
+        }
+        return;
+      }
       const groupId = res.data?.groupId ?? this.group()?.id;
       if (groupId) void this.router.navigate(['/groups', groupId]);
+      else this.joinError.set('No pudimos unirte (respuesta vacía)');
     } catch (e) {
-      // ALREADY_MEMBER → flip to the rich error state instead of the inline one
+      // eslint-disable-next-line no-console
+      console.error('[joinGroup] threw:', e);
       if (e instanceof Error && e.message?.toUpperCase() === 'ALREADY_MEMBER') {
         this.alreadyMember.set(true);
       } else {

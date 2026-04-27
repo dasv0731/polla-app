@@ -180,10 +180,22 @@ export class GroupsListComponent implements OnInit {
     this.joining.set(true);
     try {
       const res = await this.api.joinGroup(this.code());
+      // Amplify Gen 2 returns { data, errors? }; GraphQL-level errors come
+      // through `errors`, not as throws.
+      if (res.errors && res.errors.length > 0) {
+        // eslint-disable-next-line no-console
+        console.error('[joinGroup] GraphQL errors:', res.errors);
+        this.joinError.set(res.errors[0]!.message ?? 'Código inválido');
+        return;
+      }
       if (res.data?.groupId) {
         void this.router.navigate(['/groups', res.data.groupId]);
+      } else {
+        this.joinError.set('No pudimos unirte (respuesta vacía)');
       }
     } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('[joinGroup] threw:', e);
       this.joinError.set((e as Error).message ?? 'Código inválido');
     } finally {
       this.joining.set(false);
