@@ -187,17 +187,24 @@ export class AdminFixtureEditComponent implements OnInit {
       const bracketPos = this.showBracketField() ? this.bracketPosition : null;
       const venue = this.venue.trim() || null;
       if (this.id) {
-        const res = await apiClient.models.Match.update({
+        // bracketPosition only goes in the payload when the phase actually
+        // uses it (knockouts). Sending bracketPosition:null on a group-stage
+        // match was triggering "Unauthorized on [bracketPosition]" — server
+        // treats writes-of-null on optional fields as a separate operation
+        // that field-level auth doesn't grant by default. Omitting the field
+        // sidesteps that and preserves whatever value was stored.
+        const updatePayload: Record<string, unknown> = {
           id: this.id,
           phaseId: this.phaseId,
           homeTeamId: this.homeTeamId,
           awayTeamId: this.awayTeamId,
           kickoffAt,
-          status: this.status as 'SCHEDULED' | 'LIVE' | 'FINAL',
+          status: this.status,
           version: this.version + 1,
-          bracketPosition: bracketPos,
           venue,
-        });
+        };
+        if (bracketPos !== null) updatePayload['bracketPosition'] = bracketPos;
+        const res = await apiClient.models.Match.update(updatePayload);
         if (res?.errors && res.errors.length > 0) {
           // eslint-disable-next-line no-console
           console.error('[Match.update] GraphQL errors:', res.errors);
