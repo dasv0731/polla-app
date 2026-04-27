@@ -1,7 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { ToastService } from '../../core/notifications/toast.service';
-import { humanizeError } from '../../core/notifications/domain-errors';
 
 const TOURNAMENT_ID = 'mundial-2026';
 
@@ -24,6 +24,7 @@ interface StagedScore { home: number; away: number; }
 @Component({
   standalone: true,
   selector: 'app-admin-results',
+  imports: [RouterLink],
   template: `
     <header class="admin-main__head" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--space-md);">
       <div>
@@ -42,7 +43,10 @@ interface StagedScore { home: number; away: number; }
       <p>Cargando partidos…</p>
     } @else if (pending().length === 0) {
       <p class="empty-state">
-        No hay partidos pendientes — todos tienen resultado y puntos calculados.
+        No hay partidos pendientes.
+        <br>Marca un partido como <strong>FINAL</strong> en
+        <a class="link-green" routerLink="/admin/fixtures">/admin/fixtures</a>
+        para verlo aquí.
       </p>
     } @else {
       <div class="pending-list">
@@ -86,9 +90,8 @@ interface StagedScore { home: number; away: number; }
           </article>
 
           @if (selectedId() === m.id) {
-            <form class="submit-form" style="margin-bottom: var(--space-md);"
-                  (ngSubmit)="stage(m); $event.preventDefault()"
-                  (click)="$event.stopPropagation()">
+            <div class="submit-form" style="margin-bottom: var(--space-md);"
+                 (click)="$event.stopPropagation()">
               <h2>{{ teamName(m.homeTeamId) }} vs {{ teamName(m.awayTeamId) }}</h2>
 
               <div class="submit-form__teams">
@@ -123,9 +126,9 @@ interface StagedScore { home: number; away: number; }
 
               <div class="submit-form__actions">
                 <button type="button" class="btn btn--ghost" (click)="cancelSelect(); $event.stopPropagation()">Cancelar</button>
-                <button type="submit" class="btn btn--primary">Guardar</button>
+                <button type="button" class="btn btn--primary" (click)="stage(m); $event.stopPropagation()">Guardar</button>
               </div>
-            </form>
+            </div>
           }
         }
       </div>
@@ -152,24 +155,20 @@ export class AdminResultsComponent implements OnInit {
   awayScore = signal(0);
   calculating = signal(false);
 
+  // Solo partidos marcados FINAL por el admin y aún no scoreados.
+  // Status FINAL se cambia desde /admin/fixtures/:id/edit.
   pending = computed(() =>
     this.matches()
-      .filter((m) => !(this.hasDbScore(m) && m.pointsCalculated))
+      .filter((m) => m.status === 'FINAL' && !m.pointsCalculated)
       .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt)),
   );
 
   // Partidos a comitear cuando se dispare "Calcular puntos":
-  // 1. Los que tienen score staged (pendientes de DB write + scoring).
-  // 2. Los que ya tenían score en DB de antes pero sin pointsCalculated
-  //    (si quedaron a medias por algún corrido previo, los terminamos).
+  // los pending que tienen score (staged en memoria o ya guardado en DB).
+  // Si el admin no entró score para un FINAL, no lo procesamos.
   toCommit = computed(() => {
-    const result: ResultMatch[] = [];
     const stagedMap = this.staged();
-    for (const m of this.matches()) {
-      if (m.pointsCalculated) continue;
-      if (stagedMap.has(m.id) || this.hasDbScore(m)) result.push(m);
-    }
-    return result;
+    return this.pending().filter((m) => stagedMap.has(m.id) || this.hasDbScore(m));
   });
 
   async ngOnInit() { await this.load(); }
