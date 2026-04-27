@@ -73,12 +73,11 @@ interface GroupRow {
         <article class="empty-cta__card">
           <h3>Unirme con código</h3>
           <p>¿Te invitaron? Pega el código que te enviaron. 6 caracteres del alfabeto seguro (sin 0/O/1/I).</p>
-          <form class="join-form" (ngSubmit)="join()">
+          <form class="join-form" (ngSubmit)="join(); $event.preventDefault()">
             <input type="text" placeholder="K7P2QM" maxlength="6"
-                   pattern="[A-Z2-9]{6}" required
                    [value]="code()"
                    (input)="code.set($any($event.target).value.toUpperCase())">
-            <button class="btn btn--primary" type="submit" [disabled]="joining()">
+            <button class="btn btn--primary" type="button" [disabled]="joining()" (click)="join()">
               {{ joining() ? 'Validando…' : 'Unirme' }}
             </button>
           </form>
@@ -172,33 +171,45 @@ export class GroupsListComponent implements OnInit {
   }
 
   async join() {
+    /* eslint-disable no-console */
+    console.log('[joinGroup] FORM SUBMIT — code value:', JSON.stringify(this.code()), 'len:', this.code().length);
     if (this.code().length !== 6) {
+      console.log('[joinGroup] ABORT — código no tiene 6 caracteres');
       this.joinError.set('El código debe tener 6 caracteres');
       return;
     }
+    console.log('[joinGroup] STEP 1 — clearing errors, setting joining=true');
     this.joinError.set(null);
     this.joining.set(true);
     try {
+      console.log('[joinGroup] STEP 2 — calling api.joinGroup() against AppSync…');
       const res = await this.api.joinGroup(this.code());
-      // Amplify Gen 2 returns { data, errors? }; GraphQL-level errors come
-      // through `errors`, not as throws.
+      console.log('[joinGroup] STEP 3 — got response from AppSync:', res);
+      console.log('[joinGroup]   res.data =', res.data);
+      console.log('[joinGroup]   res.errors =', res.errors);
       if (res.errors && res.errors.length > 0) {
-        // eslint-disable-next-line no-console
-        console.error('[joinGroup] GraphQL errors:', res.errors);
+        console.error('[joinGroup] BRANCH: GraphQL errors path');
+        for (const err of res.errors) console.error('  · errors[i]:', err);
         this.joinError.set(res.errors[0]!.message ?? 'Código inválido');
         return;
       }
       if (res.data?.groupId) {
+        console.log('[joinGroup] BRANCH: success — navigating to /groups/' + res.data.groupId);
         void this.router.navigate(['/groups', res.data.groupId]);
       } else {
-        this.joinError.set('No pudimos unirte (respuesta vacía)');
+        console.warn('[joinGroup] BRANCH: empty response — no errors but no groupId either');
+        this.joinError.set('No pudimos unirte (respuesta vacía). Revisá la pestaña Network.');
       }
     } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error('[joinGroup] threw:', e);
+      console.error('[joinGroup] BRANCH: threw exception:', e);
+      console.error('[joinGroup]   typeof:', typeof e);
+      console.error('[joinGroup]   message:', (e as Error)?.message);
+      console.error('[joinGroup]   stack:', (e as Error)?.stack);
       this.joinError.set((e as Error).message ?? 'Código inválido');
     } finally {
+      console.log('[joinGroup] DONE — joining=false');
       this.joining.set(false);
     }
+    /* eslint-enable no-console */
   }
 }
