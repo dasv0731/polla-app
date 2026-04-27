@@ -133,6 +133,12 @@ export class ApiService {
   scoreMatch(matchId: string) {
     return apiClient.mutations.scoreMatch({ matchId });
   }
+  scoreGroupStage(tournamentId: string) {
+    return apiClient.mutations.scoreGroupStage({ tournamentId });
+  }
+  scoreBracket(tournamentId: string) {
+    return apiClient.mutations.scoreBracket({ tournamentId });
+  }
   adjudicateSpecial(tournamentId: string, type: SpecialType, winningTeamId: string) {
     return apiClient.mutations.adjudicateSpecial({ tournamentId, type, winningTeamId });
   }

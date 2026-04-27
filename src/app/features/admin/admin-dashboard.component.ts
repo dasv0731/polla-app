@@ -1,6 +1,8 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
+import { ToastService } from '../../core/notifications/toast.service';
+import { humanizeError } from '../../core/notifications/domain-errors';
 
 const TOURNAMENT_ID = 'mundial-2026';
 const DAY_MS = 86_400_000;
@@ -31,6 +33,35 @@ interface ActivityItem {
     @if (loading()) {
       <p>Cargando dashboard…</p>
     } @else {
+      <!-- Scoring jobs (manual triggers per fase del torneo) -->
+      <section style="background: var(--color-primary-white); border: var(--border-grey); border-radius: var(--radius-md); padding: var(--space-md); margin-bottom: var(--space-xl);">
+        <h2 style="font-family: var(--font-display); font-size: var(--fs-lg); text-transform: uppercase; line-height: 1; margin-bottom: var(--space-sm);">
+          Scoring del torneo
+        </h2>
+        <p class="form-card__hint" style="margin-bottom: var(--space-md);">
+          Disparar después del cierre de cada fase. Idempotente — re-correr no
+          duplica puntos. Aplica a las predicciones de TODOS los users
+          (en SIMPLE y COMPLETE).
+        </p>
+        <div style="display: flex; gap: var(--space-md); flex-wrap: wrap;">
+          <button class="btn btn--primary" type="button"
+                  [disabled]="scoringGroupStage()"
+                  (click)="runScoreGroupStage()">
+            {{ scoringGroupStage() ? 'Ejecutando…' : 'Score grupos + 3eros' }}
+          </button>
+          <button class="btn btn--primary" type="button"
+                  [disabled]="scoringBracket()"
+                  (click)="runScoreBracket()">
+            {{ scoringBracket() ? 'Ejecutando…' : 'Score bracket' }}
+          </button>
+        </div>
+        @if (scoringMsg()) {
+          <p class="form-card__hint" style="margin-top: var(--space-sm); color: var(--color-primary-green);">
+            {{ scoringMsg() }}
+          </p>
+        }
+      </section>
+
       <section class="kpi-grid">
         <article class="kpi-card">
           <small>Users registrados</small>
@@ -123,6 +154,56 @@ interface ActivityItem {
   `,
 })
 export class AdminDashboardComponent implements OnInit {
+  private toast = inject(ToastService);
+  scoringGroupStage = signal(false);
+  scoringBracket = signal(false);
+  scoringMsg = signal<string | null>(null);
+
+  async runScoreGroupStage() {
+    if (!confirm('¿Calcular scoring de fase de grupos + mejores 3eros para TODOS los users? Idempotente — no duplica.')) return;
+    this.scoringGroupStage.set(true);
+    this.scoringMsg.set(null);
+    try {
+      const res = await this.api.scoreGroupStage(TOURNAMENT_ID);
+      if (res?.errors && res.errors.length > 0) {
+        this.toast.error(res.errors[0]?.message ?? 'Error en scoreGroupStage');
+        // eslint-disable-next-line no-console
+        console.error('[scoreGroupStage] errors:', res.errors);
+        return;
+      }
+      const standings = res?.data?.standingsScored ?? 0;
+      const thirds = res?.data?.thirdsScored ?? 0;
+      this.scoringMsg.set(`Standings: ${standings} picks · Best 3eros: ${thirds} picks`);
+      this.toast.success('Scoring grupos completado');
+    } catch (e) {
+      this.toast.error(humanizeError(e));
+    } finally {
+      this.scoringGroupStage.set(false);
+    }
+  }
+
+  async runScoreBracket() {
+    if (!confirm('¿Calcular scoring de bracket (octavos→campeón) para TODOS los users? Idempotente.')) return;
+    this.scoringBracket.set(true);
+    this.scoringMsg.set(null);
+    try {
+      const res = await this.api.scoreBracket(TOURNAMENT_ID);
+      if (res?.errors && res.errors.length > 0) {
+        this.toast.error(res.errors[0]?.message ?? 'Error en scoreBracket');
+        // eslint-disable-next-line no-console
+        console.error('[scoreBracket] errors:', res.errors);
+        return;
+      }
+      const scored = res?.data?.scored ?? 0;
+      this.scoringMsg.set(`Bracket scoring: ${scored} picks`);
+      this.toast.success('Scoring bracket completado');
+    } catch (e) {
+      this.toast.error(humanizeError(e));
+    } finally {
+      this.scoringBracket.set(false);
+    }
+  }
+
   private api = inject(ApiService);
 
   loading = signal(true);

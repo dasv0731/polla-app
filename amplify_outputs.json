@@ -2275,6 +2275,37 @@
               "attributes": []
             }
           }
+        },
+        "ScoreGroupStageReturnType": {
+          "name": "ScoreGroupStageReturnType",
+          "fields": {
+            "standingsScored": {
+              "name": "standingsScored",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": true,
+              "attributes": []
+            },
+            "thirdsScored": {
+              "name": "thirdsScored",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": true,
+              "attributes": []
+            }
+          }
+        },
+        "ScoreBracketReturnType": {
+          "name": "ScoreBracketReturnType",
+          "fields": {
+            "scored": {
+              "name": "scored",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": true,
+              "attributes": []
+            }
+          }
         }
       },
       "queries": {
@@ -2478,6 +2509,38 @@
               "name": "action",
               "isArray": false,
               "type": "String",
+              "isRequired": true
+            }
+          }
+        },
+        "scoreGroupStage": {
+          "name": "scoreGroupStage",
+          "isArray": false,
+          "type": {
+            "nonModel": "ScoreGroupStageReturnType"
+          },
+          "isRequired": false,
+          "arguments": {
+            "tournamentId": {
+              "name": "tournamentId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            }
+          }
+        },
+        "scoreBracket": {
+          "name": "scoreBracket",
+          "isArray": false,
+          "type": {
+            "nonModel": "ScoreBracketReturnType"
+          },
+          "isRequired": false,
+          "arguments": {
+            "tournamentId": {
+              "name": "tournamentId",
+              "isArray": false,
+              "type": "ID",
               "isRequired": true
             }
           }
