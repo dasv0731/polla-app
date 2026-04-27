@@ -21,6 +21,7 @@ import { UserModesService } from '../../core/user/user-modes.service';
             <a routerLink="/picks" routerLinkActive="is-active">Picks</a>
           }
           <a routerLink="/picks/group-stage" routerLinkActive="is-active">Tabla de grupos</a>
+          <a routerLink="/picks/bracket" routerLinkActive="is-active">Bracket</a>
           <a routerLink="/groups" routerLinkActive="is-active">Mis grupos</a>
           <a routerLink="/ranking" routerLinkActive="is-active">Ranking</a>
           @if (isAdmin()) {
@@ -73,6 +74,7 @@ import { UserModesService } from '../../core/user/user-modes.service';
         <a routerLink="/picks" routerLinkActive="is-active" (click)="closeDrawer()">Picks</a>
       }
       <a routerLink="/picks/group-stage" routerLinkActive="is-active" (click)="closeDrawer()">Tabla de grupos</a>
+      <a routerLink="/picks/bracket" routerLinkActive="is-active" (click)="closeDrawer()">Bracket</a>
       <a routerLink="/groups" routerLinkActive="is-active" (click)="closeDrawer()">Mis grupos</a>
       <a routerLink="/ranking" routerLinkActive="is-active" (click)="closeDrawer()">Ranking</a>
       <a routerLink="/profile" routerLinkActive="is-active" (click)="closeDrawer()">Editar perfil</a>

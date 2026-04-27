@@ -209,6 +209,37 @@ export class ApiService {
     });
   }
 
+  // ----- Bracket pick (llaves eliminatorias) -----
+  getBracketPick(userId: string, tournamentId: string, mode: 'SIMPLE' | 'COMPLETE') {
+    return apiClient.models.BracketPick.list({
+      filter: { userId: { eq: userId }, tournamentId: { eq: tournamentId }, mode: { eq: mode } },
+      limit: 1,
+    });
+  }
+  upsertBracketPick(input: {
+    id?: string;
+    userId: string;
+    tournamentId: string;
+    mode: 'SIMPLE' | 'COMPLETE';
+    octavos: string[]; cuartos: string[]; semis: string[]; final: string[];
+    champion: string;
+  }) {
+    if (input.id) {
+      return apiClient.models.BracketPick.update({
+        id: input.id,
+        octavos: input.octavos, cuartos: input.cuartos,
+        semis: input.semis, final: input.final, champion: input.champion,
+      });
+    }
+    return apiClient.models.BracketPick.create({
+      userId: input.userId,
+      tournamentId: input.tournamentId,
+      mode: input.mode,
+      octavos: input.octavos, cuartos: input.cuartos,
+      semis: input.semis, final: input.final, champion: input.champion,
+    });
+  }
+
   // ----- SpecialPick upsert (owner-based auto-CRUD) -----
   // userId must be passed explicitly even though allow.ownerDefinedIn('userId')
   // would auto-fill it server-side: the generated TS signature for create()
