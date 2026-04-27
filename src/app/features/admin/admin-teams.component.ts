@@ -5,6 +5,7 @@ import { ApiService } from '../../core/api/api.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
 import { apiClient } from '../../core/api/client';
+import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
 
 const TOURNAMENT_ID = 'mundial-2026';
 const GROUP_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
@@ -14,7 +15,7 @@ interface TeamRow { slug: string; name: string; flagCode: string; groupLetter: s
 @Component({
   standalone: true,
   selector: 'app-admin-teams',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, TeamFlagComponent],
   template: `
     <header class="page-header" style="padding: 0 0 var(--space-md); display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: var(--space-md);">
       <div>
@@ -78,12 +79,7 @@ interface TeamRow { slug: string; name: string; flagCode: string; groupLetter: s
             @for (t of teams(); track t.slug) {
               <tr>
                 <td>
-                  @if (t.crestUrl) {
-                    <img [src]="t.crestUrl" [alt]="t.name + ' escudo'"
-                         style="display: inline-block; vertical-align: middle; width: 32px; height: 32px; object-fit: contain; border-radius: var(--radius-sm); background: var(--color-primary-white);">
-                  } @else {
-                    <span class="flag" [class]="flagClass(t.flagCode)" style="display: inline-block; vertical-align: middle; width: 32px; height: 32px;"></span>
-                  }
+                  <app-team-flag [flagCode]="t.flagCode" [crestUrl]="t.crestUrl" [name]="t.name" [size]="32" />
                 </td>
                 <td><code>{{ t.slug }}</code></td>
                 <td>{{ t.name }}</td>
@@ -194,23 +190,31 @@ export class AdminTeamsComponent implements OnInit {
     if (newLetter === t.groupLetter) return;
     this.savingGroup.update((s) => ({ ...s, [t.slug]: true }));
     try {
-      await apiClient.models.Team.update({
+      const res = await apiClient.models.Team.update({
         slug: t.slug,
         groupLetter: newLetter,
       });
-      // Optimistic local update + re-sort
-      this.teams.update((arr) => {
-        const updated = arr.map((row) => row.slug === t.slug ? { ...row, groupLetter: newLetter } : row);
-        return updated.sort((a, b) => {
-          const ag = a.groupLetter ?? 'Z';
-          const bg = b.groupLetter ?? 'Z';
-          if (ag !== bg) return ag.localeCompare(bg);
-          return a.name.localeCompare(b.name);
-        });
-      });
+      // Amplify Gen 2 returns { data, errors? }; surface graphql errors
+      // explicitly so we don't optimistic-update on a silent failure.
+      if (res?.errors && res.errors.length > 0) {
+        // eslint-disable-next-line no-console
+        console.error('[setGroup] GraphQL errors:', res.errors);
+        this.toast.error(res.errors[0]!.message ?? 'No se pudo guardar el grupo');
+        // Reload to discard stale UI state
+        void this.load();
+        return;
+      }
+      // Reload from server instead of optimistic update — keeps the rendered
+      // row order + flag/name/groupLetter all consistent with whatever the
+      // backend actually saved. The list is small (28-48 rows), the cost is
+      // a single listTeams call after each save.
+      await this.load();
       this.toast.success(newLetter ? `${t.name} → Grupo ${newLetter}` : `${t.name} sin grupo`);
     } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('[setGroup] threw:', e);
       this.toast.error(humanizeError(e));
+      void this.load();
     } finally {
       this.savingGroup.update((s) => ({ ...s, [t.slug]: false }));
     }
