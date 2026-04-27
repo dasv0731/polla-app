@@ -67,9 +67,6 @@ interface TeamRow { slug: string; name: string; flagCode: string; groupLetter: s
     } @else if (teams().length === 0) {
       <p class="empty-state">Aún no hay equipos cargados.</p>
     } @else {
-      <p style="font-size: var(--fs-xs); color: var(--color-text-muted); margin-bottom: var(--space-sm); text-transform: uppercase; letter-spacing: 0.08em;">
-        Tip: cambia el grupo de cualquier equipo desde la columna "Grupo" — auto-guarda.
-      </p>
       <div class="standings-wrap">
         <table class="standings standings--group">
           <thead>
@@ -84,20 +81,7 @@ interface TeamRow { slug: string; name: string; flagCode: string; groupLetter: s
                 <td><code>{{ t.slug }}</code></td>
                 <td>{{ t.name }}</td>
                 <td>{{ t.flagCode }}</td>
-                <td>
-                  <select [value]="t.groupLetter ?? ''"
-                          [disabled]="!!savingGroup()[t.slug]"
-                          (change)="setGroup(t, $any($event.target).value)"
-                          style="all: unset; padding: 4px 24px 4px 10px; border: var(--border-grey); border-radius: var(--radius-md); background-color: var(--color-primary-white); font-family: var(--font-display); font-size: var(--fs-md); cursor: pointer; min-width: 60px; text-align: center;">
-                    <option value="">—</option>
-                    @for (g of groupLetters; track g) {
-                      <option [value]="g">{{ g }}</option>
-                    }
-                  </select>
-                  @if (savingGroup()[t.slug]) {
-                    <small style="color: var(--color-text-muted); margin-left: 8px;">guardando…</small>
-                  }
-                </td>
+                <td>{{ t.groupLetter ?? '—' }}</td>
                 <td>
                   <a class="link-green" [routerLink]="['/admin/teams', t.slug, 'edit']">Editar</a>
                   ·
@@ -121,7 +105,6 @@ export class AdminTeamsComponent implements OnInit {
   adding = signal(false);
   teams = signal<TeamRow[]>([]);
   error = signal<string | null>(null);
-  savingGroup = signal<Record<string, boolean>>({});
 
   newSlug = '';
   newName = '';
@@ -182,41 +165,6 @@ export class AdminTeamsComponent implements OnInit {
       this.error.set(humanizeError(e));
     } finally {
       this.adding.set(false);
-    }
-  }
-
-  async setGroup(t: TeamRow, value: string) {
-    const newLetter = value || null;
-    if (newLetter === t.groupLetter) return;
-    this.savingGroup.update((s) => ({ ...s, [t.slug]: true }));
-    try {
-      const res = await apiClient.models.Team.update({
-        slug: t.slug,
-        groupLetter: newLetter,
-      });
-      // Amplify Gen 2 returns { data, errors? }; surface graphql errors
-      // explicitly so we don't optimistic-update on a silent failure.
-      if (res?.errors && res.errors.length > 0) {
-        // eslint-disable-next-line no-console
-        console.error('[setGroup] GraphQL errors:', res.errors);
-        this.toast.error(res.errors[0]!.message ?? 'No se pudo guardar el grupo');
-        // Reload to discard stale UI state
-        void this.load();
-        return;
-      }
-      // Reload from server instead of optimistic update — keeps the rendered
-      // row order + flag/name/groupLetter all consistent with whatever the
-      // backend actually saved. The list is small (28-48 rows), the cost is
-      // a single listTeams call after each save.
-      await this.load();
-      this.toast.success(newLetter ? `${t.name} → Grupo ${newLetter}` : `${t.name} sin grupo`);
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error('[setGroup] threw:', e);
-      this.toast.error(humanizeError(e));
-      void this.load();
-    } finally {
-      this.savingGroup.update((s) => ({ ...s, [t.slug]: false }));
     }
   }
 
