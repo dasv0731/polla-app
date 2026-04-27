@@ -157,6 +157,53 @@ export class ApiService {
     return apiClient.models.Match.update(payload);
   }
 
+  // ----- Group-stage prediction picks -----
+  listGroupStandingPicks(userId: string) {
+    return apiClient.models.GroupStandingPick.list({
+      filter: { userId: { eq: userId } },
+      limit: 50,
+    });
+  }
+  upsertGroupStandingPick(input: {
+    id?: string;
+    userId: string;
+    tournamentId: string;
+    groupLetter: string;
+    pos1: string; pos2: string; pos3: string; pos4: string;
+  }) {
+    if (input.id) {
+      return apiClient.models.GroupStandingPick.update({
+        id: input.id,
+        pos1: input.pos1, pos2: input.pos2, pos3: input.pos3, pos4: input.pos4,
+      });
+    }
+    return apiClient.models.GroupStandingPick.create({
+      userId: input.userId,
+      tournamentId: input.tournamentId,
+      groupLetter: input.groupLetter,
+      pos1: input.pos1, pos2: input.pos2, pos3: input.pos3, pos4: input.pos4,
+    });
+  }
+  getBestThirdsPick(userId: string, tournamentId: string) {
+    return apiClient.models.BestThirdsPick.list({
+      filter: { userId: { eq: userId }, tournamentId: { eq: tournamentId } },
+      limit: 1,
+    });
+  }
+  upsertBestThirdsPick(input: { id?: string; userId: string; tournamentId: string; advancing: string[] }) {
+    if (input.id) {
+      return apiClient.models.BestThirdsPick.update({
+        id: input.id,
+        advancing: input.advancing,
+      });
+    }
+    return apiClient.models.BestThirdsPick.create({
+      userId: input.userId,
+      tournamentId: input.tournamentId,
+      advancing: input.advancing,
+    });
+  }
+
   // ----- SpecialPick upsert (owner-based auto-CRUD) -----
   // userId must be passed explicitly even though allow.ownerDefinedIn('userId')
   // would auto-fill it server-side: the generated TS signature for create()

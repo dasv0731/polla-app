@@ -37,6 +37,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/picks/picks-grupo.component').then((m) => m.PicksGrupoComponent),
       },
       {
+        path: 'picks/group-stage',
+        loadComponent: () => import('./features/picks/group-stage-picks.component').then((m) => m.GroupStagePicksComponent),
+      },
+      {
         path: 'picks/match/:id',
         loadComponent: () => import('./features/picks/pick-detail.component').then((m) => m.PickDetailComponent),
       },

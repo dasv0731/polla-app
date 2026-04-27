@@ -17,6 +17,7 @@ import { AuthService } from '../../core/auth/auth.service';
         </a>
         <nav class="site-header__nav" aria-label="Principal">
           <a routerLink="/picks" routerLinkActive="is-active">Picks</a>
+          <a routerLink="/picks/group-stage" routerLinkActive="is-active">Tabla de grupos</a>
           <a routerLink="/groups" routerLinkActive="is-active">Mis grupos</a>
           <a routerLink="/ranking" routerLinkActive="is-active">Ranking</a>
           @if (isAdmin()) {
@@ -66,6 +67,7 @@ import { AuthService } from '../../core/auth/auth.service';
     <label for="drawer" class="drawer-backdrop" aria-hidden="true" (click)="closeDrawer()"></label>
     <aside class="drawer" aria-label="Menú móvil">
       <a routerLink="/picks" routerLinkActive="is-active" (click)="closeDrawer()">Picks</a>
+      <a routerLink="/picks/group-stage" routerLinkActive="is-active" (click)="closeDrawer()">Tabla de grupos</a>
       <a routerLink="/groups" routerLinkActive="is-active" (click)="closeDrawer()">Mis grupos</a>
       <a routerLink="/ranking" routerLinkActive="is-active" (click)="closeDrawer()">Ranking</a>
       <a routerLink="/profile" routerLinkActive="is-active" (click)="closeDrawer()">Editar perfil</a>
