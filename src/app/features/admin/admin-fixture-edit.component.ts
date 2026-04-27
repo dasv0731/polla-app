@@ -187,7 +187,7 @@ export class AdminFixtureEditComponent implements OnInit {
       const bracketPos = this.showBracketField() ? this.bracketPosition : null;
       const venue = this.venue.trim() || null;
       if (this.id) {
-        await apiClient.models.Match.update({
+        const res = await apiClient.models.Match.update({
           id: this.id,
           phaseId: this.phaseId,
           homeTeamId: this.homeTeamId,
@@ -198,9 +198,15 @@ export class AdminFixtureEditComponent implements OnInit {
           bracketPosition: bracketPos,
           venue,
         });
+        if (res?.errors && res.errors.length > 0) {
+          // eslint-disable-next-line no-console
+          console.error('[Match.update] GraphQL errors:', res.errors);
+          this.error.set(res.errors[0]!.message ?? 'No se pudo actualizar el partido');
+          return;
+        }
         this.toast.success('Partido actualizado');
       } else {
-        await apiClient.models.Match.create({
+        const res = await apiClient.models.Match.create({
           tournamentId: TOURNAMENT_ID,
           phaseId: this.phaseId,
           homeTeamId: this.homeTeamId,
@@ -212,6 +218,12 @@ export class AdminFixtureEditComponent implements OnInit {
           bracketPosition: bracketPos,
           venue,
         });
+        if (res?.errors && res.errors.length > 0) {
+          // eslint-disable-next-line no-console
+          console.error('[Match.create] GraphQL errors:', res.errors);
+          this.error.set(res.errors[0]!.message ?? 'No se pudo crear el partido');
+          return;
+        }
         this.toast.success('Partido creado');
       }
       void this.router.navigate([this.fromBracket ? '/admin/bracket' : '/admin/fixtures']);
