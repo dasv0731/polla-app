@@ -108,8 +108,8 @@ export class ApiService {
   upsertPick(matchId: string, homeScorePred: number, awayScorePred: number) {
     return apiClient.mutations.upsertPick({ matchId, homeScorePred, awayScorePred });
   }
-  createGroup(name: string, tournamentId: string) {
-    return apiClient.mutations.createGroup({ name, tournamentId });
+  createGroup(name: string, tournamentId: string, mode: 'SIMPLE' | 'COMPLETE') {
+    return apiClient.mutations.createGroup({ name, tournamentId, mode });
   }
   joinGroup(code: string) {
     return apiClient.mutations.joinGroup({ code });
@@ -158,9 +158,11 @@ export class ApiService {
   }
 
   // ----- Group-stage prediction picks -----
-  listGroupStandingPicks(userId: string) {
+  // Cada user puede tener dos predicciones por torneo (mode SIMPLE y mode
+  // COMPLETE) — el filtro siempre lleva mode para no mezclar.
+  listGroupStandingPicks(userId: string, mode: 'SIMPLE' | 'COMPLETE') {
     return apiClient.models.GroupStandingPick.list({
-      filter: { userId: { eq: userId } },
+      filter: { userId: { eq: userId }, mode: { eq: mode } },
       limit: 50,
     });
   }
@@ -168,6 +170,7 @@ export class ApiService {
     id?: string;
     userId: string;
     tournamentId: string;
+    mode: 'SIMPLE' | 'COMPLETE';
     groupLetter: string;
     pos1: string; pos2: string; pos3: string; pos4: string;
   }) {
@@ -180,17 +183,18 @@ export class ApiService {
     return apiClient.models.GroupStandingPick.create({
       userId: input.userId,
       tournamentId: input.tournamentId,
+      mode: input.mode,
       groupLetter: input.groupLetter,
       pos1: input.pos1, pos2: input.pos2, pos3: input.pos3, pos4: input.pos4,
     });
   }
-  getBestThirdsPick(userId: string, tournamentId: string) {
+  getBestThirdsPick(userId: string, tournamentId: string, mode: 'SIMPLE' | 'COMPLETE') {
     return apiClient.models.BestThirdsPick.list({
-      filter: { userId: { eq: userId }, tournamentId: { eq: tournamentId } },
+      filter: { userId: { eq: userId }, tournamentId: { eq: tournamentId }, mode: { eq: mode } },
       limit: 1,
     });
   }
-  upsertBestThirdsPick(input: { id?: string; userId: string; tournamentId: string; advancing: string[] }) {
+  upsertBestThirdsPick(input: { id?: string; userId: string; tournamentId: string; mode: 'SIMPLE' | 'COMPLETE'; advancing: string[] }) {
     if (input.id) {
       return apiClient.models.BestThirdsPick.update({
         id: input.id,
@@ -200,6 +204,7 @@ export class ApiService {
     return apiClient.models.BestThirdsPick.create({
       userId: input.userId,
       tournamentId: input.tournamentId,
+      mode: input.mode,
       advancing: input.advancing,
     });
   }

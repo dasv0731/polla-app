@@ -12,6 +12,7 @@ interface GroupHeader {
   joinCode: string;
   adminUserId: string;
   createdAt: string;
+  mode: 'SIMPLE' | 'COMPLETE';
   prize1st: string | null;
   prize2nd: string | null;
   prize3rd: string | null;
@@ -35,6 +36,11 @@ interface GroupHeader {
             <div>
               <h1 class="group-hero__name">{{ g.name }}</h1>
               <p class="group-hero__meta">
+                <span style="display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.06em; margin-right: 8px;"
+                      [style.background]="g.mode === 'COMPLETE' ? 'var(--color-primary-green)' : 'rgba(255,200,0,0.4)'"
+                      [style.color]="g.mode === 'COMPLETE' ? 'var(--color-primary-white)' : 'var(--color-primary-black)'">
+                  {{ g.mode === 'COMPLETE' ? 'Modo completo' : 'Modo simple' }}
+                </span>
                 {{ rows().length }} miembros
                 @if (isAdminOfGroup()) {
                    · Eres <strong>admin</strong>
@@ -203,6 +209,7 @@ export class GroupDetailComponent implements OnInit {
           joinCode: grp.data.joinCode,
           adminUserId: grp.data.adminUserId,
           createdAt: grp.data.createdAt,
+          mode: (grp.data.mode ?? 'COMPLETE') as 'SIMPLE' | 'COMPLETE',
           prize1st: grp.data.prize1st ?? null,
           prize2nd: grp.data.prize2nd ?? null,
           prize3rd: grp.data.prize3rd ?? null,

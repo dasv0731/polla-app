@@ -43,6 +43,39 @@ const TOURNAMENT_ID = 'mundial-2026';
               <span class="form-card__hint">El único torneo activo. Otros torneos vienen en Fase 2.</span>
             </div>
 
+            <div class="form-card__field">
+              <label class="form-card__label">Modo de juego</label>
+              <div style="display: grid; gap: var(--space-sm);">
+                <label style="display: grid; grid-template-columns: auto 1fr; gap: 10px; padding: var(--space-md); border: var(--border-grey); border-radius: var(--radius-md); cursor: pointer;"
+                       [style.background]="mode === 'SIMPLE' ? 'rgba(0,200,100,0.08)' : 'transparent'"
+                       [style.borderColor]="mode === 'SIMPLE' ? 'var(--color-primary-green)' : ''">
+                  <input type="radio" name="mode" value="SIMPLE" [(ngModel)]="mode" style="margin-top: 4px;">
+                  <span>
+                    <strong>Modo simple</strong>
+                    <small style="display: block; color: var(--color-text-muted); margin-top: 2px;">
+                      Predicciones de tabla de grupos, llaves eliminatorias y campeón/subcampeón/revelación.
+                      <strong>No</strong> entra al ranking global.
+                    </small>
+                  </span>
+                </label>
+                <label style="display: grid; grid-template-columns: auto 1fr; gap: 10px; padding: var(--space-md); border: var(--border-grey); border-radius: var(--radius-md); cursor: pointer;"
+                       [style.background]="mode === 'COMPLETE' ? 'rgba(0,200,100,0.08)' : 'transparent'"
+                       [style.borderColor]="mode === 'COMPLETE' ? 'var(--color-primary-green)' : ''">
+                  <input type="radio" name="mode" value="COMPLETE" [(ngModel)]="mode" style="margin-top: 4px;">
+                  <span>
+                    <strong>Modo completo</strong>
+                    <small style="display: block; color: var(--color-text-muted); margin-top: 2px;">
+                      Todo lo del simple + marcador de cada partido (con multiplicadores por fase).
+                      Cuenta para el <strong>ranking global</strong>.
+                    </small>
+                  </span>
+                </label>
+              </div>
+              <span class="form-card__hint" style="margin-top: var(--space-sm);">
+                Esta elección es <strong>permanente</strong>: el modo del grupo no se puede cambiar después de crearlo.
+              </span>
+            </div>
+
             @if (error()) {
               <p class="form-card__hint" style="color: var(--color-lost);">{{ error() }}</p>
             }
@@ -96,6 +129,7 @@ export class GroupCreateComponent {
   private toast = inject(ToastService);
 
   name = '';
+  mode: 'SIMPLE' | 'COMPLETE' = 'COMPLETE';
   loading = signal(false);
   error = signal<string | null>(null);
   created = signal<{ id: string; joinCode: string } | null>(null);
@@ -111,7 +145,7 @@ export class GroupCreateComponent {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const res = await this.api.createGroup(this.name.trim(), TOURNAMENT_ID);
+      const res = await this.api.createGroup(this.name.trim(), TOURNAMENT_ID, this.mode);
       // Amplify Gen 2 returns { data, errors? }; non-throwing GraphQL errors
       // come through `errors` so we have to check both branches.
       if (res.errors && res.errors.length > 0) {

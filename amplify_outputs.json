@@ -721,6 +721,15 @@
               "isRequired": true,
               "attributes": []
             },
+            "mode": {
+              "name": "mode",
+              "isArray": false,
+              "type": {
+                "enum": "GameMode"
+              },
+              "isRequired": true,
+              "attributes": []
+            },
             "homeScorePred": {
               "name": "homeScorePred",
               "isArray": false,
@@ -877,6 +886,15 @@
               "name": "createdAt",
               "isArray": false,
               "type": "AWSDateTime",
+              "isRequired": true,
+              "attributes": []
+            },
+            "mode": {
+              "name": "mode",
+              "isArray": false,
+              "type": {
+                "enum": "GameMode"
+              },
               "isRequired": true,
               "attributes": []
             },
@@ -1218,6 +1236,15 @@
               "isRequired": true,
               "attributes": []
             },
+            "mode": {
+              "name": "mode",
+              "isArray": false,
+              "type": {
+                "enum": "GameMode"
+              },
+              "isRequired": true,
+              "attributes": []
+            },
             "type": {
               "name": "type",
               "isArray": false,
@@ -1447,6 +1474,15 @@
               "isRequired": true,
               "attributes": []
             },
+            "mode": {
+              "name": "mode",
+              "isArray": false,
+              "type": {
+                "enum": "GameMode"
+              },
+              "isRequired": true,
+              "attributes": []
+            },
             "groupLetter": {
               "name": "groupLetter",
               "isArray": false,
@@ -1593,6 +1629,15 @@
               "name": "tournamentId",
               "isArray": false,
               "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "mode": {
+              "name": "mode",
+              "isArray": false,
+              "type": {
+                "enum": "GameMode"
+              },
               "isRequired": true,
               "attributes": []
             },
@@ -1946,6 +1991,13 @@
             "FINAL"
           ]
         },
+        "GameMode": {
+          "name": "GameMode",
+          "values": [
+            "SIMPLE",
+            "COMPLETE"
+          ]
+        },
         "SpecialPickType": {
           "name": "SpecialPickType",
           "values": [
@@ -2118,6 +2170,14 @@
               "name": "tournamentId",
               "isArray": false,
               "type": "ID",
+              "isRequired": true
+            },
+            "mode": {
+              "name": "mode",
+              "isArray": false,
+              "type": {
+                "enum": "GameMode"
+              },
               "isRequired": true
             }
           }

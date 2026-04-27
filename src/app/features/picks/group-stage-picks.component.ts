@@ -1,13 +1,18 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CdkDrag, CdkDragDrop, CdkDropList, CdkDropListGroup, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
 
+type GameMode = 'SIMPLE' | 'COMPLETE';
+
 const TOURNAMENT_ID = 'mundial-2026';
 const GROUP_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
-const STORAGE_KEY = (userId: string) => `polla-group-stage-picks-${userId}`;
+// Storage key incluye el modo: cada user puede tener UNA predicción simple
+// y UNA completa, persistidas independientes en localStorage hasta el commit.
+const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-group-stage-picks-${mode}-${userId}`;
 
 interface TeamLite { slug: string; name: string; flagCode: string; crestUrl: string | null; }
 
@@ -28,17 +33,45 @@ interface ServerIdMap {
 @Component({
   standalone: true,
   selector: 'app-group-stage-picks',
-  imports: [CdkDropListGroup, CdkDropList, CdkDrag],
+  imports: [CdkDropListGroup, CdkDropList, CdkDrag, RouterLink],
   template: `
     <header class="page-header">
       <small>Predicciones · fase de grupos</small>
       <h1>Tabla final por grupo</h1>
+
+      @if (availableModes().length === 0 && !modesLoading()) {
+        <p class="form-card__hint" style="color: var(--color-lost);">
+          Necesitas pertenecer a al menos un grupo privado para ingresar tus predicciones.
+          <a class="link-green" routerLink="/groups/new">Crea uno →</a>
+        </p>
+      } @else if (availableModes().length > 1) {
+        <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-md); flex-wrap: wrap;">
+          @for (m of availableModes(); track m) {
+            <button class="btn" type="button"
+                    [class.btn--primary]="mode() === m"
+                    [class.btn--ghost]="mode() !== m"
+                    (click)="switchMode(m)">
+              {{ m === 'COMPLETE' ? 'Modo completo' : 'Modo simple' }}
+            </button>
+          }
+        </div>
+      } @else if (mode()) {
+        <p class="form-card__hint" style="margin-top: var(--space-sm);">
+          Predicción <strong>{{ mode() === 'COMPLETE' ? 'modo completo' : 'modo simple' }}</strong>.
+          @if (mode() === 'COMPLETE') {
+            Cuenta para el ranking global y para tus grupos completos.
+          } @else {
+            Cuenta para tus grupos simples (no afecta el ranking global).
+          }
+        </p>
+      }
+
       @if (lockedAt()) {
         <p class="form-card__hint" style="color: var(--color-lost);">
           Las predicciones se cerraron al iniciar el torneo
           ({{ formatLockDate(lockedAt()!) }}). Solo lectura.
         </p>
-      } @else {
+      } @else if (mode()) {
         <p class="form-card__hint">
           Arrastra los equipos para predecir cómo terminará cada grupo.
           Los <strong>cambios se guardan automáticamente en este navegador</strong>.
@@ -276,14 +309,23 @@ export class GroupStagePicksComponent implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private toast = inject(ToastService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
 
   GROUP_LETTERS = GROUP_LETTERS;
 
   loading = signal(true);
+  modesLoading = signal(true);
   saving = signal(false);
   saveError = signal<string | null>(null);
   lastSavedAt = signal<string | null>(null);
   lockedAt = signal<string | null>(null);
+
+  // Modos disponibles según los grupos privados a los que pertenece el user.
+  availableModes = signal<GameMode[]>([]);
+  // Modo actualmente activo en la pantalla. Cuando cambia, recargamos
+  // staged + serverIds desde DB/localStorage del modo nuevo.
+  mode = signal<GameMode | null>(null);
 
   // Mapa slug → equipo, sólo lookups
   teamMap = signal<Map<string, TeamLite>>(new Map());
@@ -315,17 +357,76 @@ export class GroupStagePicksComponent implements OnInit {
       this.toast.error('Necesitas estar logueado');
       return;
     }
+    await this.discoverModes();
+    if (this.mode()) {
+      await this.load();
+    } else {
+      this.loading.set(false);
+    }
+  }
+
+  /**
+   * Determina los modos disponibles basados en los grupos privados a los
+   * que el user pertenece. Si pertenece a >= 1 grupo COMPLETE, agrega
+   * COMPLETE; idem SIMPLE. Si no pertenece a ningún grupo, vacío.
+   * Selecciona el modo inicial leyendo ?mode= del query param o el
+   * primero disponible.
+   */
+  private async discoverModes() {
+    this.modesLoading.set(true);
+    try {
+      const memberships = await this.api.myGroups(this.currentUserId);
+      const groupIds = (memberships.data ?? []).map((m) => m.groupId);
+      const modeSet = new Set<GameMode>();
+      for (const gid of groupIds) {
+        try {
+          const g = await this.api.getGroup(gid);
+          const mode = g.data?.mode as GameMode | undefined;
+          if (mode === 'SIMPLE' || mode === 'COMPLETE') modeSet.add(mode);
+        } catch {
+          // skip group we can't read
+        }
+      }
+      const modes = Array.from(modeSet);
+      this.availableModes.set(modes);
+
+      const requested = this.route.snapshot.queryParamMap.get('mode') as GameMode | null;
+      if (requested && modes.includes(requested)) {
+        this.mode.set(requested);
+      } else if (modes.length > 0) {
+        // Default a COMPLETE si está disponible, sino al único disponible.
+        this.mode.set(modes.includes('COMPLETE') ? 'COMPLETE' : modes[0]!);
+      } else {
+        this.mode.set(null);
+      }
+    } finally {
+      this.modesLoading.set(false);
+    }
+  }
+
+  async switchMode(m: GameMode) {
+    if (this.mode() === m) return;
+    this.mode.set(m);
+    // Reflejamos en URL para que un refresh respete la selección.
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { mode: m },
+      queryParamsHandling: 'merge',
+    });
+    this.serverIds = { standings: {}, thirds: null };
     await this.load();
   }
 
   async load() {
+    const currentMode = this.mode();
+    if (!currentMode) return;
     this.loading.set(true);
     try {
       const [teamsRes, matchesRes, standingsRes, thirdsRes] = await Promise.all([
         this.api.listTeams(TOURNAMENT_ID),
         this.api.listMatches(TOURNAMENT_ID),
-        this.api.listGroupStandingPicks(this.currentUserId),
-        this.api.getBestThirdsPick(this.currentUserId, TOURNAMENT_ID),
+        this.api.listGroupStandingPicks(this.currentUserId, currentMode),
+        this.api.getBestThirdsPick(this.currentUserId, TOURNAMENT_ID, currentMode),
       ]);
 
       const tm = new Map<string, TeamLite>();
@@ -380,7 +481,7 @@ export class GroupStagePicksComponent implements OnInit {
       }
 
       // Cargar de localStorage si existe (sobreescribe DB porque es lo más reciente del user)
-      const lsRaw = localStorage.getItem(STORAGE_KEY(this.currentUserId));
+      const lsRaw = localStorage.getItem(STORAGE_KEY(this.currentUserId, currentMode));
       if (lsRaw) {
         try {
           const ls = JSON.parse(lsRaw) as StagedState;
@@ -439,9 +540,10 @@ export class GroupStagePicksComponent implements OnInit {
   }
 
   private persistLocal() {
-    if (!this.currentUserId) return;
+    const m = this.mode();
+    if (!this.currentUserId || !m) return;
     try {
-      localStorage.setItem(STORAGE_KEY(this.currentUserId), JSON.stringify(this.staged()));
+      localStorage.setItem(STORAGE_KEY(this.currentUserId, m), JSON.stringify(this.staged()));
     } catch { /* localStorage might be full or disabled — silently degrade */ }
   }
 
@@ -457,6 +559,8 @@ export class GroupStagePicksComponent implements OnInit {
 
   async saveAll() {
     if (this.lockedAt()) return;
+    const currentMode = this.mode();
+    if (!currentMode) return;
     if (this.staged().advancing.length !== 8) {
       this.saveError.set('Debes marcar exactamente 8 terceros que avanzan');
       return;
@@ -479,6 +583,7 @@ export class GroupStagePicksComponent implements OnInit {
             id: this.serverIds.standings[g],
             userId: this.currentUserId,
             tournamentId: TOURNAMENT_ID,
+            mode: currentMode,
             groupLetter: g,
             pos1: arr[0]!, pos2: arr[1]!, pos3: arr[2]!, pos4: arr[3]!,
           });
@@ -501,6 +606,7 @@ export class GroupStagePicksComponent implements OnInit {
           id: this.serverIds.thirds ?? undefined,
           userId: this.currentUserId,
           tournamentId: TOURNAMENT_ID,
+          mode: currentMode,
           advancing: state.advancing,
         });
         if (res?.errors && res.errors.length > 0) {
