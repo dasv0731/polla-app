@@ -12,6 +12,9 @@ interface GroupHeader {
   joinCode: string;
   adminUserId: string;
   createdAt: string;
+  prize1st: string | null;
+  prize2nd: string | null;
+  prize3rd: string | null;
 }
 
 @Component({
@@ -99,11 +102,38 @@ interface GroupHeader {
             </div>
           </div>
 
+          @if (hasPrizes()) {
+            <div class="invite-mini">
+              <h3>Premios</h3>
+              <ul style="list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-sm);">
+                @if (g.prize1st) {
+                  <li style="display: flex; gap: var(--space-sm); align-items: baseline;">
+                    <span style="font-size: var(--fs-lg);">🥇</span>
+                    <span>{{ g.prize1st }}</span>
+                  </li>
+                }
+                @if (g.prize2nd) {
+                  <li style="display: flex; gap: var(--space-sm); align-items: baseline;">
+                    <span style="font-size: var(--fs-lg);">🥈</span>
+                    <span>{{ g.prize2nd }}</span>
+                  </li>
+                }
+                @if (g.prize3rd) {
+                  <li style="display: flex; gap: var(--space-sm); align-items: baseline;">
+                    <span style="font-size: var(--fs-lg);">🥉</span>
+                    <span>{{ g.prize3rd }}</span>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+
           @if (isAdminOfGroup()) {
             <div class="admin-actions">
               <h3>Acciones de admin</h3>
               <ul>
                 <li><a [routerLink]="['/groups', g.id, 'invite']"><span>Invitar por email</span><span>→</span></a></li>
+                <li><a [routerLink]="['/groups', g.id, 'prizes']"><span>Editar premios</span><span>→</span></a></li>
                 <li><a (click)="comingSoon('Renovar código', $event)"><span>Renovar código</span><span>→</span></a></li>
                 <li><a (click)="comingSoon('Editar nombre', $event)"><span>Editar nombre</span><span>→</span></a></li>
                 <li><a class="is-danger" (click)="del($event)"><span>Eliminar grupo</span><span>×</span></a></li>
@@ -135,6 +165,10 @@ export class GroupDetailComponent implements OnInit {
   currentUserId = '';
 
   isAdminOfGroup = computed(() => this.group()?.adminUserId === this.currentUserId);
+  hasPrizes = computed(() => {
+    const g = this.group();
+    return !!(g?.prize1st || g?.prize2nd || g?.prize3rd);
+  });
   icon = computed(() => (this.isAdminOfGroup() ? '★' : (this.group()?.name?.[0] ?? '·').toUpperCase()));
   inviteUrl = computed(() => {
     const g = this.group();
@@ -169,6 +203,9 @@ export class GroupDetailComponent implements OnInit {
           joinCode: grp.data.joinCode,
           adminUserId: grp.data.adminUserId,
           createdAt: grp.data.createdAt,
+          prize1st: grp.data.prize1st ?? null,
+          prize2nd: grp.data.prize2nd ?? null,
+          prize3rd: grp.data.prize3rd ?? null,
         });
       }
 
