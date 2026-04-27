@@ -1,6 +1,7 @@
 import { Component, HostListener, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { UserModesService } from '../../core/user/user-modes.service';
 
 @Component({
   standalone: true,
@@ -16,7 +17,9 @@ import { AuthService } from '../../core/auth/auth.service';
           <img src="assets/logo-golgana.png" alt="Golgana">
         </a>
         <nav class="site-header__nav" aria-label="Principal">
-          <a routerLink="/picks" routerLinkActive="is-active">Picks</a>
+          @if (hasComplete()) {
+            <a routerLink="/picks" routerLinkActive="is-active">Picks</a>
+          }
           <a routerLink="/picks/group-stage" routerLinkActive="is-active">Tabla de grupos</a>
           <a routerLink="/groups" routerLinkActive="is-active">Mis grupos</a>
           <a routerLink="/ranking" routerLinkActive="is-active">Ranking</a>
@@ -66,7 +69,9 @@ import { AuthService } from '../../core/auth/auth.service';
 
     <label for="drawer" class="drawer-backdrop" aria-hidden="true" (click)="closeDrawer()"></label>
     <aside class="drawer" aria-label="Menú móvil">
-      <a routerLink="/picks" routerLinkActive="is-active" (click)="closeDrawer()">Picks</a>
+      @if (hasComplete()) {
+        <a routerLink="/picks" routerLinkActive="is-active" (click)="closeDrawer()">Picks</a>
+      }
       <a routerLink="/picks/group-stage" routerLinkActive="is-active" (click)="closeDrawer()">Tabla de grupos</a>
       <a routerLink="/groups" routerLinkActive="is-active" (click)="closeDrawer()">Mis grupos</a>
       <a routerLink="/ranking" routerLinkActive="is-active" (click)="closeDrawer()">Ranking</a>
@@ -82,12 +87,14 @@ import { AuthService } from '../../core/auth/auth.service';
 export class NavComponent {
   private auth = inject(AuthService);
   private router = inject(Router);
+  private userModes = inject(UserModesService);
 
   drawerOpen = signal(false);
   userMenuOpen = signal(false);
   isAdmin = computed(() => this.auth.user()?.isAdmin ?? false);
   handle = computed(() => this.auth.user()?.handle ?? null);
   avatar = computed(() => (this.handle() ?? '?')[0]?.toUpperCase() ?? '?');
+  hasComplete = computed(() => this.userModes.hasComplete());
 
   toggleUserMenu() { this.userMenuOpen.update((v) => !v); }
   closeUserMenu() { this.userMenuOpen.set(false); }

@@ -2,6 +2,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { UserModesService } from '../../core/user/user-modes.service';
 import { TimeService } from '../../core/time/time.service';
 import { PickCardComponent } from './pick-card.component';
 
@@ -80,7 +81,24 @@ interface Totals {
       </div>
     </header>
 
-    @if (loading()) {
+    @if (!hasComplete()) {
+      <div class="empty-state">
+        <h3>Modo completo no disponible</h3>
+        <p>
+          Los picks de marcador (1 partido = 1 marcador con multiplicadores por fase)
+          son del <strong>modo completo</strong>. Para usarlos, necesitas pertenecer a
+          al menos un grupo en modo completo.
+        </p>
+        <p>
+          <a class="btn btn--primary" routerLink="/groups/new">Crear un grupo →</a>
+        </p>
+        <p style="margin-top: var(--space-md); font-size: var(--fs-sm); color: var(--color-text-muted);">
+          Si tu grupo es <strong>modo simple</strong>, las predicciones de tabla, llaves
+          y campeón sí cuentan. Las encuentras en
+          <a class="link-green" routerLink="/picks/group-stage">Tabla de grupos</a>.
+        </p>
+      </div>
+    } @else if (loading()) {
       <div class="empty-state"><h3>Cargando…</h3></div>
     } @else if (visible().length === 0) {
       <div class="empty-state">
@@ -109,12 +127,14 @@ interface Totals {
 export class PicksListComponent implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  private userModes = inject(UserModesService);
   private time = inject(TimeService);
 
   tab = signal<'upcoming' | 'played'>('upcoming');
   matches = signal<MatchWithMeta[]>([]);
   loading = signal(true);
   totals = signal<Totals>({ points: 0, exactCount: 0, resultCount: 0, globalRank: null });
+  hasComplete = computed(() => this.userModes.hasComplete());
 
   upcomingCount = computed(() => this.matches().filter((m) => !this.time.isPast(m.kickoffAt)).length);
   playedCount = computed(() => this.matches().filter((m) => this.time.isPast(m.kickoffAt)).length);

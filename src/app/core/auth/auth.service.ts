@@ -1,9 +1,10 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import {
   signIn, signOut, signUp, confirmSignUp,
   resendSignUpCode, resetPassword, confirmResetPassword,
   fetchAuthSession, fetchUserAttributes, getCurrentUser,
 } from 'aws-amplify/auth';
+import { UserModesService } from '../user/user-modes.service';
 
 export interface AuthUser {
   sub: string;
@@ -14,6 +15,8 @@ export interface AuthUser {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  private userModes = inject(UserModesService);
+
   user = signal<AuthUser | null>(null);
 
   async loadUser(): Promise<AuthUser | null> {
@@ -29,9 +32,14 @@ export class AuthService {
         isAdmin: groups.includes('admins'),
       };
       this.user.set(u);
+      // Cargamos modos disponibles (basados en memberships) en background.
+      // No bloqueamos la sesión: si falla, los componentes que necesitan
+      // modos volverán a intentar cargarlos.
+      void this.userModes.load(u.sub);
       return u;
     } catch {
       this.user.set(null);
+      this.userModes.reset();
       return null;
     }
   }
@@ -68,5 +76,6 @@ export class AuthService {
   async logout() {
     await signOut();
     this.user.set(null);
+    this.userModes.reset();
   }
 }

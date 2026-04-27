@@ -213,18 +213,18 @@ export class ApiService {
   // userId must be passed explicitly even though allow.ownerDefinedIn('userId')
   // would auto-fill it server-side: the generated TS signature for create()
   // marks userId as required. Caller passes auth.user()!.sub.
-  async upsertSpecialPick(userId: string, type: SpecialType, teamId: string, tournamentId: string) {
+  async upsertSpecialPick(userId: string, type: SpecialType, teamId: string, tournamentId: string, mode: 'SIMPLE' | 'COMPLETE') {
     const existing = await apiClient.models.SpecialPick.list({
-      filter: { tournamentId: { eq: tournamentId }, type: { eq: type } },
+      filter: { tournamentId: { eq: tournamentId }, type: { eq: type }, mode: { eq: mode } },
       limit: 1,
     });
     const found = (existing.data ?? [])[0];
     if (found) return apiClient.models.SpecialPick.update({ id: found.id, teamId });
-    return apiClient.models.SpecialPick.create({ userId, type, teamId, tournamentId });
+    return apiClient.models.SpecialPick.create({ userId, type, teamId, tournamentId, mode });
   }
-  mySpecialPicks(tournamentId: string) {
+  mySpecialPicks(tournamentId: string, mode: 'SIMPLE' | 'COMPLETE') {
     return apiClient.models.SpecialPick.list({
-      filter: { tournamentId: { eq: tournamentId } },
+      filter: { tournamentId: { eq: tournamentId }, mode: { eq: mode } },
     });
   }
 }

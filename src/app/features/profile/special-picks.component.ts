@@ -1,10 +1,13 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { UserModesService } from '../../core/user/user-modes.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
 import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
+
+type GameMode = 'SIMPLE' | 'COMPLETE';
 
 const TOURNAMENT_ID = 'mundial-2026';
 
@@ -34,6 +37,24 @@ interface TeamItem {
         · {{ totalPotential }} puntos potenciales
       </small>
       <h1>Picks especiales</h1>
+
+      @if (availableModes().length > 1) {
+        <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-md); flex-wrap: wrap;">
+          @for (m of availableModes(); track m) {
+            <button class="btn" type="button"
+                    [class.btn--primary]="mode() === m"
+                    [class.btn--ghost]="mode() !== m"
+                    (click)="switchMode(m)">
+              {{ m === 'COMPLETE' ? 'Modo completo' : 'Modo simple' }}
+            </button>
+          }
+        </div>
+      } @else if (mode()) {
+        <p style="margin-top: var(--space-sm); font-size: var(--fs-sm); color: var(--color-text-muted);">
+          Predicción <strong>{{ mode() === 'COMPLETE' ? 'modo completo' : 'modo simple' }}</strong>.
+        </p>
+      }
+
       <p style="color: var(--color-text-muted); font-size: var(--fs-md); margin-top: var(--space-md); max-width: 720px;">
         Eliges 3 selecciones <strong>antes del kickoff del primer partido</strong> del Mundial.
         Una vez que arranque el torneo, no podrás editar.
@@ -41,6 +62,15 @@ interface TeamItem {
     </header>
 
     <main class="container-app">
+      @if (availableModes().length === 0) {
+        <div class="empty-state">
+          <h3>Necesitas un grupo primero</h3>
+          <p>
+            Crea o únete a un grupo para empezar tus picks especiales.
+            <a class="link-green" routerLink="/groups/new">Crear un grupo →</a>
+          </p>
+        </div>
+      } @else {
       <div class="lock-banner">
         <span class="lock-banner__icon">⏰</span>
         <div class="lock-banner__body">
@@ -106,13 +136,17 @@ interface TeamItem {
           <a routerLink="/profile" class="btn btn--ghost">Volver a perfil</a>
         </div>
       }
+      }
     </main>
   `,
 })
 export class SpecialPicksComponent implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  private userModes = inject(UserModesService);
   private toast = inject(ToastService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
 
   types = TYPES;
   teams = signal<TeamItem[]>([]);
@@ -122,6 +156,8 @@ export class SpecialPicksComponent implements OnInit {
   tournamentLockAt = signal<string | null>(null);
   loading = signal(true);
   lastSavedAt = signal<string | null>(null);
+  mode = signal<GameMode | null>(null);
+  availableModes = computed(() => this.userModes.modes());
 
   totalPotential = TYPES.reduce((s, t) => s + t.points, 0);
 
@@ -151,11 +187,39 @@ export class SpecialPicksComponent implements OnInit {
       this.loading.set(false);
       return;
     }
+    // Resolver modo: ?mode=... > primero disponible (COMPLETE preferido)
+    const requested = this.route.snapshot.queryParamMap.get('mode') as GameMode | null;
+    const modes = this.availableModes();
+    if (requested && modes.includes(requested)) this.mode.set(requested);
+    else if (modes.includes('COMPLETE')) this.mode.set('COMPLETE');
+    else if (modes.length > 0) this.mode.set(modes[0]!);
+    if (!this.mode()) {
+      this.loading.set(false);
+      return;
+    }
+    await this.loadForMode();
+  }
+
+  async switchMode(m: GameMode) {
+    if (this.mode() === m) return;
+    this.mode.set(m);
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { mode: m },
+      queryParamsHandling: 'merge',
+    });
+    await this.loadForMode();
+  }
+
+  private async loadForMode() {
+    const m = this.mode();
+    if (!m) return;
+    this.loading.set(true);
     try {
       const [teamsRes, tour, picks] = await Promise.all([
         this.api.listTeams(TOURNAMENT_ID),
         this.api.getTournament(TOURNAMENT_ID),
-        this.api.mySpecialPicks(TOURNAMENT_ID),
+        this.api.mySpecialPicks(TOURNAMENT_ID, m),
       ]);
 
       const list = (teamsRes.data ?? [])
@@ -201,11 +265,12 @@ export class SpecialPicksComponent implements OnInit {
   async setPick(type: SpecialKey, teamId: string) {
     if (!teamId || this.locked()) return;
     const userId = this.auth.user()?.sub;
-    if (!userId) return;
+    const m = this.mode();
+    if (!userId || !m) return;
 
     this.saving.update((s) => ({ ...s, [type]: true }));
     try {
-      await this.api.upsertSpecialPick(userId, type, teamId, TOURNAMENT_ID);
+      await this.api.upsertSpecialPick(userId, type, teamId, TOURNAMENT_ID, m);
       this.picksByType.update((p) => ({ ...p, [type]: teamId }));
       this.lastSavedAt.set(`hace unos segundos`);
       this.toast.success(`${TYPES.find((t) => t.key === type)?.label} actualizado`);
