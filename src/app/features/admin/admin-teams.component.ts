@@ -39,10 +39,10 @@ interface TeamRow { slug: string; name: string; flagCode: string; groupLetter: s
                  [(ngModel)]="newName" name="name" required placeholder="Brasil">
         </div>
         <div class="form-card__field" style="margin: 0;">
-          <label class="form-card__label" for="team-flag">Flag (ISO 2)</label>
+          <label class="form-card__label" for="team-flag">Flag code</label>
           <input class="form-card__input" id="team-flag" type="text"
-                 [(ngModel)]="newFlag" name="flagCode" required maxlength="2"
-                 placeholder="BR" style="text-transform: uppercase; text-align: center;">
+                 [(ngModel)]="newFlag" name="flagCode" required maxlength="6"
+                 placeholder="BR / GB-SCT" style="text-transform: uppercase; text-align: center;">
         </div>
         <div class="form-card__field" style="margin: 0;">
           <label class="form-card__label" for="team-group">Grupo</label>

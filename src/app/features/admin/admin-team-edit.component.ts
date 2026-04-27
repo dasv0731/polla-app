@@ -59,12 +59,12 @@ const GROUP_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L
 
         <div class="form-card__field--row" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
           <div class="form-card__field">
-            <label class="form-card__label" for="t-flag">Flag code (ISO 2)</label>
+            <label class="form-card__label" for="t-flag">Flag code</label>
             <input class="form-card__input" id="t-flag" type="text"
-                   [(ngModel)]="flagCode" name="flagCode" required maxlength="2"
+                   [(ngModel)]="flagCode" name="flagCode" required maxlength="6"
                    style="text-transform: uppercase; text-align: center;"
-                   placeholder="EC">
-            <span class="form-card__hint">2 letras ISO. Renderea el placeholder de bandera CSS si no hay foto.</span>
+                   placeholder="EC / GB-SCT">
+            <span class="form-card__hint">ISO 3166-1 alpha-2 (ej. EC, BA, CV) o sub-región flag-icons (GB-SCT, GB-WLS, GB-NIR, GB-ENG).</span>
           </div>
           <div class="form-card__field">
             <label class="form-card__label" for="t-group">Grupo</label>
