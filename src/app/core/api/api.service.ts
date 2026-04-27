@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { apiClient } from './client';
 
 type SpecialType = 'CHAMPION' | 'RUNNER_UP' | 'DARK_HORSE';
-type MatchStatus = 'SCHEDULED' | 'LIVE' | 'FINAL';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -137,15 +136,25 @@ export class ApiService {
   adjudicateSpecial(tournamentId: string, type: SpecialType, winningTeamId: string) {
     return apiClient.mutations.adjudicateSpecial({ tournamentId, type, winningTeamId });
   }
-  // Two-step admin flow for results: updateMatch then scoreMatch
-  updateMatchResult(matchId: string, homeScore: number, awayScore: number, version: number) {
-    return apiClient.models.Match.update({
+  // Two-step admin flow for results: updateMatch then scoreMatch.
+  // status:'FINAL' se manda solo si no estaba en FINAL ya. Re-asignar el
+  // mismo enum value dispara field-level auth checks redundantes en
+  // AppSync que pueden devolver "Unauthorized on [status]" silenciosamente.
+  updateMatchResult(
+    matchId: string,
+    homeScore: number,
+    awayScore: number,
+    version: number,
+    currentStatus: 'SCHEDULED' | 'LIVE' | 'FINAL',
+  ) {
+    const payload: Record<string, unknown> = {
       id: matchId,
       homeScore,
       awayScore,
-      status: 'FINAL' as MatchStatus,
       version: version + 1,
-    });
+    };
+    if (currentStatus !== 'FINAL') payload['status'] = 'FINAL';
+    return apiClient.models.Match.update(payload);
   }
 
   // ----- SpecialPick upsert (owner-based auto-CRUD) -----

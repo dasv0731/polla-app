@@ -31,149 +31,113 @@ interface ResultMatch {
       <button class="btn btn--primary" type="button"
               [disabled]="calculating() || unscored().length === 0"
               (click)="calculatePointsAll()"
-              [title]="unscored().length === 0 ? 'No hay partidos finalizados pendientes de scoring' : 'Corre score-match Lambda para los ' + unscored().length + ' partidos guardados'">
+              [title]="unscored().length === 0 ? 'No hay partidos con resultado guardado pendientes de scoring' : 'Corre score-match Lambda para los ' + unscored().length + ' partidos guardados'">
         {{ calculating() ? 'Calculando…' : 'Calcular puntos (' + unscored().length + ')' }}
       </button>
     </header>
 
     @if (loading()) {
-      <p>Cargando partidos pendientes…</p>
-    } @else if (pending().length === 0 && unscored().length === 0) {
+      <p>Cargando partidos…</p>
+    } @else if (pending().length === 0) {
       <p class="empty-state">
-        No hay partidos pendientes de resultado o scoring.
-        <br>Marca un partido como <strong>FINAL</strong> en su edición para verlo aquí.
+        No hay partidos pendientes — todos tienen resultado y puntos calculados.
       </p>
     } @else {
-      @if (pending().length > 0) {
-        <h2 style="font-family: var(--font-display); font-size: var(--fs-xl); text-transform: uppercase; line-height: 1; margin-bottom: var(--space-md);">
-          Partidos sin resultado
-        </h2>
-
-        <div class="pending-list">
-          @for (m of pending(); track m.id) {
-            <article class="pending-row" [class.pending-row--selected]="selectedId() === m.id"
-                     (click)="select(m)">
-              <div class="pending-row__teams">
-                <span class="pending-row__team">{{ teamName(m.homeTeamId) }}</span>
+      <div class="pending-list">
+        @for (m of pending(); track m.id) {
+          <article class="pending-row" [class.pending-row--selected]="selectedId() === m.id"
+                   (click)="select(m)">
+            <div class="pending-row__teams">
+              <span class="pending-row__team">{{ teamName(m.homeTeamId) }}</span>
+              @if (hasScore(m)) {
+                <strong class="pending-row__score">{{ m.homeScore }} — {{ m.awayScore }}</strong>
+              } @else {
                 <span class="pending-row__sep">vs</span>
-                <span class="pending-row__team">{{ teamName(m.awayTeamId) }}</span>
-                <p class="pending-row__meta">
-                  {{ shortId(m.id) }} · {{ phaseName(m.phaseId) }}
-                  @if (m.venue) { · {{ m.venue }} }
-                  · finalizó {{ relativeFromKickoff(m.kickoffAt) }}
+              }
+              <span class="pending-row__team">{{ teamName(m.awayTeamId) }}</span>
+              <p class="pending-row__meta">
+                {{ shortId(m.id) }} · {{ phaseName(m.phaseId) }}
+                @if (m.venue) { · {{ m.venue }} }
+                · {{ kickoffLabel(m.kickoffAt) }}
+                @if (hasScore(m) && !m.pointsCalculated) {
+                  · <strong style="color: var(--color-lost);">sin scoring</strong>
+                }
+                @if (m.pointsCalculated) {
+                  · <strong style="color: var(--color-primary-green);">scoring OK</strong>
+                }
+              </p>
+            </div>
+            @if (selectedId() === m.id) {
+              <span class="pending-row__selected-tag">↓ Seleccionado</span>
+            } @else {
+              <button class="btn btn--ghost btn--sm" type="button"
+                      (click)="select(m); $event.stopPropagation()">
+                {{ hasScore(m) ? 'Editar' : 'Seleccionar' }}
+              </button>
+            }
+          </article>
+
+          @if (selectedId() === m.id) {
+            <form class="submit-form" style="margin-bottom: var(--space-md);"
+                  (ngSubmit)="publish(m); $event.preventDefault()"
+                  (click)="$event.stopPropagation()">
+              <h2>{{ teamName(m.homeTeamId) }} vs {{ teamName(m.awayTeamId) }}</h2>
+              <p class="submit-form__lead">
+                Guarda el resultado del partido. Después usa el botón
+                <strong>"Calcular puntos"</strong> de arriba para procesar los picks.
+              </p>
+
+              <div class="submit-form__teams">
+                <div class="submit-form__team">
+                  <strong>{{ teamName(m.homeTeamId) }}</strong>
+                  <div class="score-stepper">
+                    <button type="button" class="score-stepper__btn"
+                            [disabled]="homeScore() === 0"
+                            (click)="dec('home')">−</button>
+                    <input class="score-stepper__value" type="number" min="0" max="20"
+                           [value]="homeScore()" (input)="setScore('home', $any($event.target).value)">
+                    <button type="button" class="score-stepper__btn"
+                            [disabled]="homeScore() >= 20"
+                            (click)="inc('home')">+</button>
+                  </div>
+                </div>
+                <span class="submit-form__divider">—</span>
+                <div class="submit-form__team">
+                  <strong>{{ teamName(m.awayTeamId) }}</strong>
+                  <div class="score-stepper">
+                    <button type="button" class="score-stepper__btn"
+                            [disabled]="awayScore() === 0"
+                            (click)="dec('away')">−</button>
+                    <input class="score-stepper__value" type="number" min="0" max="20"
+                           [value]="awayScore()" (input)="setScore('away', $any($event.target).value)">
+                    <button type="button" class="score-stepper__btn"
+                            [disabled]="awayScore() >= 20"
+                            (click)="inc('away')">+</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="submit-form__lock">
+                <h4>Versión actual</h4>
+                <p>
+                  Match version: <code>v={{ m.version }}</code> · Conflict 409 si otro admin actualiza.
                 </p>
               </div>
-              @if (selectedId() === m.id) {
-                <span class="pending-row__selected-tag">↓ Seleccionado</span>
-              } @else {
-                <button class="btn btn--ghost btn--sm" type="button" (click)="select(m); $event.stopPropagation()">
-                  Seleccionar
-                </button>
+
+              @if (publishError()) {
+                <p class="form-card__hint" style="color: var(--color-lost);">{{ publishError() }}</p>
               }
-            </article>
-          }
-        </div>
-      }
 
-      @let sel = selectedMatch();
-      @if (sel !== null) {
-        <h2 style="font-family: var(--font-display); font-size: var(--fs-xl); text-transform: uppercase; line-height: 1; margin-bottom: var(--space-md);">
-          Resultado del partido seleccionado
-        </h2>
-
-        <form class="submit-form" (ngSubmit)="publish(sel); $event.preventDefault()">
-          <h2>{{ teamName(sel.homeTeamId) }} vs {{ teamName(sel.awayTeamId) }}</h2>
-          <p class="submit-form__lead">
-            Al publicar, se dispara <code>score-match</code> Lambda que recalcula puntos para
-            <strong>{{ formatNumber(picksFor(sel.id)) }}</strong> {{ picksFor(sel.id) === 1 ? 'pick' : 'picks' }}.
-            Operación idempotente — se puede re-correr.
-          </p>
-
-          <div class="submit-form__teams">
-            <div class="submit-form__team">
-              <strong>{{ teamName(sel.homeTeamId) }}</strong>
-              <div class="score-stepper">
-                <button type="button" class="score-stepper__btn"
-                        [disabled]="homeScore() === 0"
-                        (click)="dec('home')">−</button>
-                <input class="score-stepper__value" type="number" min="0" max="20"
-                       [value]="homeScore()" (input)="setScore('home', $any($event.target).value)">
-                <button type="button" class="score-stepper__btn"
-                        [disabled]="homeScore() >= 20"
-                        (click)="inc('home')">+</button>
-              </div>
-            </div>
-            <span class="submit-form__divider">—</span>
-            <div class="submit-form__team">
-              <strong>{{ teamName(sel.awayTeamId) }}</strong>
-              <div class="score-stepper">
-                <button type="button" class="score-stepper__btn"
-                        [disabled]="awayScore() === 0"
-                        (click)="dec('away')">−</button>
-                <input class="score-stepper__value" type="number" min="0" max="20"
-                       [value]="awayScore()" (input)="setScore('away', $any($event.target).value)">
-                <button type="button" class="score-stepper__btn"
-                        [disabled]="awayScore() >= 20"
-                        (click)="inc('away')">+</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="submit-form__lock">
-            <h4>Optimistic locking</h4>
-            <p>
-              Match version: <code>v={{ sel.version }}</code> · Conflict 409 si otro admin actualiza.
-            </p>
-          </div>
-
-          <div class="submit-form__actions">
-            <button type="button" class="btn btn--ghost" [disabled]="publishing()" (click)="cancelSelect()">Cancelar</button>
-            <button type="submit" class="btn btn--primary" [disabled]="publishing()">
-              {{ publishing() ? 'Publicando…' : ('Publicar resultado · v=' + (sel.version + 1)) }}
-            </button>
-          </div>
-
-          @if (publishing()) {
-            <div class="polling-status">
-              <div class="polling-status__spinner"></div>
-              <div>
-                <p>Procesando picks...</p>
-                <p>pointsCalculated: <code>false</code> · score-match Lambda corriendo</p>
-              </div>
-            </div>
-          }
-        </form>
-      }
-
-      @if (unscored().length > 0) {
-        <section style="margin-top: var(--space-2xl);">
-          <h2 style="font-family: var(--font-display); font-size: var(--fs-xl); text-transform: uppercase; line-height: 1; color: var(--color-lost); margin-bottom: var(--space-sm);">
-            FINAL sin scoring
-          </h2>
-          <p style="color: var(--color-text-muted); margin-bottom: var(--space-md);">
-            Estos partidos están en FINAL pero los puntos no se calcularon. Re-corre el scoring manualmente.
-          </p>
-          <div style="display: grid; gap: var(--space-md);">
-            @for (m of unscored(); track m.id) {
-              <article class="form-card" style="max-width: 100%; display: grid; grid-template-columns: 1fr auto; gap: var(--space-md); align-items: center;">
-                <div>
-                  <h3 style="font-family: var(--font-display); font-size: var(--fs-md); text-transform: uppercase; line-height: 1;">
-                    {{ teamName(m.homeTeamId) }} {{ m.homeScore }} — {{ m.awayScore }} {{ teamName(m.awayTeamId) }}
-                  </h3>
-                  <p class="form-card__hint" style="margin-top: 4px;">
-                    {{ shortId(m.id) }} · finalizó {{ relativeFromKickoff(m.kickoffAt) }}
-                  </p>
-                </div>
-                <button class="btn btn--ghost" type="button"
-                        [disabled]="rescoring()[m.id]"
-                        (click)="scoreOnly(m)">
-                  {{ rescoring()[m.id] ? 'Calculando…' : 'Calcular puntos' }}
+              <div class="submit-form__actions">
+                <button type="button" class="btn btn--ghost" [disabled]="publishing()" (click)="cancelSelect(); $event.stopPropagation()">Cancelar</button>
+                <button type="submit" class="btn btn--primary" [disabled]="publishing()">
+                  {{ publishing() ? 'Guardando…' : (hasScore(m) ? 'Actualizar resultado · v=' + (m.version + 1) : 'Publicar resultado · v=' + (m.version + 1)) }}
                 </button>
-              </article>
-            }
-          </div>
-        </section>
-      }
+              </div>
+            </form>
+          }
+        }
+      </div>
     }
   `,
 })
@@ -191,29 +155,23 @@ export class AdminResultsComponent implements OnInit {
   homeScore = signal(0);
   awayScore = signal(0);
   publishing = signal(false);
-  rescoring = signal<Record<string, boolean>>({});
+  publishError = signal<string | null>(null);
   calculating = signal(false);
 
-  // Pending = FINAL + sin score todavía. El admin marca FINAL en
-  // /admin/fixtures/:id/edit cuando termina el partido y aparece aquí.
+  // Pending = todos los partidos que aún no están "cerrados".
+  // Un partido queda fuera de la lista solo cuando tiene score Y
+  // pointsCalculated=true (es decir, completamente procesado).
   pending = computed(() =>
     this.matches()
-      .filter((m) => m.status === 'FINAL' && (m.homeScore === null || m.awayScore === null))
+      .filter((m) => !(this.hasScore(m) && m.pointsCalculated))
       .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt)),
   );
 
-  // Unscored = FINAL + score guardado + Lambda no corrido. El botón
-  // "Calcular puntos" del header los procesa en bloque.
+  // Unscored = score guardado pero scoring Lambda no corrido. El botón
+  // header "Calcular puntos (N)" cuenta esto y los procesa en bloque.
   unscored = computed(() =>
-    this.matches()
-      .filter((m) => m.status === 'FINAL' && !m.pointsCalculated && m.homeScore !== null && m.awayScore !== null)
-      .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt)),
+    this.matches().filter((m) => this.hasScore(m) && !m.pointsCalculated),
   );
-
-  selectedMatch = computed(() => {
-    const id = this.selectedId();
-    return id ? (this.matches().find((m) => m.id === id) ?? null) : null;
-  });
 
   async ngOnInit() { await this.load(); }
 
@@ -257,18 +215,26 @@ export class AdminResultsComponent implements OnInit {
       }
       this.picksByMatch.set(counts);
 
-      // Auto-select the oldest pending match if nothing chosen yet.
-      if (this.selectedId() === null && this.pending().length > 0) {
-        this.select(this.pending()[0]!);
-      } else if (this.selectedId() && !this.matches().some((m) => m.id === this.selectedId())) {
-        this.selectedId.set(null);
+      // Si el row seleccionado se quedó fuera de la lista (porque ahora ya
+      // está scored), limpiamos la selección.
+      if (this.selectedId() && !this.pending().some((m) => m.id === this.selectedId())) {
+        this.cancelSelect();
       }
     } finally {
       this.loading.set(false);
     }
   }
 
+  hasScore(m: ResultMatch): boolean {
+    return m.homeScore !== null && m.awayScore !== null;
+  }
+
   select(m: ResultMatch) {
+    this.publishError.set(null);
+    if (this.selectedId() === m.id) {
+      this.cancelSelect();
+      return;
+    }
     this.selectedId.set(m.id);
     this.homeScore.set(m.homeScore ?? 0);
     this.awayScore.set(m.awayScore ?? 0);
@@ -278,6 +244,7 @@ export class AdminResultsComponent implements OnInit {
     this.selectedId.set(null);
     this.homeScore.set(0);
     this.awayScore.set(0);
+    this.publishError.set(null);
   }
 
   setScore(side: 'home' | 'away', value: string) {
@@ -297,11 +264,15 @@ export class AdminResultsComponent implements OnInit {
   teamName(slug: string): string { return this.teams().get(slug) ?? slug; }
   phaseName(id: string): string { return this.phases().get(id) ?? '—'; }
   shortId(id: string): string { return `m-${id.slice(-4).toLowerCase()}`; }
-  formatNumber(n: number): string { return n.toLocaleString('es-EC'); }
 
-  relativeFromKickoff(iso: string): string {
-    const diff = Date.now() - Date.parse(iso);
-    if (diff < 0) return 'aún no termina';
+  kickoffLabel(iso: string): string {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '—';
+    const diff = Date.now() - d.getTime();
+    if (diff < 0) {
+      // Future
+      return d.toLocaleString('es-EC', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    }
     if (diff < 3_600_000) return `hace ${Math.max(1, Math.floor(diff / 60_000))} min`;
     if (diff < 86_400_000) return `hace ${Math.floor(diff / 3_600_000)}h`;
     return `hace ${Math.floor(diff / 86_400_000)} días`;
@@ -309,19 +280,28 @@ export class AdminResultsComponent implements OnInit {
 
   async publish(m: ResultMatch) {
     this.publishing.set(true);
+    this.publishError.set(null);
     try {
-      const res = await this.api.updateMatchResult(m.id, this.homeScore(), this.awayScore(), m.version);
+      const res = await this.api.updateMatchResult(
+        m.id,
+        this.homeScore(),
+        this.awayScore(),
+        m.version,
+        m.status,
+      );
       if (res?.errors && res.errors.length > 0) {
         // eslint-disable-next-line no-console
         console.error('[updateMatchResult] GraphQL errors:', res.errors);
-        this.toast.error(res.errors[0]!.message ?? 'No se pudo guardar el resultado');
+        this.publishError.set(res.errors[0]!.message ?? 'No se pudo guardar el resultado');
         return;
       }
       this.toast.success('Resultado guardado · usa "Calcular puntos" para procesar picks');
       this.cancelSelect();
       void this.load();
     } catch (e) {
-      this.toast.error(humanizeError(e));
+      // eslint-disable-next-line no-console
+      console.error('[publish] threw:', e);
+      this.publishError.set(humanizeError(e));
     } finally {
       this.publishing.set(false);
     }
@@ -354,20 +334,6 @@ export class AdminResultsComponent implements OnInit {
       void this.load();
     } finally {
       this.calculating.set(false);
-    }
-  }
-
-  async scoreOnly(m: ResultMatch) {
-    this.rescoring.update((p) => ({ ...p, [m.id]: true }));
-    try {
-      const res = await this.api.scoreMatch(m.id);
-      const updated = res.data?.updated ?? 0;
-      this.toast.success(`Scoring corrido · ${updated} pick${updated === 1 ? '' : 's'} actualizado${updated === 1 ? '' : 's'}`);
-      void this.load();
-    } catch (e) {
-      this.toast.error(humanizeError(e));
-    } finally {
-      this.rescoring.update((p) => ({ ...p, [m.id]: false }));
     }
   }
 }

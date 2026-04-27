@@ -122,11 +122,7 @@ interface MatchRow {
                     </td>
                     <td>{{ formatNumber(picksByMatch().get(m.id) ?? 0) }}</td>
                     <td>
-                      @if (liveStatus(m) === 'LIVE' || m.status === 'FINAL') {
-                        <a class="fix-action" routerLink="/admin/results">Publicar</a>
-                      } @else {
-                        <a class="fix-action fix-action--edit" [routerLink]="['/admin/fixtures', m.id, 'edit']">Editar</a>
-                      }
+                      <a class="fix-action fix-action--edit" [routerLink]="['/admin/fixtures', m.id, 'edit']">Editar</a>
                     </td>
                   </tr>
                 }
