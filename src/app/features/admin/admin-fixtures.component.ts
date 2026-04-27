@@ -5,6 +5,7 @@ import { ApiService } from '../../core/api/api.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
 import { apiClient } from '../../core/api/client';
+import { effectiveStatus } from '../../shared/util/match-status';
 
 const TOURNAMENT_ID = 'mundial-2026';
 const DAY_MS = 86_400_000;
@@ -97,7 +98,7 @@ interface MatchRow {
               </thead>
               <tbody>
                 @for (m of visible(); track m.id) {
-                  <tr [class.is-live]="m.status === 'LIVE'">
+                  <tr [class.is-live]="liveStatus(m) === 'LIVE'">
                     <td><code>{{ shortId(m.id) }}</code></td>
                     <td>{{ phaseName(m.phaseId) }}</td>
                     <td>
@@ -108,7 +109,7 @@ interface MatchRow {
                     </td>
                     <td>{{ formatKickoff(m.kickoffAt) }}</td>
                     <td>{{ m.venue || '—' }}</td>
-                    <td><span class="fix-status fix-status--{{ m.status.toLowerCase() }}">{{ statusLabel(m.status) }}</span></td>
+                    <td><span class="fix-status fix-status--{{ liveStatus(m).toLowerCase() }}">{{ statusLabel(liveStatus(m)) }}</span></td>
                     <td>
                       @if (m.homeScore != null && m.awayScore != null) {
                         <strong>{{ m.homeScore }}-{{ m.awayScore }}</strong>
@@ -121,7 +122,7 @@ interface MatchRow {
                     </td>
                     <td>{{ formatNumber(picksByMatch().get(m.id) ?? 0) }}</td>
                     <td>
-                      @if (m.status === 'LIVE' || (m.status === 'SCHEDULED' && isPast(m.kickoffAt))) {
+                      @if (liveStatus(m) === 'LIVE' || m.status === 'FINAL') {
                         <a class="fix-action" routerLink="/admin/results">Publicar</a>
                       } @else {
                         <a class="fix-action fix-action--edit" [routerLink]="['/admin/fixtures', m.id, 'edit']">Editar</a>
@@ -167,7 +168,10 @@ export class AdminFixturesComponent implements OnInit {
     const q = this.searchSig().trim().toLowerCase();
     return this.matches().filter((m) => {
       if (ph && m.phaseId !== ph) return false;
-      if (st && m.status !== st) return false;
+      // Filtramos sobre el status efectivo: si el usuario elige "LIVE",
+      // queremos los partidos que en este momento están EN VIVO según
+      // hora — no los que el admin marcó manualmente como LIVE en DB.
+      if (st && this.liveStatus(m) !== st) return false;
       if (q) {
         const home = this.teamName(m.homeTeamId).toLowerCase();
         const away = this.teamName(m.awayTeamId).toLowerCase();
@@ -176,6 +180,10 @@ export class AdminFixturesComponent implements OnInit {
       return true;
     });
   });
+
+  liveStatus(m: { status: string; kickoffAt: string }): 'SCHEDULED' | 'LIVE' | 'FINAL' {
+    return effectiveStatus(m.status, m.kickoffAt);
+  }
 
   anyRecentlyEdited = computed(() => this.matches().some((m) => this.recentlyEdited(m)));
 
