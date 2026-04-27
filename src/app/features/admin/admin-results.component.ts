@@ -120,7 +120,7 @@ interface ResultMatch {
               <div class="submit-form__actions">
                 <button type="button" class="btn btn--ghost" [disabled]="publishing()" (click)="cancelSelect(); $event.stopPropagation()">Cancelar</button>
                 <button type="submit" class="btn btn--primary" [disabled]="publishing()">
-                  {{ publishing() ? 'Guardando…' : (hasScore(m) ? 'Actualizar resultado' : 'Publicar resultado') }}
+                  {{ publishing() ? 'Guardando…' : 'Guardar' }}
                 </button>
               </div>
             </form>
