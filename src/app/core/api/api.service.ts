@@ -17,7 +17,10 @@ export class ApiService {
     });
   }
   getMatch(id: string) {
-    return apiClient.models.Match.get({ id });
+    // apiKey because Match.read is allowed only via publicApiKey (same auth
+    // mode listMatches uses). Without it the Cognito-default request hits the
+    // model authz, returns data:null, and the edit form pre-fill goes blank.
+    return apiClient.models.Match.get({ id }, { authMode: 'apiKey' });
   }
   listLeaderboard(tournamentId: string, limit = 100) {
     return apiClient.models.UserTournamentTotal.list({
