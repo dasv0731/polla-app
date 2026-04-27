@@ -41,6 +41,9 @@ testem.log
 .DS_Store
 Thumbs.db
 
-# Amplify outputs (live, contains real keys — replaced by CI from S3)
+# Amplify outputs.
+# /amplify_outputs.json is committed because Angular needs it at build time and
+# it only contains client-public IDs (Cognito user pool, AppSync endpoint, API
+# key). These are visible in any browser DevTools — they're not secrets. The
+# server-side polla-backend repo's amplify_outputs.json stays gitignored.
 src/amplify_outputs.json
-/amplify_outputs.json
