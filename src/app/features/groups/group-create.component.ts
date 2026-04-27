@@ -112,14 +112,25 @@ export class GroupCreateComponent {
     this.error.set(null);
     try {
       const res = await this.api.createGroup(this.name.trim(), TOURNAMENT_ID);
-      if (res.data) {
+      // Amplify Gen 2 returns { data, errors? }; non-throwing GraphQL errors
+      // come through `errors` so we have to check both branches.
+      if (res.errors && res.errors.length > 0) {
+        const first = res.errors[0]!;
+        this.error.set(humanizeError(new Error(first.message)));
+        this.toast.error(first.message);
+        // eslint-disable-next-line no-console
+        console.error('[createGroup] GraphQL errors:', res.errors);
+      } else if (res.data) {
         this.created.set({ id: res.data.id, joinCode: res.data.joinCode });
         this.toast.success('Grupo creado');
       } else {
-        this.error.set('No se pudo crear el grupo');
+        this.error.set('No se pudo crear el grupo (respuesta vacía)');
       }
     } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('[createGroup] threw:', e);
       this.error.set(humanizeError(e));
+      this.toast.error(humanizeError(e));
     } finally {
       this.loading.set(false);
     }
