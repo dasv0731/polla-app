@@ -82,10 +82,6 @@ interface ResultMatch {
                   (ngSubmit)="publish(m); $event.preventDefault()"
                   (click)="$event.stopPropagation()">
               <h2>{{ teamName(m.homeTeamId) }} vs {{ teamName(m.awayTeamId) }}</h2>
-              <p class="submit-form__lead">
-                Guarda el resultado del partido. Después usa el botón
-                <strong>"Calcular puntos"</strong> de arriba para procesar los picks.
-              </p>
 
               <div class="submit-form__teams">
                 <div class="submit-form__team">
@@ -117,13 +113,6 @@ interface ResultMatch {
                 </div>
               </div>
 
-              <div class="submit-form__lock">
-                <h4>Versión actual</h4>
-                <p>
-                  Match version: <code>v={{ m.version }}</code> · Conflict 409 si otro admin actualiza.
-                </p>
-              </div>
-
               @if (publishError()) {
                 <p class="form-card__hint" style="color: var(--color-lost);">{{ publishError() }}</p>
               }
@@ -131,7 +120,7 @@ interface ResultMatch {
               <div class="submit-form__actions">
                 <button type="button" class="btn btn--ghost" [disabled]="publishing()" (click)="cancelSelect(); $event.stopPropagation()">Cancelar</button>
                 <button type="submit" class="btn btn--primary" [disabled]="publishing()">
-                  {{ publishing() ? 'Guardando…' : (hasScore(m) ? 'Actualizar resultado · v=' + (m.version + 1) : 'Publicar resultado · v=' + (m.version + 1)) }}
+                  {{ publishing() ? 'Guardando…' : (hasScore(m) ? 'Actualizar resultado' : 'Publicar resultado') }}
                 </button>
               </div>
             </form>
@@ -310,6 +299,12 @@ export class AdminResultsComponent implements OnInit {
   async calculatePointsAll() {
     const targets = this.unscored();
     if (targets.length === 0) return;
+    const confirmed = confirm(
+      `¿Calcular los puntos de ${targets.length} partido${targets.length === 1 ? '' : 's'}?\n\n` +
+      `Esto recorre los picks de TODOS los usuarios y actualiza sus puntos. ` +
+      `La operación es idempotente — si la repites no duplica.`,
+    );
+    if (!confirmed) return;
     this.calculating.set(true);
     let totalUpdated = 0;
     let errored = 0;
