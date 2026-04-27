@@ -880,6 +880,27 @@
               "isRequired": true,
               "attributes": []
             },
+            "prize1st": {
+              "name": "prize1st",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "prize2nd": {
+              "name": "prize2nd",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "prize3rd": {
+              "name": "prize3rd",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
             "updatedAt": {
               "name": "updatedAt",
               "isArray": false,
