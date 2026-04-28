@@ -3435,6 +3435,32 @@
             }
           }
         },
+        "AssignComodinReturnType": {
+          "name": "AssignComodinReturnType",
+          "fields": {
+            "ok": {
+              "name": "ok",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": true,
+              "attributes": []
+            },
+            "message": {
+              "name": "message",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "comodinId": {
+              "name": "comodinId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            }
+          }
+        },
         "RedeemSponsorCodeReturnType": {
           "name": "RedeemSponsorCodeReturnType",
           "fields": {
@@ -3849,6 +3875,58 @@
               "isArray": false,
               "type": "ID",
               "isRequired": true
+            }
+          }
+        },
+        "assignComodin": {
+          "name": "assignComodin",
+          "isArray": false,
+          "type": {
+            "nonModel": "AssignComodinReturnType"
+          },
+          "isRequired": false,
+          "arguments": {
+            "comodinId": {
+              "name": "comodinId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            },
+            "matchId": {
+              "name": "matchId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": false
+            },
+            "phaseOrder": {
+              "name": "phaseOrder",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": false
+            },
+            "groupLetter": {
+              "name": "groupLetter",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false
+            },
+            "positionIndex": {
+              "name": "positionIndex",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": false
+            },
+            "teamSlug": {
+              "name": "teamSlug",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": false
+            },
+            "targetComodinId": {
+              "name": "targetComodinId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": false
             }
           }
         },
