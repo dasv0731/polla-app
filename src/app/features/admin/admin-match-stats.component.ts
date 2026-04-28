@@ -218,7 +218,7 @@ interface QuestionStats {
                 @for (u of pagedTriviaUsers(); track u.userId; let i = $index) {
                   <tr>
                     <td class="pos">{{ pageStart() + i + 1 }}</td>
-                    <td>@{{ u.handle }}</td>
+                    <td>&#64;{{ u.handle }}</td>
                     <td><strong>{{ u.correct }}</strong></td>
                     <td>{{ u.answered }} / {{ questions().length }}</td>
                     <td>{{ u.pct }}%</td>
