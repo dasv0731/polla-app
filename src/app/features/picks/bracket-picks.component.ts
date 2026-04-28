@@ -33,7 +33,9 @@ const PHASES: PhaseDef[] = [
   { order: 3, label: 'Octavos (R16)',       expectedMatches: 8,  feedsField: 'cuartos',  pointsLabel: '6 pts/equipo correcto en cuartos' },
   { order: 4, label: 'Cuartos',             expectedMatches: 4,  feedsField: 'semis',    pointsLabel: '8 pts/equipo correcto en semis' },
   { order: 5, label: 'Semifinales',         expectedMatches: 2,  feedsField: 'final',    pointsLabel: '10 pts/finalista correcto' },
-  { order: 6, label: 'Final',               expectedMatches: 1,  feedsField: 'champion', pointsLabel: '15 pts si campeón correcto' },
+  // Order 6 incluye Final + 3er puesto. El bracketPosition=1 (la Final)
+  // determina al campeón; el 3er puesto se muestra pero no se score (aún).
+  { order: 6, label: 'Final + 3er puesto',  expectedMatches: 2,  feedsField: 'champion', pointsLabel: '15 pts si campeón correcto (Final = bracketPosition 1)' },
 ];
 
 const TOURNAMENT_ID = 'mundial-2026';
@@ -461,9 +463,18 @@ export class BracketPicksComponent implements OnInit {
     this.saveError.set(null);
     this.saving.set(true);
     try {
-      // Derivar arrays por fase a partir del map matchId → slug.
+      // Iteramos partidos ordenados por bracketPosition (mismo orden que la
+      // UI). Para la fase 6 esto importa: el seed la llama "Final + 3er"
+      // con 2 partidos — bracketPosition=1 es la Final y bracketPosition=2
+      // el 3er puesto. El campeón es el ganador de la Final, no del 3ero.
       const winnersByPhase: Record<number, string[]> = { 2: [], 3: [], 4: [], 5: [], 6: [] };
-      for (const km of this.matches()) {
+      const sortedMatches = [...this.matches()].sort((a, b) => {
+        if (a.phaseOrder !== b.phaseOrder) return a.phaseOrder - b.phaseOrder;
+        const ap = a.bracketPosition ?? 999;
+        const bp = b.bracketPosition ?? 999;
+        return ap - bp;
+      });
+      for (const km of sortedMatches) {
         const winner = this.winners().get(km.id);
         if (!winner) continue;
         const arr = winnersByPhase[km.phaseOrder];
@@ -478,8 +489,9 @@ export class BracketPicksComponent implements OnInit {
         octavos:  winnersByPhase[2] ?? [],   // R32 winners → en octavos
         cuartos:  winnersByPhase[3] ?? [],   // R16 winners → en cuartos
         semis:    winnersByPhase[4] ?? [],   // QF winners → en semis
-        final:    winnersByPhase[5] ?? [],   // SF winners → en final
-        champion: (winnersByPhase[6] ?? [])[0] ?? '',  // Final winner
+        final:    winnersByPhase[5] ?? [],   // SF winners → en final (los 2 finalistas)
+        // bracketPosition=1 es la Final (orden 6), su ganador es el campeón.
+        champion: (winnersByPhase[6] ?? [])[0] ?? '',
       };
 
       const res = await this.api.upsertBracketPick(payload);
