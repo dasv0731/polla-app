@@ -2,6 +2,9 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { compareRankable } from '../../shared/util/tiebreakers';
+
+type GameMode = 'SIMPLE' | 'COMPLETE';
 
 interface GroupRow {
   id: string;
@@ -11,6 +14,7 @@ interface GroupRow {
   isAdmin: boolean;
   adminHandle: string | null;
   createdAt: string;
+  mode: GameMode;
 }
 
 @Component({
@@ -42,7 +46,14 @@ interface GroupRow {
               {{ icon(g) }}
             </span>
             <div class="group-row__body">
-              <p class="group-row__name">{{ g.name }}</p>
+              <p class="group-row__name">
+                {{ g.name }}
+                <span style="display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.06em; margin-left: 8px; vertical-align: middle;"
+                      [style.background]="g.mode === 'COMPLETE' ? 'var(--color-primary-green)' : 'rgba(255,200,0,0.4)'"
+                      [style.color]="g.mode === 'COMPLETE' ? 'var(--color-primary-white)' : 'var(--color-primary-black)'">
+                  {{ g.mode === 'COMPLETE' ? 'Completo' : 'Simple' }}
+                </span>
+              </p>
               <p class="group-row__meta">
                 {{ g.members }} miembros
                 @if (g.isAdmin) {
@@ -122,7 +133,9 @@ export class GroupsListComponent implements OnInit {
             this.api.groupLeaderboard(m.groupId),
           ]);
           if (!grp.data) return null;
-          const sorted = (lb.data ?? []).sort((a, b) => (b.points ?? 0) - (a.points ?? 0));
+          // Sort §8 — mismo comparator que /ranking para que la posición
+          // que mostramos acá coincida con la que el user ve adentro.
+          const sorted = [...(lb.data ?? [])].sort(compareRankable);
           const myRank = sorted.findIndex((t) => t.userId === userId);
           const isAdmin = grp.data.adminUserId === userId;
 
@@ -144,6 +157,7 @@ export class GroupsListComponent implements OnInit {
             isAdmin,
             adminHandle,
             createdAt: grp.data.createdAt,
+            mode: ((grp.data.mode as GameMode | null | undefined) ?? 'COMPLETE'),
           };
         }),
       );
