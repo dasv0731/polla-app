@@ -193,11 +193,16 @@ interface QuestionStats {
             Base: {{ uniqueAnswerers() }} users con al menos una respuesta.
           </p>
 
-          <!-- ========== TOP USUARIOS ========== -->
-          @if (topTriviaUsers().length > 0) {
-            <h3 style="font-family: var(--font-display); font-size: var(--fs-lg); text-transform: uppercase; margin: var(--space-2xl) 0 var(--space-md);">
-              Top 10 — aciertos de trivia
-            </h3>
+          <!-- ========== USUARIOS DE TRIVIA (paginado 20/página) ========== -->
+          @if (triviaUsersRanked().length > 0) {
+            <header style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: var(--space-md); margin: var(--space-2xl) 0 var(--space-md);">
+              <h3 style="font-family: var(--font-display); font-size: var(--fs-lg); text-transform: uppercase;">
+                Ranking — aciertos de trivia
+              </h3>
+              <small style="color: var(--color-text-muted);">
+                {{ triviaUsersRanked().length }} users · página {{ triviaPage() + 1 }} de {{ triviaTotalPages() }}
+              </small>
+            </header>
             <table class="standings standings--group">
               <thead>
                 <tr>
@@ -210,9 +215,9 @@ interface QuestionStats {
                 </tr>
               </thead>
               <tbody>
-                @for (u of topTriviaUsers(); track u.userId; let i = $index) {
+                @for (u of pagedTriviaUsers(); track u.userId; let i = $index) {
                   <tr>
-                    <td class="pos">{{ i + 1 }}</td>
+                    <td class="pos">{{ pageStart() + i + 1 }}</td>
                     <td>@{{ u.handle }}</td>
                     <td><strong>{{ u.correct }}</strong></td>
                     <td>{{ u.answered }} / {{ questions().length }}</td>
@@ -222,9 +227,23 @@ interface QuestionStats {
                 }
               </tbody>
             </table>
-            <p style="margin-top: var(--space-xs); font-size: var(--fs-xs); color: var(--color-text-muted);">
-              Orden: aciertos → % de aciertos → tiempo promedio menor.
-            </p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: var(--space-md); flex-wrap: wrap; gap: var(--space-sm);">
+              <small style="color: var(--color-text-muted);">
+                Orden: aciertos → % de aciertos → tiempo promedio menor.
+              </small>
+              <div style="display: flex; gap: var(--space-sm);">
+                <button class="btn btn--ghost btn--sm" type="button"
+                        [disabled]="triviaPage() === 0"
+                        (click)="prevPage()">
+                  ← Anterior
+                </button>
+                <button class="btn btn--ghost btn--sm" type="button"
+                        [disabled]="triviaPage() >= triviaTotalPages() - 1"
+                        (click)="nextPage()">
+                  Siguiente →
+                </button>
+              </div>
+            </div>
           }
 
           <!-- ========== POR PREGUNTA ========== -->
@@ -403,8 +422,12 @@ export class AdminMatchStatsComponent implements OnInit {
     return `${m}m ${String(r).padStart(2, '0')}s`;
   });
 
-  // Top usuarios por aciertos en trivia (top 10).
-  topTriviaUsers = computed<TopUserRow[]>(() => {
+  // Página actual del leaderboard (20 users por página).
+  triviaPage = signal(0);
+  static readonly TRIVIA_PAGE_SIZE = 20;
+
+  // Ranking completo de usuarios por aciertos en trivia (todos, sin slice).
+  triviaUsersRanked = computed<TopUserRow[]>(() => {
     const qCorrect = new Map(this.questions().map((q) => [q.id, q.correctOption]));
     const qPublished = new Map(this.questions().map((q) => [q.id, q.publishedAt]));
     interface Acc { answered: number; correct: number; sumResponseSec: number; respSamples: number; }
@@ -440,8 +463,28 @@ export class AdminMatchStatsComponent implements OnInit {
       b.pct - a.pct ||
       (a.avgResponseSec ?? Number.POSITIVE_INFINITY) - (b.avgResponseSec ?? Number.POSITIVE_INFINITY),
     );
-    return rows.slice(0, 10);
+    return rows;
   });
+
+  triviaTotalPages = computed(() => {
+    const t = this.triviaUsersRanked().length;
+    return Math.max(1, Math.ceil(t / AdminMatchStatsComponent.TRIVIA_PAGE_SIZE));
+  });
+
+  pagedTriviaUsers = computed(() => {
+    const all = this.triviaUsersRanked();
+    const start = this.triviaPage() * AdminMatchStatsComponent.TRIVIA_PAGE_SIZE;
+    return all.slice(start, start + AdminMatchStatsComponent.TRIVIA_PAGE_SIZE);
+  });
+
+  pageStart = computed(() => this.triviaPage() * AdminMatchStatsComponent.TRIVIA_PAGE_SIZE);
+
+  prevPage() {
+    this.triviaPage.update((p) => Math.max(0, p - 1));
+  }
+  nextPage() {
+    this.triviaPage.update((p) => Math.min(this.triviaTotalPages() - 1, p + 1));
+  }
 
   // Histograma: cuántos users respondieron N preguntas, con N de 1 a total.
   answerHistogram = computed(() => {
