@@ -1767,7 +1767,7 @@
               "type": "String",
               "isRequired": false,
               "attributes": [],
-              "isArrayNullable": false
+              "isArrayNullable": true
             },
             "cuartos": {
               "name": "cuartos",
@@ -1775,7 +1775,7 @@
               "type": "String",
               "isRequired": false,
               "attributes": [],
-              "isArrayNullable": false
+              "isArrayNullable": true
             },
             "semis": {
               "name": "semis",
@@ -1783,7 +1783,7 @@
               "type": "String",
               "isRequired": false,
               "attributes": [],
-              "isArrayNullable": false
+              "isArrayNullable": true
             },
             "final": {
               "name": "final",
@@ -1791,13 +1791,13 @@
               "type": "String",
               "isRequired": false,
               "attributes": [],
-              "isArrayNullable": false
+              "isArrayNullable": true
             },
             "champion": {
               "name": "champion",
               "isArray": false,
               "type": "ID",
-              "isRequired": true,
+              "isRequired": false,
               "attributes": []
             },
             "pointsEarned": {

@@ -230,11 +230,14 @@ export class ApiService {
     octavos: string[]; cuartos: string[]; semis: string[]; final: string[];
     champion: string;
   }) {
+    // champion vacío → null. Los arrays se mandan tal cual (vacíos OK).
+    const championValue = input.champion ? input.champion : null;
     if (input.id) {
       return apiClient.models.BracketPick.update({
         id: input.id,
         octavos: input.octavos, cuartos: input.cuartos,
-        semis: input.semis, final: input.final, champion: input.champion,
+        semis: input.semis, final: input.final,
+        champion: championValue,
       });
     }
     return apiClient.models.BracketPick.create({
@@ -242,7 +245,8 @@ export class ApiService {
       tournamentId: input.tournamentId,
       mode: input.mode,
       octavos: input.octavos, cuartos: input.cuartos,
-      semis: input.semis, final: input.final, champion: input.champion,
+      semis: input.semis, final: input.final,
+      champion: championValue,
     });
   }
 
