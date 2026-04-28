@@ -12,6 +12,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <link rel="icon" type="image/png" href="assets/logo-golgana.png">
+
+  <!-- Polyfill: aws-amplify (Storage) y algunas deps de @aws-sdk referencian
+       Node's `global` en runtime. En browser no existe — alias a window
+       antes que cualquier chunk lo evalúe. -->
+  <script>(function(){ if (typeof window !== 'undefined' && typeof window.global === 'undefined') { window.global = window; } })();</script>
 </head>
 <body>
   <app-root></app-root>
