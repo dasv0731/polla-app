@@ -264,6 +264,18 @@ export class ApiService {
       limit: 200,
     });
   }
+  listTriviaAnswersByMatch(matchId: string) {
+    return apiClient.models.TriviaAnswer.list({
+      filter: { matchId: { eq: matchId } },
+      limit: 5000,
+    });
+  }
+  listPicksByMatch(matchId: string) {
+    return apiClient.models.Pick.list({
+      filter: { matchId: { eq: matchId } },
+      limit: 5000,
+    });
+  }
   upsertTriviaAnswer(input: {
     id?: string;
     userId: string;

@@ -125,6 +125,8 @@ interface MatchRow {
                       <a class="fix-action fix-action--edit" [routerLink]="['/admin/fixtures', m.id, 'edit']">Editar</a>
                       ·
                       <a class="fix-action" [routerLink]="['/admin/fixtures', m.id, 'trivia']">Trivia</a>
+                      ·
+                      <a class="fix-action" [routerLink]="['/admin/fixtures', m.id, 'stats']">Stats</a>
                     </td>
                   </tr>
                 }

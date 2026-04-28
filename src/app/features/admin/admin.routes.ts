@@ -33,6 +33,10 @@ export const adminRoutes: Routes = [
         loadComponent: () => import('./admin-trivia.component').then((m) => m.AdminTriviaComponent),
       },
       {
+        path: 'fixtures/:matchId/stats',
+        loadComponent: () => import('./admin-match-stats.component').then((m) => m.AdminMatchStatsComponent),
+      },
+      {
         path: 'results',
         loadComponent: () => import('./admin-results.component').then((m) => m.AdminResultsComponent),
       },
