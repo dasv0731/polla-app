@@ -20,6 +20,18 @@ type DropdownKey = 'groups' | 'picks' | 'rankings' | 'user' | null;
         </a>
 
         <nav class="site-header__nav" aria-label="Principal">
+          @if (isAdmin()) {
+            <!-- ADMIN-FOCUSED NAV: dashboard, grupos overview, rankings detallado -->
+            <a class="nav-dd__btn" routerLink="/admin/groups-overview" routerLinkActive="is-active" (click)="closeAll()">
+              Grupos
+            </a>
+            <a class="nav-dd__btn" routerLink="/admin/rankings-overview" routerLinkActive="is-active" (click)="closeAll()">
+              Rankings
+            </a>
+            <a class="nav-dd__btn" routerLink="/admin" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeAll()">
+              Admin
+            </a>
+          } @else {
           <!-- MIS GRUPOS -->
           <div class="nav-dd" (click)="$event.stopPropagation()">
             <button type="button" class="nav-dd__btn"
@@ -148,8 +160,6 @@ type DropdownKey = 'groups' | 'picks' | 'rankings' | 'user' | null;
             }
           </div>
 
-          @if (isAdmin()) {
-            <a class="nav-dd__btn" routerLink="/admin" routerLinkActive="is-active" (click)="closeAll()">Admin</a>
           }
         </nav>
 
@@ -186,6 +196,16 @@ type DropdownKey = 'groups' | 'picks' | 'rankings' | 'user' | null;
     <!-- MOBILE DRAWER (flat, sin dropdowns anidados) -->
     <label for="drawer" class="drawer-backdrop" aria-hidden="true" (click)="closeDrawer()"></label>
     <aside class="drawer" aria-label="Menú móvil">
+      @if (isAdmin()) {
+        <h4 class="drawer__head">Admin</h4>
+        <a routerLink="/admin" (click)="closeDrawer()">Dashboard</a>
+        <a routerLink="/admin/groups-overview" (click)="closeDrawer()">Grupos (overview)</a>
+        <a routerLink="/admin/rankings-overview" (click)="closeDrawer()">Rankings (detallado)</a>
+        <a routerLink="/admin/fixtures" (click)="closeDrawer()">Partidos</a>
+        <a routerLink="/admin/results" (click)="closeDrawer()">Resultados</a>
+        <a routerLink="/admin/teams" (click)="closeDrawer()">Equipos</a>
+        <a routerLink="/admin/users" (click)="closeDrawer()">Usuarios</a>
+      } @else {
       <h4 class="drawer__head">Mis grupos</h4>
       @for (g of myGroups(); track g.id) {
         <a [routerLink]="['/groups', g.id]" routerLinkActive="is-active" (click)="closeDrawer()">
@@ -218,12 +238,10 @@ type DropdownKey = 'groups' | 'picks' | 'rankings' | 'user' | null;
       @if (eligibleGlobal()) {
         <a routerLink="/ranking" (click)="closeDrawer()">🌍 Ranking global</a>
       }
+      }
 
       <h4 class="drawer__head">Cuenta</h4>
       <a routerLink="/profile" (click)="closeDrawer()">Editar perfil</a>
-      @if (isAdmin()) {
-        <a routerLink="/admin" (click)="closeDrawer()">Admin</a>
-      }
       <a (click)="logout()" style="cursor: pointer; color: var(--color-lost);">Cerrar sesión</a>
     </aside>
   `,

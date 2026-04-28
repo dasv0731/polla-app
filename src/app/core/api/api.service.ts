@@ -51,6 +51,41 @@ export class ApiService {
   listUsers(limit = 1000) {
     return apiClient.models.User.list({ limit });
   }
+  // ----- Bulk listings para vistas de admin -----
+  listAllTournamentTotals(tournamentId: string, limit = 5000) {
+    return apiClient.models.UserTournamentTotal.list({
+      filter: { tournamentId: { eq: tournamentId } },
+      limit,
+    });
+  }
+  listAllStandings(tournamentId: string, limit = 5000) {
+    return apiClient.models.GroupStandingPick.list({
+      filter: { tournamentId: { eq: tournamentId } },
+      limit,
+    });
+  }
+  listAllBestThirds(tournamentId: string, limit = 5000) {
+    return apiClient.models.BestThirdsPick.list({
+      filter: { tournamentId: { eq: tournamentId } },
+      limit,
+    });
+  }
+  listAllBrackets(tournamentId: string, limit = 5000) {
+    return apiClient.models.BracketPick.list({
+      filter: { tournamentId: { eq: tournamentId } },
+      limit,
+    });
+  }
+  listAllSpecials(tournamentId: string, limit = 5000) {
+    return apiClient.models.SpecialPick.list({
+      filter: { tournamentId: { eq: tournamentId } },
+      limit,
+    });
+  }
+  listAllTriviaAnswers(limit = 5000) {
+    return apiClient.models.TriviaAnswer.list({ limit });
+  }
+
   listAllPicks(tournamentId: string, limit = 5000) {
     return apiClient.models.Pick.list({
       filter: { tournamentId: { eq: tournamentId } },

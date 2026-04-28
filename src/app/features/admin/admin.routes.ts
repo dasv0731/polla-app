@@ -13,6 +13,14 @@ export const adminRoutes: Routes = [
         loadComponent: () => import('./admin-dashboard.component').then((m) => m.AdminDashboardComponent),
       },
       {
+        path: 'groups-overview',
+        loadComponent: () => import('./admin-groups-overview.component').then((m) => m.AdminGroupsOverviewComponent),
+      },
+      {
+        path: 'rankings-overview',
+        loadComponent: () => import('./admin-rankings-overview.component').then((m) => m.AdminRankingsOverviewComponent),
+      },
+      {
         path: 'fixtures',
         loadComponent: () => import('./admin-fixtures.component').then((m) => m.AdminFixturesComponent),
       },
