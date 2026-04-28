@@ -874,7 +874,7 @@
               "type": {
                 "enum": "ComodinType"
               },
-              "isRequired": true,
+              "isRequired": false,
               "attributes": []
             },
             "source": {
@@ -3166,6 +3166,7 @@
         "ComodinStatus": {
           "name": "ComodinStatus",
           "values": [
+            "PENDING_TYPE_CHOICE",
             "UNASSIGNED",
             "ASSIGNED",
             "ACTIVATED",
@@ -3354,6 +3355,79 @@
             },
             "awarded": {
               "name": "awarded",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": true,
+              "attributes": []
+            }
+          }
+        },
+        "ClaimComodinTypeReturnType": {
+          "name": "ClaimComodinTypeReturnType",
+          "fields": {
+            "ok": {
+              "name": "ok",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": true,
+              "attributes": []
+            },
+            "message": {
+              "name": "message",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "comodinId": {
+              "name": "comodinId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": false,
+              "attributes": []
+            },
+            "type": {
+              "name": "type",
+              "isArray": false,
+              "type": {
+                "enum": "ComodinType"
+              },
+              "isRequired": false,
+              "attributes": []
+            }
+          }
+        },
+        "RunLoyaltySweepReturnType": {
+          "name": "RunLoyaltySweepReturnType",
+          "fields": {
+            "granted": {
+              "name": "granted",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": true,
+              "attributes": []
+            },
+            "skipped": {
+              "name": "skipped",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": true,
+              "attributes": []
+            }
+          }
+        },
+        "RunEngagementSweepReturnType": {
+          "name": "RunEngagementSweepReturnType",
+          "fields": {
+            "granted": {
+              "name": "granted",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": true,
+              "attributes": []
+            },
+            "skipped": {
+              "name": "skipped",
               "isArray": false,
               "type": "Int",
               "isRequired": true,
@@ -3716,6 +3790,62 @@
           "arguments": {
             "matchId": {
               "name": "matchId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            }
+          }
+        },
+        "claimComodinType": {
+          "name": "claimComodinType",
+          "isArray": false,
+          "type": {
+            "nonModel": "ClaimComodinTypeReturnType"
+          },
+          "isRequired": false,
+          "arguments": {
+            "comodinId": {
+              "name": "comodinId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            },
+            "type": {
+              "name": "type",
+              "isArray": false,
+              "type": {
+                "enum": "ComodinType"
+              },
+              "isRequired": true
+            }
+          }
+        },
+        "runLoyaltySweep": {
+          "name": "runLoyaltySweep",
+          "isArray": false,
+          "type": {
+            "nonModel": "RunLoyaltySweepReturnType"
+          },
+          "isRequired": false,
+          "arguments": {
+            "tournamentId": {
+              "name": "tournamentId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            }
+          }
+        },
+        "runEngagementSweep": {
+          "name": "runEngagementSweep",
+          "isArray": false,
+          "type": {
+            "nonModel": "RunEngagementSweepReturnType"
+          },
+          "isRequired": false,
+          "arguments": {
+            "tournamentId": {
+              "name": "tournamentId",
               "isArray": false,
               "type": "ID",
               "isRequired": true

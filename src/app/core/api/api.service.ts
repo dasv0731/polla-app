@@ -139,6 +139,15 @@ export class ApiService {
       limit,
     });
   }
+  claimComodinType(comodinId: string, type: string) {
+    return apiClient.mutations.claimComodinType({ comodinId, type });
+  }
+  runLoyaltySweep(tournamentId: string) {
+    return apiClient.mutations.runLoyaltySweep({ tournamentId });
+  }
+  runEngagementSweep(tournamentId: string) {
+    return apiClient.mutations.runEngagementSweep({ tournamentId });
+  }
   getSponsorCode(id: string) {
     return apiClient.models.SponsorCode.get({ id });
   }

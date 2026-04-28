@@ -62,6 +62,37 @@ interface ActivityItem {
         }
       </section>
 
+      <!-- Comodines: barridos manuales para fuentes LOYALTY y ENGAGEMENT.
+           Trivia source es automática (al scorear cada match). -->
+      <section style="background: var(--color-primary-white); border: var(--border-grey); border-radius: var(--radius-md); padding: var(--space-md); margin-bottom: var(--space-xl);">
+        <h2 style="font-family: var(--font-display); font-size: var(--fs-lg); text-transform: uppercase; line-height: 1; margin-bottom: var(--space-sm);">
+          Comodines · barridos
+        </h2>
+        <p class="form-card__hint" style="margin-bottom: var(--space-md);">
+          Disparar al cumplirse cada ventana del reglamento §comodines.
+          Otorga 1 comodín tipo PENDING_TYPE_CHOICE a cada user que califica
+          (modo COMPLETE, sin haber recibido la fuente, dentro del techo de 5).
+          Idempotente: re-correr no duplica.
+        </p>
+        <div style="display: flex; gap: var(--space-md); flex-wrap: wrap;">
+          <button class="btn btn--primary" type="button"
+                  [disabled]="sweepingLoyalty()"
+                  (click)="runLoyaltySweep()">
+            {{ sweepingLoyalty() ? 'Ejecutando…' : 'Sweep fidelidad temprana (T-7d)' }}
+          </button>
+          <button class="btn btn--primary" type="button"
+                  [disabled]="sweepingEngagement()"
+                  (click)="runEngagementSweep()">
+            {{ sweepingEngagement() ? 'Ejecutando…' : 'Sweep engagement (final torneo)' }}
+          </button>
+        </div>
+        @if (sweepMsg()) {
+          <p class="form-card__hint" style="margin-top: var(--space-sm); color: var(--color-primary-green);">
+            {{ sweepMsg() }}
+          </p>
+        }
+      </section>
+
       <section class="kpi-grid">
         <article class="kpi-card">
           <small>Users registrados</small>
@@ -158,6 +189,52 @@ export class AdminDashboardComponent implements OnInit {
   scoringGroupStage = signal(false);
   scoringBracket = signal(false);
   scoringMsg = signal<string | null>(null);
+
+  sweepingLoyalty = signal(false);
+  sweepingEngagement = signal(false);
+  sweepMsg = signal<string | null>(null);
+
+  async runLoyaltySweep() {
+    if (!confirm('¿Otorgar comodín de fidelidad a los users que tienen TODAS sus predicciones llenas?\n\nEsto debería correrse a 7 días del kickoff del torneo.')) return;
+    this.sweepingLoyalty.set(true);
+    this.sweepMsg.set(null);
+    try {
+      const res = await this.api.runLoyaltySweep(TOURNAMENT_ID);
+      if (res?.errors && res.errors.length > 0) {
+        this.toast.error(res.errors[0]?.message ?? 'Error en loyalty sweep');
+        return;
+      }
+      const g = res?.data?.granted ?? 0;
+      const s = res?.data?.skipped ?? 0;
+      this.sweepMsg.set(`Loyalty: ${g} comodines otorgados · ${s} users skipeados (no califican o ya tienen).`);
+      this.toast.success('Sweep fidelidad completado');
+    } catch (e) {
+      this.toast.error(humanizeError(e));
+    } finally {
+      this.sweepingLoyalty.set(false);
+    }
+  }
+
+  async runEngagementSweep() {
+    if (!confirm('¿Otorgar comodín de engagement a los users con ≥80% de marcadores predichos antes del kickoff?\n\nEsto se corre al cierre del torneo.')) return;
+    this.sweepingEngagement.set(true);
+    this.sweepMsg.set(null);
+    try {
+      const res = await this.api.runEngagementSweep(TOURNAMENT_ID);
+      if (res?.errors && res.errors.length > 0) {
+        this.toast.error(res.errors[0]?.message ?? 'Error en engagement sweep');
+        return;
+      }
+      const g = res?.data?.granted ?? 0;
+      const s = res?.data?.skipped ?? 0;
+      this.sweepMsg.set(`Engagement: ${g} comodines otorgados · ${s} users skipeados.`);
+      this.toast.success('Sweep engagement completado');
+    } catch (e) {
+      this.toast.error(humanizeError(e));
+    } finally {
+      this.sweepingEngagement.set(false);
+    }
+  }
 
   async runScoreGroupStage() {
     if (!confirm('¿Calcular scoring de fase de grupos + mejores 3eros para TODOS los users? Idempotente — no duplica.')) return;
