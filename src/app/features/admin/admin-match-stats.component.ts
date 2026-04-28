@@ -34,6 +34,16 @@ interface TriviaA {
   userId: string;
   questionId: string;
   selectedOption: Opt;
+  answeredAt: string;
+}
+
+interface TopUserRow {
+  userId: string;
+  handle: string;
+  answered: number;
+  correct: number;
+  pct: number;
+  avgResponseSec: number | null;
 }
 
 interface OptionStat {
@@ -147,6 +157,15 @@ interface QuestionStats {
               <small>Total respuestas</small>
               <div class="kpi-card__value">{{ triviaAnswers().length }}</div>
             </article>
+            <article class="kpi-card">
+              <small>Avg respuestas / pregunta</small>
+              <div class="kpi-card__value">{{ avgAnswersPerQuestion() }}</div>
+            </article>
+            <article class="kpi-card">
+              <small>Tiempo promedio de respuesta</small>
+              <div class="kpi-card__value">{{ avgResponseLabel() }}</div>
+              <small style="margin-top: 4px;">desde publishedAt hasta answer</small>
+            </article>
           </div>
 
           <h3 style="font-family: var(--font-display); font-size: var(--fs-lg); text-transform: uppercase; margin: var(--space-lg) 0 var(--space-sm);">
@@ -173,6 +192,40 @@ interface QuestionStats {
           <p style="margin-top: var(--space-xs); font-size: var(--fs-xs); color: var(--color-text-muted);">
             Base: {{ uniqueAnswerers() }} users con al menos una respuesta.
           </p>
+
+          <!-- ========== TOP USUARIOS ========== -->
+          @if (topTriviaUsers().length > 0) {
+            <h3 style="font-family: var(--font-display); font-size: var(--fs-lg); text-transform: uppercase; margin: var(--space-2xl) 0 var(--space-md);">
+              Top 10 — aciertos de trivia
+            </h3>
+            <table class="standings standings--group">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Usuario</th>
+                  <th>Aciertos</th>
+                  <th>Respondidas</th>
+                  <th>%</th>
+                  <th>Tiempo prom.</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (u of topTriviaUsers(); track u.userId; let i = $index) {
+                  <tr>
+                    <td class="pos">{{ i + 1 }}</td>
+                    <td>@{{ u.handle }}</td>
+                    <td><strong>{{ u.correct }}</strong></td>
+                    <td>{{ u.answered }} / {{ questions().length }}</td>
+                    <td>{{ u.pct }}%</td>
+                    <td>{{ formatSec(u.avgResponseSec) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+            <p style="margin-top: var(--space-xs); font-size: var(--fs-xs); color: var(--color-text-muted);">
+              Orden: aciertos → % de aciertos → tiempo promedio menor.
+            </p>
+          }
 
           <!-- ========== POR PREGUNTA ========== -->
           <h3 style="font-family: var(--font-display); font-size: var(--fs-lg); text-transform: uppercase; margin: var(--space-2xl) 0 var(--space-md);">
@@ -269,6 +322,7 @@ export class AdminMatchStatsComponent implements OnInit {
   picks = signal<PickRow[]>([]);
   questions = signal<TriviaQ[]>([]);
   triviaAnswers = signal<TriviaA[]>([]);
+  handles = signal<Map<string, string>>(new Map());
 
   totalPicks = computed(() => this.picks().length);
 
@@ -314,6 +368,79 @@ export class AdminMatchStatsComponent implements OnInit {
     const set = new Set<string>();
     for (const a of this.triviaAnswers()) set.add(a.userId);
     return set.size;
+  });
+
+  // Promedio de respuestas por pregunta (total respuestas / preguntas).
+  avgAnswersPerQuestion = computed(() => {
+    const qN = this.questions().length;
+    if (qN === 0) return 0;
+    return Math.round((this.triviaAnswers().length / qN) * 10) / 10;
+  });
+
+  // Tiempo promedio entre publishedAt y answeredAt (segundos).
+  // Usamos la última updateAt (answeredAt) — refleja cuánto tardó cada
+  // user en finalizar su respuesta.
+  avgResponseSec = computed<number | null>(() => {
+    const qById = new Map(this.questions().map((q) => [q.id, q]));
+    const diffs: number[] = [];
+    for (const a of this.triviaAnswers()) {
+      const q = qById.get(a.questionId);
+      if (!q) continue;
+      const dt = (Date.parse(a.answeredAt) - Date.parse(q.publishedAt)) / 1000;
+      if (Number.isFinite(dt) && dt >= 0) diffs.push(dt);
+    }
+    if (diffs.length === 0) return null;
+    const avg = diffs.reduce((s, x) => s + x, 0) / diffs.length;
+    return Math.round(avg);
+  });
+
+  avgResponseLabel = computed(() => {
+    const s = this.avgResponseSec();
+    if (s === null) return '—';
+    if (s < 60) return `${s}s`;
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return `${m}m ${String(r).padStart(2, '0')}s`;
+  });
+
+  // Top usuarios por aciertos en trivia (top 10).
+  topTriviaUsers = computed<TopUserRow[]>(() => {
+    const qCorrect = new Map(this.questions().map((q) => [q.id, q.correctOption]));
+    const qPublished = new Map(this.questions().map((q) => [q.id, q.publishedAt]));
+    interface Acc { answered: number; correct: number; sumResponseSec: number; respSamples: number; }
+    const byUser = new Map<string, Acc>();
+    for (const a of this.triviaAnswers()) {
+      const acc = byUser.get(a.userId) ?? { answered: 0, correct: 0, sumResponseSec: 0, respSamples: 0 };
+      acc.answered++;
+      if (qCorrect.get(a.questionId) === a.selectedOption) acc.correct++;
+      const pub = qPublished.get(a.questionId);
+      if (pub) {
+        const dt = (Date.parse(a.answeredAt) - Date.parse(pub)) / 1000;
+        if (Number.isFinite(dt) && dt >= 0) {
+          acc.sumResponseSec += dt;
+          acc.respSamples++;
+        }
+      }
+      byUser.set(a.userId, acc);
+    }
+    const rows: TopUserRow[] = [];
+    for (const [userId, acc] of byUser) {
+      rows.push({
+        userId,
+        handle: this.handles().get(userId) ?? `user-${userId.slice(0, 6)}`,
+        answered: acc.answered,
+        correct: acc.correct,
+        pct: acc.answered === 0 ? 0 : Math.round((acc.correct / acc.answered) * 100),
+        avgResponseSec: acc.respSamples > 0 ? Math.round(acc.sumResponseSec / acc.respSamples) : null,
+      });
+    }
+    // Sort: más correctas primero, luego mejor %, luego menor tiempo.
+    rows.sort((a, b) =>
+      b.correct - a.correct ||
+      b.pct - a.pct ||
+      (a.avgResponseSec ?? Number.POSITIVE_INFINITY) - (b.avgResponseSec ?? Number.POSITIVE_INFINITY),
+    );
+    return rows.slice(0, 10);
   });
 
   // Histograma: cuántos users respondieron N preguntas, con N de 1 a total.
@@ -414,11 +541,26 @@ export class AdminMatchStatsComponent implements OnInit {
       );
 
       this.triviaAnswers.set(
-        ((aRes.data ?? []) as Array<{ id: string; userId: string; questionId: string; selectedOption: string }>).map((a) => ({
+        ((aRes.data ?? []) as Array<{ id: string; userId: string; questionId: string; selectedOption: string; answeredAt: string }>).map((a) => ({
           id: a.id, userId: a.userId, questionId: a.questionId,
           selectedOption: a.selectedOption as Opt,
+          answeredAt: a.answeredAt,
         })),
       );
+
+      // Lookup de handles para los users que aparecen en picks o trivia.
+      // Lo hacemos solo si hay al menos un user para evitar la query.
+      const userIdsNeeded = new Set<string>();
+      for (const p of this.picks()) userIdsNeeded.add(p.userId);
+      for (const a of this.triviaAnswers()) userIdsNeeded.add(a.userId);
+      if (userIdsNeeded.size > 0) {
+        const usersRes = await this.api.listUsers(2000);
+        const map = new Map<string, string>();
+        for (const u of (usersRes.data ?? []) as Array<{ sub: string; handle: string }>) {
+          if (userIdsNeeded.has(u.sub)) map.set(u.sub, u.handle);
+        }
+        this.handles.set(map);
+      }
     } finally {
       this.loading.set(false);
     }
@@ -441,5 +583,12 @@ export class AdminMatchStatsComponent implements OnInit {
     if (s === 'LIVE') return 'En vivo';
     if (s === 'FINAL') return 'Finalizado';
     return s;
+  }
+  formatSec(s: number | null): string {
+    if (s === null) return '—';
+    if (s < 60) return `${s}s`;
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return `${m}m ${String(r).padStart(2, '0')}s`;
   }
 }
