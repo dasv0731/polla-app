@@ -3325,6 +3325,31 @@
       }
     }
   },
+  "storage": {
+    "aws_region": "us-east-1",
+    "bucket_name": "amplify-pollabackend-mark-pollaassetsbucket767cef5-hbcmafux1tsh",
+    "buckets": [
+      {
+        "name": "pollaAssets",
+        "bucket_name": "amplify-pollabackend-mark-pollaassetsbucket767cef5-hbcmafux1tsh",
+        "aws_region": "us-east-1",
+        "paths": {
+          "sponsors/banners/*": {
+            "authenticated": [
+              "get",
+              "list"
+            ],
+            "groupsadmins": [
+              "get",
+              "list",
+              "write",
+              "delete"
+            ]
+          }
+        }
+      }
+    ]
+  },
   "version": "1.4",
   "custom": {
     "sesBounceTopicArn": "arn:aws:sns:us-east-1:768054003068:amplify-pollabackend-Marke-sandbox-6c3578a528-data7552DF31-1FTXWUTZY46OH-sesbounces59DD2B4D-t4TJvxY1Y9OS"
