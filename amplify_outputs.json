@@ -2550,13 +2550,10 @@
                     "provider": "userPools",
                     "ownerField": "userId",
                     "allow": "owner",
-                    "identityClaim": "cognito:username",
                     "operations": [
-                      "create",
-                      "update",
-                      "delete",
                       "read"
-                    ]
+                    ],
+                    "identityClaim": "cognito:username"
                   },
                   {
                     "groupClaim": "cognito:groups",
@@ -2615,6 +2612,27 @@
               "isArray": false,
               "type": "Int",
               "isRequired": true,
+              "attributes": []
+            },
+            "pointsPreMundial": {
+              "name": "pointsPreMundial",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": false,
+              "attributes": []
+            },
+            "pointsBracket": {
+              "name": "pointsBracket",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": false,
+              "attributes": []
+            },
+            "groupStandingsExactCount": {
+              "name": "groupStandingsExactCount",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": false,
               "attributes": []
             },
             "createdAt": {
@@ -2750,6 +2768,27 @@
               "isArray": false,
               "type": "Int",
               "isRequired": true,
+              "attributes": []
+            },
+            "pointsPreMundial": {
+              "name": "pointsPreMundial",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": false,
+              "attributes": []
+            },
+            "pointsBracket": {
+              "name": "pointsBracket",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": false,
+              "attributes": []
+            },
+            "groupStandingsExactCount": {
+              "name": "groupStandingsExactCount",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": false,
               "attributes": []
             },
             "createdAt": {
@@ -2899,6 +2938,18 @@
         },
         "UpsertPickReturnType": {
           "name": "UpsertPickReturnType",
+          "fields": {
+            "id": {
+              "name": "id",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            }
+          }
+        },
+        "UpsertBracketPickReturnType": {
+          "name": "UpsertBracketPickReturnType",
           "fields": {
             "id": {
               "name": "id",
@@ -3150,6 +3201,64 @@
               "isArray": false,
               "type": "Int",
               "isRequired": true
+            }
+          }
+        },
+        "upsertBracketPick": {
+          "name": "upsertBracketPick",
+          "isArray": false,
+          "type": {
+            "nonModel": "UpsertBracketPickReturnType"
+          },
+          "isRequired": false,
+          "arguments": {
+            "tournamentId": {
+              "name": "tournamentId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            },
+            "mode": {
+              "name": "mode",
+              "isArray": false,
+              "type": {
+                "enum": "GameMode"
+              },
+              "isRequired": true
+            },
+            "octavos": {
+              "name": "octavos",
+              "isArray": true,
+              "type": "String",
+              "isRequired": false,
+              "isArrayNullable": true
+            },
+            "cuartos": {
+              "name": "cuartos",
+              "isArray": true,
+              "type": "String",
+              "isRequired": false,
+              "isArrayNullable": true
+            },
+            "semis": {
+              "name": "semis",
+              "isArray": true,
+              "type": "String",
+              "isRequired": false,
+              "isArrayNullable": true
+            },
+            "final": {
+              "name": "final",
+              "isArray": true,
+              "type": "String",
+              "isRequired": false,
+              "isArrayNullable": true
+            },
+            "champion": {
+              "name": "champion",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": false
             }
           }
         },
