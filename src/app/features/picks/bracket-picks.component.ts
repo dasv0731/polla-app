@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -144,21 +144,6 @@ interface TeamLite { slug: string; name: string; flagCode: string; }
       </div>
 
       <footer class="bp-foot">
-        @if (saveError()) {
-          <p class="bp-banner bp-banner--err">
-            <span class="bp-banner__icon">!</span>
-            <span><strong>No se pudo guardar.</strong> {{ saveError() }}</span>
-          </p>
-        }
-        @if (justSaved()) {
-          <p class="bp-banner bp-banner--ok">
-            <span class="bp-banner__icon">✓</span>
-            <span>
-              <strong>Predicción guardada en la base.</strong>
-              {{ pickedCount() }} {{ pickedCount() === 1 ? 'partido' : 'partidos' }} registrados — el servidor confirmó OK.
-            </span>
-          </p>
-        }
         <p class="form-card__hint">
           Tu predicción se guarda automáticamente en este navegador.
           Al pulsar "Guardar en la base", se sube al servidor.
@@ -167,7 +152,7 @@ interface TeamLite { slug: string; name: string; flagCode: string; }
         <button class="btn btn--primary" type="button"
                 [disabled]="saving()"
                 (click)="saveAll()">
-          {{ saving() ? 'Guardando…' : (justSaved() ? '✓ Guardado' : 'Guardar en la base') }}
+          {{ saving() ? 'Guardando…' : 'Guardar en la base' }}
         </button>
         @if (lastSavedAt()) {
           <p class="form-card__hint" style="margin-top: var(--space-sm); color: var(--color-primary-green);">
@@ -175,6 +160,44 @@ interface TeamLite { slug: string; name: string; flagCode: string; }
           </p>
         }
       </footer>
+    }
+
+    <!-- Modal de confirmación de guardado -->
+    @if (justSaved()) {
+      <div class="bp-modal" role="dialog" aria-modal="true" aria-labelledby="bp-modal-title"
+           (click)="dismissJustSaved()">
+        <div class="bp-modal__card" (click)="$event.stopPropagation()">
+          <div class="bp-modal__icon bp-modal__icon--ok">✓</div>
+          <h2 id="bp-modal-title" class="bp-modal__title">¡Predicción guardada!</h2>
+          <p class="bp-modal__body">
+            Tus <strong>{{ pickedCount() }}</strong>
+            {{ pickedCount() === 1 ? 'partido quedó' : 'partidos quedaron' }}
+            registrados en la base. Puedes seguir editando hasta que cierre el bracket.
+          </p>
+          <p class="bp-modal__time">Guardado: {{ lastSavedAt() ? formatDate(lastSavedAt()!) : '' }}</p>
+          <button class="btn btn--primary bp-modal__btn" type="button" (click)="dismissJustSaved()">
+            Entendido
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Modal de error -->
+    @if (saveError()) {
+      <div class="bp-modal" role="dialog" aria-modal="true" aria-labelledby="bp-modal-err-title"
+           (click)="dismissError()">
+        <div class="bp-modal__card" (click)="$event.stopPropagation()">
+          <div class="bp-modal__icon bp-modal__icon--err">!</div>
+          <h2 id="bp-modal-err-title" class="bp-modal__title">No se pudo guardar</h2>
+          <p class="bp-modal__body">
+            El servidor rechazó la predicción. Detalle:
+          </p>
+          <p class="bp-modal__detail">{{ saveError() }}</p>
+          <button class="btn btn--primary bp-modal__btn" type="button" (click)="dismissError()">
+            Cerrar
+          </button>
+        </div>
+      </div>
     }
   `,
   styles: [`
@@ -224,42 +247,81 @@ interface TeamLite { slug: string; name: string; flagCode: string; }
       border-radius: var(--radius-md);
       margin: var(--space-xl) var(--section-x-mobile, var(--space-md)) 0;
     }
-    .bp-banner {
-      display: grid;
-      grid-template-columns: 28px 1fr;
+    /* Modal full-screen overlay */
+    .bp-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      display: flex;
       align-items: center;
-      gap: var(--space-sm);
-      padding: var(--space-sm) var(--space-md);
-      border-radius: var(--radius-sm);
-      font-size: var(--fs-sm);
-      line-height: 1.4;
+      justify-content: center;
+      z-index: 1000;
+      padding: var(--space-md);
+      animation: bp-fade-in 150ms ease-out;
     }
-    .bp-banner__icon {
-      width: 24px;
-      height: 24px;
+    @keyframes bp-fade-in {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    .bp-modal__card {
+      max-width: 440px;
+      width: 100%;
+      background: var(--color-primary-white);
+      border-radius: var(--radius-md);
+      padding: var(--space-xl) var(--space-lg);
+      text-align: center;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+      animation: bp-pop 180ms cubic-bezier(0.2, 0.9, 0.3, 1.4);
+    }
+    @keyframes bp-pop {
+      from { transform: scale(0.92); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+    .bp-modal__icon {
+      width: 72px;
+      height: 72px;
       border-radius: 50%;
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      font-size: 40px;
       font-weight: bold;
       color: var(--color-primary-white);
+      margin: 0 auto var(--space-md);
     }
-    .bp-banner--ok {
-      background: rgba(0, 200, 100, 0.14);
-      color: var(--color-primary-green);
-      border: 1px solid var(--color-primary-green);
+    .bp-modal__icon--ok { background: var(--color-primary-green); }
+    .bp-modal__icon--err { background: var(--color-lost, #c33); }
+    .bp-modal__title {
+      font-family: var(--font-display);
+      font-size: var(--fs-2xl);
+      line-height: 1.1;
+      text-transform: uppercase;
+      margin-bottom: var(--space-sm);
     }
-    .bp-banner--ok .bp-banner__icon {
-      background: var(--color-primary-green);
+    .bp-modal__body {
+      color: var(--color-text-muted);
+      font-size: var(--fs-md);
+      line-height: 1.5;
+      margin-bottom: var(--space-md);
     }
-    .bp-banner--err {
-      background: rgba(220, 50, 50, 0.10);
-      color: var(--color-lost);
-      border: 1px solid var(--color-lost);
+    .bp-modal__time {
+      font-size: var(--fs-xs);
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: var(--space-lg);
     }
-    .bp-banner--err .bp-banner__icon {
-      background: var(--color-lost);
+    .bp-modal__detail {
+      background: rgba(220, 50, 50, 0.08);
+      color: var(--color-lost, #c33);
+      padding: var(--space-sm);
+      border-radius: var(--radius-sm);
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: var(--fs-xs);
+      margin-bottom: var(--space-lg);
+      word-break: break-word;
     }
+    .bp-modal__btn { min-width: 160px; }
   `],
 })
 export class BracketPicksComponent implements OnInit {
@@ -439,6 +501,21 @@ export class BracketPicksComponent implements OnInit {
       for (const [k, v] of this.winners()) obj[k] = v;
       localStorage.setItem(STORAGE_KEY(this.currentUserId, m), JSON.stringify(obj));
     } catch { /* localStorage full or disabled */ }
+  }
+
+  dismissJustSaved() {
+    if (this.justSavedTimer) clearTimeout(this.justSavedTimer);
+    this.justSaved.set(false);
+  }
+
+  dismissError() {
+    this.saveError.set(null);
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    if (this.justSaved()) this.dismissJustSaved();
+    else if (this.saveError()) this.dismissError();
   }
 
   formatDate(iso: string): string {
