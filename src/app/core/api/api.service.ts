@@ -104,6 +104,15 @@ export class ApiService {
   redeemSponsorCode(code: string) {
     return apiClient.mutations.redeemSponsorCode({ code });
   }
+  myRedemptions(userId: string, limit = 100) {
+    return apiClient.models.SponsorRedemption.list({
+      filter: { userId: { eq: userId } },
+      limit,
+    });
+  }
+  getSponsorCode(id: string) {
+    return apiClient.models.SponsorCode.get({ id });
+  }
 
   // ----- Bulk listings para vistas de admin -----
   listAllTournamentTotals(tournamentId: string, limit = 5000) {
