@@ -5,6 +5,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService } from '../../core/user/user-modes.service';
 import { TimeService } from '../../core/time/time.service';
 import { PickCardComponent } from './pick-card.component';
+import { SponsorRedeemComponent } from './sponsor-redeem.component';
 
 const TOURNAMENT_ID = 'mundial-2026';
 
@@ -43,7 +44,7 @@ interface Totals {
 @Component({
   standalone: true,
   selector: 'app-picks-list',
-  imports: [PickCardComponent, RouterLink],
+  imports: [PickCardComponent, RouterLink, SponsorRedeemComponent],
   template: `
     <header class="page-header">
       <div class="page-header__top">
@@ -122,6 +123,12 @@ interface Totals {
         }
       </section>
     }
+
+    <!-- Bloque de canje de códigos sponsor: visible para todos los users
+         logueados (independiente del modo del grupo). -->
+    <section style="max-width: 720px; margin: var(--space-2xl) auto 0;">
+      <app-sponsor-redeem />
+    </section>
   `,
 })
 export class PicksListComponent implements OnInit {
