@@ -2,6 +2,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { GroupLeaderboardComponent, type LeaderboardRow } from '../groups/group-leaderboard.component';
+import { compareRankable } from '../../shared/util/tiebreakers';
 
 const TOURNAMENT_ID = 'mundial-2026';
 const PAGE_SIZE = 20;
@@ -168,7 +169,7 @@ export class RankingComponent implements OnInit {
     this.currentHandle.set(this.auth.user()?.handle ?? null);
     try {
       const lb = await this.api.listLeaderboard(TOURNAMENT_ID, 500);
-      const sorted = (lb.data ?? []).sort((a, b) => (b.points ?? 0) - (a.points ?? 0));
+      const sorted = [...(lb.data ?? [])].sort(compareRankable);
 
       const handles = new Map<string, string>();
       await Promise.all(
@@ -211,7 +212,7 @@ export class RankingComponent implements OnInit {
                 groupHandles.set(memberRow.userId, u.data?.handle ?? memberRow.userId.slice(0, 6));
               }
             }
-            const sortedG = (lb.data ?? []).sort((a, b) => (b.points ?? 0) - (a.points ?? 0));
+            const sortedG = [...(lb.data ?? [])].sort(compareRankable);
             const rows: LeaderboardRow[] = sortedG.map((t) => ({
               userId: t.userId,
               handle: groupHandles.get(t.userId) ?? t.userId.slice(0, 6),

@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ApiService } from '../../core/api/api.service';
+import { compareRankable } from '../../shared/util/tiebreakers';
 
 const TOURNAMENT_ID = 'mundial-2026';
 const PAGE_SIZE = 25;
@@ -10,6 +11,11 @@ interface Row {
   totalPts: number;
   exactCount: number;
   resultCount: number;
+  // Subtotales para tiebreakers §8 (vienen directo de UserTournamentTotal):
+  pointsPreMundial: number;
+  pointsBracket: number;
+  groupStandingsExactCount: number;
+  createdAt: string | null;
   // Breakdown por fuente (todos forman parte del totalPts en UserTournamentTotal):
   matchPts: number;
   standingsPts: number;
@@ -133,6 +139,8 @@ export class AdminRankingsOverviewComponent implements OnInit {
             userId: uid,
             handle: handles.get(uid) ?? `user-${uid.slice(0, 6)}`,
             totalPts: 0, exactCount: 0, resultCount: 0,
+            pointsPreMundial: 0, pointsBracket: 0, groupStandingsExactCount: 0,
+            createdAt: null,
             matchPts: 0, standingsPts: 0, bracketPts: 0, premundialPts: 0, triviaPts: 0,
             matchCorrect: 0, matchExact: 0,
           };
@@ -141,11 +149,21 @@ export class AdminRankingsOverviewComponent implements OnInit {
         return r;
       };
 
-      for (const t of (totalsRes.data ?? []) as Array<{ userId: string; points?: number; exactCount?: number; resultCount?: number }>) {
+      for (const t of (totalsRes.data ?? []) as Array<{
+        userId: string;
+        points?: number; exactCount?: number; resultCount?: number;
+        pointsPreMundial?: number | null; pointsBracket?: number | null;
+        groupStandingsExactCount?: number | null;
+        createdAt?: string | null;
+      }>) {
         const r = ensure(t.userId);
         r.totalPts = t.points ?? 0;
         r.exactCount = t.exactCount ?? 0;
         r.resultCount = t.resultCount ?? 0;
+        r.pointsPreMundial = t.pointsPreMundial ?? 0;
+        r.pointsBracket = t.pointsBracket ?? 0;
+        r.groupStandingsExactCount = t.groupStandingsExactCount ?? 0;
+        r.createdAt = t.createdAt ?? null;
       }
       for (const p of (picksRes.data ?? []) as Array<{ userId: string; pointsEarned?: number | null; exactScore?: boolean | null; correctResult?: boolean | null }>) {
         const r = ensure(p.userId);
@@ -169,12 +187,26 @@ export class AdminRankingsOverviewComponent implements OnInit {
         ensure(ta.userId).triviaPts += ta.pointsEarned ?? 0;
       }
 
-      const out = [...acc.values()].sort((a, b) =>
-        b.totalPts - a.totalPts ||
-        b.matchExact - a.matchExact ||
-        b.matchCorrect - a.matchCorrect ||
-        a.handle.localeCompare(b.handle),
-      );
+      // Sort §8: total → pre-mundial → bracket → group exactos → marcadores exactos
+      // → createdAt. Si todo empata, fallback a handle para orden determinístico.
+      const out = [...acc.values()].sort((a, b) => {
+        const cmp = compareRankable({
+          points: a.totalPts,
+          pointsPreMundial: a.pointsPreMundial,
+          pointsBracket: a.pointsBracket,
+          groupStandingsExactCount: a.groupStandingsExactCount,
+          exactCount: a.exactCount,
+          createdAt: a.createdAt,
+        }, {
+          points: b.totalPts,
+          pointsPreMundial: b.pointsPreMundial,
+          pointsBracket: b.pointsBracket,
+          groupStandingsExactCount: b.groupStandingsExactCount,
+          exactCount: b.exactCount,
+          createdAt: b.createdAt,
+        });
+        return cmp !== 0 ? cmp : a.handle.localeCompare(b.handle);
+      });
       this.rows.set(out);
     } finally {
       this.loading.set(false);
