@@ -95,168 +95,113 @@ interface TeamLite { slug: string; name: string; flagCode: string; }
         </p>
       </div>
     } @else if (mode()) {
-      <main class="bp-main">
+      <div class="bracket-admin">
         @for (phase of PHASES; track phase.order) {
           @let matches = matchesByPhase(phase.order);
           @if (matches.length > 0) {
-            <section class="bp-phase">
-              <header class="bp-phase__head">
-                <h2>{{ phase.label }}</h2>
-                <small>{{ matches.length }} {{ matches.length === 1 ? 'partido' : 'partidos' }} · {{ phase.pointsLabel }}</small>
-              </header>
+            <div class="bracket-admin__col">
+              <h2 class="bracket-admin__head">
+                {{ phase.label }}
+                <small style="display: block; font-size: var(--fs-xs); color: var(--color-text-muted); font-family: var(--font-primary); letter-spacing: 0.08em; margin-top: 4px;">
+                  {{ matches.length }} {{ matches.length === 1 ? 'partido' : 'partidos' }} · {{ phase.pointsLabel }}
+                </small>
+              </h2>
 
-              <div class="bp-matches">
-                @for (m of matches; track m.id) {
-                  @let pickedSlug = winners().get(m.id);
-                  <article class="bp-match">
-                    <button type="button"
-                            class="bp-team-btn"
-                            [class.bp-team-btn--win]="pickedSlug === m.homeTeamId"
-                            [class.bp-team-btn--lose]="pickedSlug && pickedSlug !== m.homeTeamId"
-                            (click)="pickWinner(m.id, m.homeTeamId)">
-                      <span class="bp-team-btn__flag fi" [class]="'fi-' + (teamMap().get(m.homeTeamId)?.flagCode || '').toLowerCase()"></span>
-                      <span class="bp-team-btn__name">{{ teamMap().get(m.homeTeamId)?.name || m.homeTeamId }}</span>
-                      @if (pickedSlug === m.homeTeamId) { <span class="bp-team-btn__win">✓</span> }
-                    </button>
+              @for (m of matches; track m.id) {
+                @let pickedSlug = winners().get(m.id);
+                <div class="bracket-slot bp-clickable">
+                  <span class="bracket-slot__pos">#{{ m.bracketPosition ?? '?' }}</span>
 
-                    <span class="bp-vs">vs</span>
+                  <button type="button"
+                          class="bracket-slot__row bp-row"
+                          [class.bracket-slot__row--winner]="pickedSlug === m.homeTeamId"
+                          [class.bp-row--lose]="pickedSlug && pickedSlug !== m.homeTeamId"
+                          (click)="pickWinner(m.id, m.homeTeamId)">
+                    <span class="fi bp-flag" [class]="'fi-' + (teamMap().get(m.homeTeamId)?.flagCode || '').toLowerCase()"></span>
+                    <span class="bracket-slot__name">{{ teamMap().get(m.homeTeamId)?.name || m.homeTeamId }}</span>
+                    <span class="bracket-slot__score">{{ pickedSlug === m.homeTeamId ? '✓' : '' }}</span>
+                  </button>
 
-                    <button type="button"
-                            class="bp-team-btn"
-                            [class.bp-team-btn--win]="pickedSlug === m.awayTeamId"
-                            [class.bp-team-btn--lose]="pickedSlug && pickedSlug !== m.awayTeamId"
-                            (click)="pickWinner(m.id, m.awayTeamId)">
-                      <span class="bp-team-btn__flag fi" [class]="'fi-' + (teamMap().get(m.awayTeamId)?.flagCode || '').toLowerCase()"></span>
-                      <span class="bp-team-btn__name">{{ teamMap().get(m.awayTeamId)?.name || m.awayTeamId }}</span>
-                      @if (pickedSlug === m.awayTeamId) { <span class="bp-team-btn__win">✓</span> }
-                    </button>
+                  <button type="button"
+                          class="bracket-slot__row bp-row"
+                          [class.bracket-slot__row--winner]="pickedSlug === m.awayTeamId"
+                          [class.bp-row--lose]="pickedSlug && pickedSlug !== m.awayTeamId"
+                          (click)="pickWinner(m.id, m.awayTeamId)">
+                    <span class="fi bp-flag" [class]="'fi-' + (teamMap().get(m.awayTeamId)?.flagCode || '').toLowerCase()"></span>
+                    <span class="bracket-slot__name">{{ teamMap().get(m.awayTeamId)?.name || m.awayTeamId }}</span>
+                    <span class="bracket-slot__score">{{ pickedSlug === m.awayTeamId ? '✓' : '' }}</span>
+                  </button>
 
-                    @if (m.venue) {
-                      <small class="bp-match__venue">{{ m.venue }}</small>
-                    }
-                  </article>
-                }
-              </div>
-            </section>
+                  <p class="bracket-slot__meta">
+                    {{ formatKickoffShort(m.kickoffAt) }}
+                    @if (m.venue) { · {{ m.venue }} }
+                  </p>
+                </div>
+              }
+            </div>
           }
         }
+      </div>
 
-        <footer class="bp-foot">
-          @if (saveError()) {
-            <p class="form-card__hint" style="color: var(--color-lost);">{{ saveError() }}</p>
-          }
-          <p class="form-card__hint">
-            Tu predicción se guarda automáticamente en este navegador.
-            Al pulsar "Guardar en la base", se sube al servidor.
-            <strong>{{ pickedCount() }}</strong> de <strong>{{ totalKnockoutMatches() }}</strong> partidos elegidos.
+      <footer class="bp-foot">
+        @if (saveError()) {
+          <p class="form-card__hint" style="color: var(--color-lost);">{{ saveError() }}</p>
+        }
+        <p class="form-card__hint">
+          Tu predicción se guarda automáticamente en este navegador.
+          Al pulsar "Guardar en la base", se sube al servidor.
+          <strong>{{ pickedCount() }}</strong> de <strong>{{ totalKnockoutMatches() }}</strong> partidos elegidos.
+        </p>
+        <button class="btn btn--primary" type="button"
+                [disabled]="saving()"
+                (click)="saveAll()">
+          {{ saving() ? 'Guardando…' : 'Guardar en la base' }}
+        </button>
+        @if (lastSavedAt()) {
+          <p class="form-card__hint" style="margin-top: var(--space-sm);">
+            Último guardado: {{ formatDate(lastSavedAt()!) }}
           </p>
-          <button class="btn btn--primary" type="button"
-                  [disabled]="saving()"
-                  (click)="saveAll()">
-            {{ saving() ? 'Guardando…' : 'Guardar en la base' }}
-          </button>
-          @if (lastSavedAt()) {
-            <p class="form-card__hint" style="margin-top: var(--space-sm);">
-              Último guardado: {{ formatDate(lastSavedAt()!) }}
-            </p>
-          }
-        </footer>
-      </main>
+        }
+      </footer>
     }
   `,
   styles: [`
-    .bp-main {
-      display: grid;
-      gap: var(--space-xl);
-      padding: 0 var(--section-x-mobile, var(--space-md));
+    /* Reusamos .bracket-admin y .bracket-slot del page-shell.css. El slot
+       no es clickeable como un todo (a diferencia del admin); cada row
+       de equipo es su propio botón. */
+    .bp-clickable { cursor: default; }
+    .bp-clickable:hover {
+      border-color: var(--border-grey);
+      transform: none;
     }
-    .bp-phase {
-      background: var(--color-primary-white);
-      border: var(--border-grey);
-      border-radius: var(--radius-md);
-      padding: var(--space-md);
-    }
-    .bp-phase__head {
-      margin-bottom: var(--space-md);
-    }
-    .bp-phase__head h2 {
-      font-family: var(--font-display);
-      font-size: var(--fs-lg);
-      text-transform: uppercase;
-      line-height: 1;
-    }
-    .bp-phase__head small {
-      display: block;
-      color: var(--color-text-muted);
-      font-size: var(--fs-xs);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      margin-top: 4px;
-    }
-    .bp-matches {
-      display: grid;
-      gap: var(--space-sm);
-    }
-    .bp-match {
-      display: grid;
-      grid-template-columns: 1fr 40px 1fr;
-      align-items: center;
-      gap: var(--space-sm);
-      padding: var(--space-sm);
-      background: var(--color-primary-grey, #f4f4f4);
-      border-radius: var(--radius-sm);
-      position: relative;
-    }
-    .bp-vs {
-      text-align: center;
-      font-size: var(--fs-xs);
-      color: var(--color-text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
-    .bp-team-btn {
-      display: grid;
-      grid-template-columns: 24px 1fr auto;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 12px;
-      background: var(--color-primary-white);
-      border: 2px solid rgba(0,0,0,0.08);
-      border-radius: var(--radius-sm);
-      cursor: pointer;
+    /* La row del bracket nativamente es display: grid con 3 columnas.
+       Hacemos que nuestro <button> ocupe todo el ancho y conserve el
+       grid layout del .bracket-slot__row, sobreescribiendo los defaults
+       de button. */
+    .bp-row {
+      width: 100%;
+      background: transparent;
+      border: 0;
       font: inherit;
       text-align: left;
-      font-size: var(--fs-sm);
-      transition: border-color 100ms, background 100ms, opacity 100ms;
+      cursor: pointer;
+      color: inherit;
+      transition: background 100ms;
+      border-radius: var(--radius-sm);
     }
-    .bp-team-btn:hover {
-      border-color: rgba(0,0,0,0.25);
+    .bp-row:hover {
+      background: rgba(0, 200, 100, 0.08);
     }
-    .bp-team-btn--win {
-      border-color: var(--color-primary-green);
-      background: rgba(0, 200, 100, 0.12);
-      font-weight: 600;
-    }
-    .bp-team-btn--lose {
+    .bp-row--lose .bracket-slot__name,
+    .bp-row--lose .bracket-slot__score,
+    .bp-row--lose .bp-flag {
       opacity: 0.45;
     }
-    .bp-team-btn__flag { width: 20px; height: 20px; border-radius: 3px; }
-    .bp-team-btn__name {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .bp-team-btn__win {
-      color: var(--color-primary-green);
-      font-weight: bold;
-    }
-    .bp-match__venue {
-      grid-column: 1 / -1;
-      text-align: center;
-      font-size: 10px;
-      color: var(--color-text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
+    .bp-flag {
+      width: 22px;
+      height: 22px;
+      border-radius: 3px;
+      display: inline-block;
     }
     .bp-foot {
       display: grid;
@@ -265,10 +210,7 @@ interface TeamLite { slug: string; name: string; flagCode: string; }
       background: var(--color-primary-white);
       border: var(--border-grey);
       border-radius: var(--radius-md);
-    }
-    @media (max-width: 600px) {
-      .bp-match { grid-template-columns: 1fr; }
-      .bp-vs { display: none; }
+      margin: var(--space-xl) var(--section-x-mobile, var(--space-md)) 0;
     }
   `],
 })
@@ -455,6 +397,14 @@ export class BracketPicksComponent implements OnInit {
         day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
       });
     } catch { return iso; }
+  }
+
+  formatKickoffShort(iso: string): string {
+    try {
+      return new Date(iso).toLocaleString('es-EC', {
+        day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+      });
+    } catch { return '—'; }
   }
 
   async saveAll() {
