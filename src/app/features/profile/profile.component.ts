@@ -13,10 +13,12 @@ interface Totals {
   globalRank: number | null;
 }
 
+import { SponsorRedeemComponent } from '../picks/sponsor-redeem.component';
+
 @Component({
   standalone: true,
   selector: 'app-profile',
-  imports: [RouterLink],
+  imports: [RouterLink, SponsorRedeemComponent],
   template: `
     @let u = user();
 
@@ -138,6 +140,11 @@ interface Totals {
             </div>
             <a class="settings-row__action settings-row__action--danger" (click)="deleteAccount($event)">Eliminar →</a>
           </div>
+        </section>
+
+        <!-- Sponsor codes (canje de cupones promocionales) -->
+        <section style="margin-top: var(--space-xl);">
+          <app-sponsor-redeem />
         </section>
       </div>
     }

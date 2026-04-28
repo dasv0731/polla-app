@@ -51,6 +51,60 @@ export class ApiService {
   listUsers(limit = 1000) {
     return apiClient.models.User.list({ limit });
   }
+  // ----- Sponsors / códigos de canje -----
+  listSponsors(limit = 200) {
+    return apiClient.models.Sponsor.list({ limit });
+  }
+  getSponsor(id: string) {
+    return apiClient.models.Sponsor.get({ id });
+  }
+  createSponsor(input: { name: string; bannerKeys?: string[] }) {
+    return apiClient.models.Sponsor.create({
+      name: input.name,
+      bannerKeys: input.bannerKeys ?? [],
+    });
+  }
+  updateSponsor(input: { id: string; name?: string; bannerKeys?: string[] }) {
+    return apiClient.models.Sponsor.update(input);
+  }
+  deleteSponsor(id: string) {
+    return apiClient.models.Sponsor.delete({ id });
+  }
+  listSponsorCodes(sponsorId: string) {
+    return apiClient.models.SponsorCode.list({
+      filter: { sponsorId: { eq: sponsorId } },
+      limit: 200,
+    });
+  }
+  createSponsorCode(input: {
+    sponsorId: string;
+    tournamentId: string;
+    code: string;
+    startDate: string; endDate: string;
+    maxUses: number;
+    pointsValue: number;
+  }) {
+    return apiClient.models.SponsorCode.create({
+      ...input,
+      currentUses: 0,
+    });
+  }
+  updateSponsorCode(input: {
+    id: string;
+    code?: string;
+    startDate?: string; endDate?: string;
+    maxUses?: number;
+    pointsValue?: number;
+  }) {
+    return apiClient.models.SponsorCode.update(input);
+  }
+  deleteSponsorCode(id: string) {
+    return apiClient.models.SponsorCode.delete({ id });
+  }
+  redeemSponsorCode(code: string) {
+    return apiClient.mutations.redeemSponsorCode({ code });
+  }
+
   // ----- Bulk listings para vistas de admin -----
   listAllTournamentTotals(tournamentId: string, limit = 5000) {
     return apiClient.models.UserTournamentTotal.list({

@@ -204,6 +204,7 @@ type DropdownKey = 'groups' | 'picks' | 'rankings' | 'user' | null;
         <a routerLink="/admin/fixtures" (click)="closeDrawer()">Partidos</a>
         <a routerLink="/admin/results" (click)="closeDrawer()">Resultados</a>
         <a routerLink="/admin/teams" (click)="closeDrawer()">Equipos</a>
+        <a routerLink="/admin/sponsors" (click)="closeDrawer()">Sponsors</a>
         <a routerLink="/admin/users" (click)="closeDrawer()">Usuarios</a>
       } @else {
       <h4 class="drawer__head">Mis grupos</h4>

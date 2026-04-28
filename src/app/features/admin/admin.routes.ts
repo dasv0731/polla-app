@@ -21,6 +21,18 @@ export const adminRoutes: Routes = [
         loadComponent: () => import('./admin-rankings-overview.component').then((m) => m.AdminRankingsOverviewComponent),
       },
       {
+        path: 'sponsors',
+        loadComponent: () => import('./admin-sponsors.component').then((m) => m.AdminSponsorsComponent),
+      },
+      {
+        path: 'sponsors/new',
+        loadComponent: () => import('./admin-sponsor-edit.component').then((m) => m.AdminSponsorEditComponent),
+      },
+      {
+        path: 'sponsors/:id/edit',
+        loadComponent: () => import('./admin-sponsor-edit.component').then((m) => m.AdminSponsorEditComponent),
+      },
+      {
         path: 'fixtures',
         loadComponent: () => import('./admin-fixtures.component').then((m) => m.AdminFixturesComponent),
       },
