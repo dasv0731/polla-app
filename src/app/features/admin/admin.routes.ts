@@ -29,6 +29,10 @@ export const adminRoutes: Routes = [
         loadComponent: () => import('./admin-fixture-edit.component').then((m) => m.AdminFixtureEditComponent),
       },
       {
+        path: 'fixtures/:matchId/trivia',
+        loadComponent: () => import('./admin-trivia.component').then((m) => m.AdminTriviaComponent),
+      },
+      {
         path: 'results',
         loadComponent: () => import('./admin-results.component').then((m) => m.AdminResultsComponent),
       },

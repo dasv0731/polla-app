@@ -222,6 +222,69 @@ export class ApiService {
       limit: 1,
     });
   }
+  // ----- Trivia (admin CRUD + user answers) -----
+  listTriviaByMatch(matchId: string) {
+    return apiClient.models.TriviaQuestion.list({
+      filter: { matchId: { eq: matchId } },
+      limit: 200,
+    });
+  }
+  createTriviaQuestion(input: {
+    matchId: string;
+    tournamentId: string;
+    prompt: string;
+    optionA: string; optionB: string; optionC: string; optionD: string;
+    correctOption: 'A' | 'B' | 'C' | 'D';
+    publishedAt: string;
+    timerSeconds: number;
+    explanation?: string | null;
+  }) {
+    return apiClient.models.TriviaQuestion.create(input);
+  }
+  updateTriviaQuestion(input: {
+    id: string;
+    prompt?: string;
+    optionA?: string; optionB?: string; optionC?: string; optionD?: string;
+    correctOption?: 'A' | 'B' | 'C' | 'D';
+    publishedAt?: string;
+    timerSeconds?: number;
+    explanation?: string | null;
+  }) {
+    return apiClient.models.TriviaQuestion.update(input);
+  }
+  deleteTriviaQuestion(id: string) {
+    return apiClient.models.TriviaQuestion.delete({ id });
+  }
+  myTriviaAnswers(userId: string, matchId: string) {
+    return apiClient.models.TriviaAnswer.list({
+      filter: { userId: { eq: userId }, matchId: { eq: matchId } },
+      limit: 200,
+    });
+  }
+  upsertTriviaAnswer(input: {
+    id?: string;
+    userId: string;
+    questionId: string;
+    matchId: string;
+    selectedOption: 'A' | 'B' | 'C' | 'D';
+  }) {
+    const answeredAt = new Date().toISOString();
+    if (input.id) {
+      return apiClient.models.TriviaAnswer.update({
+        id: input.id,
+        selectedOption: input.selectedOption,
+        answeredAt,
+      });
+    }
+    return apiClient.models.TriviaAnswer.create({
+      userId: input.userId,
+      questionId: input.questionId,
+      matchId: input.matchId,
+      selectedOption: input.selectedOption,
+      answeredAt,
+    });
+  }
+
   upsertBracketPick(input: {
     id?: string;
     userId: string;
