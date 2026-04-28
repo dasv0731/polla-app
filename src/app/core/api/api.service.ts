@@ -99,6 +99,7 @@ export class ApiService {
     startDate: string; endDate: string;
     maxUses: number;
     pointsValue: number;
+    comodinType?: string | null;
   }) {
     return apiClient.models.SponsorCode.create({
       ...input,
@@ -111,6 +112,7 @@ export class ApiService {
     startDate?: string; endDate?: string;
     maxUses?: number;
     pointsValue?: number;
+    comodinType?: string | null;
   }) {
     return apiClient.models.SponsorCode.update(input);
   }
@@ -123,6 +125,17 @@ export class ApiService {
   myRedemptions(userId: string, limit = 100) {
     return apiClient.models.SponsorRedemption.list({
       filter: { userId: { eq: userId } },
+      limit,
+    });
+  }
+
+  // ----- Comodines (sistema reglamento §comodines) -----
+  listMyComodines(userId: string, tournamentId: string, limit = 50) {
+    return apiClient.models.Comodin.list({
+      filter: {
+        userId: { eq: userId },
+        tournamentId: { eq: tournamentId },
+      },
       limit,
     });
   }

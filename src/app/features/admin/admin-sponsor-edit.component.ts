@@ -22,13 +22,33 @@ const SLOTS: SlotDef[] = [
   { key: 'banner3', label: 'Slot 3', hint: 'Dimensiones por definir' },
 ];
 
+type ComodinType =
+  | 'MULTIPLIER_X2' | 'PHASE_BOOST' | 'GROUP_SAFE_PICK' | 'BRACKET_SAFE_PICK'
+  | 'REASSIGN_CHAMP_RUNNER' | 'LATE_EDIT' | 'BRACKET_RESET' | 'GROUP_RESET'
+  | 'ANTI_PENALTY';
+
+const COMODIN_OPTIONS: Array<{ value: ComodinType; label: string }> = [
+  { value: 'MULTIPLIER_X2',         label: 'Multiplicador x2' },
+  { value: 'PHASE_BOOST',           label: 'Boost de fase' },
+  { value: 'GROUP_SAFE_PICK',       label: 'Pick seguro de grupos' },
+  { value: 'BRACKET_SAFE_PICK',     label: 'Pick seguro de llaves' },
+  { value: 'REASSIGN_CHAMP_RUNNER', label: 'Reasignación campeón/subcampeón' },
+  { value: 'LATE_EDIT',             label: 'Edición tardía' },
+  { value: 'BRACKET_RESET',         label: 'Reseteo de fase eliminatoria' },
+  { value: 'GROUP_RESET',           label: 'Reseteo de grupo' },
+  { value: 'ANTI_PENALTY',          label: 'Anti-penalización' },
+];
+
 interface CodeRow {
   id: string | null;        // null si es nuevo (no commiteado a DB)
   code: string;
   startLocal: string;       // datetime-local string
   endLocal: string;
   maxUses: number;
+  // Reward: si comodinType está set, el code otorga 1 comodín de ese tipo.
+  // Si no, suma pointsValue (legacy). UI fuerza uno o el otro.
   pointsValue: number;
+  comodinType: ComodinType | '';   // '' = vacío, usar pointsValue legacy
   currentUses: number;      // read-only
   // marca de cambio para minimizar updates
   dirty: boolean;
@@ -127,9 +147,10 @@ interface CodeRow {
 
         <h2 class="form-card__title">Códigos de canje</h2>
         <p class="form-card__lead">
-          Cada código suma <code>pointsValue</code> puntos al ranking del usuario que lo canjee
-          (UserTournamentTotal + cada UserGroupTotal del user). Una vez canjeado, el mismo user no
-          puede volver a usarlo. Cuando se alcanza el límite de usos, ningún user más puede canjearlo.
+          Cada código entrega un <strong>comodín de tipo predefinido</strong> al usuario que lo
+          canjee (sistema reglamento §comodines). Si dejas el dropdown vacío, el código sumará
+          <code>pointsValue</code> puntos directos al ranking (modo legacy, en migración).
+          Una vez canjeado, el mismo user no puede volver a usarlo.
         </p>
 
         @for (c of activeCodes(); track c; let i = $index) {
@@ -138,7 +159,7 @@ interface CodeRow {
               <strong>Código #{{ i + 1 }}</strong>
               <a class="link-green" style="color: var(--color-lost); cursor: pointer;" (click)="markDelete(c, $event)">Borrar</a>
             </header>
-            <div style="display: grid; grid-template-columns: 1fr 100px 100px; gap: var(--space-sm); align-items: end;">
+            <div style="display: grid; grid-template-columns: 1fr 100px; gap: var(--space-sm); align-items: end;">
               <div class="form-card__field" style="margin: 0;">
                 <label class="form-card__label">Code (alfanumérico)</label>
                 <input class="form-card__input" type="text" [(ngModel)]="c.code"
@@ -152,10 +173,24 @@ interface CodeRow {
                        [(ngModel)]="c.maxUses" [name]="'max-' + i" required
                        (input)="c.dirty = true">
               </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 110px; gap: var(--space-sm); margin-top: var(--space-sm); align-items: end;">
               <div class="form-card__field" style="margin: 0;">
-                <label class="form-card__label">Pts</label>
+                <label class="form-card__label">Tipo de comodín que otorga</label>
+                <select class="form-card__input" [(ngModel)]="c.comodinType"
+                        [name]="'ctype-' + i"
+                        (change)="c.dirty = true">
+                  <option value="">— ninguno (legacy: solo puntos) —</option>
+                  @for (opt of COMODIN_OPTIONS; track opt.value) {
+                    <option [value]="opt.value">{{ opt.label }}</option>
+                  }
+                </select>
+              </div>
+              <div class="form-card__field" style="margin: 0;">
+                <label class="form-card__label">Pts (legacy)</label>
                 <input class="form-card__input" type="number" min="0" max="500"
-                       [(ngModel)]="c.pointsValue" [name]="'pts-' + i" required
+                       [(ngModel)]="c.pointsValue" [name]="'pts-' + i"
+                       [disabled]="!!c.comodinType"
                        (input)="c.dirty = true">
               </div>
             </div>
@@ -263,6 +298,7 @@ export class AdminSponsorEditComponent implements OnInit {
   private router = inject(Router);
 
   SLOTS = SLOTS;
+  COMODIN_OPTIONS = COMODIN_OPTIONS;
 
   loading = signal(true);
   saving = signal(false);
@@ -323,13 +359,15 @@ export class AdminSponsorEditComponent implements OnInit {
       const codes: CodeRow[] = ((cRes.data ?? []) as Array<{
         id: string; code: string; startDate: string; endDate: string;
         maxUses: number; pointsValue: number; currentUses?: number;
+        comodinType?: ComodinType | null;
       }>).map((c) => ({
         id: c.id,
         code: c.code,
         startLocal: isoToLocal(c.startDate),
         endLocal: isoToLocal(c.endDate),
         maxUses: c.maxUses,
-        pointsValue: c.pointsValue,
+        pointsValue: c.pointsValue ?? 0,
+        comodinType: c.comodinType ?? '',
         currentUses: c.currentUses ?? 0,
         dirty: false,
         deleted: false,
@@ -455,7 +493,9 @@ export class AdminSponsorEditComponent implements OnInit {
   }
 
   addCode() {
-    // Default start = now, end = +30 days, maxUses = 100, pts = 10
+    // Default: comodín MULTIPLIER_X2, ventana 30d, máx 100 usos. Admin
+    // ajusta según campaña. pointsValue queda en 0 a menos que se elija
+    // dropdown vacío (legacy mode).
     const now = new Date();
     const end = new Date(now.getTime() + 30 * 86_400_000);
     this.codes.update((arr) => [...arr, {
@@ -464,7 +504,8 @@ export class AdminSponsorEditComponent implements OnInit {
       startLocal: dateToLocalInput(now),
       endLocal: dateToLocalInput(end),
       maxUses: 100,
-      pointsValue: 10,
+      pointsValue: 0,
+      comodinType: 'MULTIPLIER_X2',
       currentUses: 0,
       dirty: true,
       deleted: false,
@@ -532,6 +573,11 @@ export class AdminSponsorEditComponent implements OnInit {
         }
         if (c.deleted) continue;        // todavía no en DB, ya filtrado
         if (!c.code.trim()) continue;   // skip vacíos
+        // Si el admin eligió un comodinType, ese gana (pointsValue → 0).
+        // Si no eligió, el code es legacy (suma pointsValue al canjear).
+        const ctype = c.comodinType || null;
+        const pts = ctype ? 0 : c.pointsValue;
+
         if (!c.id) {
           const res = await this.api.createSponsorCode({
             sponsorId,
@@ -540,7 +586,8 @@ export class AdminSponsorEditComponent implements OnInit {
             startDate: localInputToIso(c.startLocal),
             endDate: localInputToIso(c.endLocal),
             maxUses: c.maxUses,
-            pointsValue: c.pointsValue,
+            pointsValue: pts,
+            comodinType: ctype,
           });
           if (res?.errors && res.errors.length > 0) {
             this.error.set(res.errors[0]!.message ?? 'No se pudo crear código');
@@ -553,7 +600,8 @@ export class AdminSponsorEditComponent implements OnInit {
             startDate: localInputToIso(c.startLocal),
             endDate: localInputToIso(c.endLocal),
             maxUses: c.maxUses,
-            pointsValue: c.pointsValue,
+            pointsValue: pts,
+            comodinType: ctype,
           });
           if (res?.errors && res.errors.length > 0) {
             this.error.set(res.errors[0]!.message ?? 'No se pudo actualizar código');

@@ -174,6 +174,10 @@ type DropdownKey = 'groups' | 'picks' | 'rankings' | 'user' | null;
           </button>
           @if (open() === 'user') {
             <div class="user-menu__panel" role="menu">
+              <a class="user-menu__item" role="menuitem" (click)="goComodines()">
+                <span class="user-menu__icon" aria-hidden="true">🃏</span>
+                Mis comodines
+              </a>
               <a class="user-menu__item" role="menuitem" (click)="goProfile()">
                 <span class="user-menu__icon" aria-hidden="true">⚙</span>
                 Editar perfil
@@ -242,6 +246,7 @@ type DropdownKey = 'groups' | 'picks' | 'rankings' | 'user' | null;
       }
 
       <h4 class="drawer__head">Cuenta</h4>
+      <a routerLink="/mis-comodines" (click)="closeDrawer()">🃏 Mis comodines</a>
       <a routerLink="/profile" (click)="closeDrawer()">Editar perfil</a>
       <a (click)="logout()" style="cursor: pointer; color: var(--color-lost);">Cerrar sesión</a>
     </aside>
@@ -356,6 +361,11 @@ export class NavComponent {
   goProfile() {
     this.closeAll();
     void this.router.navigate(['/profile']);
+  }
+
+  goComodines() {
+    this.closeAll();
+    void this.router.navigate(['/mis-comodines']);
   }
 
   async logout() {

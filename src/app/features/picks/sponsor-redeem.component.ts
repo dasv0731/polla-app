@@ -19,6 +19,24 @@ const ERROR_LABELS: Record<string, string> = {
   SPONSOR_CODE_EXPIRED: 'Este código ya expiró.',
   SPONSOR_CODE_LIMIT_REACHED: 'Este código ya alcanzó el límite de canjes.',
   SPONSOR_CODE_ALREADY_USED: 'Ya canjeaste este código antes.',
+  COMODINES_REQUIRES_COMPLETE_MODE:
+    'Los comodines solo aplican a Modo Completo. Únete a un grupo en modo completo.',
+  COMODIN_CAP_REACHED:
+    'Ya tienes 5 comodines (el techo). Usa o deja caducar uno antes de canjear más.',
+  COMODIN_SPONSOR_LIMIT_REACHED:
+    'Ya canjeaste 2 códigos de sponsor (el máximo por esa vía).',
+};
+
+const COMODIN_NAMES: Record<string, string> = {
+  MULTIPLIER_X2: 'Multiplicador x2',
+  PHASE_BOOST: 'Boost de fase',
+  GROUP_SAFE_PICK: 'Pick seguro de grupos',
+  BRACKET_SAFE_PICK: 'Pick seguro de llaves',
+  REASSIGN_CHAMP_RUNNER: 'Reasignación campeón/subcampeón',
+  LATE_EDIT: 'Edición tardía',
+  BRACKET_RESET: 'Reseteo de fase eliminatoria',
+  GROUP_RESET: 'Reseteo de grupo',
+  ANTI_PENALTY: 'Anti-penalización',
 };
 
 @Component({
@@ -299,8 +317,26 @@ export class SponsorRedeemComponent implements OnInit {
       }
       const data = res?.data;
       if (data?.ok) {
-        this.lastResult.set({ ok: true, message: data.message ?? `+${data.points} puntos sumados` });
-        this.toast.success('Código canjeado');
+        // Tres flavors de éxito según el response:
+        //   1. Comodín nuevo otorgado    → comodinType set, alreadyOwned=false
+        //   2. Code consumido sin comodín (ya tenía el tipo) → alreadyOwned=true
+        //   3. Legacy points              → comodinType=null, points>0
+        let msg = data.message ?? '';
+        let toastMsg = 'Código canjeado';
+        if (data.comodinType && !data.alreadyOwned) {
+          const niceName = COMODIN_NAMES[data.comodinType] ?? data.comodinType;
+          msg = `¡Ganaste un comodín tipo "${niceName}"! Está en tu cartera, listo para asignar.`;
+          toastMsg = `Comodín ${niceName} acreditado`;
+        } else if (data.alreadyOwned) {
+          // El sponsor canjeó pero el tipo ya lo tenía — dejamos el msg
+          // del backend que ya lo explica claramente.
+          toastMsg = 'Código canjeado (sin comodín extra)';
+        } else if (data.points > 0) {
+          msg = msg || `+${data.points} puntos sumados`;
+          toastMsg = `+${data.points} puntos`;
+        }
+        this.lastResult.set({ ok: true, message: msg });
+        this.toast.success(toastMsg);
         this.code = '';
         // Refrescar lista de canjes para incluir el nuevo
         void this.loadHistory();

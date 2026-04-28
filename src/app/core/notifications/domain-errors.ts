@@ -10,6 +10,9 @@ export const DOMAIN_ERROR_COPY: Record<string, string> = {
   GROUP_NOT_FOUND: 'No encontramos el grupo.',
   ADMIN_REQUIRED: 'Solo el admin del grupo puede hacer esto.',
   VALIDATION_ERROR: 'Datos inválidos. Revisa los campos.',
+  COMODINES_REQUIRES_COMPLETE_MODE: 'Los comodines solo aplican a Modo Completo. Únete a un grupo en modo completo para participar.',
+  COMODIN_CAP_REACHED: 'Ya tienes 5 comodines (el techo). Usa o deja caducar uno antes de canjear más.',
+  COMODIN_SPONSOR_LIMIT_REACHED: 'Ya canjeaste 2 códigos de sponsor (el máximo por esa vía). El comodín no se acreditó.',
 };
 
 export function humanizeError(e: unknown): string {
