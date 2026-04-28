@@ -98,13 +98,20 @@ interface ServerIdMap {
                   (cdkDropListDropped)="onDrop(g, $event)"
                   class="gs-list">
                 @for (slug of staged().groups[g] || []; track slug; let idx = $index) {
-                  <li cdkDrag class="gs-item" [class.gs-item--3rd]="idx === 2"
+                  <li cdkDrag class="gs-item"
+                      [class.gs-item--qualified]="idx === 0 || idx === 1"
+                      [class.gs-item--third]="idx === 2"
+                      [class.gs-item--eliminated]="idx === 3"
                       [cdkDragDisabled]="!!lockedAt()">
-                    <span class="gs-item__pos">{{ idx + 1 }}</span>
+                    <span class="gs-item__pos">{{ idx + 1 }}°</span>
                     <span class="gs-item__flag fi" [class]="'fi-' + (teamMap().get(slug)?.flagCode || '').toLowerCase()"></span>
                     <span class="gs-item__name">{{ teamMap().get(slug)?.name || slug }}</span>
-                    @if (idx === 2) {
-                      <span class="gs-item__tag">3°</span>
+                    @if (idx === 0 || idx === 1) {
+                      <span class="gs-item__tag gs-item__tag--ok">✓ Clasifica</span>
+                    } @else if (idx === 2) {
+                      <span class="gs-item__tag gs-item__tag--maybe">3°</span>
+                    } @else {
+                      <span class="gs-item__tag gs-item__tag--out">✕ Eliminado</span>
                     }
                   </li>
                 }
@@ -113,11 +120,12 @@ interface ServerIdMap {
           }
         </section>
 
-        <!-- Sidebar terceros -->
+        <!-- Sidebar terceros: click-to-toggle (no drag-drop — el orden no importa
+             para scoring, solo importa que el equipo esté entre los 8 que pasan). -->
         <aside class="gs-sidebar">
           <header class="gs-sidebar__head">
-            <h2>Mejores 3eros (avanzan 8 de 12)</h2>
-            <small>Marca con click los 8 que pasan a octavos.</small>
+            <h2>Mejores 3eros</h2>
+            <small>De los 12 terceros de cada grupo, <strong>solo 8 clasifican</strong> a octavos. Marcalos con un click.</small>
           </header>
 
           <ol class="gs-thirds">
@@ -126,11 +134,13 @@ interface ServerIdMap {
               <li class="gs-third"
                   [class.gs-third--in]="advancing"
                   [class.gs-third--disabled]="!!lockedAt()"
+                  role="button"
+                  [attr.aria-pressed]="advancing"
                   (click)="toggleAdvance(slug)">
-                <span class="gs-third__check">{{ advancing ? '✓' : '·' }}</span>
+                <span class="gs-third__check">{{ advancing ? '✓' : '+' }}</span>
                 <span class="gs-third__flag fi" [class]="'fi-' + (teamMap().get(slug)?.flagCode || '').toLowerCase()"></span>
                 <span class="gs-third__name">{{ teamMap().get(slug)?.name || slug }}</span>
-                <small class="gs-third__group">{{ groupOf(slug) }}</small>
+                <small class="gs-third__group">Gr {{ groupOf(slug) }}</small>
               </li>
             }
           </ol>
@@ -208,21 +218,41 @@ interface ServerIdMap {
     }
     .gs-item {
       display: grid;
-      grid-template-columns: 24px 24px 1fr auto;
+      grid-template-columns: 28px 22px 1fr auto;
       gap: 8px;
       align-items: center;
       padding: 8px 10px;
+      border-left: 4px solid transparent;
       background: var(--color-primary-grey, #f4f4f4);
       border-radius: var(--radius-sm);
       cursor: grab;
       user-select: none;
+      transition: background 100ms;
     }
     .gs-item:active { cursor: grabbing; }
-    .gs-item--3rd { background: rgba(255, 200, 0, 0.18); }
+    .gs-item--qualified {
+      background: rgba(0, 200, 100, 0.14);
+      border-left-color: var(--color-primary-green);
+    }
+    .gs-item--third {
+      background: rgba(255, 180, 0, 0.18);
+      border-left-color: #d99b00;
+    }
+    .gs-item--eliminated {
+      background: rgba(220, 50, 50, 0.10);
+      border-left-color: var(--color-lost, #c33);
+      opacity: 0.85;
+    }
+    .gs-item--eliminated .gs-item__name {
+      color: var(--color-text-muted);
+      text-decoration: line-through;
+      text-decoration-color: rgba(0,0,0,0.35);
+    }
     .gs-item__pos {
       font-family: var(--font-display);
       font-size: var(--fs-md);
       text-align: center;
+      font-weight: bold;
     }
     .gs-item__flag { width: 20px; height: 20px; border-radius: 3px; }
     .gs-item__name {
@@ -232,9 +262,25 @@ interface ServerIdMap {
       white-space: nowrap;
     }
     .gs-item__tag {
-      font-size: 10px;
-      color: var(--color-text-muted);
+      font-size: 9px;
       text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 2px 6px;
+      border-radius: 999px;
+      white-space: nowrap;
+      font-weight: 600;
+    }
+    .gs-item__tag--ok {
+      background: var(--color-primary-green);
+      color: var(--color-primary-white);
+    }
+    .gs-item__tag--maybe {
+      background: #d99b00;
+      color: var(--color-primary-white);
+    }
+    .gs-item__tag--out {
+      background: var(--color-lost, #c33);
+      color: var(--color-primary-white);
     }
     .cdk-drag-preview {
       box-shadow: 0 4px 12px rgba(0,0,0,0.2);
@@ -276,32 +322,52 @@ interface ServerIdMap {
     }
     .gs-third {
       display: grid;
-      grid-template-columns: 20px 24px 1fr 28px;
+      grid-template-columns: 22px 22px 1fr auto;
       gap: 8px;
       align-items: center;
-      padding: 6px 10px;
+      padding: 8px 10px;
+      border: 1px solid rgba(0,0,0,0.08);
       border-radius: var(--radius-sm);
       cursor: pointer;
       user-select: none;
-      background: var(--color-primary-grey, #f4f4f4);
-      transition: background 100ms;
+      background: var(--color-primary-white);
+      transition: background 100ms, border-color 100ms;
     }
-    .gs-third:hover { background: rgba(0,0,0,0.06); }
+    .gs-third:hover { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.18); }
     .gs-third--in {
-      background: rgba(0, 200, 100, 0.15);
-      outline: 1px solid var(--color-primary-green);
+      background: rgba(0, 200, 100, 0.14);
+      border-color: var(--color-primary-green);
+    }
+    .gs-third--in .gs-third__check {
+      background: var(--color-primary-green);
+      color: var(--color-primary-white);
     }
     .gs-third--disabled {
       cursor: not-allowed;
       opacity: 0.6;
     }
-    .gs-third__check { text-align: center; font-weight: bold; }
+    .gs-third__check {
+      width: 22px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.08);
+      color: var(--color-text-muted);
+      font-weight: bold;
+      font-size: var(--fs-sm);
+    }
     .gs-third__flag { width: 20px; height: 20px; border-radius: 3px; }
-    .gs-third__name { font-size: var(--fs-sm); }
+    .gs-third__name { font-size: var(--fs-sm); font-weight: 500; }
     .gs-third__group {
-      font-size: var(--fs-xs);
+      font-size: 9px;
       color: var(--color-text-muted);
       text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.06);
     }
   `],
 })
