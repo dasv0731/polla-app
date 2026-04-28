@@ -844,6 +844,228 @@
             "sortKeyFieldNames": []
           }
         },
+        "Comodin": {
+          "name": "Comodin",
+          "fields": {
+            "id": {
+              "name": "id",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "userId": {
+              "name": "userId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "tournamentId": {
+              "name": "tournamentId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "type": {
+              "name": "type",
+              "isArray": false,
+              "type": {
+                "enum": "ComodinType"
+              },
+              "isRequired": true,
+              "attributes": []
+            },
+            "source": {
+              "name": "source",
+              "isArray": false,
+              "type": {
+                "enum": "ComodinSource"
+              },
+              "isRequired": true,
+              "attributes": []
+            },
+            "status": {
+              "name": "status",
+              "isArray": false,
+              "type": {
+                "enum": "ComodinStatus"
+              },
+              "isRequired": true,
+              "attributes": []
+            },
+            "sponsorCodeId": {
+              "name": "sponsorCodeId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": false,
+              "attributes": []
+            },
+            "sponsorRedemptionId": {
+              "name": "sponsorRedemptionId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": false,
+              "attributes": []
+            },
+            "assignedMatchId": {
+              "name": "assignedMatchId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": false,
+              "attributes": []
+            },
+            "assignedPhaseOrder": {
+              "name": "assignedPhaseOrder",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": false,
+              "attributes": []
+            },
+            "assignedGroupLetter": {
+              "name": "assignedGroupLetter",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "assignedPositionIndex": {
+              "name": "assignedPositionIndex",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": false,
+              "attributes": []
+            },
+            "assignedTeamSlug": {
+              "name": "assignedTeamSlug",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": false,
+              "attributes": []
+            },
+            "assignedSpecialType": {
+              "name": "assignedSpecialType",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "assignedComodinId": {
+              "name": "assignedComodinId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": false,
+              "attributes": []
+            },
+            "assignedAt": {
+              "name": "assignedAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": []
+            },
+            "activatedAt": {
+              "name": "activatedAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": []
+            },
+            "expiredAt": {
+              "name": "expiredAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": []
+            },
+            "pointsImpact": {
+              "name": "pointsImpact",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": false,
+              "attributes": []
+            },
+            "createdAt": {
+              "name": "createdAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            },
+            "updatedAt": {
+              "name": "updatedAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            }
+          },
+          "syncable": true,
+          "pluralName": "Comodins",
+          "attributes": [
+            {
+              "type": "model",
+              "properties": {}
+            },
+            {
+              "type": "key",
+              "properties": {
+                "name": "comodinesByUser",
+                "queryField": "listComodinByUserIdAndTournamentId",
+                "fields": [
+                  "userId",
+                  "tournamentId"
+                ]
+              }
+            },
+            {
+              "type": "key",
+              "properties": {
+                "name": "comodinesByTournament",
+                "queryField": "listComodinByTournamentIdAndType",
+                "fields": [
+                  "tournamentId",
+                  "type"
+                ]
+              }
+            },
+            {
+              "type": "auth",
+              "properties": {
+                "rules": [
+                  {
+                    "provider": "userPools",
+                    "ownerField": "userId",
+                    "allow": "owner",
+                    "operations": [
+                      "read"
+                    ],
+                    "identityClaim": "cognito:username"
+                  },
+                  {
+                    "groupClaim": "cognito:groups",
+                    "provider": "userPools",
+                    "allow": "groups",
+                    "operations": [
+                      "read"
+                    ],
+                    "groups": [
+                      "admins"
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "primaryKeyInfo": {
+            "isCustomPrimaryKey": false,
+            "primaryKeyFieldName": "id",
+            "sortKeyFieldNames": []
+          }
+        },
         "Group": {
           "name": "Group",
           "fields": {
@@ -1902,7 +2124,16 @@
               "name": "pointsValue",
               "isArray": false,
               "type": "Int",
-              "isRequired": true,
+              "isRequired": false,
+              "attributes": []
+            },
+            "comodinType": {
+              "name": "comodinType",
+              "isArray": false,
+              "type": {
+                "enum": "ComodinType"
+              },
+              "isRequired": false,
               "attributes": []
             },
             "createdAt": {
@@ -2909,6 +3140,38 @@
             "COMPLETE"
           ]
         },
+        "ComodinType": {
+          "name": "ComodinType",
+          "values": [
+            "MULTIPLIER_X2",
+            "PHASE_BOOST",
+            "GROUP_SAFE_PICK",
+            "BRACKET_SAFE_PICK",
+            "REASSIGN_CHAMP_RUNNER",
+            "LATE_EDIT",
+            "BRACKET_RESET",
+            "GROUP_RESET",
+            "ANTI_PENALTY"
+          ]
+        },
+        "ComodinSource": {
+          "name": "ComodinSource",
+          "values": [
+            "SPONSOR",
+            "TRIVIA",
+            "LOYALTY",
+            "ENGAGEMENT"
+          ]
+        },
+        "ComodinStatus": {
+          "name": "ComodinStatus",
+          "values": [
+            "UNASSIGNED",
+            "ASSIGNED",
+            "ACTIVATED",
+            "EXPIRED"
+          ]
+        },
         "SpecialPickType": {
           "name": "SpecialPickType",
           "values": [
@@ -3120,6 +3383,29 @@
               "isArray": false,
               "type": "String",
               "isRequired": true,
+              "attributes": []
+            },
+            "comodinType": {
+              "name": "comodinType",
+              "isArray": false,
+              "type": {
+                "enum": "ComodinType"
+              },
+              "isRequired": false,
+              "attributes": []
+            },
+            "comodinId": {
+              "name": "comodinId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": false,
+              "attributes": []
+            },
+            "alreadyOwned": {
+              "name": "alreadyOwned",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": false,
               "attributes": []
             }
           }
