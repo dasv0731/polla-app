@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -21,7 +22,35 @@ interface ComodinRow {
   source: ComodinSource;
   status: ComodinStatus;
   createdAt: string;
+  // Target — set cuando status pasa a ASSIGNED. Forma depende del tipo.
+  assignedMatchId?: string | null;
+  assignedPhaseOrder?: number | null;
+  assignedGroupLetter?: string | null;
+  assignedPositionIndex?: number | null;
+  assignedTeamSlug?: string | null;
+  assignedComodinId?: string | null;
 }
+
+interface MatchOption {
+  id: string;
+  label: string;             // "ECU vs ARG · 14 jun 18:00"
+  kickoffAt: string;
+  phaseOrder: number;
+}
+
+interface TeamOption { slug: string; name: string; }
+
+const ASSIGNABLE_TYPES = new Set<ComodinType>([
+  'MULTIPLIER_X2', 'PHASE_BOOST', 'GROUP_SAFE_PICK',
+  'BRACKET_SAFE_PICK', 'ANTI_PENALTY',
+]);
+
+const PHASE_LABELS: Record<number, string> = {
+  3: 'Octavos (R16)',
+  4: 'Cuartos',
+  5: 'Semifinales',
+  6: 'Finalistas',
+};
 
 const ALL_TYPES: ComodinType[] = [
   'MULTIPLIER_X2', 'PHASE_BOOST', 'GROUP_SAFE_PICK', 'BRACKET_SAFE_PICK',
@@ -94,7 +123,7 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
 @Component({
   standalone: true,
   selector: 'app-comodines-list',
-  imports: [RouterLink],
+  imports: [RouterLink, FormsModule],
   template: `
     <header class="page-header">
       <div class="page-header__top">
@@ -164,9 +193,20 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
                         style="margin-top: var(--space-sm); justify-self: start;">
                   Elegir tipo →
                 </button>
+              } @else if (c.status === 'UNASSIGNED' && canAssign(c.type)) {
+                <button class="btn btn--primary btn--sm" type="button"
+                        (click)="openAssignModal(c)"
+                        style="margin-top: var(--space-sm); justify-self: start;">
+                  Asignar →
+                </button>
               } @else if (c.status === 'UNASSIGNED') {
                 <p class="form-card__hint" style="margin-top: var(--space-sm);">
-                  La asignación llega en la próxima fase del rollout.
+                  La asignación de este tipo llega en la próxima entrega
+                  (Fase 3b: tipos activos #5–#8).
+                </p>
+              } @else if (c.status === 'ASSIGNED') {
+                <p class="comodin-card__assigned">
+                  ✓ Asignado a <strong>{{ formatTarget(c) }}</strong>
                 </p>
               }
             </li>
@@ -174,6 +214,154 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
         </ul>
       }
     </div>
+
+    <!-- Modal Asignar -->
+    @if (assigning()) {
+      @let comodin = assigning()!;
+      <div class="claim-overlay" role="dialog" aria-modal="true"
+           (click)="closeAssignModal()">
+        <div class="claim-modal" (click)="$event.stopPropagation()">
+          <header class="claim-modal__head">
+            <h2>Asignar: {{ comodin.type ? typeInfo(comodin.type).name : '' }}</h2>
+            <button type="button" class="claim-modal__x" (click)="closeAssignModal()">×</button>
+          </header>
+          <p class="form-card__hint">{{ comodin.type ? typeInfo(comodin.type).impact : '' }}</p>
+          <p class="form-card__hint" style="margin-top: var(--space-xs);">
+            ⚠ La asignación es <strong>vinculante</strong>: una vez confirmada
+            no se puede mover ni cancelar.
+          </p>
+
+          <!-- Form por tipo -->
+          @switch (comodin.type) {
+            @case ('MULTIPLIER_X2') {
+              <div class="form-card__field" style="margin-top: var(--space-md);">
+                <label class="form-card__label">Partido (grupos / R32 / R16)</label>
+                @if (assignLoadingOptions()) {
+                  <p class="form-card__hint">Cargando partidos…</p>
+                } @else if (matchOptions().length === 0) {
+                  <p class="form-card__hint" style="color: var(--color-lost);">
+                    No hay partidos elegibles próximos.
+                  </p>
+                } @else {
+                  <select class="form-card__input" [(ngModel)]="selMatchId">
+                    <option value="">— elige un partido —</option>
+                    @for (m of matchOptions(); track m.id) {
+                      <option [value]="m.id">{{ m.label }}</option>
+                    }
+                  </select>
+                }
+              </div>
+            }
+
+            @case ('PHASE_BOOST') {
+              <div class="form-card__field" style="margin-top: var(--space-md);">
+                <label class="form-card__label">Fase a boostear (x1.5)</label>
+                <div style="display: flex; gap: var(--space-sm);">
+                  <label class="phase-radio">
+                    <input type="radio" name="boost-phase" [value]="3"
+                           [(ngModel)]="selPhaseOrder">
+                    <span>Octavos (R16)</span>
+                  </label>
+                  <label class="phase-radio">
+                    <input type="radio" name="boost-phase" [value]="4"
+                           [(ngModel)]="selPhaseOrder">
+                    <span>Cuartos</span>
+                  </label>
+                </div>
+              </div>
+            }
+
+            @case ('GROUP_SAFE_PICK') {
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm); margin-top: var(--space-md);">
+                <div class="form-card__field" style="margin: 0;">
+                  <label class="form-card__label">Grupo</label>
+                  <select class="form-card__input" [(ngModel)]="selGroupLetter">
+                    <option value="">—</option>
+                    @for (l of GROUP_LETTERS; track l) {
+                      <option [value]="l">Grupo {{ l }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="form-card__field" style="margin: 0;">
+                  <label class="form-card__label">Posición a asegurar</label>
+                  <select class="form-card__input" [(ngModel)]="selPositionIndex">
+                    <option [value]="0">—</option>
+                    <option [value]="1">1° (primer puesto)</option>
+                    <option [value]="2">2° (segundo puesto)</option>
+                    <option [value]="3">3° (tercer puesto)</option>
+                    <option [value]="4">4° (último)</option>
+                  </select>
+                </div>
+              </div>
+            }
+
+            @case ('BRACKET_SAFE_PICK') {
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm); margin-top: var(--space-md);">
+                <div class="form-card__field" style="margin: 0;">
+                  <label class="form-card__label">Equipo a asegurar</label>
+                  @if (assignLoadingOptions()) {
+                    <p class="form-card__hint">Cargando equipos…</p>
+                  } @else {
+                    <select class="form-card__input" [(ngModel)]="selTeamSlug">
+                      <option value="">—</option>
+                      @for (t of teamOptions(); track t.slug) {
+                        <option [value]="t.slug">{{ t.name }}</option>
+                      }
+                    </select>
+                  }
+                </div>
+                <div class="form-card__field" style="margin: 0;">
+                  <label class="form-card__label">Fase</label>
+                  <select class="form-card__input" [(ngModel)]="selPhaseOrder">
+                    <option [value]="0">—</option>
+                    <option [value]="3">Octavos (R16)</option>
+                    <option [value]="4">Cuartos</option>
+                    <option [value]="5">Semifinales</option>
+                    <option [value]="6">Finalistas</option>
+                  </select>
+                </div>
+              </div>
+            }
+
+            @case ('ANTI_PENALTY') {
+              <div class="form-card__field" style="margin-top: var(--space-md);">
+                <label class="form-card__label">Bracket Safe Pick a cubrir</label>
+                @if (antiPenaltyTargets().length === 0) {
+                  <p class="form-card__hint" style="color: var(--color-lost);">
+                    Necesitas tener un Pick seguro de llaves <strong>ya asignado</strong>
+                    para cubrirlo con anti-penalización.
+                  </p>
+                } @else {
+                  <select class="form-card__input" [(ngModel)]="selTargetComodinId">
+                    <option value="">—</option>
+                    @for (t of antiPenaltyTargets(); track t.id) {
+                      <option [value]="t.id">{{ formatTarget(t) }}</option>
+                    }
+                  </select>
+                }
+              </div>
+            }
+          }
+
+          @if (assignError()) {
+            <p class="form-card__hint" style="color: var(--color-lost); margin-top: var(--space-sm);">
+              {{ assignError() }}
+            </p>
+          }
+
+          <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-lg); justify-content: flex-end;">
+            <button type="button" class="btn btn--ghost"
+                    [disabled]="assigningNow()"
+                    (click)="closeAssignModal()">Cancelar</button>
+            <button type="button" class="btn btn--primary"
+                    [disabled]="assigningNow() || !canSubmit()"
+                    (click)="submitAssign()">
+              {{ assigningNow() ? 'Asignando…' : 'Confirmar asignación' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
 
     <!-- Modal Elegir tipo -->
     @if (claiming()) {
@@ -279,6 +467,25 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
       color: var(--color-text-muted);
       font-style: italic;
     }
+    .comodin-card__assigned {
+      font-size: var(--fs-sm);
+      color: var(--color-primary-green);
+      margin-top: var(--space-sm);
+      padding: var(--space-xs) var(--space-sm);
+      background: rgba(0,200,100,0.10);
+      border-radius: var(--radius-sm);
+    }
+    .phase-radio {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: var(--color-primary-grey, #f4f4f4);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+    .phase-radio input { margin: 0; }
 
     /* Modal Elegir tipo */
     .claim-overlay {
@@ -350,6 +557,7 @@ export class ComodinesListComponent implements OnInit {
   private toast = inject(ToastService);
 
   ALL_TYPES = ALL_TYPES;
+  GROUP_LETTERS = ['A','B','C','D','E','F','G','H'];
 
   loading = signal(true);
   comodines = signal<ComodinRow[]>([]);
@@ -357,6 +565,65 @@ export class ComodinesListComponent implements OnInit {
   // Modal "Elegir tipo": el comodín que se está claimeando.
   claiming = signal<ComodinRow | null>(null);
   claimingNow = signal(false);
+
+  // Modal "Asignar": el comodín que se está asignando + state del form.
+  assigning = signal<ComodinRow | null>(null);
+  assigningNow = signal(false);
+  assignError = signal<string | null>(null);
+  assignLoadingOptions = signal(false);
+  matchOptions = signal<MatchOption[]>([]);
+  teamOptions = signal<TeamOption[]>([]);
+  selMatchId = '';
+  selPhaseOrder = 0;
+  selGroupLetter = '';
+  selPositionIndex = 0;
+  selTeamSlug = '';
+  selTargetComodinId = '';
+
+  antiPenaltyTargets = computed(() =>
+    this.comodines().filter((c) =>
+      c.type === 'BRACKET_SAFE_PICK' && c.status === 'ASSIGNED',
+    ),
+  );
+
+  canAssign(t: ComodinType | null): boolean {
+    return !!t && ASSIGNABLE_TYPES.has(t);
+  }
+
+  canSubmit(): boolean {
+    const c = this.assigning();
+    if (!c) return false;
+    switch (c.type) {
+      case 'MULTIPLIER_X2':         return !!this.selMatchId;
+      case 'PHASE_BOOST':           return this.selPhaseOrder === 3 || this.selPhaseOrder === 4;
+      case 'GROUP_SAFE_PICK':       return !!this.selGroupLetter && this.selPositionIndex >= 1 && this.selPositionIndex <= 4;
+      case 'BRACKET_SAFE_PICK':     return !!this.selTeamSlug && this.selPhaseOrder >= 3 && this.selPhaseOrder <= 6;
+      case 'ANTI_PENALTY':          return !!this.selTargetComodinId;
+      default: return false;
+    }
+  }
+
+  formatTarget(c: ComodinRow): string {
+    switch (c.type) {
+      case 'MULTIPLIER_X2': {
+        const m = this.matchOptions().find((x) => x.id === c.assignedMatchId);
+        return m?.label ?? `partido ${c.assignedMatchId ?? '?'}`;
+      }
+      case 'PHASE_BOOST':
+        return PHASE_LABELS[c.assignedPhaseOrder ?? 0] ?? `fase ${c.assignedPhaseOrder}`;
+      case 'GROUP_SAFE_PICK':
+        return `Grupo ${c.assignedGroupLetter} · pos ${c.assignedPositionIndex}°`;
+      case 'BRACKET_SAFE_PICK': {
+        const teamName = this.teamOptions().find((t) => t.slug === c.assignedTeamSlug)?.name ?? c.assignedTeamSlug;
+        return `${teamName} en ${PHASE_LABELS[c.assignedPhaseOrder ?? 0] ?? `fase ${c.assignedPhaseOrder}`}`;
+      }
+      case 'ANTI_PENALTY': {
+        const t = this.comodines().find((x) => x.id === c.assignedComodinId);
+        return t ? `Anti-pen sobre: ${this.formatTarget(t)}` : 'safe pick desconocido';
+      }
+      default: return '—';
+    }
+  }
 
   // Tipos que el user ya tiene (excluyendo EXPIRED) — usado para
   // deshabilitar opciones en el modal.
@@ -390,6 +657,141 @@ export class ComodinesListComponent implements OnInit {
   closeClaimModal() {
     if (this.claimingNow()) return;
     this.claiming.set(null);
+  }
+
+  async openAssignModal(c: ComodinRow) {
+    this.assigning.set(c);
+    this.selMatchId = '';
+    this.selPhaseOrder = 0;
+    this.selGroupLetter = '';
+    this.selPositionIndex = 0;
+    this.selTeamSlug = '';
+    this.selTargetComodinId = '';
+    this.assignError.set(null);
+
+    // Cargar options según el tipo
+    if (c.type === 'MULTIPLIER_X2') {
+      await this.loadMatchOptions();
+    } else if (c.type === 'BRACKET_SAFE_PICK') {
+      await this.loadTeamOptions();
+    }
+  }
+
+  closeAssignModal() {
+    if (this.assigningNow()) return;
+    this.assigning.set(null);
+    this.assignError.set(null);
+  }
+
+  private async loadMatchOptions() {
+    this.assignLoadingOptions.set(true);
+    try {
+      const [matchesRes, phasesRes, teamsRes] = await Promise.all([
+        this.api.listMatches(TOURNAMENT_ID),
+        this.api.listPhases(TOURNAMENT_ID),
+        this.api.listTeams(TOURNAMENT_ID),
+      ]);
+      const phaseOrderById = new Map<string, number>();
+      for (const p of phasesRes.data ?? []) phaseOrderById.set(p.id, p.order);
+      const teamNameBySlug = new Map<string, string>();
+      for (const t of teamsRes.data ?? []) teamNameBySlug.set(t.slug, t.name);
+
+      const now = Date.now();
+      const opts: MatchOption[] = (matchesRes.data ?? [])
+        .map((m) => ({
+          id: m.id,
+          kickoffAt: m.kickoffAt,
+          phaseOrder: phaseOrderById.get(m.phaseId) ?? 0,
+          home: teamNameBySlug.get(m.homeTeamId) ?? m.homeTeamId,
+          away: teamNameBySlug.get(m.awayTeamId) ?? m.awayTeamId,
+        }))
+        .filter((m) => m.phaseOrder >= 1 && m.phaseOrder <= 3 && Date.parse(m.kickoffAt) > now)
+        .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt))
+        .map((m) => ({
+          id: m.id,
+          kickoffAt: m.kickoffAt,
+          phaseOrder: m.phaseOrder,
+          label: `${m.home} vs ${m.away} · ${this.shortDate(m.kickoffAt)} · ${this.phaseShort(m.phaseOrder)}`,
+        }));
+      this.matchOptions.set(opts);
+    } finally {
+      this.assignLoadingOptions.set(false);
+    }
+  }
+
+  private async loadTeamOptions() {
+    this.assignLoadingOptions.set(true);
+    try {
+      const teamsRes = await this.api.listTeams(TOURNAMENT_ID);
+      const opts: TeamOption[] = (teamsRes.data ?? [])
+        .map((t) => ({ slug: t.slug, name: t.name }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+      this.teamOptions.set(opts);
+    } finally {
+      this.assignLoadingOptions.set(false);
+    }
+  }
+
+  private shortDate(iso: string): string {
+    try {
+      return new Date(iso).toLocaleString('es-EC', {
+        day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+      });
+    } catch { return iso; }
+  }
+  private phaseShort(order: number): string {
+    if (order === 1) return 'grupos';
+    if (order === 2) return 'R32';
+    if (order === 3) return 'R16';
+    return `fase ${order}`;
+  }
+
+  async submitAssign() {
+    const c = this.assigning();
+    if (!c || !this.canSubmit()) return;
+    this.assignError.set(null);
+    this.assigningNow.set(true);
+    try {
+      const args: {
+        comodinId: string; matchId?: string; phaseOrder?: number;
+        groupLetter?: string; positionIndex?: number;
+        teamSlug?: string; targetComodinId?: string;
+      } = { comodinId: c.id };
+
+      switch (c.type) {
+        case 'MULTIPLIER_X2':         args.matchId = this.selMatchId; break;
+        case 'PHASE_BOOST':           args.phaseOrder = this.selPhaseOrder; break;
+        case 'GROUP_SAFE_PICK':
+          args.groupLetter = this.selGroupLetter;
+          args.positionIndex = this.selPositionIndex;
+          break;
+        case 'BRACKET_SAFE_PICK':
+          args.teamSlug = this.selTeamSlug;
+          args.phaseOrder = this.selPhaseOrder;
+          break;
+        case 'ANTI_PENALTY':          args.targetComodinId = this.selTargetComodinId; break;
+      }
+
+      const res = await this.api.assignComodin(args);
+      if (res?.errors && res.errors.length > 0) {
+        this.assignError.set(res.errors[0]?.message ?? 'No se pudo asignar');
+        return;
+      }
+      this.toast.success('Comodín asignado');
+      this.assigning.set(null);
+      // Refrescar lista
+      const userId = this.auth.user()?.sub;
+      if (userId) {
+        const list = await this.api.listMyComodines(userId, TOURNAMENT_ID);
+        const rows = ((list.data ?? []) as ComodinRow[])
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+        this.comodines.set(rows);
+      }
+    } catch (e) {
+      this.assignError.set(humanizeError(e));
+    } finally {
+      this.assigningNow.set(false);
+    }
   }
 
   async confirmClaim(c: ComodinRow, type: ComodinType) {

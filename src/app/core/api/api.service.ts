@@ -142,6 +142,17 @@ export class ApiService {
   claimComodinType(comodinId: string, type: string) {
     return apiClient.mutations.claimComodinType({ comodinId, type });
   }
+  assignComodin(input: {
+    comodinId: string;
+    matchId?: string;
+    phaseOrder?: number;
+    groupLetter?: string;
+    positionIndex?: number;
+    teamSlug?: string;
+    targetComodinId?: string;
+  }) {
+    return apiClient.mutations.assignComodin(input);
+  }
   runLoyaltySweep(tournamentId: string) {
     return apiClient.mutations.runLoyaltySweep({ tournamentId });
   }
