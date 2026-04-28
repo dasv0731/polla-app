@@ -399,30 +399,24 @@ export class ApiService {
   }
 
   upsertBracketPick(input: {
-    id?: string;
-    userId: string;
+    id?: string;     // ignorado: el server resuelve upsert por (user, tournament, mode)
+    userId: string;  // ignorado: el server toma identity.sub
     tournamentId: string;
     mode: 'SIMPLE' | 'COMPLETE';
     octavos: string[]; cuartos: string[]; semis: string[]; final: string[];
     champion: string;
   }) {
-    // champion vacío → null. Los arrays se mandan tal cual (vacíos OK).
-    const championValue = input.champion ? input.champion : null;
-    if (input.id) {
-      return apiClient.models.BracketPick.update({
-        id: input.id,
-        octavos: input.octavos, cuartos: input.cuartos,
-        semis: input.semis, final: input.final,
-        champion: championValue,
-      });
-    }
-    return apiClient.models.BracketPick.create({
-      userId: input.userId,
+    // Custom mutation: enforcea el lock §4 (kickoff del primer partido
+    // eliminatorio). El server upserta por (userId=identity.sub,
+    // tournamentId, mode), preservando createdAt y pointsEarned.
+    return apiClient.mutations.upsertBracketPick({
       tournamentId: input.tournamentId,
       mode: input.mode,
-      octavos: input.octavos, cuartos: input.cuartos,
-      semis: input.semis, final: input.final,
-      champion: championValue,
+      octavos: input.octavos,
+      cuartos: input.cuartos,
+      semis: input.semis,
+      final: input.final,
+      champion: input.champion ? input.champion : null,
     });
   }
 

@@ -1,5 +1,5 @@
 export const DOMAIN_ERROR_COPY: Record<string, string> = {
-  PICK_WINDOW_CLOSED: 'Este partido ya cerró su ventana de picks.',
+  PICK_WINDOW_CLOSED: 'La ventana de predicciones ya se cerró.',
   INVITE_CODE_INVALID: 'El código no es válido o expiró.',
   ALREADY_MEMBER: 'Ya eres miembro de este grupo.',
   HANDLE_TAKEN: 'Ese handle ya está en uso.',

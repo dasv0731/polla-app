@@ -1,9 +1,10 @@
-import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService } from '../../core/user/user-modes.service';
 import { ToastService } from '../../core/notifications/toast.service';
+import { TimeService } from '../../core/time/time.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
 
 type GameMode = 'SIMPLE' | 'COMPLETE';
@@ -81,6 +82,21 @@ interface TeamLite { slug: string; name: string; flagCode: string; }
           un equipo bien puesto desde octavos hasta campeón suma 3+6+8+10+15 = 42 pts.
         </p>
       }
+
+      @if (mode() && bracketLockAt()) {
+        @if (bracketLocked()) {
+          <div class="bp-lock bp-lock--closed" role="status">
+            <strong>BLOQUEADO</strong> · El bracket cerró el {{ bracketLockFormatted() }}.
+            Ya no se aceptan cambios.
+          </div>
+        } @else {
+          <div class="bp-lock bp-lock--open" role="status">
+            Cierra al kickoff del primer partido eliminatorio:
+            <strong>{{ bracketLockFormatted() }}</strong>
+            (en {{ bracketLockCountdown() }}).
+          </div>
+        }
+      }
     </header>
 
     @if (loading()) {
@@ -95,7 +111,7 @@ interface TeamLite { slug: string; name: string; flagCode: string; }
         </p>
       </div>
     } @else if (mode()) {
-      <div class="bracket-admin">
+      <div class="bracket-admin" [class.bp-readonly]="bracketLocked()">
         @for (phase of PHASES; track phase.order) {
           @let matches = matchesByPhase(phase.order);
           @if (matches.length > 0) {
@@ -150,9 +166,9 @@ interface TeamLite { slug: string; name: string; flagCode: string; }
           <strong>{{ pickedCount() }}</strong> de <strong>{{ totalKnockoutMatches() }}</strong> partidos elegidos.
         </p>
         <button class="btn btn--primary" type="button"
-                [disabled]="saving()"
+                [disabled]="saving() || bracketLocked()"
                 (click)="saveAll()">
-          {{ saving() ? 'Guardando…' : 'Guardar en la base' }}
+          {{ bracketLocked() ? 'Bracket bloqueado' : (saving() ? 'Guardando…' : 'Guardar en la base') }}
         </button>
         @if (lastSavedAt()) {
           <p class="form-card__hint" style="margin-top: var(--space-sm); color: var(--color-primary-green);">
@@ -322,13 +338,36 @@ interface TeamLite { slug: string; name: string; flagCode: string; }
       word-break: break-word;
     }
     .bp-modal__btn { min-width: 160px; }
+    /* Banner del lock §4 */
+    .bp-lock {
+      margin-top: var(--space-md);
+      padding: var(--space-sm) var(--space-md);
+      border-radius: var(--radius-sm);
+      font-size: var(--fs-sm);
+      line-height: 1.4;
+    }
+    .bp-lock--open {
+      background: rgba(0, 200, 100, 0.10);
+      border-left: 3px solid var(--color-primary-green);
+    }
+    .bp-lock--closed {
+      background: rgba(220, 50, 50, 0.10);
+      border-left: 3px solid var(--color-lost, #c33);
+      color: var(--color-lost, #c33);
+    }
+    /* Cuando el bracket está bloqueado: filas read-only, cursor default,
+       sin hover effect. Las selecciones siguen visibles para que el user
+       vea su pick guardado. */
+    .bp-readonly .bp-row { cursor: not-allowed; }
+    .bp-readonly .bp-row:hover { background: transparent; }
   `],
 })
-export class BracketPicksComponent implements OnInit {
+export class BracketPicksComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private userModes = inject(UserModesService);
   private toast = inject(ToastService);
+  private time = inject(TimeService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
@@ -354,10 +393,39 @@ export class BracketPicksComponent implements OnInit {
 
   private serverId: string | null = null;
   private currentUserId = '';
+  private lockTicker: ReturnType<typeof setInterval> | undefined;
 
   hasNoKnockoutMatches = computed(() => this.matches().length === 0);
   totalKnockoutMatches = computed(() => this.matches().length);
   pickedCount = computed(() => this.winners().size);
+
+  // Lock window §4: el bracket cierra al kickoff del primer partido
+  // eliminatorio. Si todavía no hay knockouts cargados, lockAt es null
+  // y el form queda abierto como draft.
+  bracketLockAt = computed<string | null>(() => {
+    const ms = this.matches();
+    if (ms.length === 0) return null;
+    let min = ms[0]!.kickoffAt;
+    for (const m of ms) if (m.kickoffAt < min) min = m.kickoffAt;
+    return min;
+  });
+  // Re-evaluado cada 30s vía nowTick para que el banner cambie de
+  // "abre, cierra en X" a "BLOQUEADO" sin refresh.
+  private nowTick = signal(Date.now());
+  bracketLocked = computed(() => {
+    const at = this.bracketLockAt();
+    if (!at) return false;
+    return this.nowTick() >= Date.parse(at);
+  });
+  bracketLockCountdown = computed(() => {
+    const at = this.bracketLockAt();
+    if (!at) return null;
+    return this.time.timeUntil(at);
+  });
+  bracketLockFormatted = computed(() => {
+    const at = this.bracketLockAt();
+    return at ? this.time.formatKickoff(at) : null;
+  });
 
   matchesByPhase(order: number): KnockoutMatch[] {
     return this.matches()
@@ -379,6 +447,8 @@ export class BracketPicksComponent implements OnInit {
       return;
     }
     this.modesLoading.set(false);
+    // Tick global cada 30s para refrescar el countdown / cambiar a "bloqueado".
+    this.lockTicker = setInterval(() => this.nowTick.set(Date.now()), 30_000);
 
     const requested = this.route.snapshot.queryParamMap.get('mode') as GameMode | null;
     const modes = this.availableModes();
@@ -390,6 +460,11 @@ export class BracketPicksComponent implements OnInit {
       return;
     }
     await this.loadForMode();
+  }
+
+  ngOnDestroy(): void {
+    if (this.lockTicker) clearInterval(this.lockTicker);
+    if (this.justSavedTimer) clearTimeout(this.justSavedTimer);
   }
 
   async switchMode(m: GameMode) {
@@ -481,6 +556,7 @@ export class BracketPicksComponent implements OnInit {
   }
 
   pickWinner(matchId: string, teamSlug: string) {
+    if (this.bracketLocked()) return;
     this.winners.update((prev) => {
       const next = new Map(prev);
       if (next.get(matchId) === teamSlug) {
@@ -537,6 +613,10 @@ export class BracketPicksComponent implements OnInit {
   async saveAll() {
     const m = this.mode();
     if (!m) return;
+    if (this.bracketLocked()) {
+      this.saveError.set('La ventana de predicciones del bracket ya se cerró.');
+      return;
+    }
     this.saveError.set(null);
     this.saving.set(true);
     try {
