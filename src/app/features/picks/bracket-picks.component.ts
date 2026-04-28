@@ -145,7 +145,19 @@ interface TeamLite { slug: string; name: string; flagCode: string; }
 
       <footer class="bp-foot">
         @if (saveError()) {
-          <p class="form-card__hint" style="color: var(--color-lost);">{{ saveError() }}</p>
+          <p class="bp-banner bp-banner--err">
+            <span class="bp-banner__icon">!</span>
+            <span><strong>No se pudo guardar.</strong> {{ saveError() }}</span>
+          </p>
+        }
+        @if (justSaved()) {
+          <p class="bp-banner bp-banner--ok">
+            <span class="bp-banner__icon">✓</span>
+            <span>
+              <strong>Predicción guardada en la base.</strong>
+              {{ pickedCount() }} {{ pickedCount() === 1 ? 'partido' : 'partidos' }} registrados — el servidor confirmó OK.
+            </span>
+          </p>
         }
         <p class="form-card__hint">
           Tu predicción se guarda automáticamente en este navegador.
@@ -155,11 +167,11 @@ interface TeamLite { slug: string; name: string; flagCode: string; }
         <button class="btn btn--primary" type="button"
                 [disabled]="saving()"
                 (click)="saveAll()">
-          {{ saving() ? 'Guardando…' : 'Guardar en la base' }}
+          {{ saving() ? 'Guardando…' : (justSaved() ? '✓ Guardado' : 'Guardar en la base') }}
         </button>
         @if (lastSavedAt()) {
-          <p class="form-card__hint" style="margin-top: var(--space-sm);">
-            Último guardado: {{ formatDate(lastSavedAt()!) }}
+          <p class="form-card__hint" style="margin-top: var(--space-sm); color: var(--color-primary-green);">
+            ✓ Último guardado en la base: {{ formatDate(lastSavedAt()!) }}
           </p>
         }
       </footer>
@@ -212,6 +224,42 @@ interface TeamLite { slug: string; name: string; flagCode: string; }
       border-radius: var(--radius-md);
       margin: var(--space-xl) var(--section-x-mobile, var(--space-md)) 0;
     }
+    .bp-banner {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: var(--space-sm) var(--space-md);
+      border-radius: var(--radius-sm);
+      font-size: var(--fs-sm);
+      line-height: 1.4;
+    }
+    .bp-banner__icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: var(--color-primary-white);
+    }
+    .bp-banner--ok {
+      background: rgba(0, 200, 100, 0.14);
+      color: var(--color-primary-green);
+      border: 1px solid var(--color-primary-green);
+    }
+    .bp-banner--ok .bp-banner__icon {
+      background: var(--color-primary-green);
+    }
+    .bp-banner--err {
+      background: rgba(220, 50, 50, 0.10);
+      color: var(--color-lost);
+      border: 1px solid var(--color-lost);
+    }
+    .bp-banner--err .bp-banner__icon {
+      background: var(--color-lost);
+    }
   `],
 })
 export class BracketPicksComponent implements OnInit {
@@ -229,6 +277,8 @@ export class BracketPicksComponent implements OnInit {
   saving = signal(false);
   saveError = signal<string | null>(null);
   lastSavedAt = signal<string | null>(null);
+  justSaved = signal(false);
+  private justSavedTimer: ReturnType<typeof setTimeout> | undefined;
 
   availableModes = computed(() => this.userModes.modes());
   mode = signal<GameMode | null>(null);
@@ -453,7 +503,11 @@ export class BracketPicksComponent implements OnInit {
       }
       if (res?.data?.id) this.serverId = res.data.id;
       this.lastSavedAt.set(new Date().toISOString());
-      this.toast.success('Bracket guardado');
+      this.toast.success('Bracket guardado en la base');
+      // Banner verde visible por 5s
+      if (this.justSavedTimer) clearTimeout(this.justSavedTimer);
+      this.justSaved.set(true);
+      this.justSavedTimer = setTimeout(() => this.justSaved.set(false), 5000);
     } catch (e) {
       this.saveError.set(humanizeError(e));
     } finally {
