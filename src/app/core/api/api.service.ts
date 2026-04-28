@@ -58,13 +58,29 @@ export class ApiService {
   getSponsor(id: string) {
     return apiClient.models.Sponsor.get({ id });
   }
-  createSponsor(input: { name: string; bannerKeys?: string[] }) {
+  createSponsor(input: {
+    name: string;
+    banner1?: string | null;
+    banner2?: string | null;
+    banner3?: string | null;
+    bannerKeys?: string[];      // legacy, opcional
+  }) {
     return apiClient.models.Sponsor.create({
       name: input.name,
-      bannerKeys: input.bannerKeys ?? [],
+      banner1: input.banner1 ?? null,
+      banner2: input.banner2 ?? null,
+      banner3: input.banner3 ?? null,
+      ...(input.bannerKeys ? { bannerKeys: input.bannerKeys } : {}),
     });
   }
-  updateSponsor(input: { id: string; name?: string; bannerKeys?: string[] }) {
+  updateSponsor(input: {
+    id: string;
+    name?: string;
+    banner1?: string | null;
+    banner2?: string | null;
+    banner3?: string | null;
+    bannerKeys?: string[];
+  }) {
     return apiClient.models.Sponsor.update(input);
   }
   deleteSponsor(id: string) {

@@ -10,6 +10,18 @@ const TOURNAMENT_ID = 'mundial-2026';
 const MAX_BANNER_BYTES = 2 * 1024 * 1024;     // 2 MB
 const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml'];
 
+type SlotKey = 'banner1' | 'banner2' | 'banner3';
+
+interface SlotDef { key: SlotKey; label: string; hint: string; }
+
+// Las dimensiones se definen cuando llegue el diseño — el hint es un
+// placeholder neutral. Cambiar acá cuando se establezcan ratios.
+const SLOTS: SlotDef[] = [
+  { key: 'banner1', label: 'Slot 1', hint: 'Dimensiones por definir' },
+  { key: 'banner2', label: 'Slot 2', hint: 'Dimensiones por definir' },
+  { key: 'banner3', label: 'Slot 3', hint: 'Dimensiones por definir' },
+];
+
 interface CodeRow {
   id: string | null;        // null si es nuevo (no commiteado a DB)
   code: string;
@@ -48,51 +60,67 @@ interface CodeRow {
                  placeholder="Pepsi · Nike · Movistar">
         </div>
 
-        <!-- Banners (upload S3 via Amplify Storage) -->
+        <!-- Banners: 3 slots independientes. Cada slot acepta una sola
+             imagen; las dimensiones por slot se definen cuando llegue
+             el diseño. Se persisten en banner1/banner2/banner3. -->
         <div class="form-card__field">
-          <label class="form-card__label">Banners</label>
-          @if (bannerKeys().length === 0) {
-            <p class="form-card__hint">Sin banners cargados.</p>
-          } @else {
-            <ul class="banner-grid">
-              @for (k of bannerKeys(); track k; let i = $index) {
-                <li class="banner-item">
-                  @let url = previewUrls().get(k);
-                  @if (url) {
-                    <img [src]="url" [alt]="'Banner ' + (i + 1)" loading="lazy">
-                  } @else {
-                    <div class="banner-item__placeholder">cargando…</div>
-                  }
-                  <button type="button" class="banner-item__remove"
-                          [disabled]="busyKey() === k"
-                          (click)="removeBanner(k)"
-                          title="Borrar este banner">×</button>
-                </li>
-              }
-            </ul>
-          }
+          <label class="form-card__label">Banners (3 slots)</label>
+          <span class="form-card__hint">
+            Tres alternativas de banner para distintas superficies (cabecera,
+            tile lateral, inline, etc — definimos dimensiones cuando esté
+            el diseño). Imágenes hasta 2 MB · PNG / JPG / WebP / GIF / SVG.
+          </span>
 
-          <div style="margin-top: var(--space-md);">
-            <input id="banner-upload" type="file" accept="image/*"
-                   [disabled]="uploading()"
-                   (change)="onFilePick($event)"
-                   style="display: none;">
-            <label for="banner-upload" class="btn btn--ghost btn--sm"
-                   [class.is-disabled]="uploading()"
-                   style="cursor: pointer;">
-              {{ uploading() ? ('Subiendo… ' + uploadPct() + '%') : '+ Subir banner' }}
-            </label>
-            @if (uploadError()) {
-              <p class="form-card__hint" style="color: var(--color-lost); margin-top: var(--space-xs);">
-                {{ uploadError() }}
-              </p>
+          <div class="banner-slot-grid">
+            @for (slot of SLOTS; track slot.key) {
+              @let key = slotKey(slot.key);
+              <article class="banner-slot">
+                <header class="banner-slot__head">
+                  <strong>{{ slot.label }}</strong>
+                  <small>{{ slot.hint }}</small>
+                </header>
+                <div class="banner-slot__preview">
+                  @if (key) {
+                    @let url = previewUrls().get(key);
+                    @if (url) {
+                      <img [src]="url" [alt]="slot.label" loading="lazy">
+                    } @else {
+                      <div class="banner-slot__placeholder">cargando…</div>
+                    }
+                  } @else {
+                    <div class="banner-slot__placeholder">vacío</div>
+                  }
+                </div>
+                <div class="banner-slot__actions">
+                  <input [id]="'upload-' + slot.key" type="file" accept="image/*"
+                         [disabled]="uploadingSlot() === slot.key"
+                         (change)="onFilePick($event, slot.key)"
+                         style="display: none;">
+                  <label [for]="'upload-' + slot.key"
+                         class="btn btn--ghost btn--sm"
+                         [class.is-disabled]="uploadingSlot() === slot.key"
+                         style="cursor: pointer;">
+                    {{ uploadingSlot() === slot.key
+                        ? ('Subiendo… ' + uploadPct() + '%')
+                        : (key ? 'Reemplazar' : '+ Subir') }}
+                  </label>
+                  @if (key) {
+                    <button type="button" class="btn btn--ghost btn--sm"
+                            [disabled]="busyKey() === key"
+                            (click)="removeBannerSlot(slot.key)"
+                            style="color: var(--color-lost, #c33);">
+                      Borrar
+                    </button>
+                  }
+                </div>
+                @if (uploadErrorBySlot()[slot.key]) {
+                  <p class="form-card__hint" style="color: var(--color-lost); margin-top: var(--space-xs);">
+                    {{ uploadErrorBySlot()[slot.key] }}
+                  </p>
+                }
+              </article>
             }
           </div>
-          <span class="form-card__hint" style="margin-top: 4px;">
-            Imágenes hasta 2 MB · PNG / JPG / WebP / GIF / SVG.
-            Los banners se guardan en S3 cuando subes; el "Guardar todo"
-            persiste solo la lista de keys en el modelo Sponsor.
-          </span>
         </div>
 
         <hr style="margin: var(--space-lg) 0;">
@@ -168,29 +196,47 @@ interface CodeRow {
     }
   `,
   styles: [`
-    .banner-grid {
-      list-style: none;
-      padding: 0;
-      margin: 0;
+    .banner-slot-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-      gap: var(--space-sm);
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: var(--space-md);
+      margin-top: var(--space-md);
     }
-    .banner-item {
-      position: relative;
-      aspect-ratio: 16 / 9;
+    .banner-slot {
       background: var(--color-primary-grey, #f4f4f4);
       border-radius: var(--radius-sm);
-      overflow: hidden;
-      border: 1px solid rgba(0,0,0,0.08);
+      padding: var(--space-md);
+      display: grid;
+      gap: var(--space-sm);
     }
-    .banner-item img {
+    .banner-slot__head strong {
+      display: block;
+      font-family: var(--font-display);
+      font-size: var(--fs-lg);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      line-height: 1;
+    }
+    .banner-slot__head small {
+      display: block;
+      font-size: var(--fs-xs);
+      color: var(--color-text-muted);
+      margin-top: 2px;
+    }
+    .banner-slot__preview {
+      aspect-ratio: 16 / 9;
+      background: var(--color-primary-white);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      border: 1px dashed rgba(0,0,0,0.15);
+    }
+    .banner-slot__preview img {
       width: 100%;
       height: 100%;
       object-fit: contain;
       display: block;
     }
-    .banner-item__placeholder {
+    .banner-slot__placeholder {
       width: 100%;
       height: 100%;
       display: flex;
@@ -201,25 +247,11 @@ interface CodeRow {
       text-transform: uppercase;
       letter-spacing: 0.06em;
     }
-    .banner-item__remove {
-      position: absolute;
-      top: 4px;
-      right: 4px;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: rgba(0,0,0,0.65);
-      color: var(--color-primary-white);
-      border: 0;
-      cursor: pointer;
-      font-size: 18px;
-      line-height: 1;
+    .banner-slot__actions {
       display: flex;
-      align-items: center;
-      justify-content: center;
+      gap: var(--space-xs);
+      flex-wrap: wrap;
     }
-    .banner-item__remove:hover { background: var(--color-lost, #c33); }
-    .banner-item__remove:disabled { opacity: 0.5; cursor: not-allowed; }
     .is-disabled { opacity: 0.6; pointer-events: none; }
   `],
 })
@@ -230,26 +262,44 @@ export class AdminSponsorEditComponent implements OnInit {
   private toast = inject(ToastService);
   private router = inject(Router);
 
+  SLOTS = SLOTS;
+
   loading = signal(true);
   saving = signal(false);
   error = signal<string | null>(null);
 
-  // Upload state
-  uploading = signal(false);
+  // Upload state — mode-aware por slot, así dos slots no compiten por
+  // el mismo flag global y la barra de progreso muestra cuál está activo.
+  uploadingSlot = signal<SlotKey | null>(null);
   uploadPct = signal(0);
-  uploadError = signal<string | null>(null);
-  busyKey = signal<string | null>(null);     // key currently being deleted
+  uploadErrorBySlot = signal<Partial<Record<SlotKey, string>>>({});
+  busyKey = signal<string | null>(null);     // S3 key currently being deleted
 
   // Cache de URLs firmadas para preview de banners.
   previewUrls = signal<Map<string, string>>(new Map());
 
   name = '';
-  bannerKeys = signal<string[]>([]);
+  // Tres signals independientes — uno por slot. Nullable cuando vacío.
+  banner1 = signal<string | null>(null);
+  banner2 = signal<string | null>(null);
+  banner3 = signal<string | null>(null);
   codes = signal<CodeRow[]>([]);
 
   activeCodes = computed(() => this.codes().filter((c) => !c.deleted));
 
   isNew = computed(() => !this.id);
+
+  slotKey(slot: SlotKey): string | null {
+    if (slot === 'banner1') return this.banner1();
+    if (slot === 'banner2') return this.banner2();
+    return this.banner3();
+  }
+
+  private setSlot(slot: SlotKey, value: string | null) {
+    if (slot === 'banner1') this.banner1.set(value);
+    else if (slot === 'banner2') this.banner2.set(value);
+    else this.banner3.set(value);
+  }
 
   async ngOnInit() {
     if (!this.id) {
@@ -263,7 +313,12 @@ export class AdminSponsorEditComponent implements OnInit {
       ]);
       if (sRes.data) {
         this.name = sRes.data.name;
-        this.bannerKeys.set(((sRes.data.bannerKeys ?? []) as (string | null)[]).filter((k): k is string => !!k));
+        // Backcompat: si el sponsor todavía tiene bannerKeys legacy y los
+        // slots están vacíos, prefill slot1/2/3 con los primeros 3.
+        const legacy = ((sRes.data.bannerKeys ?? []) as (string | null)[]).filter((k): k is string => !!k);
+        this.banner1.set((sRes.data.banner1 as string | null) ?? legacy[0] ?? null);
+        this.banner2.set((sRes.data.banner2 as string | null) ?? legacy[1] ?? null);
+        this.banner3.set((sRes.data.banner3 as string | null) ?? legacy[2] ?? null);
       }
       const codes: CodeRow[] = ((cRes.data ?? []) as Array<{
         id: string; code: string; startDate: string; endDate: string;
@@ -290,7 +345,8 @@ export class AdminSponsorEditComponent implements OnInit {
   }
 
   private async resolveAllPreviews(): Promise<void> {
-    const keys = this.bannerKeys();
+    const keys = [this.banner1(), this.banner2(), this.banner3()]
+      .filter((k): k is string => !!k);
     await Promise.all(keys.map((k) => this.resolvePreview(k)));
   }
 
@@ -309,29 +365,34 @@ export class AdminSponsorEditComponent implements OnInit {
     }
   }
 
-  async onFilePick(ev: Event) {
+  async onFilePick(ev: Event, slot: SlotKey) {
     const input = ev.target as HTMLInputElement;
     const file = input.files?.[0];
     input.value = '';                                  // reset para permitir re-pick mismo archivo
     if (!file) return;
 
+    const setSlotErr = (msg: string | null) => {
+      this.uploadErrorBySlot.update((m) => ({ ...m, [slot]: msg ?? undefined }));
+    };
+
     if (!ACCEPTED_TYPES.includes(file.type)) {
-      this.uploadError.set('Tipo de archivo no soportado. Usa PNG, JPG, WebP, GIF o SVG.');
+      setSlotErr('Tipo de archivo no soportado. Usa PNG, JPG, WebP, GIF o SVG.');
       return;
     }
     if (file.size > MAX_BANNER_BYTES) {
-      this.uploadError.set(`Archivo muy grande (${Math.round(file.size / 1024 / 1024)} MB). Máx 2 MB.`);
+      setSlotErr(`Archivo muy grande (${Math.round(file.size / 1024 / 1024)} MB). Máx 2 MB.`);
       return;
     }
-    this.uploadError.set(null);
-    this.uploading.set(true);
+    setSlotErr(null);
+    this.uploadingSlot.set(slot);
     this.uploadPct.set(0);
 
-    // path: sponsors/banners/{ulidAleatorio}-{filename limpio}
+    // path: sponsors/banners/{slot}/{ts-rand-filename}. Prefijo por slot
+    // ayuda a debug en S3 console.
     const ts = Date.now().toString(36);
     const rand = Math.random().toString(36).slice(2, 8);
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').toLowerCase();
-    const path = `sponsors/banners/${ts}-${rand}-${safeName}`;
+    const path = `sponsors/banners/${slot}/${ts}-${rand}-${safeName}`;
 
     try {
       const op = uploadData({
@@ -348,32 +409,41 @@ export class AdminSponsorEditComponent implements OnInit {
       });
       const result = await op.result;
       const finalKey = result.path ?? path;
-      this.bannerKeys.update((arr) => arr.includes(finalKey) ? arr : [...arr, finalKey]);
+      // Si el slot ya tenía banner, intentamos borrar el viejo (best-effort).
+      const old = this.slotKey(slot);
+      if (old && old !== finalKey) {
+        try { await remove({ path: old }); }
+        catch (e) {
+          // eslint-disable-next-line no-console
+          console.warn('[remove old slot S3] failed:', e);
+        }
+        this.previewUrls.update((m) => { const n = new Map(m); n.delete(old); return n; });
+      }
+      this.setSlot(slot, finalKey);
       void this.resolvePreview(finalKey);
-      this.toast.success('Banner subido');
+      this.toast.success(`Banner subido (${slot})`);
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error('[uploadData] failed', e);
-      this.uploadError.set(humanizeError(e));
+      setSlotErr(humanizeError(e));
     } finally {
-      this.uploading.set(false);
+      this.uploadingSlot.set(null);
       this.uploadPct.set(0);
     }
   }
 
-  async removeBanner(key: string) {
+  async removeBannerSlot(slot: SlotKey) {
+    const key = this.slotKey(slot);
+    if (!key) return;
     if (!confirm('¿Borrar este banner del bucket? Esta acción no se puede deshacer.')) return;
     this.busyKey.set(key);
     try {
-      // Borrar de S3 primero. Si falla, no quitamos del modelo para que
-      // el admin pueda reintentar; si tiene éxito, sale del array y la
-      // sig "Guardar todo" persiste sin esta key.
       try { await remove({ path: key }); }
       catch (e) {
         // eslint-disable-next-line no-console
         console.warn('[remove S3] failed (continuing anyway):', e);
       }
-      this.bannerKeys.update((arr) => arr.filter((k) => k !== key));
+      this.setSlot(slot, null);
       this.previewUrls.update((m) => {
         const next = new Map(m);
         next.delete(key);
@@ -419,12 +489,19 @@ export class AdminSponsorEditComponent implements OnInit {
     this.error.set(null);
     this.saving.set(true);
     try {
-      // 1) Sponsor: create o update
+      // 1) Sponsor: create o update. Persistimos en banner1/2/3 (los
+      // slots nuevos). bannerKeys legacy se deja como está para que
+      // los reads viejos no se rompan.
+      const slots = {
+        banner1: this.banner1(),
+        banner2: this.banner2(),
+        banner3: this.banner3(),
+      };
       let sponsorId = this.id;
       if (!sponsorId) {
         const res = await this.api.createSponsor({
           name: this.name.trim(),
-          bannerKeys: this.bannerKeys(),
+          ...slots,
         });
         if (res?.errors && res.errors.length > 0) {
           this.error.set(res.errors[0]!.message ?? 'No se pudo crear');
@@ -439,7 +516,7 @@ export class AdminSponsorEditComponent implements OnInit {
         const res = await this.api.updateSponsor({
           id: sponsorId,
           name: this.name.trim(),
-          bannerKeys: this.bannerKeys(),
+          ...slots,
         });
         if (res?.errors && res.errors.length > 0) {
           this.error.set(res.errors[0]!.message ?? 'No se pudo actualizar');

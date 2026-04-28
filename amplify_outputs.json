@@ -1745,6 +1745,27 @@
               "isRequired": true,
               "attributes": []
             },
+            "banner1": {
+              "name": "banner1",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "banner2": {
+              "name": "banner2",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "banner3": {
+              "name": "banner3",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
             "bannerKeys": {
               "name": "bannerKeys",
               "isArray": true,
