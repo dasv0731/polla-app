@@ -136,9 +136,23 @@ interface MatchInfo {
       </form>
 
       <!-- LIST -->
-      <h2 style="font-family: var(--font-display); font-size: var(--fs-xl); text-transform: uppercase; line-height: 1; margin-bottom: var(--space-md);">
-        Banco ({{ questions().length }} preguntas)
-      </h2>
+      <header style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: var(--space-md); margin-bottom: var(--space-md);">
+        <h2 style="font-family: var(--font-display); font-size: var(--fs-xl); text-transform: uppercase; line-height: 1;">
+          Banco ({{ questions().length }} preguntas)
+        </h2>
+        @if (questions().length > 0) {
+          <button class="btn btn--primary" type="button"
+                  [disabled]="scoring()"
+                  (click)="runScoreTrivia()">
+            {{ scoring() ? 'Calculando…' : '🧮 Calcular puntos de trivia' }}
+          </button>
+        }
+      </header>
+      @if (scoringMsg()) {
+        <p class="form-card__hint" style="color: var(--color-primary-green); margin-bottom: var(--space-md);">
+          {{ scoringMsg() }}
+        </p>
+      }
 
       @if (questions().length === 0) {
         <p class="empty-state">Aún no hay preguntas en este partido.</p>
@@ -193,6 +207,8 @@ export class AdminTriviaComponent implements OnInit {
 
   loading = signal(true);
   saving = signal(false);
+  scoring = signal(false);
+  scoringMsg = signal<string | null>(null);
   error = signal<string | null>(null);
   editingId = signal<string | null>(null);
 
@@ -357,6 +373,30 @@ export class AdminTriviaComponent implements OnInit {
       this.error.set(humanizeError(e));
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  async runScoreTrivia() {
+    if (!confirm('¿Calcular puntos de trivia para este partido? Solo usuarios con grupo modo completo que hayan respondido durante la ventana LIVE suman 1 pt por correcta. Idempotente.')) return;
+    this.scoring.set(true);
+    this.scoringMsg.set(null);
+    try {
+      const res = await this.api.scoreTrivia(this.matchId);
+      if (res?.errors && res.errors.length > 0) {
+        // eslint-disable-next-line no-console
+        console.error('[scoreTrivia] errors:', res.errors);
+        this.toast.error(res.errors[0]?.message ?? 'Error en scoreTrivia');
+        return;
+      }
+      const scored = res?.data?.scored ?? 0;
+      const awarded = res?.data?.awarded ?? 0;
+      this.scoringMsg.set(`Procesadas ${scored} respuestas · ${awarded} pts otorgados.`);
+      this.toast.success('Trivia scoreado');
+      void this.load();
+    } catch (e) {
+      this.toast.error(humanizeError(e));
+    } finally {
+      this.scoring.set(false);
     }
   }
 

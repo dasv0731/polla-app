@@ -139,6 +139,9 @@ export class ApiService {
   scoreBracket(tournamentId: string) {
     return apiClient.mutations.scoreBracket({ tournamentId });
   }
+  scoreTrivia(matchId: string) {
+    return apiClient.mutations.scoreTrivia({ matchId });
+  }
   adjudicateSpecial(tournamentId: string, type: SpecialType, winningTeamId: string) {
     return apiClient.mutations.adjudicateSpecial({ tournamentId, type, winningTeamId });
   }

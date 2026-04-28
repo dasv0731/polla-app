@@ -2624,6 +2624,25 @@
               "attributes": []
             }
           }
+        },
+        "ScoreTriviaReturnType": {
+          "name": "ScoreTriviaReturnType",
+          "fields": {
+            "scored": {
+              "name": "scored",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": true,
+              "attributes": []
+            },
+            "awarded": {
+              "name": "awarded",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": true,
+              "attributes": []
+            }
+          }
         }
       },
       "queries": {
@@ -2857,6 +2876,22 @@
           "arguments": {
             "tournamentId": {
               "name": "tournamentId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            }
+          }
+        },
+        "scoreTrivia": {
+          "name": "scoreTrivia",
+          "isArray": false,
+          "type": {
+            "nonModel": "ScoreTriviaReturnType"
+          },
+          "isRequired": false,
+          "arguments": {
+            "matchId": {
+              "name": "matchId",
               "isArray": false,
               "type": "ID",
               "isRequired": true
