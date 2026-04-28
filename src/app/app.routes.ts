@@ -49,6 +49,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/picks/pick-detail.component').then((m) => m.PickDetailComponent),
       },
       {
+        path: 'picks/trivia/:matchId',
+        loadComponent: () => import('./features/picks/trivia.component').then((m) => m.TriviaComponent),
+      },
+      {
         path: 'groups',
         loadComponent: () => import('./features/groups/groups-list.component').then((m) => m.GroupsListComponent),
       },
