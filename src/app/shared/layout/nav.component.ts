@@ -49,8 +49,8 @@ type DropdownKey = 'groups' | 'picks' | 'rankings' | 'user' | null;
                   </p>
                 } @else {
                   @for (g of topGroups(); track g.id) {
-                    <a class="user-menu__item" role="menuitem"
-                       [routerLink]="['/groups', g.id]" (click)="closeAll()">
+                    <a class="user-menu__item" role="menuitem" style="cursor: pointer;"
+                       (click)="goToGroup(g.id)">
                       <span class="nav-dd__name">{{ g.name }}</span>
                       <span class="nav-dd__pill" [class.nav-dd__pill--complete]="g.mode === 'COMPLETE'">
                         {{ g.mode === 'COMPLETE' ? 'Completo' : 'Simple' }}
@@ -64,10 +64,10 @@ type DropdownKey = 'groups' | 'picks' | 'rankings' | 'user' | null;
                   }
                 }
                 <hr class="user-menu__sep">
-                <a class="user-menu__item" role="menuitem"
-                   routerLink="/groups" (click)="closeAll()">Ver todos los grupos</a>
-                <a class="user-menu__item" role="menuitem"
-                   routerLink="/groups/new" (click)="closeAll()">+ Crear grupo nuevo</a>
+                <a class="user-menu__item" role="menuitem" style="cursor: pointer;"
+                   (click)="goToGroups()">Ver todos los grupos</a>
+                <a class="user-menu__item" role="menuitem" style="cursor: pointer;"
+                   (click)="goToGroupsNew()">+ Crear grupo nuevo</a>
               </div>
             }
           </div>
@@ -423,6 +423,19 @@ export class NavComponent implements OnInit, OnDestroy {
   goNotifications() {
     this.closeAll();
     void this.router.navigate(['/notificaciones']);
+  }
+
+  goToGroup(id: string) {
+    this.closeAll();
+    void this.router.navigate(['/groups', id]);
+  }
+  goToGroups() {
+    this.closeAll();
+    void this.router.navigate(['/groups']);
+  }
+  goToGroupsNew() {
+    this.closeAll();
+    void this.router.navigate(['/groups/new']);
   }
 
   async logout() {
