@@ -85,6 +85,11 @@ interface ActivityItem {
                   (click)="runEngagementSweep()">
             {{ sweepingEngagement() ? 'Ejecutando…' : 'Sweep engagement (final torneo)' }}
           </button>
+          <button class="btn btn--ghost" type="button"
+                  [disabled]="sweepingExpiry()"
+                  (click)="runExpirySweep()">
+            {{ sweepingExpiry() ? 'Ejecutando…' : 'Sweep caducidad + recordatorios' }}
+          </button>
         </div>
         @if (sweepMsg()) {
           <p class="form-card__hint" style="margin-top: var(--space-sm); color: var(--color-primary-green);">
@@ -192,6 +197,7 @@ export class AdminDashboardComponent implements OnInit {
 
   sweepingLoyalty = signal(false);
   sweepingEngagement = signal(false);
+  sweepingExpiry = signal(false);
   sweepMsg = signal<string | null>(null);
 
   async runLoyaltySweep() {
@@ -233,6 +239,27 @@ export class AdminDashboardComponent implements OnInit {
       this.toast.error(humanizeError(e));
     } finally {
       this.sweepingEngagement.set(false);
+    }
+  }
+
+  async runExpirySweep() {
+    if (!confirm('¿Marcar como EXPIRED los comodines no asignados que pasaron su ventana, y emitir recordatorios 24h antes? Idempotente — re-correr no duplica.')) return;
+    this.sweepingExpiry.set(true);
+    this.sweepMsg.set(null);
+    try {
+      const res = await this.api.expireComodines(TOURNAMENT_ID);
+      if (res?.errors && res.errors.length > 0) {
+        this.toast.error(res.errors[0]?.message ?? 'Error en expiry sweep');
+        return;
+      }
+      const exp = res?.data?.expired ?? 0;
+      const rem = res?.data?.reminders ?? 0;
+      this.sweepMsg.set(`Caducidad: ${exp} expirados · ${rem} recordatorios 24h emitidos.`);
+      this.toast.success('Sweep caducidad completado');
+    } catch (e) {
+      this.toast.error(humanizeError(e));
+    } finally {
+      this.sweepingExpiry.set(false);
     }
   }
 

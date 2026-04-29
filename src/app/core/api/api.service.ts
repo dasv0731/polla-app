@@ -185,6 +185,9 @@ export class ApiService {
   runEngagementSweep(tournamentId: string) {
     return apiClient.mutations.runEngagementSweep({ tournamentId });
   }
+  expireComodines(tournamentId: string) {
+    return apiClient.mutations.expireComodines({ tournamentId });
+  }
   getSponsorCode(id: string) {
     return apiClient.models.SponsorCode.get({ id });
   }
