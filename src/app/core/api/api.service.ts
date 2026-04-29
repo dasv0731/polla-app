@@ -48,8 +48,26 @@ export class ApiService {
   getUser(sub: string) {
     return apiClient.models.User.get({ sub });
   }
-  listUsers(limit = 1000) {
-    return apiClient.models.User.list({ limit });
+  /**
+   * Lista todos los users paginando vía nextToken. Amplify Gen2 cap por
+   * página es ~100 — un solo `list({ limit: 1000 })` solo devuelve la
+   * primera página y deja afuera los users registrados después de los
+   * primeros 100. Acá iteramos hasta agotar nextToken.
+   */
+  async listUsers(maxTotal = 5000) {
+    type Row = Awaited<ReturnType<typeof apiClient.models.User.list>>['data'][number];
+    const allItems: Row[] = [];
+    let nextToken: string | null | undefined = undefined;
+    do {
+      const res = await apiClient.models.User.list({ limit: 100, nextToken });
+      if (res.errors && res.errors.length > 0) {
+        return { data: allItems, errors: res.errors };
+      }
+      allItems.push(...(res.data ?? []));
+      nextToken = res.nextToken;
+      if (allItems.length >= maxTotal) break;
+    } while (nextToken);
+    return { data: allItems };
   }
   // ----- Sponsors / códigos de canje -----
   listSponsors(limit = 200) {
@@ -60,6 +78,7 @@ export class ApiService {
   }
   createSponsor(input: {
     name: string;
+    maxRedemptionsPerUser?: number;
     banner1?: string | null;
     banner2?: string | null;
     banner3?: string | null;
@@ -67,6 +86,7 @@ export class ApiService {
   }) {
     return apiClient.models.Sponsor.create({
       name: input.name,
+      maxRedemptionsPerUser: input.maxRedemptionsPerUser ?? 1,
       banner1: input.banner1 ?? null,
       banner2: input.banner2 ?? null,
       banner3: input.banner3 ?? null,
@@ -76,6 +96,7 @@ export class ApiService {
   updateSponsor(input: {
     id: string;
     name?: string;
+    maxRedemptionsPerUser?: number;
     banner1?: string | null;
     banner2?: string | null;
     banner3?: string | null;

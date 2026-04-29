@@ -73,11 +73,22 @@ import { AuthShellComponent } from '../../shared/layout/auth-shell.component';
         <p class="form-card__alt">
           @if (codeSent()) {
             ¿No te llegó el código?
-            <a href="#" (click)="resend($event)">Reenviar</a>
+            @if (resendCooldown() > 0) {
+              <span style="color: var(--color-text-muted); margin-left: 4px;">
+                Reenvío disponible en {{ resendCooldown() }}s
+              </span>
+            } @else {
+              <a href="#" (click)="resend($event)">Reenviar</a>
+            }
           } @else {
             <a routerLink="/login">Volver a login</a>
           }
         </p>
+        @if (resendInfo()) {
+          <p class="form-card__hint" style="color: var(--color-primary-green); margin-top: 4px;">
+            ✓ {{ resendInfo() }}
+          </p>
+        }
       </div>
     </app-auth-shell>
   `,
@@ -94,6 +105,10 @@ export class ForgotPasswordComponent {
   resetting = signal(false);
   codeSent = signal(false);
   requestError = signal<string | null>(null);
+  // Reenvío con cooldown 60s
+  resendCooldown = signal(0);
+  resendInfo = signal<string | null>(null);
+  private cooldownTimer: ReturnType<typeof setInterval> | undefined;
   resetError = signal<string | null>(null);
 
   async requestCode() {
@@ -127,10 +142,30 @@ export class ForgotPasswordComponent {
   async resend(event: Event) {
     event.preventDefault();
     if (!this.email) return;
+    if (this.resendCooldown() > 0) return;
+    this.resendInfo.set(null);
+    this.requestError.set(null);
     try {
       await this.auth.forgotPassword(this.email);
+      this.resendInfo.set('Código reenviado. Revisa tu correo (incluyendo spam).');
+      this.startCooldown(60);
     } catch (e) {
       this.requestError.set((e as Error).message ?? 'No se pudo reenviar el código');
     }
+  }
+
+  private startCooldown(seconds: number) {
+    if (this.cooldownTimer) clearInterval(this.cooldownTimer);
+    this.resendCooldown.set(seconds);
+    this.cooldownTimer = setInterval(() => {
+      const left = this.resendCooldown() - 1;
+      if (left <= 0) {
+        this.resendCooldown.set(0);
+        if (this.cooldownTimer) clearInterval(this.cooldownTimer);
+        this.cooldownTimer = undefined;
+      } else {
+        this.resendCooldown.set(left);
+      }
+    }, 1000);
   }
 }

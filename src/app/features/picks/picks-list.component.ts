@@ -154,9 +154,15 @@ interface Totals {
 
     <!-- Bloque de canje de códigos sponsor: visible para todos los users
          logueados (independiente del modo del grupo). -->
-    <section style="max-width: 720px; margin: var(--space-2xl) auto 0;">
+    <section id="canjear-codigo" style="max-width: 720px; margin: var(--space-2xl) auto 0;">
       <app-sponsor-redeem />
     </section>
+
+    <!-- FAB persistente bottom-right para canjear código rápido -->
+    <button type="button" class="canjear-fab" (click)="scrollToCanjear()"
+            title="Canjear código de sponsor">
+      🎁 <span>Canjear código</span>
+    </button>
   `,
   styles: [`
     .sponsor-banner-row {
@@ -196,6 +202,35 @@ interface Totals {
       letter-spacing: 0.04em;
       color: var(--color-text-muted);
     }
+
+    .canjear-fab {
+      position: fixed;
+      bottom: var(--space-lg);
+      right: var(--space-lg);
+      z-index: 50;
+      background: var(--color-primary-green);
+      color: var(--color-primary-white);
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 20px;
+      font: inherit;
+      font-weight: var(--fw-bold);
+      font-size: var(--fs-sm);
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0,200,100,0.30);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform 100ms, box-shadow 100ms;
+    }
+    .canjear-fab:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 22px rgba(0,200,100,0.40);
+    }
+    @media (max-width: 480px) {
+      .canjear-fab span { display: none; }
+      .canjear-fab { padding: 14px 16px; font-size: var(--fs-md); }
+    }
   `],
 })
 export class PicksListComponent implements OnInit {
@@ -218,6 +253,16 @@ export class PicksListComponent implements OnInit {
   });
   sponsorBannersForSlot(slot: BannerSlot): SponsorBanner[] {
     return this.banners()[slot] ?? [];
+  }
+
+  scrollToCanjear() {
+    const el = document.getElementById('canjear-codigo');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Auto-focus en el input del bloque tras un breve delay para mejor UX
+    setTimeout(() => {
+      const input = el?.querySelector<HTMLInputElement>('.sr__input');
+      input?.focus();
+    }, 400);
   }
 
   upcomingCount = computed(() => this.matches().filter((m) => !this.time.isPast(m.kickoffAt)).length);

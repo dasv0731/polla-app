@@ -77,8 +77,19 @@ import { AuthShellComponent } from '../../shared/layout/auth-shell.component';
           </button>
 
           <p class="form-card__alt">
-            <a href="#" (click)="resendCode($event)">Reenviar código</a>
+            @if (resendCooldown() > 0) {
+              <span style="color: var(--color-text-muted);">
+                Reenviar disponible en {{ resendCooldown() }}s
+              </span>
+            } @else {
+              <a href="#" (click)="resendCode($event)">Reenviar código</a>
+            }
           </p>
+          @if (resendInfo()) {
+            <p class="form-card__hint" style="color: var(--color-primary-green); margin-top: 4px;">
+              ✓ {{ resendInfo() }}
+            </p>
+          }
         </form>
       }
     </app-auth-shell>
@@ -96,6 +107,11 @@ export class RegisterComponent {
   loading = signal(false);
   error = signal<string | null>(null);
   handleError = signal<string | null>(null);
+
+  // Reenvío de código con cooldown 60s para evitar spam de SES.
+  resendCooldown = signal(0);
+  resendInfo = signal<string | null>(null);
+  private cooldownTimer: ReturnType<typeof setInterval> | undefined;
 
   private async checkHandleUnique(handle: string): Promise<boolean> {
     const res = await apiClient.models.User.list({
@@ -160,10 +176,30 @@ export class RegisterComponent {
 
   async resendCode(event: Event) {
     event.preventDefault();
+    if (this.resendCooldown() > 0) return;     // double-click guard
+    this.resendInfo.set(null);
+    this.error.set(null);
     try {
       await this.auth.resend(this.email);
+      this.resendInfo.set('Código reenviado. Revisa tu correo (incluyendo spam).');
+      this.startCooldown(60);
     } catch (e) {
       this.error.set((e as Error).message ?? 'No se pudo reenviar el código');
     }
+  }
+
+  private startCooldown(seconds: number) {
+    if (this.cooldownTimer) clearInterval(this.cooldownTimer);
+    this.resendCooldown.set(seconds);
+    this.cooldownTimer = setInterval(() => {
+      const left = this.resendCooldown() - 1;
+      if (left <= 0) {
+        this.resendCooldown.set(0);
+        if (this.cooldownTimer) clearInterval(this.cooldownTimer);
+        this.cooldownTimer = undefined;
+      } else {
+        this.resendCooldown.set(left);
+      }
+    }, 1000);
   }
 }

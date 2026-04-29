@@ -80,6 +80,18 @@ interface CodeRow {
                  placeholder="Pepsi · Nike · Movistar">
         </div>
 
+        <div class="form-card__field">
+          <label class="form-card__label" for="maxRedemptions">Máx códigos por user</label>
+          <input class="form-card__input" id="maxRedemptions" name="maxRedemptions" type="number"
+                 [(ngModel)]="maxRedemptionsPerUser" min="1" max="10" required
+                 style="max-width: 120px;">
+          <span class="form-card__hint">
+            Cuántos códigos de este sponsor puede canjear UN usuario.
+            Default 1. El cap global del reglamento (2 sponsor codes por
+            user en total) sigue aplicando — el más restrictivo gana.
+          </span>
+        </div>
+
         <!-- Banners: 3 slots independientes. Cada slot acepta una sola
              imagen; las dimensiones por slot se definen cuando llegue
              el diseño. Se persisten en banner1/banner2/banner3. -->
@@ -315,6 +327,7 @@ export class AdminSponsorEditComponent implements OnInit {
   previewUrls = signal<Map<string, string>>(new Map());
 
   name = '';
+  maxRedemptionsPerUser = 1;
   // Tres signals independientes — uno por slot. Nullable cuando vacío.
   banner1 = signal<string | null>(null);
   banner2 = signal<string | null>(null);
@@ -349,6 +362,7 @@ export class AdminSponsorEditComponent implements OnInit {
       ]);
       if (sRes.data) {
         this.name = sRes.data.name;
+        this.maxRedemptionsPerUser = (sRes.data.maxRedemptionsPerUser as number | null) ?? 1;
         // Backcompat: si el sponsor todavía tiene bannerKeys legacy y los
         // slots están vacíos, prefill slot1/2/3 con los primeros 3.
         const legacy = ((sRes.data.bannerKeys ?? []) as (string | null)[]).filter((k): k is string => !!k);
@@ -542,6 +556,7 @@ export class AdminSponsorEditComponent implements OnInit {
       if (!sponsorId) {
         const res = await this.api.createSponsor({
           name: this.name.trim(),
+          maxRedemptionsPerUser: this.maxRedemptionsPerUser,
           ...slots,
         });
         if (res?.errors && res.errors.length > 0) {
@@ -557,6 +572,7 @@ export class AdminSponsorEditComponent implements OnInit {
         const res = await this.api.updateSponsor({
           id: sponsorId,
           name: this.name.trim(),
+          maxRedemptionsPerUser: this.maxRedemptionsPerUser,
           ...slots,
         });
         if (res?.errors && res.errors.length > 0) {
