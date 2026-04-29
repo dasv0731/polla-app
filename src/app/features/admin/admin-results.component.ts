@@ -68,6 +68,9 @@ interface StagedScore { home: number; away: number; }
                 {{ shortId(m.id) }} · {{ phaseName(m.phaseId) }}
                 @if (m.venue) { · {{ m.venue }} }
                 · {{ kickoffLabel(m.kickoffAt) }}
+                @if (isAwaitingResult(m)) {
+                  · <strong style="color: var(--color-lost); background: rgba(220,50,50,0.10); padding: 2px 6px; border-radius: 999px;">⏱ Esperando resultado</strong>
+                }
                 @if (staged) {
                   · <strong style="color: var(--color-text-muted);">guardado para revisión</strong>
                 }
@@ -155,13 +158,30 @@ export class AdminResultsComponent implements OnInit {
   awayScore = signal(0);
   calculating = signal(false);
 
-  // Solo partidos marcados FINAL por el admin y aún no scoreados.
-  // Status FINAL se cambia desde /admin/fixtures/:id/edit.
-  pending = computed(() =>
-    this.matches()
-      .filter((m) => m.status === 'FINAL' && !m.pointsCalculated)
-      .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt)),
-  );
+  // Pending = un partido necesita atención del admin para publicar.
+  // Dos casos:
+  //   1. Status FINAL pero pointsCalculated=false (ya pusiste el score,
+  //      falta correr scoreMatch).
+  //   2. Status != FINAL pero ya pasaron 2h del kickoff ("Esperando
+  //      resultado" — el partido en realidad terminó pero todavía no
+  //      ingresaste score). El user lo ve "EN VIVO" en su feed.
+  pending = computed(() => {
+    const now = Date.now();
+    const matchEndMs = (iso: string) => Date.parse(iso) + 2 * 60 * 60_000;
+    return this.matches()
+      .filter((m) => {
+        if (m.status === 'FINAL' && !m.pointsCalculated) return true;
+        if (m.status !== 'FINAL' && now >= matchEndMs(m.kickoffAt)) return true;
+        return false;
+      })
+      .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt));
+  });
+
+  /** True si el partido ya terminó (kickoff+2h) pero status no es FINAL */
+  isAwaitingResult(m: ResultMatch): boolean {
+    if (m.status === 'FINAL') return false;
+    return Date.now() >= Date.parse(m.kickoffAt) + 2 * 60 * 60_000;
+  }
 
   // Partidos a comitear cuando se dispare "Calcular puntos":
   // los pending que tienen score (staged en memoria o ya guardado en DB).
