@@ -3705,6 +3705,25 @@
             }
           }
         },
+        "ExpireComodinesReturnType": {
+          "name": "ExpireComodinesReturnType",
+          "fields": {
+            "expired": {
+              "name": "expired",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": true,
+              "attributes": []
+            },
+            "reminders": {
+              "name": "reminders",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": true,
+              "attributes": []
+            }
+          }
+        },
         "RedeemSponsorCodeReturnType": {
           "name": "RedeemSponsorCodeReturnType",
           "fields": {
@@ -4308,6 +4327,22 @@
               "type": "ID",
               "isRequired": false,
               "isArrayNullable": false
+            }
+          }
+        },
+        "expireComodines": {
+          "name": "expireComodines",
+          "isArray": false,
+          "type": {
+            "nonModel": "ExpireComodinesReturnType"
+          },
+          "isRequired": false,
+          "arguments": {
+            "tournamentId": {
+              "name": "tournamentId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
             }
           }
         },
