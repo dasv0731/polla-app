@@ -49,6 +49,12 @@ interface Totals {
   globalRank: number | null;
 }
 
+interface DayBlock {
+  dateKey: string;          // YYYY-MM-DD
+  label: string;            // "Hoy", "Mañana", "lunes 14 jun"
+  matches: MatchWithMeta[];
+}
+
 @Component({
   standalone: true,
   selector: 'app-picks-list',
@@ -90,47 +96,137 @@ interface Totals {
       </div>
     </header>
 
-    @if (!hasComplete()) {
-      <div class="empty-state">
-        <h3>Modo completo no disponible</h3>
-        <p>
-          Los picks de marcador (1 partido = 1 marcador con multiplicadores por fase)
-          son del <strong>modo completo</strong>. Para usarlos, necesitas pertenecer a
-          al menos un grupo en modo completo.
-        </p>
-        <p>
-          <a class="btn btn--primary" routerLink="/groups/new">Crear un grupo →</a>
-        </p>
-        <p style="margin-top: var(--space-md); font-size: var(--fs-sm); color: var(--color-text-muted);">
-          Si tu grupo es <strong>modo simple</strong>, las predicciones de tabla, llaves
-          y campeón sí cuentan. Las encuentras en
-          <a class="link-green" routerLink="/picks/group-stage">Tabla de grupos</a>.
-        </p>
-      </div>
-    } @else if (loading()) {
-      <div class="empty-state"><h3>Cargando…</h3></div>
-    } @else if (visible().length === 0) {
-      <div class="empty-state">
-        <h3>{{ tab() === 'upcoming' ? 'No hay partidos próximos' : 'Aún no jugaste partidos' }}</h3>
-        <p>
-          @if (tab() === 'upcoming') {
-            Cuando admin cargue los fixtures, aparecerán aquí.
-          } @else {
-            Tus picks jugados aparecerán acá con el resultado y los puntos.
+    <div class="picks-layout">
+      <!-- MAIN COLUMN: cronológico por días -->
+      <div class="picks-layout__main">
+        @if (!hasComplete()) {
+          <div class="empty-state">
+            <h3>Modo completo no disponible</h3>
+            <p>
+              Los picks de marcador (1 partido = 1 marcador con multiplicadores por fase)
+              son del <strong>modo completo</strong>. Para usarlos, necesitas pertenecer a
+              al menos un grupo en modo completo.
+            </p>
+            <p>
+              <a class="btn btn--primary" routerLink="/groups/new">Crear un grupo →</a>
+            </p>
+            <p style="margin-top: var(--space-md); font-size: var(--fs-sm); color: var(--color-text-muted);">
+              Si tu grupo es <strong>modo simple</strong>, las predicciones de tabla, llaves
+              y campeón sí cuentan. Las encuentras en
+              <a class="link-green" routerLink="/picks/group-stage">Tabla de grupos</a>.
+            </p>
+          </div>
+        } @else if (loading()) {
+          <div class="empty-state"><h3>Cargando…</h3></div>
+        } @else if (tab() === 'upcoming') {
+          @if (visibleDays().length === 0) {
+            <div class="empty-state">
+              <h3>No hay partidos próximos en este rango</h3>
+              <p>
+                @if (allUpcomingDays().length > 0) {
+                  Probá cargando los próximos días.
+                } @else {
+                  Ya jugaste todos los partidos del torneo o el admin no
+                  cargó más fixtures.
+                }
+              </p>
+            </div>
           }
-        </p>
-      </div>
-    } @else {
-      <section class="picks-grid">
-        @for (m of visible(); track m.id) {
-          <app-pick-card
-            [match]="m"
-            [phaseLabel]="m.phaseLabel"
-            [existingPick]="m.pick"
-            [pointsEarned]="m.pick?.pointsEarned" />
+          @for (day of visibleDays(); track day.dateKey) {
+            <section class="day-block">
+              <header class="day-block__head">
+                <h2>📅 {{ day.label }}</h2>
+                <small>{{ day.matches.length }} partido{{ day.matches.length === 1 ? '' : 's' }}</small>
+              </header>
+              <div class="day-block__matches">
+                @for (m of day.matches; track m.id) {
+                  <app-pick-card
+                    [match]="m"
+                    [phaseLabel]="m.phaseLabel"
+                    [existingPick]="m.pick"
+                    [pointsEarned]="m.pick?.pointsEarned" />
+                }
+              </div>
+            </section>
+          }
+          @if (canLoadMore()) {
+            <button class="btn btn--ghost btn--block" type="button"
+                    (click)="loadNextTwoDays()" style="width: 100%; margin-top: var(--space-md);">
+              Próximos 2 días →
+            </button>
+          }
+        } @else {
+          <!-- Jugados — flat reverse-chrono -->
+          @if (playedMatches().length === 0) {
+            <div class="empty-state">
+              <h3>Aún no jugaste partidos</h3>
+              <p>Tus picks jugados aparecerán acá con el resultado y los puntos.</p>
+            </div>
+          } @else {
+            <section class="picks-grid">
+              @for (m of playedMatches(); track m.id) {
+                <app-pick-card
+                  [match]="m"
+                  [phaseLabel]="m.phaseLabel"
+                  [existingPick]="m.pick"
+                  [pointsEarned]="m.pick?.pointsEarned" />
+              }
+            </section>
+          }
         }
-      </section>
-    }
+      </div>
+
+      <!-- SIDEBAR -->
+      <aside class="picks-layout__sidebar">
+        @if (myPrizes().length > 0) {
+          <section class="sidebar-card sidebar-card--prizes">
+            <h3>🏆 Premios</h3>
+            @for (p of myPrizes(); track p.groupId) {
+              <article class="sidebar-prize">
+                <strong>{{ p.groupName }}</strong>
+                <ul>
+                  @if (p.prize1st) { <li>🥇 {{ p.prize1st }}</li> }
+                  @if (p.prize2nd) { <li>🥈 {{ p.prize2nd }}</li> }
+                  @if (p.prize3rd) { <li>🥉 {{ p.prize3rd }}</li> }
+                </ul>
+              </article>
+            }
+          </section>
+        }
+
+        <section class="sidebar-card">
+          <h3>Mis grupos</h3>
+          @if (myGroupsList().length === 0) {
+            <p style="color: var(--color-text-muted); font-size: var(--fs-sm);">
+              Aún no estás en ningún grupo.
+            </p>
+          } @else {
+            <ul class="sidebar-groups">
+              @for (g of myGroupsList(); track g.id) {
+                <li>
+                  <a [routerLink]="['/groups', g.id]">
+                    <span>{{ g.name }}</span>
+                    <small [class.is-complete]="g.mode === 'COMPLETE'">
+                      {{ g.mode === 'COMPLETE' ? 'Completo' : 'Simple' }}
+                    </small>
+                  </a>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+
+        <a class="sidebar-card sidebar-card--cta" routerLink="/groups/new">
+          <strong>+ Crear grupo</strong>
+          <small>Arma uno privado con tus amigos</small>
+        </a>
+
+        <a class="sidebar-card sidebar-card--cta" routerLink="/groups" fragment="unirme">
+          <strong>→ Unirme con código</strong>
+          <small>¿Te invitaron? Pega el código de 6 caracteres</small>
+        </a>
+      </aside>
+    </div>
 
     <!-- Banners de sponsors: 3 hileras, una por slot. Cada hilera muestra
          las imágenes subidas por los sponsors en ese slot. Si no hay
@@ -203,6 +299,136 @@ interface Totals {
       color: var(--color-text-muted);
     }
 
+    .picks-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-lg);
+      padding: 0 var(--section-x-mobile);
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    @media (min-width: 992px) {
+      .picks-layout { grid-template-columns: minmax(0, 1fr) 320px; }
+    }
+    .picks-layout__main { display: grid; gap: var(--space-md); align-content: start; }
+    .picks-layout__sidebar {
+      display: grid;
+      gap: var(--space-md);
+      align-content: start;
+    }
+    @media (min-width: 992px) {
+      .picks-layout__sidebar { position: sticky; top: var(--space-lg); }
+    }
+
+    .day-block {
+      background: var(--color-primary-white);
+      border: var(--border-grey);
+      border-radius: var(--radius-md);
+      padding: var(--space-md);
+    }
+    .day-block__head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: var(--space-md);
+      padding-bottom: var(--space-sm);
+      border-bottom: 1px solid var(--color-primary-grey);
+    }
+    .day-block__head h2 {
+      font-family: var(--font-display);
+      font-size: var(--fs-2xl);
+      text-transform: uppercase;
+      line-height: 1;
+    }
+    .day-block__head small {
+      font-size: var(--fs-xs);
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .day-block__matches { display: grid; gap: var(--space-sm); }
+
+    .sidebar-card {
+      background: var(--color-primary-white);
+      border: var(--border-grey);
+      border-radius: var(--radius-md);
+      padding: var(--space-md);
+      display: block;
+      text-decoration: none;
+      color: inherit;
+    }
+    .sidebar-card h3 {
+      font-family: var(--font-display);
+      font-size: var(--fs-lg);
+      text-transform: uppercase;
+      line-height: 1;
+      margin-bottom: var(--space-sm);
+      letter-spacing: 0.04em;
+    }
+    .sidebar-card--prizes {
+      background: rgba(255, 200, 0, 0.10);
+      border: 1px solid rgba(255, 200, 0, 0.35);
+    }
+    .sidebar-prize {
+      padding: var(--space-xs) 0;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    .sidebar-prize:last-child { border-bottom: 0; }
+    .sidebar-prize strong {
+      display: block;
+      font-size: var(--fs-sm);
+      margin-bottom: 4px;
+    }
+    .sidebar-prize ul {
+      list-style: none; padding: 0; margin: 0;
+      font-size: var(--fs-sm); line-height: 1.6;
+    }
+    .sidebar-groups {
+      list-style: none; padding: 0; margin: 0;
+      display: grid; gap: 4px;
+    }
+    .sidebar-groups a {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 6px 8px;
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+      color: inherit;
+      transition: background 100ms;
+    }
+    .sidebar-groups a:hover { background: rgba(0,200,100,0.06); }
+    .sidebar-groups small {
+      font-size: var(--fs-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--color-text-muted);
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.06);
+    }
+    .sidebar-groups small.is-complete {
+      background: var(--color-primary-green);
+      color: var(--color-primary-white);
+    }
+    .sidebar-card--cta {
+      transition: transform 100ms, box-shadow 100ms;
+    }
+    .sidebar-card--cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,200,100,0.15);
+      border-color: var(--color-primary-green);
+    }
+    .sidebar-card--cta strong {
+      display: block;
+      font-size: var(--fs-md);
+      color: var(--color-primary-green);
+      margin-bottom: 2px;
+    }
+    .sidebar-card--cta small {
+      font-size: var(--fs-xs);
+      color: var(--color-text-muted);
+      line-height: 1.4;
+    }
+
     .canjear-fab {
       position: fixed;
       bottom: var(--space-lg);
@@ -245,6 +471,20 @@ export class PicksListComponent implements OnInit {
   totals = signal<Totals>({ points: 0, exactCount: 0, resultCount: 0, globalRank: null });
   hasComplete = computed(() => this.userModes.hasComplete());
 
+  // Cronológico por días: cargamos HOY+MAÑANA por default; botón
+  // "Próximos 2 días" extiende ventana de 2 en 2.
+  daysWindow = signal(2);
+
+  myGroupsList = computed(() => this.userModes.groups());
+  myPrizes = computed(() =>
+    this.myGroupsList()
+      .filter((g) => !!(g.prize1st || g.prize2nd || g.prize3rd))
+      .map((g) => ({
+        groupId: g.id, groupName: g.name,
+        prize1st: g.prize1st, prize2nd: g.prize2nd, prize3rd: g.prize3rd,
+      })),
+  );
+
   // Banners de sponsors agrupados por slot. Resolved-async desde S3
   // via Amplify Storage signed URLs.
   bannerSlotKeys: BannerSlot[] = ['banner1', 'banner2', 'banner3'];
@@ -267,11 +507,69 @@ export class PicksListComponent implements OnInit {
 
   upcomingCount = computed(() => this.matches().filter((m) => !this.time.isPast(m.kickoffAt)).length);
   playedCount = computed(() => this.matches().filter((m) => this.time.isPast(m.kickoffAt)).length);
-  visible = computed(() =>
-    this.matches().filter((m) =>
-      this.tab() === 'upcoming' ? !this.time.isPast(m.kickoffAt) : this.time.isPast(m.kickoffAt),
-    ),
+
+  /** Próximos partidos sortidos por kickoff asc */
+  private upcomingSorted = computed(() =>
+    this.matches()
+      .filter((m) => !this.time.isPast(m.kickoffAt))
+      .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt)),
   );
+
+  /** Jugados sortidos por kickoff desc (más recientes primero) */
+  playedMatches = computed(() =>
+    this.matches()
+      .filter((m) => this.time.isPast(m.kickoffAt))
+      .sort((a, b) => b.kickoffAt.localeCompare(a.kickoffAt)),
+  );
+
+  /** Todos los días (con al menos 1 partido) próximos, agrupados */
+  allUpcomingDays = computed<DayBlock[]>(() => {
+    const byDate = new Map<string, MatchWithMeta[]>();
+    for (const m of this.upcomingSorted()) {
+      const key = this.dateKey(m.kickoffAt);
+      const arr = byDate.get(key) ?? [];
+      arr.push(m);
+      byDate.set(key, arr);
+    }
+    const days: DayBlock[] = [];
+    for (const [dateKey, matches] of byDate) {
+      days.push({ dateKey, label: this.dayLabel(dateKey), matches });
+    }
+    return days.sort((a, b) => a.dateKey.localeCompare(b.dateKey));
+  });
+
+  /** Sólo los primeros N días (paginación incremental) */
+  visibleDays = computed<DayBlock[]>(() =>
+    this.allUpcomingDays().slice(0, this.daysWindow()),
+  );
+
+  canLoadMore = computed(() => this.daysWindow() < this.allUpcomingDays().length);
+
+  loadNextTwoDays() {
+    this.daysWindow.update((n) => n + 2);
+  }
+
+  private dateKey(iso: string): string {
+    // YYYY-MM-DD en zona local del usuario para agrupar correctamente.
+    const d = new Date(iso);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+  private dayLabel(dateKey: string): string {
+    const [y, m, d] = dateKey.split('-').map(Number);
+    const date = new Date(y!, m! - 1, d!);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    if (date.getTime() === today.getTime()) return 'Hoy';
+    if (date.getTime() === tomorrow.getTime()) return 'Mañana';
+    return date.toLocaleDateString('es-EC', {
+      weekday: 'long', day: '2-digit', month: 'long',
+    });
+  }
 
   async ngOnInit() {
     const userId = this.auth.user()?.sub;

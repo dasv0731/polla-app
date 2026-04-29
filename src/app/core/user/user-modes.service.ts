@@ -19,6 +19,9 @@ export interface UserGroup {
   id: string;
   name: string;
   mode: GameMode;
+  prize1st: string | null;
+  prize2nd: string | null;
+  prize3rd: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -62,7 +65,12 @@ export class UserModesService {
             if (!g.data) return;
             const mode = g.data.mode as GameMode | undefined;
             if (mode !== 'SIMPLE' && mode !== 'COMPLETE') return;
-            resolved.push({ id: g.data.id, name: g.data.name, mode });
+            resolved.push({
+              id: g.data.id, name: g.data.name, mode,
+              prize1st: g.data.prize1st ?? null,
+              prize2nd: g.data.prize2nd ?? null,
+              prize3rd: g.data.prize3rd ?? null,
+            });
           } catch {
             /* skip */
           }

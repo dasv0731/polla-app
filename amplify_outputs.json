@@ -2118,6 +2118,13 @@
               "isRequired": false,
               "attributes": []
             },
+            "maxRedemptionsPerUser": {
+              "name": "maxRedemptionsPerUser",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": false,
+              "attributes": []
+            },
             "bannerKeys": {
               "name": "bannerKeys",
               "isArray": true,
