@@ -3461,6 +3461,110 @@
             }
           }
         },
+        "UseLateEditReturnType": {
+          "name": "UseLateEditReturnType",
+          "fields": {
+            "ok": {
+              "name": "ok",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": true,
+              "attributes": []
+            },
+            "message": {
+              "name": "message",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "pickId": {
+              "name": "pickId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": false,
+              "attributes": []
+            }
+          }
+        },
+        "UseReassignChampRunnerReturnType": {
+          "name": "UseReassignChampRunnerReturnType",
+          "fields": {
+            "ok": {
+              "name": "ok",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": true,
+              "attributes": []
+            },
+            "message": {
+              "name": "message",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "specialPickId": {
+              "name": "specialPickId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": false,
+              "attributes": []
+            }
+          }
+        },
+        "UseGroupResetReturnType": {
+          "name": "UseGroupResetReturnType",
+          "fields": {
+            "ok": {
+              "name": "ok",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": true,
+              "attributes": []
+            },
+            "message": {
+              "name": "message",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "pickId": {
+              "name": "pickId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": false,
+              "attributes": []
+            }
+          }
+        },
+        "UseBracketResetReturnType": {
+          "name": "UseBracketResetReturnType",
+          "fields": {
+            "ok": {
+              "name": "ok",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": true,
+              "attributes": []
+            },
+            "message": {
+              "name": "message",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "bracketPickId": {
+              "name": "bracketPickId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": false,
+              "attributes": []
+            }
+          }
+        },
         "RedeemSponsorCodeReturnType": {
           "name": "RedeemSponsorCodeReturnType",
           "fields": {
@@ -3927,6 +4031,143 @@
               "isArray": false,
               "type": "ID",
               "isRequired": false
+            }
+          }
+        },
+        "useLateEdit": {
+          "name": "useLateEdit",
+          "isArray": false,
+          "type": {
+            "nonModel": "UseLateEditReturnType"
+          },
+          "isRequired": false,
+          "arguments": {
+            "comodinId": {
+              "name": "comodinId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            },
+            "matchId": {
+              "name": "matchId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            },
+            "homeScorePred": {
+              "name": "homeScorePred",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": true
+            },
+            "awayScorePred": {
+              "name": "awayScorePred",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": true
+            }
+          }
+        },
+        "useReassignChampRunner": {
+          "name": "useReassignChampRunner",
+          "isArray": false,
+          "type": {
+            "nonModel": "UseReassignChampRunnerReturnType"
+          },
+          "isRequired": false,
+          "arguments": {
+            "comodinId": {
+              "name": "comodinId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            },
+            "specialType": {
+              "name": "specialType",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "newTeamSlug": {
+              "name": "newTeamSlug",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            }
+          }
+        },
+        "useGroupReset": {
+          "name": "useGroupReset",
+          "isArray": false,
+          "type": {
+            "nonModel": "UseGroupResetReturnType"
+          },
+          "isRequired": false,
+          "arguments": {
+            "comodinId": {
+              "name": "comodinId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            },
+            "groupLetter": {
+              "name": "groupLetter",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "pos1": {
+              "name": "pos1",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            },
+            "pos2": {
+              "name": "pos2",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            },
+            "pos3": {
+              "name": "pos3",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            },
+            "pos4": {
+              "name": "pos4",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            }
+          }
+        },
+        "useBracketReset": {
+          "name": "useBracketReset",
+          "isArray": false,
+          "type": {
+            "nonModel": "UseBracketResetReturnType"
+          },
+          "isRequired": false,
+          "arguments": {
+            "comodinId": {
+              "name": "comodinId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            },
+            "phaseOrder": {
+              "name": "phaseOrder",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": true
+            },
+            "newPicks": {
+              "name": "newPicks",
+              "isArray": true,
+              "type": "ID",
+              "isRequired": false,
+              "isArrayNullable": false
             }
           }
         },
