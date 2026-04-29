@@ -85,6 +85,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/comodines/comodines-list.component').then((m) => m.ComodinesListComponent),
       },
       {
+        path: 'notificaciones',
+        loadComponent: () => import('./features/notifications/notifications-list.component').then((m) => m.NotificationsListComponent),
+      },
+      {
         path: 'profile/special-picks',
         loadComponent: () => import('./features/profile/special-picks.component').then((m) => m.SpecialPicksComponent),
       },

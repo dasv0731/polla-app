@@ -1,5 +1,6 @@
-import { Component, HostListener, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService, type UserGroup } from '../../core/user/user-modes.service';
 
@@ -178,6 +179,15 @@ type DropdownKey = 'groups' | 'picks' | 'rankings' | 'user' | null;
                 <span class="user-menu__icon" aria-hidden="true">🃏</span>
                 Mis comodines
               </a>
+              <a class="user-menu__item" role="menuitem" (click)="goNotifications()">
+                <span class="user-menu__icon" aria-hidden="true">🔔</span>
+                Notificaciones
+                @if (unreadCount() > 0) {
+                  <span style="margin-left: auto; background: var(--color-primary-green); color: var(--color-primary-white); padding: 2px 8px; border-radius: 999px; font-size: var(--fs-xs); font-weight: var(--fw-bold);">
+                    {{ unreadCount() }}
+                  </span>
+                }
+              </a>
               <a class="user-menu__item" role="menuitem" (click)="goProfile()">
                 <span class="user-menu__icon" aria-hidden="true">⚙</span>
                 Editar perfil
@@ -247,6 +257,7 @@ type DropdownKey = 'groups' | 'picks' | 'rankings' | 'user' | null;
 
       <h4 class="drawer__head">Cuenta</h4>
       <a routerLink="/mis-comodines" (click)="closeDrawer()">🃏 Mis comodines</a>
+      <a routerLink="/notificaciones" (click)="closeDrawer()">🔔 Notificaciones</a>
       <a routerLink="/profile" (click)="closeDrawer()">Editar perfil</a>
       <a (click)="logout()" style="cursor: pointer; color: var(--color-lost);">Cerrar sesión</a>
     </aside>
@@ -324,8 +335,9 @@ type DropdownKey = 'groups' | 'picks' | 'rankings' | 'user' | null;
     }
   `],
 })
-export class NavComponent {
+export class NavComponent implements OnInit, OnDestroy {
   private auth = inject(AuthService);
+  private api = inject(ApiService);
   private router = inject(Router);
   private userModes = inject(UserModesService);
 
@@ -339,6 +351,33 @@ export class NavComponent {
   hasComplete = computed(() => this.userModes.hasComplete());
   eligibleGlobal = computed(() => this.userModes.eligibleForGlobalRanking());
   myGroups = computed<UserGroup[]>(() => this.userModes.groups());
+
+  // Badge de notificaciones unread. Poll cada 60s mientras el user esté
+  // logueado. Cheap query (filter por userId) — no incurre en costos
+  // grandes. Cuando llegue WebSockets via AppSync subscriptions, swap acá.
+  unreadCount = signal(0);
+  private pollTimer: ReturnType<typeof setInterval> | undefined;
+
+  async ngOnInit() {
+    await this.refreshUnreadCount();
+    this.pollTimer = setInterval(() => void this.refreshUnreadCount(), 60_000);
+  }
+  ngOnDestroy() {
+    if (this.pollTimer) clearInterval(this.pollTimer);
+  }
+
+  private async refreshUnreadCount() {
+    const userId = this.auth.user()?.sub;
+    if (!userId) { this.unreadCount.set(0); return; }
+    try {
+      const res = await this.api.listMyNotifications(userId, 200);
+      const unread = ((res.data ?? []) as Array<{ readAt: string | null }>)
+        .filter((n) => !n.readAt).length;
+      this.unreadCount.set(unread);
+    } catch {
+      // ignore — keep last value
+    }
+  }
 
   toggle(key: DropdownKey) {
     this.open.update((cur) => (cur === key ? null : key));
@@ -366,6 +405,11 @@ export class NavComponent {
   goComodines() {
     this.closeAll();
     void this.router.navigate(['/mis-comodines']);
+  }
+
+  goNotifications() {
+    this.closeAll();
+    void this.router.navigate(['/notificaciones']);
   }
 
   async logout() {

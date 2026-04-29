@@ -129,6 +129,20 @@ export class ApiService {
     });
   }
 
+  // ----- Notifications -----
+  listMyNotifications(userId: string, limit = 100) {
+    return apiClient.models.Notification.list({
+      filter: { userId: { eq: userId } },
+      limit,
+    });
+  }
+  markNotificationRead(id: string) {
+    return apiClient.models.Notification.update({
+      id,
+      readAt: new Date().toISOString(),
+    });
+  }
+
   // ----- Comodines (sistema reglamento §comodines) -----
   listMyComodines(userId: string, tournamentId: string, limit = 50) {
     return apiClient.models.Comodin.list({
