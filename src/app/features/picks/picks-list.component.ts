@@ -1,11 +1,19 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { getUrl } from 'aws-amplify/storage';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService } from '../../core/user/user-modes.service';
 import { TimeService } from '../../core/time/time.service';
 import { PickCardComponent } from './pick-card.component';
 import { SponsorRedeemComponent } from './sponsor-redeem.component';
+
+type BannerSlot = 'banner1' | 'banner2' | 'banner3';
+interface SponsorBanner {
+  sponsorId: string;
+  sponsorName: string;
+  url: string | null;     // null mientras se resuelve la signed URL
+}
 
 const TOURNAMENT_ID = 'mundial-2026';
 
@@ -124,12 +132,71 @@ interface Totals {
       </section>
     }
 
+    <!-- Banners de sponsors: 3 hileras, una por slot. Cada hilera muestra
+         las imágenes subidas por los sponsors en ese slot. Si no hay
+         sponsors con un slot dado, esa sección se oculta. -->
+    @for (slot of bannerSlotKeys; track slot) {
+      @let banners = sponsorBannersForSlot(slot);
+      @if (banners.length > 0) {
+        <section class="sponsor-banner-row">
+          @for (b of banners; track b.sponsorId) {
+            <div class="sponsor-banner-tile" [title]="b.sponsorName">
+              @if (b.url) {
+                <img [src]="b.url" [alt]="b.sponsorName" loading="lazy">
+              } @else {
+                <div class="sponsor-banner-tile__placeholder">{{ b.sponsorName }}</div>
+              }
+            </div>
+          }
+        </section>
+      }
+    }
+
     <!-- Bloque de canje de códigos sponsor: visible para todos los users
          logueados (independiente del modo del grupo). -->
     <section style="max-width: 720px; margin: var(--space-2xl) auto 0;">
       <app-sponsor-redeem />
     </section>
   `,
+  styles: [`
+    .sponsor-banner-row {
+      display: flex;
+      gap: var(--space-sm);
+      overflow-x: auto;
+      padding: var(--space-sm) 0;
+      margin: var(--space-md) auto 0;
+      max-width: 1100px;
+      scroll-snap-type: x mandatory;
+    }
+    .sponsor-banner-tile {
+      flex: 0 0 auto;
+      width: 280px;
+      aspect-ratio: 16 / 9;
+      background: var(--color-primary-grey, #f4f4f4);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      scroll-snap-align: start;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+    .sponsor-banner-tile img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .sponsor-banner-tile__placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: var(--fs-xl);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--color-text-muted);
+    }
+  `],
 })
 export class PicksListComponent implements OnInit {
   private api = inject(ApiService);
@@ -142,6 +209,16 @@ export class PicksListComponent implements OnInit {
   loading = signal(true);
   totals = signal<Totals>({ points: 0, exactCount: 0, resultCount: 0, globalRank: null });
   hasComplete = computed(() => this.userModes.hasComplete());
+
+  // Banners de sponsors agrupados por slot. Resolved-async desde S3
+  // via Amplify Storage signed URLs.
+  bannerSlotKeys: BannerSlot[] = ['banner1', 'banner2', 'banner3'];
+  private banners = signal<Record<BannerSlot, SponsorBanner[]>>({
+    banner1: [], banner2: [], banner3: [],
+  });
+  sponsorBannersForSlot(slot: BannerSlot): SponsorBanner[] {
+    return this.banners()[slot] ?? [];
+  }
 
   upcomingCount = computed(() => this.matches().filter((m) => !this.time.isPast(m.kickoffAt)).length);
   playedCount = computed(() => this.matches().filter((m) => this.time.isPast(m.kickoffAt)).length);
@@ -230,6 +307,58 @@ export class PicksListComponent implements OnInit {
       });
     } finally {
       this.loading.set(false);
+    }
+
+    // Carga de banners de sponsors (best-effort, no bloquea UI)
+    void this.loadSponsorBanners();
+  }
+
+  private async loadSponsorBanners() {
+    try {
+      const res = await this.api.listSponsors(50);
+      const sponsors = ((res.data ?? []) as Array<{
+        id: string; name: string;
+        banner1?: string | null; banner2?: string | null; banner3?: string | null;
+      }>);
+
+      const buckets: Record<BannerSlot, SponsorBanner[]> = {
+        banner1: [], banner2: [], banner3: [],
+      };
+
+      // Pre-llenar buckets con placeholders (url=null) para que la UI
+      // muestre algo mientras se resuelven las signed URLs.
+      for (const s of sponsors) {
+        for (const slot of this.bannerSlotKeys) {
+          const key = (s as Record<BannerSlot, string | null | undefined>)[slot];
+          if (key) {
+            buckets[slot].push({ sponsorId: s.id, sponsorName: s.name, url: null });
+          }
+        }
+      }
+      this.banners.set({ ...buckets });
+
+      // Resolver URLs en paralelo
+      await Promise.all(
+        sponsors.flatMap((s) =>
+          this.bannerSlotKeys.map(async (slot) => {
+            const key = (s as Record<BannerSlot, string | null | undefined>)[slot];
+            if (!key) return;
+            try {
+              const u = await getUrl({ path: key, options: { expiresIn: 3600 } });
+              this.banners.update((cur) => {
+                const next = { ...cur };
+                next[slot] = next[slot].map((b) =>
+                  b.sponsorId === s.id ? { ...b, url: u.url.toString() } : b,
+                );
+                return next;
+              });
+            } catch { /* skip silenciosamente */ }
+          }),
+        ),
+      );
+    } catch {
+      // Sin sponsors o sin permiso — la UI omite las secciones cuando
+      // los buckets quedan vacíos.
     }
   }
 }

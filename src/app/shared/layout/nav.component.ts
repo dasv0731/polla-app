@@ -48,7 +48,7 @@ type DropdownKey = 'groups' | 'picks' | 'rankings' | 'user' | null;
                     No estás en ningún grupo
                   </p>
                 } @else {
-                  @for (g of myGroups(); track g.id) {
+                  @for (g of topGroups(); track g.id) {
                     <a class="user-menu__item" role="menuitem"
                        [routerLink]="['/groups', g.id]" (click)="closeAll()">
                       <span class="nav-dd__name">{{ g.name }}</span>
@@ -56,6 +56,11 @@ type DropdownKey = 'groups' | 'picks' | 'rankings' | 'user' | null;
                         {{ g.mode === 'COMPLETE' ? 'Completo' : 'Simple' }}
                       </span>
                     </a>
+                  }
+                  @if (myGroups().length > 3) {
+                    <p class="user-menu__item" style="color: var(--color-text-muted); pointer-events: none; font-size: var(--fs-xs);">
+                      + {{ myGroups().length - 3 }} grupo{{ myGroups().length - 3 === 1 ? '' : 's' }} más
+                    </p>
                   }
                 }
                 <hr class="user-menu__sep">
@@ -222,9 +227,14 @@ type DropdownKey = 'groups' | 'picks' | 'rankings' | 'user' | null;
         <a routerLink="/admin/users" (click)="closeDrawer()">Usuarios</a>
       } @else {
       <h4 class="drawer__head">Mis grupos</h4>
-      @for (g of myGroups(); track g.id) {
+      @for (g of topGroups(); track g.id) {
         <a [routerLink]="['/groups', g.id]" routerLinkActive="is-active" (click)="closeDrawer()">
           {{ g.name }} <small style="color: var(--color-text-muted);">· {{ g.mode === 'COMPLETE' ? 'Completo' : 'Simple' }}</small>
+        </a>
+      }
+      @if (myGroups().length > 3) {
+        <a routerLink="/groups" (click)="closeDrawer()" style="color: var(--color-primary-green); font-size: var(--fs-sm);">
+          Ver todos los grupos ({{ myGroups().length }}) →
         </a>
       }
       <a routerLink="/groups/new" (click)="closeDrawer()" style="color: var(--color-primary-green);">+ Crear grupo</a>
@@ -351,6 +361,9 @@ export class NavComponent implements OnInit, OnDestroy {
   hasComplete = computed(() => this.userModes.hasComplete());
   eligibleGlobal = computed(() => this.userModes.eligibleForGlobalRanking());
   myGroups = computed<UserGroup[]>(() => this.userModes.groups());
+  // Dropdown desktop limita a 3 grupos para no llenar la pantalla;
+  // si el user tiene más, hint "+ N más" + link "Ver todos los grupos".
+  topGroups = computed<UserGroup[]>(() => this.myGroups().slice(0, 3));
 
   // Badge de notificaciones unread. AppSync subscription via observeQuery
   // mantiene el contador en tiempo real (sin polling). El Observable
