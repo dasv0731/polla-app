@@ -45,6 +45,11 @@ const ASSIGNABLE_TYPES = new Set<ComodinType>([
   'BRACKET_SAFE_PICK', 'ANTI_PENALTY',
 ]);
 
+// Tipos "activos" que se ejercen vía mutation propia (no asignación pasiva).
+const USABLE_TYPES = new Set<ComodinType>([
+  'LATE_EDIT', 'REASSIGN_CHAMP_RUNNER', 'GROUP_RESET', 'BRACKET_RESET',
+]);
+
 const PHASE_LABELS: Record<number, string> = {
   3: 'Octavos (R16)',
   4: 'Cuartos',
@@ -200,11 +205,12 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
                         style="margin-top: var(--space-sm); justify-self: start;">
                   Asignar →
                 </button>
-              } @else if (c.status === 'UNASSIGNED') {
-                <p class="form-card__hint" style="margin-top: var(--space-sm);">
-                  La asignación de este tipo llega en la próxima entrega
-                  (Fase 3b: tipos activos #5–#8).
-                </p>
+              } @else if (c.status === 'UNASSIGNED' && canUse(c.type)) {
+                <button class="btn btn--primary btn--sm" type="button"
+                        (click)="openUseModal(c)"
+                        style="margin-top: var(--space-sm); justify-self: start;">
+                  Usar →
+                </button>
               } @else if (c.status === 'ASSIGNED') {
                 <p class="comodin-card__assigned">
                   ✓ Asignado a <strong>{{ formatTarget(c) }}</strong>
@@ -358,6 +364,179 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
                     [disabled]="assigningNow() || !canSubmit()"
                     (click)="submitAssign()">
               {{ assigningNow() ? 'Asignando…' : 'Confirmar asignación' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Modal Usar (tipos activos #5 #6 #7 #8) -->
+    @if (using()) {
+      @let comodin = using()!;
+      <div class="claim-overlay" role="dialog" aria-modal="true"
+           (click)="closeUseModal()">
+        <div class="claim-modal" (click)="$event.stopPropagation()">
+          <header class="claim-modal__head">
+            <h2>Usar: {{ comodin.type ? typeInfo(comodin.type).name : '' }}</h2>
+            <button type="button" class="claim-modal__x" (click)="closeUseModal()">×</button>
+          </header>
+          <p class="form-card__hint">{{ comodin.type ? typeInfo(comodin.type).impact : '' }}</p>
+          <p class="form-card__hint" style="margin-top: var(--space-xs);">
+            ⚠ Una vez ejercido, no se puede revertir. El comodín queda
+            <strong>ACTIVATED</strong> y modifica tu pick correspondiente.
+          </p>
+
+          @switch (comodin.type) {
+            @case ('LATE_EDIT') {
+              <div class="form-card__field" style="margin-top: var(--space-md);">
+                <label class="form-card__label">Partido en vivo (grupos · 0–15 min post-kickoff)</label>
+                @if (assignLoadingOptions()) {
+                  <p class="form-card__hint">Cargando…</p>
+                } @else if (lateEditMatches().length === 0) {
+                  <p class="form-card__hint" style="color: var(--color-lost);">
+                    No hay partidos elegibles ahora mismo (la ventana es 15 min post-kickoff de un grupo).
+                  </p>
+                } @else {
+                  <select class="form-card__input" [(ngModel)]="selMatchId">
+                    <option value="">— elige un partido —</option>
+                    @for (m of lateEditMatches(); track m.id) {
+                      <option [value]="m.id">{{ m.label }}</option>
+                    }
+                  </select>
+                }
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm); margin-top: var(--space-sm);">
+                <div class="form-card__field" style="margin: 0;">
+                  <label class="form-card__label">Marcador local</label>
+                  <input class="form-card__input" type="number" min="0" max="20"
+                         [(ngModel)]="selHomeScore">
+                </div>
+                <div class="form-card__field" style="margin: 0;">
+                  <label class="form-card__label">Marcador visitante</label>
+                  <input class="form-card__input" type="number" min="0" max="20"
+                         [(ngModel)]="selAwayScore">
+                </div>
+              </div>
+            }
+
+            @case ('REASSIGN_CHAMP_RUNNER') {
+              <div class="form-card__field" style="margin-top: var(--space-md);">
+                <label class="form-card__label">¿Qué pick reasignar?</label>
+                <div style="display: flex; gap: var(--space-sm);">
+                  <label class="phase-radio">
+                    <input type="radio" name="reassign-special" value="CHAMPION"
+                           [(ngModel)]="selSpecialType">
+                    <span>Campeón</span>
+                  </label>
+                  <label class="phase-radio">
+                    <input type="radio" name="reassign-special" value="RUNNER_UP"
+                           [(ngModel)]="selSpecialType">
+                    <span>Subcampeón</span>
+                  </label>
+                </div>
+              </div>
+              <div class="form-card__field" style="margin-top: var(--space-sm);">
+                <label class="form-card__label">Nuevo equipo</label>
+                @if (assignLoadingOptions()) {
+                  <p class="form-card__hint">Cargando equipos…</p>
+                } @else {
+                  <select class="form-card__input" [(ngModel)]="selTeamSlug">
+                    <option value="">— elige equipo —</option>
+                    @for (t of teamOptions(); track t.slug) {
+                      <option [value]="t.slug">{{ t.name }}</option>
+                    }
+                  </select>
+                }
+              </div>
+            }
+
+            @case ('GROUP_RESET') {
+              <div class="form-card__field" style="margin-top: var(--space-md);">
+                <label class="form-card__label">Grupo a reordenar</label>
+                <select class="form-card__input" [(ngModel)]="selGroupLetter"
+                        (change)="onGroupResetGroupChange()">
+                  <option value="">—</option>
+                  @for (l of GROUP_LETTERS; track l) {
+                    <option [value]="l">Grupo {{ l }}</option>
+                  }
+                </select>
+              </div>
+              @if (selGroupLetter && groupResetTeams().length === 4) {
+                <p class="form-card__hint" style="margin-top: var(--space-sm);">
+                  Reordena los 4 equipos de tu pick original (no se puede agregar/quitar):
+                </p>
+                <div style="display: grid; gap: var(--space-xs); margin-top: var(--space-sm);">
+                  @for (pos of [1,2,3,4]; track pos) {
+                    <div class="form-card__field" style="margin: 0; display: flex; align-items: center; gap: var(--space-sm);">
+                      <strong style="min-width: 36px;">{{ pos }}°</strong>
+                      <select class="form-card__input" style="flex: 1;"
+                              [ngModel]="groupResetSelections()[pos - 1]"
+                              (ngModelChange)="setGroupResetSelection(pos - 1, $event)">
+                        <option value="">—</option>
+                        @for (t of groupResetTeams(); track t) {
+                          <option [value]="t">{{ teamName(t) }}</option>
+                        }
+                      </select>
+                    </div>
+                  }
+                </div>
+              } @else if (selGroupLetter) {
+                <p class="form-card__hint" style="color: var(--color-lost); margin-top: var(--space-sm);">
+                  No tienes pick previo en este grupo (modo completo).
+                </p>
+              }
+            }
+
+            @case ('BRACKET_RESET') {
+              <div class="form-card__field" style="margin-top: var(--space-md);">
+                <label class="form-card__label">Fase a resetear</label>
+                <select class="form-card__input" [(ngModel)]="selPhaseOrder"
+                        (change)="onBracketResetPhaseChange()">
+                  <option [value]="0">—</option>
+                  <option [value]="3">Octavos (R16) — 8 equipos</option>
+                  <option [value]="4">Cuartos — 4 equipos</option>
+                  <option [value]="5">Semifinales — 2 equipos</option>
+                </select>
+              </div>
+              @if (bracketResetSize() > 0) {
+                <p class="form-card__hint" style="margin-top: var(--space-sm);">
+                  Elige los {{ bracketResetSize() }} equipos que avanzan a esta fase
+                  (todos siguen en competencia):
+                </p>
+                @if (assignLoadingOptions()) {
+                  <p class="form-card__hint">Cargando equipos…</p>
+                } @else {
+                  <div style="display: grid; gap: var(--space-xs); margin-top: var(--space-sm);">
+                    @for (idx of bracketResetSlots(); track idx) {
+                      <select class="form-card__input"
+                              [ngModel]="bracketResetSelections()[idx]"
+                              (ngModelChange)="setBracketResetSelection(idx, $event)">
+                        <option value="">— equipo {{ idx + 1 }} —</option>
+                        @for (t of teamOptions(); track t.slug) {
+                          <option [value]="t.slug">{{ t.name }}</option>
+                        }
+                      </select>
+                    }
+                  </div>
+                }
+              }
+            }
+          }
+
+          @if (assignError()) {
+            <p class="form-card__hint" style="color: var(--color-lost); margin-top: var(--space-sm);">
+              {{ assignError() }}
+            </p>
+          }
+
+          <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-lg); justify-content: flex-end;">
+            <button type="button" class="btn btn--ghost"
+                    [disabled]="assigningNow()"
+                    (click)="closeUseModal()">Cancelar</button>
+            <button type="button" class="btn btn--primary"
+                    [disabled]="assigningNow() || !canSubmitUse()"
+                    (click)="submitUse()">
+              {{ assigningNow() ? 'Aplicando…' : 'Confirmar' }}
             </button>
           </div>
         </div>
@@ -581,6 +760,27 @@ export class ComodinesListComponent implements OnInit {
   selTeamSlug = '';
   selTargetComodinId = '';
 
+  // Modal "Usar" (tipos activos #5–#8). Comparte assigningNow + assignError.
+  using = signal<ComodinRow | null>(null);
+  selHomeScore = 0;
+  selAwayScore = 0;
+  selSpecialType: 'CHAMPION' | 'RUNNER_UP' | '' = '';
+  lateEditMatches = signal<MatchOption[]>([]);
+  groupResetTeams = signal<string[]>([]);     // teams del pick original del user en el grupo
+  groupResetSelections = signal<string[]>(['', '', '', '']);
+  bracketResetSelections = signal<string[]>([]);
+
+  bracketResetSize = computed(() => {
+    const o = this.selPhaseOrder;
+    if (o === 3) return 8;
+    if (o === 4) return 4;
+    if (o === 5) return 2;
+    return 0;
+  });
+  bracketResetSlots = computed(() => {
+    return Array.from({ length: this.bracketResetSize() }, (_, i) => i);
+  });
+
   antiPenaltyTargets = computed(() =>
     this.comodines().filter((c) =>
       c.type === 'BRACKET_SAFE_PICK' && c.status === 'ASSIGNED',
@@ -589,6 +789,62 @@ export class ComodinesListComponent implements OnInit {
 
   canAssign(t: ComodinType | null): boolean {
     return !!t && ASSIGNABLE_TYPES.has(t);
+  }
+  canUse(t: ComodinType | null): boolean {
+    return !!t && USABLE_TYPES.has(t);
+  }
+  canSubmitUse(): boolean {
+    const c = this.using();
+    if (!c) return false;
+    switch (c.type) {
+      case 'LATE_EDIT':
+        return !!this.selMatchId
+          && this.selHomeScore >= 0 && this.selHomeScore <= 20
+          && this.selAwayScore >= 0 && this.selAwayScore <= 20;
+      case 'REASSIGN_CHAMP_RUNNER':
+        return (this.selSpecialType === 'CHAMPION' || this.selSpecialType === 'RUNNER_UP')
+          && !!this.selTeamSlug;
+      case 'GROUP_RESET': {
+        const sel = this.groupResetSelections();
+        return !!this.selGroupLetter
+          && sel.length === 4
+          && sel.every((s) => !!s)
+          && new Set(sel).size === 4;
+      }
+      case 'BRACKET_RESET': {
+        const sel = this.bracketResetSelections();
+        const size = this.bracketResetSize();
+        return size > 0
+          && sel.length === size
+          && sel.every((s) => !!s)
+          && new Set(sel).size === size;
+      }
+      default: return false;
+    }
+  }
+  teamName(slug: string): string {
+    return this.teamOptions().find((t) => t.slug === slug)?.name ?? slug;
+  }
+  setGroupResetSelection(idx: number, val: string) {
+    this.groupResetSelections.update((arr) => {
+      const next = [...arr];
+      next[idx] = val;
+      return next;
+    });
+  }
+  setBracketResetSelection(idx: number, val: string) {
+    this.bracketResetSelections.update((arr) => {
+      const next = [...arr];
+      next[idx] = val;
+      return next;
+    });
+  }
+  onGroupResetGroupChange() {
+    void this.loadGroupResetTeams();
+  }
+  onBracketResetPhaseChange() {
+    const size = this.bracketResetSize();
+    this.bracketResetSelections.set(Array.from({ length: size }, () => ''));
   }
 
   canSubmit(): boolean {
@@ -682,6 +938,159 @@ export class ComodinesListComponent implements OnInit {
     if (this.assigningNow()) return;
     this.assigning.set(null);
     this.assignError.set(null);
+  }
+
+  async openUseModal(c: ComodinRow) {
+    this.using.set(c);
+    this.selMatchId = '';
+    this.selPhaseOrder = 0;
+    this.selGroupLetter = '';
+    this.selTeamSlug = '';
+    this.selSpecialType = '';
+    this.selHomeScore = 0;
+    this.selAwayScore = 0;
+    this.groupResetTeams.set([]);
+    this.groupResetSelections.set(['', '', '', '']);
+    this.bracketResetSelections.set([]);
+    this.assignError.set(null);
+
+    if (c.type === 'LATE_EDIT') {
+      await this.loadLateEditMatches();
+    } else if (c.type === 'REASSIGN_CHAMP_RUNNER' || c.type === 'BRACKET_RESET') {
+      await this.loadTeamOptions();
+    }
+    // GROUP_RESET: teams del grupo se cargan al elegir el grupo letter.
+  }
+
+  closeUseModal() {
+    if (this.assigningNow()) return;
+    this.using.set(null);
+    this.assignError.set(null);
+  }
+
+  private async loadLateEditMatches() {
+    this.assignLoadingOptions.set(true);
+    try {
+      const [matchesRes, phasesRes, teamsRes] = await Promise.all([
+        this.api.listMatches(TOURNAMENT_ID),
+        this.api.listPhases(TOURNAMENT_ID),
+        this.api.listTeams(TOURNAMENT_ID),
+      ]);
+      const phaseOrderById = new Map<string, number>();
+      for (const p of phasesRes.data ?? []) phaseOrderById.set(p.id, p.order);
+      const teamNameBySlug = new Map<string, string>();
+      for (const t of teamsRes.data ?? []) teamNameBySlug.set(t.slug, t.name);
+
+      const now = Date.now();
+      const opts: MatchOption[] = (matchesRes.data ?? [])
+        .map((m) => ({
+          id: m.id,
+          kickoffAt: m.kickoffAt,
+          phaseOrder: phaseOrderById.get(m.phaseId) ?? 0,
+          home: teamNameBySlug.get(m.homeTeamId) ?? m.homeTeamId,
+          away: teamNameBySlug.get(m.awayTeamId) ?? m.awayTeamId,
+        }))
+        // Solo grupos (phaseOrder=1) en ventana 0..15min post-kickoff
+        .filter((m) => m.phaseOrder === 1)
+        .filter((m) => {
+          const k = Date.parse(m.kickoffAt);
+          return now >= k && now <= k + 15 * 60_000;
+        })
+        .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt))
+        .map((m) => ({
+          id: m.id,
+          kickoffAt: m.kickoffAt,
+          phaseOrder: m.phaseOrder,
+          label: `${m.home} vs ${m.away} · iniciado ${this.shortDate(m.kickoffAt)}`,
+        }));
+      this.lateEditMatches.set(opts);
+      // Aprovechamos que ya cargamos teams para el modal:
+      this.teamOptions.set((teamsRes.data ?? [])
+        .map((t) => ({ slug: t.slug, name: t.name }))
+        .sort((a, b) => a.name.localeCompare(b.name)));
+    } finally {
+      this.assignLoadingOptions.set(false);
+    }
+  }
+
+  private async loadGroupResetTeams() {
+    if (!this.selGroupLetter) {
+      this.groupResetTeams.set([]);
+      return;
+    }
+    const userId = this.auth.user()?.sub;
+    if (!userId) return;
+    try {
+      // Cargar el GroupStandingPick del user en modo completo, filtrar el grupo.
+      const res = await this.api.listGroupStandingPicks(userId, 'COMPLETE');
+      const pick = ((res.data ?? []) as Array<{
+        groupLetter: string; pos1: string; pos2: string; pos3: string; pos4: string;
+      }>).find((p) => p.groupLetter === this.selGroupLetter);
+      if (pick) {
+        this.groupResetTeams.set([pick.pos1, pick.pos2, pick.pos3, pick.pos4]);
+        this.groupResetSelections.set([pick.pos1, pick.pos2, pick.pos3, pick.pos4]);
+      } else {
+        this.groupResetTeams.set([]);
+      }
+    } catch {
+      this.groupResetTeams.set([]);
+    }
+  }
+
+  async submitUse() {
+    const c = this.using();
+    if (!c || !this.canSubmitUse()) return;
+    this.assignError.set(null);
+    this.assigningNow.set(true);
+    try {
+      let res;
+      switch (c.type) {
+        case 'LATE_EDIT':
+          res = await this.api.useLateEdit({
+            comodinId: c.id, matchId: this.selMatchId,
+            homeScorePred: this.selHomeScore, awayScorePred: this.selAwayScore,
+          });
+          break;
+        case 'REASSIGN_CHAMP_RUNNER':
+          res = await this.api.useReassignChampRunner({
+            comodinId: c.id,
+            specialType: this.selSpecialType as 'CHAMPION' | 'RUNNER_UP',
+            newTeamSlug: this.selTeamSlug,
+          });
+          break;
+        case 'GROUP_RESET': {
+          const sel = this.groupResetSelections();
+          res = await this.api.useGroupReset({
+            comodinId: c.id, groupLetter: this.selGroupLetter,
+            pos1: sel[0]!, pos2: sel[1]!, pos3: sel[2]!, pos4: sel[3]!,
+          });
+          break;
+        }
+        case 'BRACKET_RESET':
+          res = await this.api.useBracketReset({
+            comodinId: c.id, phaseOrder: this.selPhaseOrder,
+            newPicks: [...this.bracketResetSelections()],
+          });
+          break;
+      }
+      if (res?.errors && res.errors.length > 0) {
+        this.assignError.set(res.errors[0]?.message ?? 'No se pudo aplicar');
+        return;
+      }
+      this.toast.success('Comodín ejercido');
+      this.using.set(null);
+      const userId = this.auth.user()?.sub;
+      if (userId) {
+        const list = await this.api.listMyComodines(userId, TOURNAMENT_ID);
+        const rows = ((list.data ?? []) as ComodinRow[])
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+        this.comodines.set(rows);
+      }
+    } catch (e) {
+      this.assignError.set(humanizeError(e));
+    } finally {
+      this.assigningNow.set(false);
+    }
   }
 
   private async loadMatchOptions() {

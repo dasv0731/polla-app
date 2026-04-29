@@ -153,6 +153,18 @@ export class ApiService {
   }) {
     return apiClient.mutations.assignComodin(input);
   }
+  useLateEdit(input: { comodinId: string; matchId: string; homeScorePred: number; awayScorePred: number; }) {
+    return apiClient.mutations.useLateEdit(input);
+  }
+  useReassignChampRunner(input: { comodinId: string; specialType: 'CHAMPION' | 'RUNNER_UP'; newTeamSlug: string; }) {
+    return apiClient.mutations.useReassignChampRunner(input);
+  }
+  useGroupReset(input: { comodinId: string; groupLetter: string; pos1: string; pos2: string; pos3: string; pos4: string; }) {
+    return apiClient.mutations.useGroupReset(input);
+  }
+  useBracketReset(input: { comodinId: string; phaseOrder: number; newPicks: string[]; }) {
+    return apiClient.mutations.useBracketReset(input);
+  }
   runLoyaltySweep(tournamentId: string) {
     return apiClient.mutations.runLoyaltySweep({ tournamentId });
   }
