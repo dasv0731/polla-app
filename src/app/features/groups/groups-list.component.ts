@@ -1,7 +1,9 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { UserModesService } from '../../core/user/user-modes.service';
 import { compareRankable } from '../../shared/util/tiebreakers';
 
 type GameMode = 'SIMPLE' | 'COMPLETE';
@@ -20,7 +22,7 @@ interface GroupRow {
 @Component({
   standalone: true,
   selector: 'app-groups-list',
-  imports: [RouterLink],
+  imports: [RouterLink, FormsModule],
   template: `
     <header class="page-header">
       <div class="page-header__top">
@@ -84,11 +86,12 @@ interface GroupRow {
         <article class="empty-cta__card">
           <h3>Unirme con código</h3>
           <p>¿Te invitaron? Pega el código que te enviaron. 6 caracteres del alfabeto seguro (sin 0/O/1/I).</p>
-          <form class="join-form" (ngSubmit)="join(); $event.preventDefault()">
-            <input type="text" placeholder="K7P2QM" maxlength="6"
-                   [value]="code()"
-                   (input)="code.set($any($event.target).value.toUpperCase())">
-            <button class="btn btn--primary" type="button" [disabled]="joining()" (click)="join()">
+          <form class="join-form" (ngSubmit)="join()">
+            <input type="text" name="code" placeholder="K7P2QM" maxlength="6"
+                   autocomplete="off" autocapitalize="characters"
+                   [(ngModel)]="codeInput"
+                   (input)="codeInput = codeInput.toUpperCase()">
+            <button class="btn btn--primary" type="submit" [disabled]="joining()">
               {{ joining() ? 'Validando…' : 'Unirme' }}
             </button>
           </form>
@@ -104,10 +107,11 @@ export class GroupsListComponent implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private router = inject(Router);
+  private userModes = inject(UserModesService);
 
   groups = signal<GroupRow[]>([]);
   loading = signal(true);
-  code = signal('');
+  codeInput = '';
   joinError = signal<string | null>(null);
   joining = signal(false);
 
@@ -185,45 +189,32 @@ export class GroupsListComponent implements OnInit {
   }
 
   async join() {
-    /* eslint-disable no-console */
-    console.log('[joinGroup] FORM SUBMIT — code value:', JSON.stringify(this.code()), 'len:', this.code().length);
-    if (this.code().length !== 6) {
-      console.log('[joinGroup] ABORT — código no tiene 6 caracteres');
+    const code = this.codeInput.trim().toUpperCase();
+    if (code.length !== 6) {
       this.joinError.set('El código debe tener 6 caracteres');
       return;
     }
-    console.log('[joinGroup] STEP 1 — clearing errors, setting joining=true');
     this.joinError.set(null);
     this.joining.set(true);
     try {
-      console.log('[joinGroup] STEP 2 — calling api.joinGroup() against AppSync…');
-      const res = await this.api.joinGroup(this.code());
-      console.log('[joinGroup] STEP 3 — got response from AppSync:', res);
-      console.log('[joinGroup]   res.data =', res.data);
-      console.log('[joinGroup]   res.errors =', res.errors);
+      const res = await this.api.joinGroup(code);
       if (res.errors && res.errors.length > 0) {
-        console.error('[joinGroup] BRANCH: GraphQL errors path');
-        for (const err of res.errors) console.error('  · errors[i]:', err);
         this.joinError.set(res.errors[0]!.message ?? 'Código inválido');
         return;
       }
       if (res.data?.groupId) {
-        console.log('[joinGroup] BRANCH: success — navigating to /groups/' + res.data.groupId);
+        // Re-cargar grupos del user en la cache global para que el dropdown
+        // de mis-grupos los vea sin necesidad de full reload.
+        const userId = this.auth.user()?.sub;
+        if (userId) await this.userModes.load(userId);
         void this.router.navigate(['/groups', res.data.groupId]);
       } else {
-        console.warn('[joinGroup] BRANCH: empty response — no errors but no groupId either');
-        this.joinError.set('No pudimos unirte (respuesta vacía). Revisá la pestaña Network.');
+        this.joinError.set('No pudimos unirte. Intenta de nuevo.');
       }
     } catch (e) {
-      console.error('[joinGroup] BRANCH: threw exception:', e);
-      console.error('[joinGroup]   typeof:', typeof e);
-      console.error('[joinGroup]   message:', (e as Error)?.message);
-      console.error('[joinGroup]   stack:', (e as Error)?.stack);
       this.joinError.set((e as Error).message ?? 'Código inválido');
     } finally {
-      console.log('[joinGroup] DONE — joining=false');
       this.joining.set(false);
     }
-    /* eslint-enable no-console */
   }
 }

@@ -2,6 +2,7 @@ import { Component, Input, OnInit, computed, inject, signal } from '@angular/cor
 import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { UserModesService } from '../../core/user/user-modes.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
 
 interface GroupSummary {
@@ -106,6 +107,7 @@ export class GroupJoinComponent implements OnInit {
 
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  private userModes = inject(UserModesService);
   private router = inject(Router);
 
   loading = signal(true);
@@ -190,8 +192,14 @@ export class GroupJoinComponent implements OnInit {
         return;
       }
       const groupId = res.data?.groupId ?? this.group()?.id;
-      if (groupId) void this.router.navigate(['/groups', groupId]);
-      else this.joinError.set('No pudimos unirte (respuesta vacía)');
+      if (groupId) {
+        // Refresh cache de grupos para que aparezca en el dropdown
+        const userId = this.auth.user()?.sub;
+        if (userId) await this.userModes.load(userId);
+        void this.router.navigate(['/groups', groupId]);
+      } else {
+        this.joinError.set('No pudimos unirte (respuesta vacía)');
+      }
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error('[joinGroup] threw:', e);

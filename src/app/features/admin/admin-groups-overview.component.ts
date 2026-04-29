@@ -249,7 +249,7 @@ export class AdminGroupsOverviewComponent implements OnInit {
   );
   avgMembers = computed(() => {
     const t = this.groups().length;
-    return t === 0 ? 0 : Math.round((this.totalMembers() / t) * 10) / 10;
+    return t === 0 ? 0 : Math.round(this.totalMembers() / t);
   });
   topGroups = computed(() =>
     [...this.groups()].sort((a, b) => b.memberCount - a.memberCount).slice(0, 5),

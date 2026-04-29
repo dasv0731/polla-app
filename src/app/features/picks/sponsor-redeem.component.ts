@@ -11,6 +11,10 @@ interface RedemptionRow {
   pointsAwarded: number;
   sponsorName: string;
   codeText: string;
+  // Si el code otorgó un comodín, su tipo + descripción breve.
+  comodinType: string | null;
+  comodinName: string | null;
+  comodinImpact: string | null;
 }
 
 const ERROR_LABELS: Record<string, string> = {
@@ -37,6 +41,18 @@ const COMODIN_NAMES: Record<string, string> = {
   BRACKET_RESET: 'Reseteo de fase eliminatoria',
   GROUP_RESET: 'Reseteo de grupo',
   ANTI_PENALTY: 'Anti-penalización',
+};
+
+const COMODIN_IMPACT: Record<string, string> = {
+  MULTIPLIER_X2: 'Duplica los puntos en 1 partido (grupos / R32 / R16).',
+  PHASE_BOOST: 'x1.5 a marcadores de toda una fase (octavos o cuartos).',
+  GROUP_SAFE_PICK: '50% si fallás 1 posición de un grupo (en vez de 0).',
+  BRACKET_SAFE_PICK: '50% si tu equipo no llega a la fase predicha.',
+  REASSIGN_CHAMP_RUNNER: 'Cambiás campeón/subcampeón post-grupos. Paga 50%.',
+  LATE_EDIT: 'Editar marcador hasta 15 min post-kickoff. Paga 50%.',
+  BRACKET_RESET: 'Reescribís todos los picks de una fase. Paga 60%.',
+  GROUP_RESET: 'Reordenás un grupo post-J1. Paga 50%.',
+  ANTI_PENALTY: 'Anula el descuento del Pick seguro de llaves: paga 100%.',
 };
 
 @Component({
@@ -79,19 +95,29 @@ const COMODIN_NAMES: Record<string, string> = {
         <ul class="sr__history">
           @for (r of redemptions(); track r.id) {
             <li class="sr__history-item">
-              <div>
+              <div style="flex: 1;">
                 <strong>{{ r.codeText }}</strong>
-                <small style="display: block; color: var(--color-text-muted);">
+                @if (r.comodinName) {
+                  <small style="display: block; color: var(--color-primary-green); font-weight: var(--fw-semibold); margin-top: 2px;">
+                    🃏 {{ r.comodinName }}
+                  </small>
+                  @if (r.comodinImpact) {
+                    <small style="display: block; color: var(--color-text-muted); line-height: 1.3; margin-top: 2px;">
+                      {{ r.comodinImpact }}
+                    </small>
+                  }
+                } @else if (r.pointsAwarded > 0) {
+                  <small style="display: block; color: var(--color-primary-green); font-weight: var(--fw-semibold);">
+                    +{{ r.pointsAwarded }} pts
+                  </small>
+                }
+                <small style="display: block; color: var(--color-text-muted); margin-top: 2px;">
                   {{ r.sponsorName }} · {{ formatDate(r.redeemedAt) }}
                 </small>
               </div>
-              <span class="sr__history-pts">+{{ r.pointsAwarded }} pts</span>
             </li>
           }
         </ul>
-        <p class="form-card__hint" style="margin-top: var(--space-sm);">
-          Total ganado: <strong style="color: var(--color-primary-green);">+{{ totalRedeemedPts() }} pts</strong> en {{ redemptions().length }} {{ redemptions().length === 1 ? 'canje' : 'canjes' }}.
-        </p>
       } @else if (!loadingHistory()) {
         <p class="form-card__hint" style="margin-top: var(--space-md);">
           Aún no has canjeado ningún código.
@@ -258,13 +284,13 @@ export class SponsorRedeemComponent implements OnInit {
         id: string; codeId: string; sponsorId: string;
         redeemedAt: string; pointsAwarded: number;
       }>);
-      // Resolver code text + sponsor name. Cacheamos lookups por id para
-      // evitar pegarle al backend N veces si hay duplicados.
+      // Resolver code text + sponsor name + tipo de comodín otorgado.
+      // Cacheamos lookups por id para evitar pegarle al backend N veces.
       const sponsorCache = new Map<string, string>();
-      const codeCache = new Map<string, string>();
+      const codeCache = new Map<string, { text: string; comodinType: string | null }>();
       const rows: RedemptionRow[] = await Promise.all(
         raw.map(async (r): Promise<RedemptionRow> => {
-          const [sponsorName, codeText] = await Promise.all([
+          const [sponsorName, codeMeta] = await Promise.all([
             (async () => {
               if (sponsorCache.has(r.sponsorId)) return sponsorCache.get(r.sponsorId)!;
               try {
@@ -278,15 +304,22 @@ export class SponsorRedeemComponent implements OnInit {
               if (codeCache.has(r.codeId)) return codeCache.get(r.codeId)!;
               try {
                 const c = await this.api.getSponsorCode(r.codeId);
-                const text = c.data?.code ?? '—';
-                codeCache.set(r.codeId, text);
-                return text;
-              } catch { return '—'; }
+                const meta = {
+                  text: c.data?.code ?? '—',
+                  comodinType: (c.data?.comodinType as string | null | undefined) ?? null,
+                };
+                codeCache.set(r.codeId, meta);
+                return meta;
+              } catch { return { text: '—', comodinType: null }; }
             })(),
           ]);
+          const ctype = codeMeta.comodinType;
           return {
             id: r.id, redeemedAt: r.redeemedAt, pointsAwarded: r.pointsAwarded,
-            sponsorName, codeText,
+            sponsorName, codeText: codeMeta.text,
+            comodinType: ctype,
+            comodinName: ctype ? (COMODIN_NAMES[ctype] ?? ctype) : null,
+            comodinImpact: ctype ? (COMODIN_IMPACT[ctype] ?? null) : null,
           };
         }),
       );

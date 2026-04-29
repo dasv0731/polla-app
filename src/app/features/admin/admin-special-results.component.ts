@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/api/api.service';
 import { ToastService } from '../../core/notifications/toast.service';
@@ -26,6 +26,17 @@ type SpecialKey = (typeof TYPES)[number]['key'];
     <p style="color: var(--color-text-muted); margin-bottom: var(--space-xl); max-width: 720px;">
       Adjudica los picks especiales una vez que el torneo termine. Cada selección dispara el cálculo automático para todos los SpecialPicks de ese tipo.
     </p>
+
+    @if (!finalCompleted() && !loading()) {
+      <div class="empty-state" style="background: rgba(255,200,0,0.10); border-left: 3px solid var(--color-primary-green); padding: var(--space-md);">
+        <strong>Bloqueado hasta el fin de la final.</strong>
+        <p style="margin-top: 4px;">
+          La adjudicación de campeón / subcampeón / revelación se habilita
+          solo cuando el partido de la final está marcado como FINAL en
+          /admin/results.
+        </p>
+      </div>
+    }
 
     @if (loading()) {
       <p>Cargando equipos…</p>
@@ -55,7 +66,7 @@ type SpecialKey = (typeof TYPES)[number]['key'];
                 </select>
               </div>
               <button class="btn btn--primary" type="button"
-                      [disabled]="!selections()[t.key] || processing()[t.key]"
+                      [disabled]="!selections()[t.key] || processing()[t.key] || !finalCompleted()"
                       (click)="adjudicate(t.key)">
                 {{ processing()[t.key] ? 'Adjudicando…' : 'Adjudicar' }}
               </button>
@@ -82,14 +93,29 @@ export class AdminSpecialResultsComponent implements OnInit {
   processing = signal<Record<string, boolean>>({});
   lastResult = signal<Partial<Record<SpecialKey, { updated: number }>>>({});
 
+  // La final está completa = existe un Match con phaseOrder=6,
+  // bracketPosition=1 (el partido de la final, no el 3er puesto), status=FINAL.
+  finalCompleted = signal(false);
+
   async ngOnInit() {
     try {
-      const teamsRes = await this.api.listTeams(TOURNAMENT_ID);
+      const [teamsRes, matchesRes, phasesRes] = await Promise.all([
+        this.api.listTeams(TOURNAMENT_ID),
+        this.api.listMatches(TOURNAMENT_ID),
+        this.api.listPhases(TOURNAMENT_ID),
+      ]);
       this.teams.set(
         (teamsRes.data ?? [])
           .map((t) => ({ slug: t.slug, name: t.name }))
           .sort((a, b) => a.name.localeCompare(b.name)),
       );
+      // Detectar si la final ya se jugó (FINAL).
+      const finalPhase = (phasesRes.data ?? []).find((p) => p.order === 6);
+      if (finalPhase) {
+        const finalMatch = (matchesRes.data ?? []).find((m) =>
+          m.phaseId === finalPhase.id && m.bracketPosition === 1);
+        this.finalCompleted.set(finalMatch?.status === 'FINAL');
+      }
     } finally {
       this.loading.set(false);
     }

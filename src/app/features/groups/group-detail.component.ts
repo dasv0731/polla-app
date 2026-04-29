@@ -123,17 +123,22 @@ interface GroupHeader {
               <strong>{{ gapToLeader() }}</strong>
               <small>Al líder</small>
             </div>
-            <!-- Comodines solo aplican a Modo Completo (reglamento §1).
-                 En grupos SIMPLE no se muestra ni el icono ni el modal. -->
-            @if (g.mode === 'COMPLETE' && myActiveComodines().length > 0) {
-              <button class="group-hero__stat group-hero__stat--button"
-                      type="button" (click)="openComodinesModal()"
-                      title="Ver tus comodines activos">
-                <strong>🃏 {{ myActiveComodines().length }}</strong>
-                <small>Comodines</small>
-              </button>
-            }
           </div>
+          <!-- Comodines solo aplican a Modo Completo (reglamento §1).
+               En grupos SIMPLE no se muestra ni los chips ni el modal. -->
+          @if (g.mode === 'COMPLETE' && myActiveComodines().length > 0) {
+            <div class="group-hero__comodines">
+              @for (c of myActiveComodines(); track c.id) {
+                <button type="button" class="group-hero__comodin-chip"
+                        (click)="openComodinesModal()"
+                        [class.is-pending]="c.status === 'PENDING_TYPE_CHOICE'"
+                        [class.is-activated]="c.status === 'ACTIVATED'"
+                        [title]="c.type ? typeInfo(c.type).name : 'Sin tipo elegido'">
+                  🃏 {{ c.type ? typeShort(c.type) : 'Elige tipo' }}
+                </button>
+              }
+            </div>
+          }
         </div>
       </section>
 
@@ -285,6 +290,37 @@ interface GroupHeader {
     }
     .group-hero__stat--button:hover strong { color: var(--color-primary-green); }
 
+    .group-hero__comodines {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: var(--space-md);
+      padding-top: var(--space-md);
+      border-top: 1px solid rgba(255,255,255,0.15);
+      grid-column: 1 / -1;
+    }
+    .group-hero__comodin-chip {
+      background: rgba(255,255,255,0.18);
+      color: var(--color-primary-white);
+      border: 0;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: background 100ms;
+    }
+    .group-hero__comodin-chip:hover { background: rgba(255,255,255,0.30); }
+    .group-hero__comodin-chip.is-pending {
+      background: rgba(255,200,0,0.40);
+      color: var(--color-primary-black);
+    }
+    .group-hero__comodin-chip.is-activated {
+      background: var(--color-primary-green);
+      color: var(--color-primary-white);
+    }
+
     .comodin-overlay {
       position: fixed; inset: 0;
       background: rgba(0,0,0,0.55);
@@ -386,6 +422,20 @@ export class GroupDetailComponent implements OnInit {
   );
   showComodinesModal = signal(false);
   COMODIN_INFO = COMODIN_INFO;
+  typeInfo(t: ComodinType) { return COMODIN_INFO[t]; }
+  typeShort(t: ComodinType): string {
+    switch (t) {
+      case 'MULTIPLIER_X2':         return 'x2';
+      case 'PHASE_BOOST':           return 'Boost';
+      case 'GROUP_SAFE_PICK':       return 'Safe Grupos';
+      case 'BRACKET_SAFE_PICK':     return 'Safe Llaves';
+      case 'REASSIGN_CHAMP_RUNNER': return 'Reasign';
+      case 'LATE_EDIT':             return 'Edit. tardía';
+      case 'BRACKET_RESET':         return 'Reset Bracket';
+      case 'GROUP_RESET':           return 'Reset Grupo';
+      case 'ANTI_PENALTY':          return 'Anti-pen';
+    }
+  }
   openComodinesModal() { this.showComodinesModal.set(true); }
   closeComodinesModal() { this.showComodinesModal.set(false); }
   statusLabel(s: string): string {

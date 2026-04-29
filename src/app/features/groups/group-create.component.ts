@@ -27,6 +27,19 @@ const TOURNAMENT_ID = 'mundial-2026';
             <h2 class="form-card__title">Define tu grupo</h2>
             <p class="form-card__lead">Solo necesitas un nombre. El torneo se asigna automáticamente al Mundial 2026.</p>
 
+            <div style="background: rgba(0, 200, 100, 0.08); border-left: 3px solid var(--color-primary-green); padding: var(--space-sm) var(--space-md); margin-bottom: var(--space-md); border-radius: var(--radius-sm);">
+              <p style="margin: 0; font-size: var(--fs-sm); line-height: 1.5;">
+                <strong>¿Cómo funciona la polla?</strong>
+                Cada miembro del grupo predice marcadores, posiciones de grupo, llaves
+                eliminatorias y campeón. Suma puntos por aciertos. Comparten un ranking
+                interno. ¿Querés más detalle?
+                <a href="https://golgana.net/polla/como-jugar" target="_blank" rel="noopener"
+                   class="link-green" style="font-weight: var(--fw-semibold);">
+                  Cómo jugar →
+                </a>
+              </p>
+            </div>
+
             <div class="form-card__field">
               <label class="form-card__label" for="grp-name">Nombre del grupo</label>
               <input class="form-card__input" id="grp-name" name="name" type="text"

@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { GroupLeaderboardComponent, type LeaderboardRow } from '../groups/group-leaderboard.component';
@@ -41,6 +42,13 @@ interface UserGroup { id: string; name: string; members: number; }
     </header>
 
     <div class="container-app">
+      @if (scope() === 'global') {
+        <p style="background: rgba(0, 200, 100, 0.10); border-left: 3px solid var(--color-primary-green); padding: var(--space-sm) var(--space-md); margin: 0 0 var(--space-md); font-size: var(--fs-sm); border-radius: var(--radius-sm);">
+          ℹ Este ranking solo incluye usuarios en <strong>modo completo</strong>.
+          Si tu único grupo es modo simple, no aparecés acá. Tus puntos en
+          modo simple cuentan para tu ranking interno del grupo.
+        </p>
+      }
       @if (loading()) {
         <p>Cargando ranking…</p>
       } @else if (scope() === 'global') {
@@ -111,8 +119,12 @@ interface UserGroup { id: string; name: string; members: number; }
 export class RankingComponent implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  private route = inject(ActivatedRoute);
 
-  scope = signal<'global' | 'grupos'>('global');
+  // Default = 'grupos' (mis grupos). Si el queryParam ?scope=global el
+  // toggle empieza en global directo. El ranking global aplica solo a
+  // modo completo (banner explicativo aparece cuando scope=global).
+  scope = signal<'global' | 'grupos'>('grupos');
   global = signal<LeaderboardRow[]>([]);
   loading = signal(true);
   loadedAt = signal<number>(Date.now());
@@ -167,6 +179,11 @@ export class RankingComponent implements OnInit {
   async ngOnInit() {
     this.currentUserId = this.auth.user()?.sub ?? '';
     this.currentHandle.set(this.auth.user()?.handle ?? null);
+
+    // Honra ?scope=global|grupos del menú nav. Si no viene, default 'grupos'.
+    const qpScope = this.route.snapshot.queryParamMap.get('scope');
+    if (qpScope === 'global' || qpScope === 'grupos') this.scope.set(qpScope);
+
     try {
       const lb = await this.api.listLeaderboard(TOURNAMENT_ID, 500);
       const sorted = [...(lb.data ?? [])].sort(compareRankable);

@@ -67,6 +67,8 @@ type DropdownKey = 'groups' | 'picks' | 'rankings' | 'user' | null;
                 <a class="user-menu__item" role="menuitem" style="cursor: pointer;"
                    (click)="goToGroups()">Ver todos los grupos</a>
                 <a class="user-menu__item" role="menuitem" style="cursor: pointer;"
+                   (click)="goToGroupsJoin()">→ Unirme con código</a>
+                <a class="user-menu__item" role="menuitem" style="cursor: pointer;"
                    (click)="goToGroupsNew()">+ Crear grupo nuevo</a>
               </div>
             }
@@ -142,25 +144,29 @@ type DropdownKey = 'groups' | 'picks' | 'rankings' | 'user' | null;
             </button>
             @if (open() === 'rankings') {
               <div class="user-menu__panel" role="menu">
-                @if (myGroups().length > 0) {
-                  <span class="user-menu__group-head">Por grupo</span>
-                  @for (g of myGroups(); track g.id) {
-                    <a class="user-menu__item user-menu__item--sub" role="menuitem"
-                       [routerLink]="['/groups', g.id]" (click)="closeAll()">
-                      {{ g.name }}
-                    </a>
-                  }
-                  @if (eligibleGlobal()) { <hr class="user-menu__sep"> }
-                }
+                <a class="user-menu__item" role="menuitem" style="cursor: pointer;"
+                   (click)="goToRankingGrupos()">
+                  📋 Ranking en mis grupos
+                </a>
                 @if (eligibleGlobal()) {
-                  <a class="user-menu__item" role="menuitem"
-                     routerLink="/ranking" (click)="closeAll()">
+                  <a class="user-menu__item" role="menuitem" style="cursor: pointer;"
+                     (click)="goToRankingGlobal()">
                     🌍 Ranking global
                   </a>
                 } @else {
                   <p class="user-menu__item" style="color: var(--color-text-muted); pointer-events: none; font-size: var(--fs-xs);">
-                    El ranking global requiere al menos un grupo en modo completo
+                    🔒 El ranking global requiere modo completo
                   </p>
+                }
+                @if (myGroups().length > 0) {
+                  <hr class="user-menu__sep">
+                  <span class="user-menu__group-head">Por grupo</span>
+                  @for (g of myGroups(); track g.id) {
+                    <a class="user-menu__item user-menu__item--sub" role="menuitem" style="cursor: pointer;"
+                       (click)="goToGroup(g.id)">
+                      {{ g.name }}
+                    </a>
+                  }
                 }
               </div>
             }
@@ -180,10 +186,12 @@ type DropdownKey = 'groups' | 'picks' | 'rankings' | 'user' | null;
           </button>
           @if (open() === 'user') {
             <div class="user-menu__panel" role="menu">
-              <a class="user-menu__item" role="menuitem" (click)="goComodines()">
-                <span class="user-menu__icon" aria-hidden="true">🃏</span>
-                Mis comodines
-              </a>
+              @if (hasComplete()) {
+                <a class="user-menu__item" role="menuitem" (click)="goComodines()">
+                  <span class="user-menu__icon" aria-hidden="true">🃏</span>
+                  Mis comodines
+                </a>
+              }
               <a class="user-menu__item" role="menuitem" (click)="goNotifications()">
                 <span class="user-menu__icon" aria-hidden="true">🔔</span>
                 Notificaciones
@@ -237,6 +245,7 @@ type DropdownKey = 'groups' | 'picks' | 'rankings' | 'user' | null;
           Ver todos los grupos ({{ myGroups().length }}) →
         </a>
       }
+      <a routerLink="/groups" fragment="unirme" (click)="closeDrawer()" style="color: var(--color-primary-green);">→ Unirme con código</a>
       <a routerLink="/groups/new" (click)="closeDrawer()" style="color: var(--color-primary-green);">+ Crear grupo</a>
 
       @if (hasSimple() || hasComplete()) {
@@ -266,7 +275,9 @@ type DropdownKey = 'groups' | 'picks' | 'rankings' | 'user' | null;
       }
 
       <h4 class="drawer__head">Cuenta</h4>
-      <a routerLink="/mis-comodines" (click)="closeDrawer()">🃏 Mis comodines</a>
+      @if (hasComplete()) {
+        <a routerLink="/mis-comodines" (click)="closeDrawer()">🃏 Mis comodines</a>
+      }
       <a routerLink="/notificaciones" (click)="closeDrawer()">🔔 Notificaciones</a>
       <a routerLink="/profile" (click)="closeDrawer()">Editar perfil</a>
       <a (click)="logout()" style="cursor: pointer; color: var(--color-lost);">Cerrar sesión</a>
@@ -436,6 +447,20 @@ export class NavComponent implements OnInit, OnDestroy {
   goToGroupsNew() {
     this.closeAll();
     void this.router.navigate(['/groups/new']);
+  }
+  /** Lleva al user al form de unirse-con-código en /groups (anchor #unirme). */
+  goToGroupsJoin() {
+    this.closeAll();
+    void this.router.navigate(['/groups'], { fragment: 'unirme' });
+  }
+
+  goToRankingGrupos() {
+    this.closeAll();
+    void this.router.navigate(['/ranking'], { queryParams: { scope: 'grupos' } });
+  }
+  goToRankingGlobal() {
+    this.closeAll();
+    void this.router.navigate(['/ranking'], { queryParams: { scope: 'global' } });
   }
 
   async logout() {
