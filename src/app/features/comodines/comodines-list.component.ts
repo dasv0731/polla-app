@@ -14,7 +14,7 @@ type ComodinType =
   | 'ANTI_PENALTY';
 
 type ComodinSource = 'SPONSOR' | 'TRIVIA' | 'LOYALTY' | 'ENGAGEMENT';
-type ComodinStatus = 'UNASSIGNED' | 'ASSIGNED' | 'ACTIVATED' | 'EXPIRED';
+type ComodinStatus = 'PENDING_TYPE_CHOICE' | 'UNASSIGNED' | 'ASSIGNED' | 'ACTIVATED' | 'EXPIRED';
 
 interface ComodinRow {
   id: string;
@@ -114,6 +114,7 @@ const SOURCE_LABEL: Record<ComodinSource, string> = {
 };
 
 const STATUS_LABEL: Record<ComodinStatus, string> = {
+  PENDING_TYPE_CHOICE: 'Elige tipo',
   UNASSIGNED: 'Sin asignar',
   ASSIGNED: 'Asignado',
   ACTIVATED: 'Activado',
