@@ -1,5 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { TimeService } from '../../core/time/time.service';
@@ -74,221 +74,304 @@ interface PendingEdit {
     @if (loading()) {
       <p style="padding: var(--space-2xl); text-align: center;">Cargando…</p>
     } @else {
-      <section class="groups-grid">
+      <div class="container-app groups-list">
         @for (g of groups(); track g.letter) {
-          <button class="group-card" type="button"
-                  [disabled]="g.isTbd"
-                  (click)="openGroup(g.letter)"
-                  style="text-align: left; cursor: pointer;">
-            <header class="group-card__header">
-              <span class="group-card__letter">{{ g.letter }}</span>
-              <span class="group-card__meta">
-                @if (g.isTbd) { Por sortear }
-                @else { {{ g.played }} / {{ g.total }} jugados }
-              </span>
-            </header>
-            <div class="group-card__teams">
-              @for (row of g.standings; track row.team.slug; let i = $index) {
-                <div class="group-card__team">
-                  <span class="group-card__team-pos">{{ row.played > 0 ? (i + 1) : '—' }}</span>
-                  <app-team-flag [flagCode]="row.team.flagCode" [crestUrl]="row.team.crestUrl"
-                                 [name]="row.team.name" [size]="24" />
-                  <span class="group-card__team-name">{{ row.team.name }}</span>
-                  <span class="group-card__team-played">{{ row.played }}</span>
-                  <span class="group-card__team-pts">{{ row.points }}</span>
-                </div>
-              }
-              @for (i of fillTbd(g.standings.length); track i) {
-                <div class="group-card__team">
-                  <span class="group-card__team-pos">—</span>
-                  <span class="flag"></span>
-                  <span class="group-card__team-name">TBD</span>
-                  <span class="group-card__team-played">—</span>
-                  <span class="group-card__team-pts">—</span>
-                </div>
-              }
-            </div>
-            <footer class="group-card__footer">
-              @if (g.isTbd) {
-                <span>—</span>
-              } @else {
-                <span [style.color]="g.pendingCount > 0 ? 'var(--color-lost)' : null">
-                  {{ g.myPicksCount }} picks
-                  @if (g.pendingCount > 0) { · {{ g.pendingCount }} pendientes }
-                </span>
-              }
-              <span class="group-card__cta">Ver →</span>
-            </footer>
-          </button>
-        }
-      </section>
-    }
-
-    <!-- Modal -->
-    @if (selectedGroup(); as letter) {
-      <div class="modal-backdrop" style="opacity:1; pointer-events:auto;" (click)="closeGroup()"></div>
-      <div class="modal" role="dialog" aria-modal="true"
-           style="opacity:1; pointer-events:auto; transform: translate(-50%, -50%) scale(1);">
-        <header class="modal__header">
-          <div>
-            <p style="font-size: var(--fs-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: var(--fw-bold);">
-              Grupo {{ letter }} · {{ selectedGroupData()?.matchesInGroup?.length ?? 0 }} partidos
-            </p>
-            <h3 class="modal__title">Picks del Grupo {{ letter }}</h3>
-          </div>
-          <button class="modal__close" type="button" (click)="closeGroup()" aria-label="Cerrar">×</button>
-        </header>
-        <div class="modal__body">
-          @let g = selectedGroupData();
-          @if (g !== null) {
-            <div class="standings-wrap" style="margin-bottom: var(--space-lg);">
-              <table class="standings standings--group">
-                <thead>
-                  <tr>
-                    <th>#</th><th>Equipo</th><th>J</th><th>G</th><th>E</th><th>P</th><th>Pts</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (row of g.standings; track row.team.slug; let i = $index) {
-                    <tr>
-                      <td class="pos">{{ i + 1 }}</td>
-                      <td>
-                        <app-team-flag [flagCode]="row.team.flagCode" [crestUrl]="row.team.crestUrl"
-                                       [name]="row.team.name" [size]="24" />
-                        <span style="margin-left: 6px;">{{ row.team.name }}</span>
-                      </td>
-                      <td>{{ row.played }}</td>
-                      <td>{{ row.won }}</td>
-                      <td>{{ row.drawn }}</td>
-                      <td>{{ row.lost }}</td>
-                      <td><strong>{{ row.points }}</strong></td>
-                    </tr>
+          @if (!g.isTbd) {
+            <section class="group-block" [id]="'grupo-' + g.letter.toLowerCase()">
+              <header class="group-block__header">
+                <h2>Grupo {{ g.letter }}</h2>
+                <span class="group-block__meta">
+                  {{ g.played }} / {{ g.total }} jugados
+                  @if (g.pendingCount > 0) {
+                    · <span style="color: var(--color-lost);">{{ g.pendingCount }} pick{{ g.pendingCount === 1 ? '' : 's' }} pendiente{{ g.pendingCount === 1 ? '' : 's' }}</span>
+                  } @else if (g.myPicksCount > 0) {
+                    · {{ g.myPicksCount }} pick{{ g.myPicksCount === 1 ? '' : 's' }} hechos
                   }
-                </tbody>
-              </table>
-            </div>
+                </span>
+              </header>
 
-            <h4 style="font-family: var(--font-display); font-size: var(--fs-md); text-transform: uppercase; margin-bottom: var(--space-md);">
-              {{ g.matchesInGroup.length }} partidos del grupo
-            </h4>
+              <div class="group-block__body">
+                <!-- LEFT: matches con score inputs -->
+                <div class="group-block__matches">
+                  <h3 class="group-block__col-head">Partidos</h3>
+                  @for (m of g.matchesInGroup; track m.id) {
+                    @let isFinal = m.status === 'FINAL' && m.homeScore != null && m.awayScore != null;
+                    @let isPast = time.isPast(m.kickoffAt);
+                    @let pick = picksByMatch().get(m.id);
 
-            <div style="display: flex; flex-direction: column; gap: var(--space-sm);">
-              @for (m of g.matchesInGroup; track m.id) {
-                @let isFinal = m.status === 'FINAL' && m.homeScore != null && m.awayScore != null;
-                @let isPast = time.isPast(m.kickoffAt);
-                @let pick = picksByMatch().get(m.id);
-
-                <article class="pick-card"
-                         [class.pick-card--saved]="pick !== undefined && !isPast"
-                         [class.pick-card--open]="pick === undefined && !isPast"
-                         [class.pick-card--locked]="isPast"
-                         style="padding: var(--space-md);">
-                  <div class="pick-card__header">
-                    <span class="pick-card__phase">{{ time.formatKickoff(m.kickoffAt) }}</span>
-                    @if (isFinal && pick?.pointsEarned != null) {
-                      <span style="color: var(--color-primary-green); font-weight: var(--fw-bold);">
-                        FT · +{{ pick?.pointsEarned ?? 0 }} pts
-                      </span>
-                    } @else if (isFinal) {
-                      <span>FT</span>
-                    } @else if (isPast) {
-                      <span style="color: var(--color-lost);">Cerrado</span>
-                    } @else {
-                      <span>{{ time.timeUntil(m.kickoffAt) }}</span>
-                    }
-                  </div>
-
-                  <div class="pick-card__teams" style="grid-template-columns: 1fr auto 1fr;">
-                    <div class="pick-card__team">
-                      <app-team-flag [flagCode]="teamFlagCode(m.homeTeamId)" [crestUrl]="teamCrest(m.homeTeamId)"
-                                     [name]="teamName(m.homeTeamId)" [size]="32" />
-                      <span class="pick-card__team-name">{{ teamName(m.homeTeamId) }}</span>
-                    </div>
-
-                    @if (isFinal) {
-                      <div class="pick-card__center" style="font-family: var(--font-display); font-size: var(--fs-2xl);">
-                        {{ m.homeScore }} — {{ m.awayScore }}
+                    <article class="gm-row"
+                             [class.gm-row--final]="isFinal"
+                             [class.gm-row--locked]="isPast && !isFinal">
+                      <div class="gm-row__top">
+                        <span class="gm-row__date">{{ time.formatKickoff(m.kickoffAt) }}</span>
+                        @if (isFinal && pick?.pointsEarned != null) {
+                          <strong style="color: var(--color-primary-green);">+{{ pick?.pointsEarned ?? 0 }} pts</strong>
+                        } @else if (isFinal) {
+                          <strong>FT</strong>
+                        } @else if (isPast) {
+                          <strong style="color: var(--color-lost);">Cerrado</strong>
+                        } @else {
+                          <span style="font-size: var(--fs-xs); color: var(--color-text-muted);">{{ time.timeUntil(m.kickoffAt) }}</span>
+                        }
                       </div>
-                    } @else if (isPast) {
-                      <div class="pick-card__center">EN VIVO</div>
-                    } @else {
-                      <div class="score-input" style="gap: var(--space-sm);">
-                        <div class="score-input__field">
-                          <div class="score-input__stepper">
-                            <button class="score-input__btn" type="button"
+
+                      <div class="gm-row__teams">
+                        <app-team-flag [flagCode]="teamFlagCode(m.homeTeamId)" [crestUrl]="teamCrest(m.homeTeamId)"
+                                       [name]="teamName(m.homeTeamId)" [size]="22" />
+                        <span class="gm-row__team-name">{{ teamName(m.homeTeamId) }}</span>
+
+                        @if (isFinal) {
+                          <span class="gm-row__final">{{ m.homeScore }}—{{ m.awayScore }}</span>
+                        } @else if (isPast) {
+                          <span class="gm-row__vs">vs</span>
+                        } @else {
+                          <div class="gm-row__inputs">
+                            <button type="button" class="gm-step"
                                     [disabled]="(getEditHome(m.id) ?? 0) <= 0"
                                     (click)="editScore(m.id, 'home', -1)">−</button>
-                            <input class="score-input__value" type="text"
-                                   [value]="displayScore(m.id, 'home', pick)" readonly>
-                            <button class="score-input__btn" type="button"
-                                    [disabled]="(getEditHome(m.id) ?? 0) >= 20"
-                                    (click)="editScore(m.id, 'home', 1)">+</button>
-                          </div>
-                        </div>
-                        <span class="score-input__sep">vs</span>
-                        <div class="score-input__field">
-                          <div class="score-input__stepper">
-                            <button class="score-input__btn" type="button"
+                            <span class="gm-score">{{ displayScore(m.id, 'home', pick) }}</span>
+                            <button type="button" class="gm-step"
+                                    (click)="editScore(m.id, 'home', 1)"
+                                    [disabled]="(getEditHome(m.id) ?? 0) >= 20">+</button>
+                            <span class="gm-sep">—</span>
+                            <button type="button" class="gm-step"
                                     [disabled]="(getEditAway(m.id) ?? 0) <= 0"
                                     (click)="editScore(m.id, 'away', -1)">−</button>
-                            <input class="score-input__value" type="text"
-                                   [value]="displayScore(m.id, 'away', pick)" readonly>
-                            <button class="score-input__btn" type="button"
-                                    [disabled]="(getEditAway(m.id) ?? 0) >= 20"
-                                    (click)="editScore(m.id, 'away', 1)">+</button>
+                            <span class="gm-score">{{ displayScore(m.id, 'away', pick) }}</span>
+                            <button type="button" class="gm-step"
+                                    (click)="editScore(m.id, 'away', 1)"
+                                    [disabled]="(getEditAway(m.id) ?? 0) >= 20">+</button>
                           </div>
-                        </div>
+                        }
+
+                        <span class="gm-row__team-name gm-row__team-name--right">{{ teamName(m.awayTeamId) }}</span>
+                        <app-team-flag [flagCode]="teamFlagCode(m.awayTeamId)" [crestUrl]="teamCrest(m.awayTeamId)"
+                                       [name]="teamName(m.awayTeamId)" [size]="22" />
                       </div>
-                    }
 
-                    <div class="pick-card__team">
-                      <app-team-flag [flagCode]="teamFlagCode(m.awayTeamId)" [crestUrl]="teamCrest(m.awayTeamId)"
-                                     [name]="teamName(m.awayTeamId)" [size]="32" />
-                      <span class="pick-card__team-name">{{ teamName(m.awayTeamId) }}</span>
-                    </div>
-                  </div>
-
-                  @if (isFinal && pick) {
-                    <div class="pick-card__footer">
-                      <span style="font-weight: var(--fw-bold); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.08em;"
-                            [style.color]="(pick?.pointsEarned ?? 0) > 0 ? 'var(--color-primary-green)' : 'var(--color-text-muted)'">
-                        Tu pick: {{ pick?.homeScorePred }}-{{ pick?.awayScorePred }}
-                        @if (pick?.exactScore) { · Marcador exacto }
-                        @else if (pick?.correctResult) { · Resultado correcto }
-                        @else { · Falló }
-                      </span>
-                    </div>
+                      @if (isFinal && pick) {
+                        <p class="gm-row__pick"
+                           [style.color]="(pick?.pointsEarned ?? 0) > 0 ? 'var(--color-primary-green)' : 'var(--color-text-muted)'">
+                          Tu pick: {{ pick?.homeScorePred }}-{{ pick?.awayScorePred }}
+                          @if (pick?.exactScore) { · Exacto }
+                          @else if (pick?.correctResult) { · Resultado OK }
+                          @else { · Falló }
+                        </p>
+                      }
+                    </article>
                   }
-                </article>
-              }
-              @if (g.matchesInGroup.length === 0) {
-                <p style="text-align: center; color: var(--color-text-muted); padding: var(--space-lg);">
-                  Aún no hay partidos cargados para este grupo.
-                </p>
-              }
-            </div>
+                  @if (g.matchesInGroup.length === 0) {
+                    <p style="color: var(--color-text-muted); padding: var(--space-md); font-size: var(--fs-sm);">
+                      Calendario aún no publicado.
+                    </p>
+                  }
+                </div>
+
+                <!-- RIGHT: standings -->
+                <div class="group-block__standings">
+                  <h3 class="group-block__col-head">Tabla</h3>
+                  <table class="standings standings--group">
+                    <thead>
+                      <tr>
+                        <th>#</th><th></th><th>Selección</th>
+                        <th title="Partidos jugados">PJ</th>
+                        <th title="Diferencia de gol">DG</th>
+                        <th>Pts</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (row of g.standings; track row.team.slug; let i = $index) {
+                        <tr>
+                          <td class="pos">{{ row.played > 0 ? (i + 1) : '—' }}</td>
+                          <td>
+                            <app-team-flag [flagCode]="row.team.flagCode" [crestUrl]="row.team.crestUrl"
+                                           [name]="row.team.name" [size]="20" />
+                          </td>
+                          <td>{{ row.team.name }}</td>
+                          <td>{{ row.played }}</td>
+                          <td>{{ row.goalDiff > 0 ? '+' + row.goalDiff : row.goalDiff }}</td>
+                          <td><strong>{{ row.points }}</strong></td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          } @else {
+            <section class="group-block group-block--tbd">
+              <header class="group-block__header">
+                <h2>Grupo {{ g.letter }}</h2>
+                <span class="group-block__meta">Por sortear</span>
+              </header>
+            </section>
           }
-        </div>
-        <footer class="modal__footer">
-          <button class="btn btn--ghost" type="button" (click)="closeGroup()">Cerrar</button>
-          <button class="btn btn--primary" type="button" (click)="saveAllPicks()" [disabled]="saving() || dirtyCount() === 0">
-            {{ saving() ? 'Guardando…' : (dirtyCount() === 0 ? 'Sin cambios' : 'Guardar ' + dirtyCount() + ' pick' + (dirtyCount() === 1 ? '' : 's')) }}
-          </button>
-        </footer>
+        }
       </div>
+
+      <!-- Sticky save bar -->
+      @if (dirtyCount() > 0) {
+        <div class="save-bar">
+          <button class="btn btn--primary" type="button"
+                  [disabled]="saving()" (click)="saveAllPicks()">
+            {{ saving() ? 'Guardando…' : 'Guardar ' + dirtyCount() + ' pick' + (dirtyCount() === 1 ? '' : 's') }}
+          </button>
+        </div>
+      }
     }
   `,
+  styles: [`
+    .groups-list { display: grid; gap: var(--space-2xl); padding-bottom: 100px; }
+    .group-block {
+      background: var(--color-primary-white);
+      border: var(--border-grey);
+      border-radius: var(--radius-md);
+      padding: var(--space-lg);
+    }
+    .group-block--tbd { opacity: 0.6; }
+    .group-block__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+      padding-bottom: var(--space-md);
+      margin-bottom: var(--space-md);
+      border-bottom: 1px solid var(--color-primary-grey);
+    }
+    .group-block__header h2 {
+      font-family: var(--font-display);
+      font-size: var(--fs-3xl);
+      text-transform: uppercase;
+      line-height: 1;
+    }
+    .group-block__meta {
+      font-size: var(--fs-xs);
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: var(--fw-bold);
+    }
+
+    .group-block__body {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-lg);
+    }
+    @media (min-width: 992px) {
+      .group-block__body { grid-template-columns: 1fr 1fr; }
+    }
+
+    .group-block__col-head {
+      font-family: var(--font-display);
+      font-size: var(--fs-md);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: var(--space-sm);
+      color: var(--color-text-muted);
+    }
+
+    .group-block__matches { display: grid; gap: var(--space-xs); align-content: start; }
+
+    .gm-row {
+      display: grid;
+      gap: 6px;
+      padding: var(--space-sm) var(--space-md);
+      border-radius: var(--radius-sm);
+      background: var(--color-primary-grey, #f4f4f4);
+    }
+    .gm-row--final { background: rgba(0,200,100,0.08); }
+    .gm-row--locked { opacity: 0.7; }
+    .gm-row__top {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: var(--space-sm);
+      font-size: var(--fs-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--color-text-muted);
+    }
+    .gm-row__teams {
+      display: grid;
+      grid-template-columns: 22px 1fr auto 1fr 22px;
+      gap: 8px;
+      align-items: center;
+      font-size: var(--fs-sm);
+    }
+    .gm-row__team-name { font-weight: var(--fw-semibold); }
+    .gm-row__team-name--right { text-align: right; }
+    .gm-row__final {
+      font-family: var(--font-display);
+      font-size: var(--fs-lg);
+      text-align: center;
+      color: var(--color-primary-black);
+    }
+    .gm-row__vs {
+      font-family: var(--font-display);
+      font-size: var(--fs-md);
+      text-align: center;
+      color: var(--color-text-muted);
+    }
+    .gm-row__inputs {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      justify-content: center;
+    }
+    .gm-step {
+      width: 22px; height: 22px;
+      border: 1px solid rgba(0,0,0,0.15);
+      background: var(--color-primary-white);
+      color: var(--color-primary-black);
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: var(--fw-bold);
+      font-size: var(--fs-sm);
+      line-height: 1;
+    }
+    .gm-step:disabled { opacity: 0.4; cursor: not-allowed; }
+    .gm-score {
+      min-width: 18px; text-align: center;
+      font-family: var(--font-display);
+      font-size: var(--fs-md);
+    }
+    .gm-sep { color: var(--color-text-muted); padding: 0 4px; }
+    .gm-row__pick {
+      font-size: var(--fs-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: var(--fw-bold);
+      margin-top: 4px;
+    }
+
+    .group-block__standings table { width: 100%; }
+    .group-block__standings .pos {
+      font-family: var(--font-display);
+      font-size: var(--fs-md);
+    }
+
+    .save-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      padding: var(--space-md);
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(8px);
+      border-top: 1px solid var(--color-primary-grey);
+      display: flex;
+      justify-content: center;
+      z-index: 50;
+      box-shadow: 0 -4px 12px rgba(0,0,0,0.06);
+    }
+    .save-bar .btn { min-width: 240px; }
+  `],
 })
 export class PicksGrupoComponent implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
   time = inject(TimeService);
   private toast = inject(ToastService);
-  private router = inject(Router);
 
   loading = signal(true);
   saving = signal(false);
-  selectedGroup = signal<string | null>(null);
 
   teams = signal<Map<string, TeamInfo>>(new Map());
   matches = signal<MatchItem[]>([]);
@@ -332,12 +415,6 @@ export class PicksGrupoComponent implements OnInit {
     });
   });
 
-  selectedGroupData = computed<GroupCardData | null>(() => {
-    const l = this.selectedGroup();
-    if (!l) return null;
-    return this.groups().find((g) => g.letter === l) ?? null;
-  });
-
   dirtyCount = computed(() => this.pendingEdits().size);
 
   async ngOnInit() {
@@ -379,18 +456,6 @@ export class PicksGrupoComponent implements OnInit {
     } finally {
       this.loading.set(false);
     }
-  }
-
-  openGroup(letter: string) {
-    this.selectedGroup.set(letter);
-    this.pendingEdits.set(new Map());
-  }
-  closeGroup() {
-    if (this.dirtyCount() > 0 && !confirm('Tienes picks sin guardar. ¿Cerrar de todas formas?')) {
-      return;
-    }
-    this.selectedGroup.set(null);
-    this.pendingEdits.set(new Map());
   }
 
   editScore(matchId: string, side: 'home' | 'away', delta: number) {
@@ -453,7 +518,6 @@ export class PicksGrupoComponent implements OnInit {
     }
     this.pendingEdits.set(new Map());
     if (ok > 0) this.toast.success(`${ok} pick${ok === 1 ? '' : 's'} guardado${ok === 1 ? '' : 's'}`);
-    if (fail === 0) this.selectedGroup.set(null);
     this.saving.set(false);
   }
 
@@ -462,11 +526,6 @@ export class PicksGrupoComponent implements OnInit {
   teamFlagCode(slug: string): string { return this.teams().get(slug)?.flagCode ?? ''; }
   teamCrest(slug: string): string | null { return this.teams().get(slug)?.crestUrl ?? null; }
   flagClass(code: string): string { return code ? `flag--${code.toLowerCase()}` : 'flag'; }
-
-  fillTbd(currentLen: number): number[] {
-    const need = Math.max(0, 4 - currentLen);
-    return Array.from({ length: need }, (_, i) => i);
-  }
 
   private computeStandings(teams: TeamInfo[], matches: MatchItem[]): StandingRow[] {
     const stats = new Map<string, StandingRow>();
