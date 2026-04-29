@@ -123,7 +123,9 @@ interface GroupHeader {
               <strong>{{ gapToLeader() }}</strong>
               <small>Al líder</small>
             </div>
-            @if (myActiveComodines().length > 0) {
+            <!-- Comodines solo aplican a Modo Completo (reglamento §1).
+                 En grupos SIMPLE no se muestra ni el icono ni el modal. -->
+            @if (g.mode === 'COMPLETE' && myActiveComodines().length > 0) {
               <button class="group-hero__stat group-hero__stat--button"
                       type="button" (click)="openComodinesModal()"
                       title="Ver tus comodines activos">
