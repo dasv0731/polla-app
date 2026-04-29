@@ -148,9 +148,10 @@ interface CodeRow {
         <h2 class="form-card__title">Códigos de canje</h2>
         <p class="form-card__lead">
           Cada código entrega un <strong>comodín de tipo predefinido</strong> al usuario que lo
-          canjee (sistema reglamento §comodines). Si dejas el dropdown vacío, el código sumará
-          <code>pointsValue</code> puntos directos al ranking (modo legacy, en migración).
-          Una vez canjeado, el mismo user no puede volver a usarlo.
+          canjee (sistema reglamento §comodines). El admin elige cuál de los 9 tipos otorga
+          el código antes de publicarlo. Una vez canjeado, el mismo user no puede volver
+          a usarlo. <em>Nota:</em> el campo "Pts (legacy)" sigue visible solo para soportar
+          códigos creados antes del sistema de comodines — los nuevos siempre usan tipo.
         </p>
 
         @for (c of activeCodes(); track c; let i = $index) {
@@ -178,9 +179,8 @@ interface CodeRow {
               <div class="form-card__field" style="margin: 0;">
                 <label class="form-card__label">Tipo de comodín que otorga</label>
                 <select class="form-card__input" [(ngModel)]="c.comodinType"
-                        [name]="'ctype-' + i"
+                        [name]="'ctype-' + i" required
                         (change)="c.dirty = true">
-                  <option value="">— ninguno (legacy: solo puntos) —</option>
                   @for (opt of COMODIN_OPTIONS; track opt.value) {
                     <option [value]="opt.value">{{ opt.label }}</option>
                   }

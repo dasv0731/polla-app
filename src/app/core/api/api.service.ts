@@ -136,6 +136,16 @@ export class ApiService {
       limit,
     });
   }
+  /**
+   * AppSync live subscription. Returns an Observable that emits snapshots
+   * { items, isSynced } cada vez que algo cambia. Usado por el bell badge
+   * en nav para mostrar count de unread sin polling.
+   */
+  observeMyNotifications(userId: string) {
+    return apiClient.models.Notification.observeQuery({
+      filter: { userId: { eq: userId } },
+    });
+  }
   markNotificationRead(id: string) {
     return apiClient.models.Notification.update({
       id,

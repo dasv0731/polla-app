@@ -352,31 +352,31 @@ export class NavComponent implements OnInit, OnDestroy {
   eligibleGlobal = computed(() => this.userModes.eligibleForGlobalRanking());
   myGroups = computed<UserGroup[]>(() => this.userModes.groups());
 
-  // Badge de notificaciones unread. Poll cada 60s mientras el user esté
-  // logueado. Cheap query (filter por userId) — no incurre en costos
-  // grandes. Cuando llegue WebSockets via AppSync subscriptions, swap acá.
+  // Badge de notificaciones unread. AppSync subscription via observeQuery
+  // mantiene el contador en tiempo real (sin polling). El Observable
+  // se cancela en ngOnDestroy para evitar leaks.
   unreadCount = signal(0);
-  private pollTimer: ReturnType<typeof setInterval> | undefined;
+  private notifSub: { unsubscribe: () => void } | undefined;
 
   async ngOnInit() {
-    await this.refreshUnreadCount();
-    this.pollTimer = setInterval(() => void this.refreshUnreadCount(), 60_000);
-  }
-  ngOnDestroy() {
-    if (this.pollTimer) clearInterval(this.pollTimer);
+    const userId = this.auth.user()?.sub;
+    if (!userId) return;
+    // Initial count + live updates
+    this.notifSub = this.api.observeMyNotifications(userId).subscribe({
+      next: (snap) => {
+        const items = snap.items as Array<{ readAt: string | null }>;
+        const unread = items.filter((n) => !n.readAt).length;
+        this.unreadCount.set(unread);
+      },
+      error: (err: unknown) => {
+        // eslint-disable-next-line no-console
+        console.warn('[nav] notification subscription error', err);
+      },
+    });
   }
 
-  private async refreshUnreadCount() {
-    const userId = this.auth.user()?.sub;
-    if (!userId) { this.unreadCount.set(0); return; }
-    try {
-      const res = await this.api.listMyNotifications(userId, 200);
-      const unread = ((res.data ?? []) as Array<{ readAt: string | null }>)
-        .filter((n) => !n.readAt).length;
-      this.unreadCount.set(unread);
-    } catch {
-      // ignore — keep last value
-    }
+  ngOnDestroy() {
+    if (this.notifSub) this.notifSub.unsubscribe();
   }
 
   toggle(key: DropdownKey) {
