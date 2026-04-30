@@ -54,7 +54,7 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
 
             <div class="mh__teams">
               <div class="mh__side" [class.mh__side--winner]="(m.homeScore ?? 0) > (m.awayScore ?? 0)">
-                <app-team-flag [flagCode]="teamFlag(m.homeTeamId)" [crestUrl]="teamCrest(m.homeTeamId)" [name]="teamName(m.homeTeamId)" [size]="160" />
+                <app-team-flag [flagCode]="teamFlag(m.homeTeamId)" [crestUrl]="teamCrest(m.homeTeamId)" [name]="teamName(m.homeTeamId)" [size]="80" />
                 <strong>{{ teamName(m.homeTeamId) }}</strong>
                 <small>{{ resultLabel('home') }}</small>
               </div>
@@ -62,7 +62,7 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
                 <div class="mh__score">{{ m.homeScore }} — {{ m.awayScore }}</div>
               </div>
               <div class="mh__side" [class.mh__side--winner]="(m.awayScore ?? 0) > (m.homeScore ?? 0)">
-                <app-team-flag [flagCode]="teamFlag(m.awayTeamId)" [crestUrl]="teamCrest(m.awayTeamId)" [name]="teamName(m.awayTeamId)" [size]="160" />
+                <app-team-flag [flagCode]="teamFlag(m.awayTeamId)" [crestUrl]="teamCrest(m.awayTeamId)" [name]="teamName(m.awayTeamId)" [size]="80" />
                 <strong>{{ teamName(m.awayTeamId) }}</strong>
                 <small>{{ resultLabel('away') }}</small>
               </div>
@@ -71,7 +71,7 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
             <p class="mh__competition">Mundial 2026 · {{ phaseName() ?? 'Por definir' }}</p>
             <div class="mh__teams">
               <div class="mh__side">
-                <app-team-flag [flagCode]="teamFlag(m.homeTeamId)" [crestUrl]="teamCrest(m.homeTeamId)" [name]="teamName(m.homeTeamId)" [size]="160" />
+                <app-team-flag [flagCode]="teamFlag(m.homeTeamId)" [crestUrl]="teamCrest(m.homeTeamId)" [name]="teamName(m.homeTeamId)" [size]="80" />
                 <strong>{{ teamName(m.homeTeamId) }}</strong>
               </div>
               <div class="mh__vs">
@@ -82,7 +82,7 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
                 </div>
               </div>
               <div class="mh__side">
-                <app-team-flag [flagCode]="teamFlag(m.awayTeamId)" [crestUrl]="teamCrest(m.awayTeamId)" [name]="teamName(m.awayTeamId)" [size]="160" />
+                <app-team-flag [flagCode]="teamFlag(m.awayTeamId)" [crestUrl]="teamCrest(m.awayTeamId)" [name]="teamName(m.awayTeamId)" [size]="80" />
                 <strong>{{ teamName(m.awayTeamId) }}</strong>
               </div>
             </div>
@@ -215,12 +215,12 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
 
               <div class="pick-form__teams">
                 <div class="pick-form__team">
-                  <app-team-flag [flagCode]="teamFlag(m.homeTeamId)" [crestUrl]="teamCrest(m.homeTeamId)" [name]="teamName(m.homeTeamId)" [size]="160" />
+                  <app-team-flag [flagCode]="teamFlag(m.homeTeamId)" [crestUrl]="teamCrest(m.homeTeamId)" [name]="teamName(m.homeTeamId)" [size]="80" />
                   <strong>{{ teamName(m.homeTeamId) }}</strong>
                 </div>
                 <span class="pick-form__divider">VS</span>
                 <div class="pick-form__team">
-                  <app-team-flag [flagCode]="teamFlag(m.awayTeamId)" [crestUrl]="teamCrest(m.awayTeamId)" [name]="teamName(m.awayTeamId)" [size]="160" />
+                  <app-team-flag [flagCode]="teamFlag(m.awayTeamId)" [crestUrl]="teamCrest(m.awayTeamId)" [name]="teamName(m.awayTeamId)" [size]="80" />
                   <strong>{{ teamName(m.awayTeamId) }}</strong>
                 </div>
               </div>

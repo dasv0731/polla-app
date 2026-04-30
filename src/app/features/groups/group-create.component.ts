@@ -13,8 +13,10 @@ const TOURNAMENT_ID = 'mundial-2026';
   imports: [FormsModule, RouterLink],
   template: `
     <header class="page-header">
-      <small><a routerLink="/groups" style="color: var(--color-primary-green);">← Mis grupos</a></small>
-      <h1>Crear grupo</h1>
+      <div class="page-header__title">
+        <small><a routerLink="/groups" style="color: var(--color-primary-green);">← Mis grupos</a></small>
+        <h1>Crear grupo</h1>
+      </div>
     </header>
 
     <main class="container-app">

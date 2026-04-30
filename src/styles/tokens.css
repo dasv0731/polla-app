@@ -7,7 +7,7 @@
 :root {
   /* -------- Colores de marca -------- */
   --color-primary-green: #02CC74;
-  --color-primary-black: #000000;
+  --color-primary-black: #1a1a1a;   /* softened from #000 — wireframe ink */
   --color-primary-white: #FFFFFF;
   --color-primary-grey:  #E0E0E0;
 
@@ -25,7 +25,7 @@
 
   /* -------- Tipografía -------- */
   --font-display:   "Bebas Neue", system-ui, sans-serif;   /* hero, H1/H2 grandes */
-  --font-primary:   "Montserrat", system-ui, sans-serif;   /* body, nav, H3, CTA */
+  --font-primary:   "Inter", "Montserrat", system-ui, sans-serif;   /* body, nav, H3, CTA — Inter prioritario, Montserrat fallback */
   --font-secondary: Arial, sans-serif;
   --font-icons:     "Material Symbols Outlined";
 
@@ -106,4 +106,31 @@
   --container-medium: 960px;
   --container-wide:   1280px;
   --container-full:   1440px;
+
+  /* ============================================================
+     Wireframe extension — handoff design system
+     Disponibles para componentes prefijados .wf-*. Conviven con
+     los tokens de marca (no los reemplazan).
+     ============================================================ */
+  --wf-bg:        #f6f7f5;
+  --wf-paper:     #ffffff;
+  --wf-ink:       #1a1a1a;
+  --wf-ink-2:     #4a4a4a;
+  --wf-ink-3:     #8a8a8a;
+  --wf-line:      #d8d8d6;
+  --wf-line-2:    #ececea;
+  --wf-fill:      #f0f1ee;
+  --wf-fill-2:    #e6e7e4;
+  --wf-green:     #02CC74;                 /* alineado con --color-primary-green */
+  --wf-green-ink: #008a45;
+  --wf-green-soft: rgba(2, 204, 116, 0.10);
+  --wf-warn:      #d4a500;
+  --wf-warn-soft: rgba(255, 200, 0, 0.18);
+  --wf-danger:    #E74C3C;                 /* alineado con --color-lost */
+
+  /* Fuentes wireframe (cargadas en index.html) */
+  --wf-font:    'Caveat', 'Comic Neue', system-ui, sans-serif;
+  --wf-ui:      'Inter', system-ui, -apple-system, sans-serif;
+  --wf-display: 'Bebas Neue', 'Arial Narrow', sans-serif;
+  --wf-mono:    ui-monospace, 'SF Mono', Menlo, monospace;
 }

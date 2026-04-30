@@ -18,9 +18,9 @@ interface TeamRow { slug: string; name: string; flagCode: string; groupLetter: s
   imports: [FormsModule, RouterLink, TeamFlagComponent],
   template: `
     <header class="page-header" style="padding: 0 0 var(--space-md); display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: var(--space-md);">
-      <div>
+      <div class="page-header__title">
         <small>{{ teams().length }} equipos cargados · 48 esperados · {{ assignedCount() }} con grupo asignado</small>
-        <h1 style="font-family: var(--font-display); font-size: 56px; line-height: 1; text-transform: uppercase;">Equipos</h1>
+        <h1>Equipos</h1>
       </div>
     </header>
 

@@ -127,30 +127,31 @@ const COMODIN_IMPACT: Record<string, string> = {
   `,
   styles: [`
     .sr {
-      background: var(--color-primary-white);
-      border: var(--border-grey);
-      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, #fff8d6, #fff3a0);
+      border: 1px solid rgba(212, 165, 0, 0.4);
+      border-radius: 12px;
       padding: var(--space-lg);
     }
     .sr__head { margin-bottom: var(--space-md); }
     .sr__kicker {
-      font-size: var(--fs-xs);
+      font-size: 10px;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--color-text-muted);
-      font-weight: var(--fw-semibold);
+      letter-spacing: 0.08em;
+      color: #7a5d00;
+      font-weight: 700;
     }
     .sr h2 {
       font-family: 'Bebas Neue', var(--font-display, sans-serif);
-      font-size: var(--fs-2xl);
-      text-transform: uppercase;
-      line-height: 1;
+      font-size: 24px;
+      letter-spacing: 0.04em;
+      line-height: 1.05;
       margin-top: 4px;
+      color: #3a2c00;
     }
     .sr__lead {
-      color: var(--color-text-muted);
+      color: #7a5d00;
       margin-top: var(--space-xs);
-      font-size: var(--fs-sm);
+      font-size: 13px;
       line-height: 1.5;
     }
     .sr__form {
@@ -160,14 +161,15 @@ const COMODIN_IMPACT: Record<string, string> = {
       margin-bottom: var(--space-md);
     }
     .sr__input {
-      padding: 12px 14px;
-      border: 2px solid rgba(0,0,0,0.1);
-      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      border: 1.5px solid var(--wf-line);
+      border-radius: 8px;
       font: inherit;
-      font-size: var(--fs-md);
+      font-size: 13px;
       letter-spacing: 0.04em;
       text-transform: uppercase;
-      font-weight: var(--fw-semibold);
+      font-weight: 600;
+      background: var(--wf-paper);
     }
     .sr__input:focus {
       outline: none;

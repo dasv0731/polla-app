@@ -60,39 +60,39 @@ interface DayBlock {
   selector: 'app-picks-list',
   imports: [PickCardComponent, RouterLink, SponsorRedeemComponent],
   template: `
-    <header class="page-header">
-      <div class="page-header__top">
-        <div class="page-header__title">
-          <small>Mundial 2026 · Tu polla</small>
-          <h1>Mis picks</h1>
+    <header class="picks-list__header">
+      <div class="picks-list__header-top">
+        <div>
+          <span class="wf-kicker">MUNDIAL 2026 · TU POLLA</span>
+          <h1 class="picks-list__h1">Mis picks</h1>
         </div>
-        <div class="page-header__counts">
-          <div><strong>{{ totals().points }}</strong><small>Pts totales</small></div>
+        <div class="picks-list__stats">
+          <div><strong>{{ totals().points }}</strong><small>Pts</small></div>
           <div><strong>{{ totals().exactCount }}</strong><small>Exactos</small></div>
           <div><strong>{{ totals().resultCount }}</strong><small>Resultados</small></div>
-          <div><strong>{{ totals().globalRank ? '#' + totals().globalRank : '—' }}</strong><small>Ranking global</small></div>
+          <div><strong>{{ totals().globalRank ? '#' + totals().globalRank : '—' }}</strong><small>Global</small></div>
         </div>
       </div>
 
-      <div class="page-header__controls">
-        <div class="view-mode-toggle" role="tablist" aria-label="Modo de vista">
-          <button class="view-mode-toggle__option is-active" type="button">📅 Cronológico</button>
-          <a class="view-mode-toggle__option" routerLink="/picks/by-group">🏆 Por grupo</a>
-          <button class="view-mode-toggle__option" type="button" disabled title="Próximamente">🌳 Llaves</button>
-        </div>
+      <div class="wf-tabs wf-tabs--scroll" role="tablist" aria-label="Modo de vista">
+        <span class="wf-tabs__item is-active">📅 Cronológico</span>
+        <a class="wf-tabs__item" routerLink="/picks/by-group">🏆 Por grupo</a>
+        <span class="wf-tabs__item" style="opacity: 0.4; pointer-events: none;">🌳 Llaves</span>
+      </div>
 
-        <nav class="subnav" role="tablist" aria-label="Tabs de picks" style="margin-left: auto;">
-          <button type="button"
+      <div class="picks-list__seg-wrap">
+        <div class="wf-seg" role="tablist" aria-label="Tabs de picks">
+          <button type="button" class="wf-seg__item"
                   [class.is-active]="tab() === 'upcoming'"
                   (click)="tab.set('upcoming')">
-            Próximos<span class="subnav__count">{{ upcomingCount() }}</span>
+            Próximos · {{ upcomingCount() }}
           </button>
-          <button type="button"
+          <button type="button" class="wf-seg__item"
                   [class.is-active]="tab() === 'played'"
                   (click)="tab.set('played')">
-            Jugados<span class="subnav__count">{{ playedCount() }}</span>
+            Jugados · {{ playedCount() }}
           </button>
-        </nav>
+        </div>
       </div>
     </header>
 
@@ -261,6 +261,57 @@ interface DayBlock {
     </button>
   `,
   styles: [`
+    /* Wireframe-style header (sustituye a .page-header) */
+    .picks-list__header {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--space-md) var(--section-x-mobile) 0;
+    }
+    .picks-list__header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: var(--space-md);
+      flex-wrap: wrap;
+      margin-bottom: var(--space-md);
+    }
+    .picks-list__h1 {
+      font-family: var(--wf-display);
+      font-size: var(--fs-2xl);
+      letter-spacing: 0.04em;
+      line-height: 1;
+      margin: 4px 0 0;
+      text-transform: none;
+    }
+    .picks-list__stats {
+      display: flex;
+      gap: var(--space-md);
+      align-items: flex-end;
+    }
+    .picks-list__stats > div {
+      text-align: center;
+    }
+    .picks-list__stats strong {
+      display: block;
+      font-family: var(--wf-display);
+      font-size: var(--fs-lg);
+      line-height: 1;
+    }
+    .picks-list__stats small {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--wf-ink-3);
+      font-weight: 700;
+    }
+    .picks-list__seg-wrap {
+      margin-top: var(--space-md);
+      max-width: 320px;
+    }
+    @media (min-width: 992px) {
+      .picks-list__seg-wrap { max-width: 360px; }
+    }
+
     .sponsor-banner-row {
       display: flex;
       gap: var(--space-sm);
@@ -350,8 +401,8 @@ interface DayBlock {
 
     .sidebar-card {
       background: var(--color-primary-white);
-      border: var(--border-grey);
-      border-radius: var(--radius-md);
+      border: 1px solid var(--wf-line);
+      border-radius: 12px;
       padding: var(--space-md);
       display: block;
       text-decoration: none;
@@ -359,15 +410,14 @@ interface DayBlock {
     }
     .sidebar-card h3 {
       font-family: var(--font-display);
-      font-size: var(--fs-lg);
-      text-transform: uppercase;
-      line-height: 1;
-      margin-bottom: var(--space-sm);
+      font-size: 18px;
       letter-spacing: 0.04em;
+      line-height: 1.05;
+      margin-bottom: var(--space-sm);
     }
     .sidebar-card--prizes {
-      background: rgba(255, 200, 0, 0.10);
-      border: 1px solid rgba(255, 200, 0, 0.35);
+      background: linear-gradient(135deg, #fff8d6, #fff3a0);
+      border: 1px solid rgba(212, 165, 0, 0.4);
     }
     .sidebar-prize {
       padding: var(--space-xs) 0;

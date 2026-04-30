@@ -224,9 +224,9 @@ interface PendingEdit {
     .groups-list { display: grid; gap: var(--space-2xl); padding-bottom: 100px; }
     .group-block {
       background: var(--color-primary-white);
-      border: var(--border-grey);
-      border-radius: var(--radius-md);
-      padding: var(--space-lg);
+      border: 1px solid var(--wf-line);
+      border-radius: 12px;
+      padding: var(--space-md);
     }
     .group-block--tbd { opacity: 0.6; }
     .group-block__header {
@@ -235,22 +235,21 @@ interface PendingEdit {
       align-items: baseline;
       flex-wrap: wrap;
       gap: var(--space-sm);
-      padding-bottom: var(--space-md);
+      padding-bottom: var(--space-sm);
       margin-bottom: var(--space-md);
-      border-bottom: 1px solid var(--color-primary-grey);
+      border-bottom: 1px solid var(--wf-line-2);
     }
     .group-block__header h2 {
       font-family: var(--font-display);
-      font-size: var(--fs-3xl);
-      text-transform: uppercase;
-      line-height: 1;
+      font-size: 24px;
+      letter-spacing: 0.04em;
+      line-height: 1.05;
     }
     .group-block__meta {
-      font-size: var(--fs-xs);
+      font-size: 11px;
       color: var(--color-text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-weight: var(--fw-bold);
+      letter-spacing: 0;
+      text-transform: none;
     }
 
     .group-block__body {
@@ -263,12 +262,12 @@ interface PendingEdit {
     }
 
     .group-block__col-head {
-      font-family: var(--font-display);
-      font-size: var(--fs-md);
+      font-size: 9px;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.08em;
       margin-bottom: var(--space-sm);
       color: var(--color-text-muted);
+      font-weight: 700;
     }
 
     .group-block__matches { display: grid; gap: var(--space-xs); align-content: start; }
@@ -277,8 +276,9 @@ interface PendingEdit {
       display: grid;
       gap: 6px;
       padding: var(--space-sm) var(--space-md);
-      border-radius: var(--radius-sm);
-      background: var(--color-primary-grey, #f4f4f4);
+      border-radius: 8px;
+      background: var(--wf-fill);
+      border: 1px solid var(--wf-line);
     }
     .gm-row--final { background: rgba(0,200,100,0.08); }
     .gm-row--locked { opacity: 0.7; }

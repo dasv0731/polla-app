@@ -331,8 +331,9 @@ interface GroupHeader {
       max-width: 640px; width: 100%;
       max-height: 88vh; overflow-y: auto;
       background: var(--color-primary-white);
-      border-radius: var(--radius-md);
+      border-radius: 12px;
       padding: var(--space-lg);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
     }
     .comodin-modal__head {
       display: flex; justify-content: space-between; align-items: center;
@@ -340,9 +341,9 @@ interface GroupHeader {
     }
     .comodin-modal__head h2 {
       font-family: var(--font-display);
-      font-size: var(--fs-2xl);
-      text-transform: uppercase;
-      line-height: 1; margin: 0;
+      font-size: 24px;
+      letter-spacing: 0.04em;
+      line-height: 1.05; margin: 0;
     }
     .comodin-modal__x {
       background: transparent; border: 0;

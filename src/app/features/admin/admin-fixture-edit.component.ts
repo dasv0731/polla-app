@@ -19,7 +19,7 @@ const TOURNAMENT_ID = 'mundial-2026';
           ← {{ fromBracket ? 'Llaves' : 'Partidos' }}
         </a>
       </small>
-      <h1 style="font-family: var(--font-display); font-size: 56px; line-height: 1; text-transform: uppercase;">
+      <h1 style="font-family: var(--font-display); font-size: 36px; line-height: 1.05; letter-spacing: 0.04em;">
         {{ id ? 'Editar partido' : 'Nuevo partido' }}
       </h1>
     </header>

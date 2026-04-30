@@ -36,8 +36,10 @@ interface ServerIdMap {
   imports: [CdkDropListGroup, CdkDropList, CdkDrag, RouterLink],
   template: `
     <header class="page-header">
-      <small>Predicciones · fase de grupos</small>
-      <h1>Tabla final por grupo</h1>
+      <div class="page-header__title">
+        <small>Predicciones · fase de grupos</small>
+        <h1>Tabla final por grupo</h1>
+      </div>
 
       @if (availableModes().length === 0 && !modesLoading()) {
         <p class="form-card__hint" style="color: var(--color-lost);">
@@ -45,11 +47,10 @@ interface ServerIdMap {
           <a class="link-green" routerLink="/groups/new">Crea uno →</a>
         </p>
       } @else if (availableModes().length > 1) {
-        <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-md); flex-wrap: wrap;">
+        <div class="wf-seg" role="tablist" style="max-width: 320px; margin-top: var(--space-md);">
           @for (m of availableModes(); track m) {
-            <button class="btn" type="button"
-                    [class.btn--primary]="mode() === m"
-                    [class.btn--ghost]="mode() !== m"
+            <button type="button" class="wf-seg__item"
+                    [class.is-active]="mode() === m"
                     (click)="switchMode(m)">
               {{ m === 'COMPLETE' ? 'Modo completo' : 'Modo simple' }}
             </button>
@@ -186,8 +187,8 @@ interface ServerIdMap {
     }
     .gs-card {
       background: var(--color-primary-white);
-      border: var(--border-grey);
-      border-radius: var(--radius-md);
+      border: 1px solid var(--wf-line);
+      border-radius: 12px;
       padding: var(--space-md);
     }
     .gs-card__head {
@@ -198,15 +199,16 @@ interface ServerIdMap {
     }
     .gs-card__head h2 {
       font-family: var(--font-display);
-      font-size: var(--fs-lg);
-      line-height: 1;
-      text-transform: uppercase;
+      font-size: 18px;
+      letter-spacing: 0.04em;
+      line-height: 1.05;
     }
     .gs-card__head small {
-      font-size: var(--fs-xs);
+      font-size: 9px;
       color: var(--color-text-muted);
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.08em;
+      font-weight: 700;
     }
     .gs-list {
       list-style: none;
@@ -222,12 +224,13 @@ interface ServerIdMap {
       gap: 8px;
       align-items: center;
       padding: 8px 10px;
-      border-left: 4px solid transparent;
-      background: var(--color-primary-grey, #f4f4f4);
-      border-radius: var(--radius-sm);
+      border: 1px solid var(--wf-line);
+      border-left: 3px solid var(--wf-line);
+      background: var(--wf-fill);
+      border-radius: 8px;
       cursor: grab;
       user-select: none;
-      transition: background 100ms;
+      transition: background 100ms, border-color 100ms;
     }
     .gs-item:active { cursor: grabbing; }
     .gs-item--qualified {

@@ -11,177 +11,38 @@ type DropdownKey = 'groups' | 'picks' | 'rankings' | 'user' | null;
   selector: 'app-nav',
   imports: [RouterLink, RouterLinkActive],
   template: `
-    <input type="checkbox" id="drawer" class="drawer-toggle sr-only"
-           [checked]="drawerOpen()"
-           (change)="drawerOpen.set($any($event.target).checked)">
-    <header class="site-header site-header--auth">
-      <div class="site-header__inner">
-        <a routerLink="/picks" class="site-header__logo" aria-label="Polla Mundial 2026" (click)="closeAll()">
-          <img src="assets/logo-golgana.png" alt="Golgana">
+    <!-- ============ DESKTOP NAV (≥992px) ============ -->
+    <header class="wf-desk-nav app-nav-desktop">
+      <div class="wf-row" style="align-items: center;">
+        <a routerLink="/picks" class="wf-topbar__brand app-nav__brand-link" aria-label="Polla Mundial 2026" (click)="closeAll()">
+          <span class="wf-topbar__logo">⚽</span>
+          <span class="wf-topbar__title">POLLA</span>
         </a>
-
-        <nav class="site-header__nav" aria-label="Principal">
+        <nav class="wf-desk-nav__menu" aria-label="Principal">
           @if (isAdmin()) {
-            <!-- ADMIN-FOCUSED NAV: dashboard, grupos overview, rankings detallado -->
-            <a class="nav-dd__btn" routerLink="/admin/groups-overview" routerLinkActive="is-active" (click)="closeAll()">
-              Grupos
-            </a>
-            <a class="nav-dd__btn" routerLink="/admin/rankings-overview" routerLinkActive="is-active" (click)="closeAll()">
-              Rankings
-            </a>
-            <a class="nav-dd__btn" routerLink="/admin" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeAll()">
-              Admin
-            </a>
+            <a class="wf-desk-nav__item" routerLink="/admin" routerLinkActive="is-active" [routerLinkActiveOptions]="{exact: true}" (click)="closeAll()">Dashboard</a>
+            <a class="wf-desk-nav__item" routerLink="/admin/groups-overview" routerLinkActive="is-active" (click)="closeAll()">Grupos</a>
+            <a class="wf-desk-nav__item" routerLink="/admin/rankings-overview" routerLinkActive="is-active" (click)="closeAll()">Rankings</a>
+            <a class="wf-desk-nav__item" routerLink="/admin/fixtures" routerLinkActive="is-active" (click)="closeAll()">Partidos</a>
           } @else {
-          <!-- MIS GRUPOS -->
-          <div class="nav-dd" (click)="$event.stopPropagation()">
-            <button type="button" class="nav-dd__btn"
-                    [class.is-active]="open() === 'groups'"
-                    (click)="toggle('groups')">
-              Mis grupos
-              <span class="nav-dd__chevron" [class.is-open]="open() === 'groups'">▾</span>
-            </button>
-            @if (open() === 'groups') {
-              <div class="user-menu__panel" role="menu">
-                @if (myGroups().length === 0) {
-                  <p class="user-menu__item" style="color: var(--color-text-muted); pointer-events: none;">
-                    No estás en ningún grupo
-                  </p>
-                } @else {
-                  @for (g of topGroups(); track g.id) {
-                    <a class="user-menu__item" role="menuitem" style="cursor: pointer;"
-                       (click)="goToGroup(g.id)">
-                      <span class="nav-dd__name">{{ g.name }}</span>
-                      <span class="nav-dd__pill" [class.nav-dd__pill--complete]="g.mode === 'COMPLETE'">
-                        {{ g.mode === 'COMPLETE' ? 'Completo' : 'Simple' }}
-                      </span>
-                    </a>
-                  }
-                  @if (myGroups().length > 3) {
-                    <p class="user-menu__item" style="color: var(--color-text-muted); pointer-events: none; font-size: var(--fs-xs);">
-                      + {{ myGroups().length - 3 }} grupo{{ myGroups().length - 3 === 1 ? '' : 's' }} más
-                    </p>
-                  }
-                }
-                <hr class="user-menu__sep">
-                <a class="user-menu__item" role="menuitem" style="cursor: pointer;"
-                   (click)="goToGroups()">Ver todos los grupos</a>
-                <a class="user-menu__item" role="menuitem" style="cursor: pointer;"
-                   (click)="goToGroupsJoin()">→ Unirme con código</a>
-                <a class="user-menu__item" role="menuitem" style="cursor: pointer;"
-                   (click)="goToGroupsNew()">+ Crear grupo nuevo</a>
-              </div>
-            }
-          </div>
-
-          <!-- MIS PICKS -->
-          <div class="nav-dd" (click)="$event.stopPropagation()">
-            <button type="button" class="nav-dd__btn"
-                    [class.is-active]="open() === 'picks'"
-                    (click)="toggle('picks')">
-              Mis picks
-              <span class="nav-dd__chevron" [class.is-open]="open() === 'picks'">▾</span>
-            </button>
-            @if (open() === 'picks') {
-              <div class="user-menu__panel user-menu__panel--wide" role="menu">
-                @if (!hasSimple() && !hasComplete()) {
-                  <p class="user-menu__item" style="color: var(--color-text-muted); pointer-events: none;">
-                    Únete o crea un grupo primero
-                  </p>
-                  <a class="user-menu__item" role="menuitem"
-                     routerLink="/groups/new" (click)="closeAll()">+ Crear grupo</a>
-                }
-                @if (hasSimple()) {
-                  <div class="user-menu__group">
-                    <span class="user-menu__group-head">Modo simple</span>
-                    <a class="user-menu__item user-menu__item--sub" role="menuitem"
-                       [routerLink]="['/picks/group-stage']" [queryParams]="{ mode: 'SIMPLE' }" (click)="closeAll()">
-                      Fase de grupos (Tabla)
-                    </a>
-                    <a class="user-menu__item user-menu__item--sub" role="menuitem"
-                       [routerLink]="['/picks/bracket']" [queryParams]="{ mode: 'SIMPLE' }" (click)="closeAll()">
-                      Fase eliminatoria (Bracket)
-                    </a>
-                    <a class="user-menu__item user-menu__item--sub" role="menuitem"
-                       [routerLink]="['/profile/special-picks']" [queryParams]="{ mode: 'SIMPLE' }" (click)="closeAll()">
-                      Picks especiales
-                    </a>
-                  </div>
-                }
-                @if (hasComplete()) {
-                  @if (hasSimple()) { <hr class="user-menu__sep"> }
-                  <div class="user-menu__group">
-                    <span class="user-menu__group-head">Modo completo</span>
-                    <a class="user-menu__item user-menu__item--sub" role="menuitem"
-                       [routerLink]="['/picks/group-stage']" [queryParams]="{ mode: 'COMPLETE' }" (click)="closeAll()">
-                      Fase de grupos (Tabla)
-                    </a>
-                    <a class="user-menu__item user-menu__item--sub" role="menuitem"
-                       [routerLink]="['/picks/bracket']" [queryParams]="{ mode: 'COMPLETE' }" (click)="closeAll()">
-                      Fase eliminatoria (Bracket)
-                    </a>
-                    <a class="user-menu__item user-menu__item--sub" role="menuitem"
-                       routerLink="/picks" (click)="closeAll()">
-                      Marcadores (Mis picks)
-                    </a>
-                    <a class="user-menu__item user-menu__item--sub" role="menuitem"
-                       [routerLink]="['/profile/special-picks']" [queryParams]="{ mode: 'COMPLETE' }" (click)="closeAll()">
-                      Picks especiales
-                    </a>
-                  </div>
-                }
-              </div>
-            }
-          </div>
-
-          <!-- RANKINGS -->
-          <div class="nav-dd" (click)="$event.stopPropagation()">
-            <button type="button" class="nav-dd__btn"
-                    [class.is-active]="open() === 'rankings'"
-                    (click)="toggle('rankings')">
-              Rankings
-              <span class="nav-dd__chevron" [class.is-open]="open() === 'rankings'">▾</span>
-            </button>
-            @if (open() === 'rankings') {
-              <div class="user-menu__panel" role="menu">
-                <a class="user-menu__item" role="menuitem" style="cursor: pointer;"
-                   (click)="goToRankingGrupos()">
-                  📋 Ranking en mis grupos
-                </a>
-                @if (eligibleGlobal()) {
-                  <a class="user-menu__item" role="menuitem" style="cursor: pointer;"
-                     (click)="goToRankingGlobal()">
-                    🌍 Ranking global
-                  </a>
-                } @else {
-                  <p class="user-menu__item" style="color: var(--color-text-muted); pointer-events: none; font-size: var(--fs-xs);">
-                    🔒 El ranking global requiere modo completo
-                  </p>
-                }
-                @if (myGroups().length > 0) {
-                  <hr class="user-menu__sep">
-                  <span class="user-menu__group-head">Por grupo</span>
-                  @for (g of myGroups(); track g.id) {
-                    <a class="user-menu__item user-menu__item--sub" role="menuitem" style="cursor: pointer;"
-                       (click)="goToGroup(g.id)">
-                      {{ g.name }}
-                    </a>
-                  }
-                }
-              </div>
-            }
-          </div>
-
+            <a class="wf-desk-nav__item" routerLink="/picks" routerLinkActive="is-active" (click)="closeAll()">Mis picks</a>
+            <a class="wf-desk-nav__item" routerLink="/groups" routerLinkActive="is-active" (click)="closeAll()">Grupos</a>
+            <a class="wf-desk-nav__item" routerLink="/ranking" routerLinkActive="is-active" (click)="closeAll()">Ranking</a>
           }
         </nav>
+      </div>
 
-        <!-- User dropdown (desktop) -->
-        <div class="user-menu" (click)="$event.stopPropagation()">
-          <button class="site-header__user" type="button" aria-haspopup="true"
+      <div class="wf-row wf-row--gap-sm" style="align-items: center;">
+        <a routerLink="/notificaciones" class="wf-topbar__bell app-nav__bell" aria-label="Notificaciones" (click)="closeAll()">
+          🔔
+          @if (unreadCount() > 0) { <span class="wf-topbar__bell-badge">{{ unreadCount() }}</span> }
+        </a>
+        <div class="user-menu app-nav__user-anchor" (click)="$event.stopPropagation()">
+          <button class="app-nav__user-btn" type="button" aria-haspopup="true"
                   [attr.aria-expanded]="open() === 'user'" aria-label="Cuenta"
                   (click)="toggle('user')">
-            <span class="site-header__avatar">{{ avatar() }}</span>
-            <span class="site-header__handle">{{ '@' + (handle() ?? '') }}</span>
+            <span class="wf-topbar__avatar">{{ avatar() }}</span>
+            <span class="wf-text-bold" style="font-size: 13px;">{{ '@' + (handle() ?? '') }}</span>
             <span class="user-menu__chevron" [class.is-open]="open() === 'user'" aria-hidden="true">▾</span>
           </button>
           @if (open() === 'user') {
@@ -192,13 +53,15 @@ type DropdownKey = 'groups' | 'picks' | 'rankings' | 'user' | null;
                   Mis comodines
                 </a>
               }
+              <a class="user-menu__item" role="menuitem" (click)="goSpecialPicks()">
+                <span class="user-menu__icon" aria-hidden="true">⭐</span>
+                Picks especiales
+              </a>
               <a class="user-menu__item" role="menuitem" (click)="goNotifications()">
                 <span class="user-menu__icon" aria-hidden="true">🔔</span>
                 Notificaciones
                 @if (unreadCount() > 0) {
-                  <span style="margin-left: auto; background: var(--color-primary-green); color: var(--color-primary-white); padding: 2px 8px; border-radius: 999px; font-size: var(--fs-xs); font-weight: var(--fw-bold);">
-                    {{ unreadCount() }}
-                  </span>
+                  <span class="app-nav__pill-count">{{ unreadCount() }}</span>
                 }
               </a>
               <a class="user-menu__item" role="menuitem" (click)="goProfile()">
@@ -213,146 +76,171 @@ type DropdownKey = 'groups' | 'picks' | 'rankings' | 'user' | null;
             </div>
           }
         </div>
-
-        <label for="drawer" class="drawer-btn" aria-label="Abrir menú">
-          <span></span><span></span><span></span>
-        </label>
       </div>
     </header>
 
-    <!-- MOBILE DRAWER (flat, sin dropdowns anidados) -->
-    <label for="drawer" class="drawer-backdrop" aria-hidden="true" (click)="closeDrawer()"></label>
-    <aside class="drawer" aria-label="Menú móvil">
-      @if (isAdmin()) {
-        <h4 class="drawer__head">Admin</h4>
-        <a routerLink="/admin" (click)="closeDrawer()">Dashboard</a>
-        <a routerLink="/admin/groups-overview" (click)="closeDrawer()">Grupos (overview)</a>
-        <a routerLink="/admin/rankings-overview" (click)="closeDrawer()">Rankings (detallado)</a>
-        <a routerLink="/admin/fixtures" (click)="closeDrawer()">Partidos</a>
-        <a routerLink="/admin/results" (click)="closeDrawer()">Resultados</a>
-        <a routerLink="/admin/teams" (click)="closeDrawer()">Equipos</a>
-        <a routerLink="/admin/sponsors" (click)="closeDrawer()">Sponsors</a>
-        <a routerLink="/admin/users" (click)="closeDrawer()">Usuarios</a>
-      } @else {
-      <h4 class="drawer__head">Mis grupos</h4>
-      @for (g of topGroups(); track g.id) {
-        <a [routerLink]="['/groups', g.id]" routerLinkActive="is-active" (click)="closeDrawer()">
-          {{ g.name }} <small style="color: var(--color-text-muted);">· {{ g.mode === 'COMPLETE' ? 'Completo' : 'Simple' }}</small>
+    <!-- ============ MOBILE TOPBAR (<992px) ============ -->
+    <header class="wf-topbar app-nav-mobile">
+      <a routerLink="/picks" class="wf-topbar__brand app-nav__brand-link" aria-label="Polla" (click)="closeAll()">
+        <span class="wf-topbar__logo">⚽</span>
+        <span class="wf-topbar__title">POLLA</span>
+      </a>
+      <div class="wf-topbar__icons">
+        <a routerLink="/notificaciones" class="wf-topbar__bell" aria-label="Notificaciones" (click)="closeAll()">
+          🔔
+          @if (unreadCount() > 0) { <span class="wf-topbar__bell-badge">{{ unreadCount() }}</span> }
         </a>
-      }
-      @if (myGroups().length > 3) {
-        <a routerLink="/groups" (click)="closeDrawer()" style="color: var(--color-primary-green); font-size: var(--fs-sm);">
-          Ver todos los grupos ({{ myGroups().length }}) →
-        </a>
-      }
-      <a routerLink="/groups" fragment="unirme" (click)="closeDrawer()" style="color: var(--color-primary-green);">→ Unirme con código</a>
-      <a routerLink="/groups/new" (click)="closeDrawer()" style="color: var(--color-primary-green);">+ Crear grupo</a>
+        <button class="app-nav__avatar-btn" type="button" aria-label="Cuenta"
+                (click)="toggle('user'); $event.stopPropagation()">
+          <span class="wf-topbar__avatar">{{ avatar() }}</span>
+        </button>
+      </div>
+    </header>
 
-      @if (hasSimple() || hasComplete()) {
-        <h4 class="drawer__head">Mis picks</h4>
-        @if (hasSimple()) {
-          <small style="color: var(--color-text-muted); padding: 4px 0; display: block;">Simple</small>
-          <a [routerLink]="['/picks/group-stage']" [queryParams]="{ mode: 'SIMPLE' }" (click)="closeDrawer()">Tabla de grupos</a>
-          <a [routerLink]="['/picks/bracket']" [queryParams]="{ mode: 'SIMPLE' }" (click)="closeDrawer()">Bracket</a>
-          <a [routerLink]="['/profile/special-picks']" [queryParams]="{ mode: 'SIMPLE' }" (click)="closeDrawer()">Picks especiales</a>
-        }
+    <!-- Mobile user menu (anchored top-right under avatar) -->
+    @if (open() === 'user') {
+      <div class="user-menu__panel app-nav__mobile-menu" role="menu" (click)="$event.stopPropagation()">
         @if (hasComplete()) {
-          <small style="color: var(--color-text-muted); padding: 4px 0; display: block;">Completo</small>
-          <a [routerLink]="['/picks/group-stage']" [queryParams]="{ mode: 'COMPLETE' }" (click)="closeDrawer()">Tabla de grupos</a>
-          <a [routerLink]="['/picks/bracket']" [queryParams]="{ mode: 'COMPLETE' }" (click)="closeDrawer()">Bracket</a>
-          <a routerLink="/picks" (click)="closeDrawer()">Marcadores</a>
-          <a [routerLink]="['/profile/special-picks']" [queryParams]="{ mode: 'COMPLETE' }" (click)="closeDrawer()">Picks especiales</a>
+          <a class="user-menu__item" role="menuitem" (click)="goComodines()">🃏 Mis comodines</a>
         }
-      }
+        <a class="user-menu__item" role="menuitem" (click)="goSpecialPicks()">⭐ Picks especiales</a>
+        <a class="user-menu__item" role="menuitem" (click)="goNotifications()">
+          🔔 Notificaciones
+          @if (unreadCount() > 0) { <span class="app-nav__pill-count">{{ unreadCount() }}</span> }
+        </a>
+        <a class="user-menu__item" role="menuitem" (click)="goProfile()">⚙ Editar perfil</a>
+        @if (isAdmin()) {
+          <hr class="user-menu__sep">
+          <a class="user-menu__item" role="menuitem" routerLink="/admin/fixtures" (click)="closeAll()">🛠 Partidos</a>
+          <a class="user-menu__item" role="menuitem" routerLink="/admin/results" (click)="closeAll()">📋 Resultados</a>
+          <a class="user-menu__item" role="menuitem" routerLink="/admin/teams" (click)="closeAll()">🏳 Equipos</a>
+          <a class="user-menu__item" role="menuitem" routerLink="/admin/sponsors" (click)="closeAll()">🎁 Sponsors</a>
+          <a class="user-menu__item" role="menuitem" routerLink="/admin/users" (click)="closeAll()">👥 Usuarios</a>
+        }
+        <hr class="user-menu__sep">
+        <a class="user-menu__item user-menu__item--danger" role="menuitem" (click)="logout()">⏻ Cerrar sesión</a>
+      </div>
+    }
 
-      <h4 class="drawer__head">Rankings</h4>
-      @for (g of myGroups(); track g.id) {
-        <a [routerLink]="['/groups', g.id]" (click)="closeDrawer()">{{ g.name }}</a>
+    <!-- ============ MOBILE TABBAR (<992px) ============ -->
+    <nav class="wf-tabbar app-nav-tabbar" aria-label="Navegación principal">
+      @if (isAdmin()) {
+        <a class="wf-tabbar__item" routerLink="/admin" routerLinkActive="is-active" [routerLinkActiveOptions]="{exact: true}" (click)="closeAll()">
+          <span class="wf-tabbar__icon">🏠</span><span>Home</span>
+        </a>
+        <a class="wf-tabbar__item" routerLink="/admin/groups-overview" routerLinkActive="is-active" (click)="closeAll()">
+          <span class="wf-tabbar__icon">👥</span><span>Grupos</span>
+        </a>
+        <a class="wf-tabbar__item" routerLink="/admin/rankings-overview" routerLinkActive="is-active" (click)="closeAll()">
+          <span class="wf-tabbar__icon">🏆</span><span>Rankings</span>
+        </a>
+        <a class="wf-tabbar__item" routerLink="/admin/fixtures" routerLinkActive="is-active" (click)="closeAll()">
+          <span class="wf-tabbar__icon">🛠</span><span>Partidos</span>
+        </a>
+      } @else {
+        <a class="wf-tabbar__item" routerLink="/picks" routerLinkActive="is-active" (click)="closeAll()">
+          <span class="wf-tabbar__icon">⚽</span><span>Picks</span>
+        </a>
+        <a class="wf-tabbar__item" routerLink="/groups" routerLinkActive="is-active" (click)="closeAll()">
+          <span class="wf-tabbar__icon">👥</span><span>Grupos</span>
+        </a>
+        <a class="wf-tabbar__item" routerLink="/ranking" routerLinkActive="is-active" (click)="closeAll()">
+          <span class="wf-tabbar__icon">🏆</span><span>Ranking</span>
+        </a>
+        <a class="wf-tabbar__item" routerLink="/profile" routerLinkActive="is-active" (click)="closeAll()">
+          <span class="wf-tabbar__icon">👤</span><span>Perfil</span>
+        </a>
       }
-      @if (eligibleGlobal()) {
-        <a routerLink="/ranking" (click)="closeDrawer()">🌍 Ranking global</a>
-      }
-      }
-
-      <h4 class="drawer__head">Cuenta</h4>
-      @if (hasComplete()) {
-        <a routerLink="/mis-comodines" (click)="closeDrawer()">🃏 Mis comodines</a>
-      }
-      <a routerLink="/notificaciones" (click)="closeDrawer()">🔔 Notificaciones</a>
-      <a routerLink="/profile" (click)="closeDrawer()">Editar perfil</a>
-      <a (click)="logout()" style="cursor: pointer; color: var(--color-lost);">Cerrar sesión</a>
-    </aside>
+    </nav>
   `,
   styles: [`
-    /* Dropdown botón en la nav. Reusa .user-menu__panel del global. */
-    .nav-dd {
-      position: relative;
-      display: inline-block;
+    /* ===========================================================
+       Visibility: desktop nav ≥992px, mobile topbar+tabbar <992px
+       =========================================================== */
+    .app-nav-desktop { display: none; }
+    .app-nav-mobile  { display: flex; }
+    .app-nav-tabbar  {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 50;
+      box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
     }
-    .nav-dd__btn {
+
+    @media (min-width: 992px) {
+      .app-nav-desktop { display: flex; }
+      .app-nav-mobile  { display: none; }
+      .app-nav-tabbar  { display: none; }
+    }
+
+    /* Brand link sin underline */
+    .app-nav__brand-link { text-decoration: none; color: inherit; }
+    .app-nav__brand-link:hover { text-decoration: none; }
+
+    /* Bell común */
+    .app-nav__bell { font-size: 16px; }
+
+    /* Avatar btn (mobile) — botón sin border */
+    .app-nav__avatar-btn {
       background: transparent;
       border: 0;
-      color: inherit;
-      font: inherit;
-      padding: 8px 12px;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    /* User dropdown desktop */
+    .app-nav__user-anchor { position: relative; }
+    .app-nav__user-btn {
+      background: transparent;
+      border: 0;
+      padding: 4px 8px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      border-radius: var(--radius-sm);
-      text-decoration: none;
+      gap: 8px;
+      border-radius: 6px;
+      font: inherit;
     }
-    .nav-dd__btn:hover { background: rgba(0,0,0,0.05); }
-    .nav-dd__btn.is-active {
-      background: rgba(0, 200, 100, 0.12);
-      color: var(--color-primary-green);
-    }
-    .nav-dd__chevron {
-      font-size: 10px;
-      transition: transform 100ms;
-    }
-    .nav-dd__chevron.is-open { transform: rotate(180deg); }
+    .app-nav__user-btn:hover { background: rgba(0,0,0,0.04); }
 
-    .nav-dd__name { flex: 1; }
-    .nav-dd__pill {
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      padding: 2px 6px;
+    /* Mobile user menu — anchored top-right under topbar */
+    :host ::ng-deep .app-nav__mobile-menu {
+      position: fixed;
+      top: 56px;
+      right: 12px;
+      min-width: 220px;
+      z-index: 60;
+    }
+    @media (min-width: 992px) { :host ::ng-deep .app-nav__mobile-menu { display: none; } }
+
+    /* Pill count para badges en items del dropdown */
+    .app-nav__pill-count {
+      margin-left: auto;
+      background: var(--wf-green);
+      color: white;
+      padding: 2px 8px;
       border-radius: 999px;
-      background: rgba(255, 200, 0, 0.4);
-      color: var(--color-primary-black);
-      font-weight: 600;
-    }
-    .nav-dd__pill--complete {
-      background: var(--color-primary-green);
-      color: var(--color-primary-white);
+      font-size: 11px;
+      font-weight: 700;
     }
 
-    /* Panel ancho para "Mis picks" porque tiene 2 columnas de items */
-    :host ::ng-deep .user-menu__panel--wide { min-width: 240px; }
-    :host ::ng-deep .user-menu__group { padding-bottom: 4px; }
-    :host ::ng-deep .user-menu__group-head {
-      display: block;
-      padding: 8px 12px 4px;
-      font-size: var(--fs-xs);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--color-primary-green);
-      font-weight: var(--fw-semibold);
+    /* Active state para wf-tabbar items via routerLinkActive */
+    :host ::ng-deep .wf-tabbar__item.is-active {
+      color: var(--wf-green-ink);
     }
-    :host ::ng-deep .user-menu__item--sub {
-      padding-left: 24px;
+    :host ::ng-deep .wf-tabbar__item.is-active .wf-tabbar__icon {
+      color: var(--wf-green);
     }
 
-    .drawer__head {
-      padding: var(--space-md) 0 var(--space-xs);
-      font-family: var(--font-display);
-      font-size: var(--fs-md);
-      text-transform: uppercase;
-      line-height: 1;
-      color: var(--color-primary-green);
-      letter-spacing: 0.06em;
+    /* Active state para wf-desk-nav__item via routerLinkActive */
+    :host ::ng-deep .wf-desk-nav__item.is-active {
+      background: var(--wf-green-soft);
+      color: var(--wf-green-ink);
+    }
+
+    /* Padding-bottom global del :host para que el contenido no quede
+       tapado por la tabbar fija en mobile. La tabbar mide ~60px. */
+    @media (max-width: 991px) {
+      :host { display: block; padding-bottom: 64px; }
     }
   `],
 })
@@ -434,6 +322,11 @@ export class NavComponent implements OnInit, OnDestroy {
   goNotifications() {
     this.closeAll();
     void this.router.navigate(['/notificaciones']);
+  }
+
+  goSpecialPicks() {
+    this.closeAll();
+    void this.router.navigate(['/profile/special-picks']);
   }
 
   goToGroup(id: string) {

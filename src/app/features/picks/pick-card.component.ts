@@ -50,13 +50,13 @@ interface ExistingPick {
       <div class="pick-card__teams">
         <div class="pick-card__team">
           <app-team-flag [flagCode]="match.homeFlag ?? ''" [crestUrl]="match.homeCrestUrl ?? null"
-                         [name]="match.homeTeamName ?? null" [size]="56" />
+                         [name]="match.homeTeamName ?? null" [size]="40" />
           <span class="pick-card__team-name">{{ match.homeTeamName || match.homeTeamId }}</span>
         </div>
         <div class="pick-card__center">{{ centerLabel() }}</div>
         <div class="pick-card__team">
           <app-team-flag [flagCode]="match.awayFlag ?? ''" [crestUrl]="match.awayCrestUrl ?? null"
-                         [name]="match.awayTeamName ?? null" [size]="56" />
+                         [name]="match.awayTeamName ?? null" [size]="40" />
           <span class="pick-card__team-name">{{ match.awayTeamName || match.awayTeamId }}</span>
         </div>
       </div>

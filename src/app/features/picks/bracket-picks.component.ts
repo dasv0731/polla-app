@@ -49,9 +49,9 @@ interface TeamLite { slug: string; name: string; flagCode: string; }
   selector: 'app-bracket-picks',
   imports: [RouterLink],
   template: `
-    <header class="page-header">
-      <small>Predicciones · llaves eliminatorias</small>
-      <h1>Bracket</h1>
+    <header class="bp-header">
+      <span class="wf-kicker">PREDICCIONES · LLAVES ELIMINATORIAS</span>
+      <h1 class="bp-header__h1">Bracket</h1>
 
       @if (availableModes().length === 0 && !modesLoading()) {
         <p class="form-card__hint" style="color: var(--color-lost);">
@@ -59,11 +59,10 @@ interface TeamLite { slug: string; name: string; flagCode: string; }
           <a class="link-green" routerLink="/groups/new">Crea uno →</a>
         </p>
       } @else if (availableModes().length > 1) {
-        <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-md); flex-wrap: wrap;">
+        <div class="wf-seg" role="tablist" style="max-width: 320px; margin-top: var(--space-md);">
           @for (m of availableModes(); track m) {
-            <button class="btn" type="button"
-                    [class.btn--primary]="mode() === m"
-                    [class.btn--ghost]="mode() !== m"
+            <button type="button" class="wf-seg__item"
+                    [class.is-active]="mode() === m"
                     (click)="switchMode(m)">
               {{ m === 'COMPLETE' ? 'Modo completo' : 'Modo simple' }}
             </button>
@@ -76,7 +75,7 @@ interface TeamLite { slug: string; name: string; flagCode: string; }
       }
 
       @if (mode()) {
-        <p class="form-card__hint">
+        <p class="form-card__hint" style="margin-top: var(--space-sm); max-width: 720px;">
           El admin define las llaves a partir de los resultados de la fase de grupos.
           Tu trabajo: <strong>elegir el ganador de cada partido</strong>. Doble contabilidad —
           un equipo bien puesto desde octavos hasta campeón suma 3+6+8+10+15 = 42 pts.
@@ -85,12 +84,12 @@ interface TeamLite { slug: string; name: string; flagCode: string; }
 
       @if (mode() && bracketLockAt()) {
         @if (bracketLocked()) {
-          <div class="bp-lock bp-lock--closed" role="status">
+          <div class="wf-lock-banner wf-lock-banner--closed" role="status">
             <strong>BLOQUEADO</strong> · El bracket cerró el {{ bracketLockFormatted() }}.
             Ya no se aceptan cambios.
           </div>
         } @else {
-          <div class="bp-lock bp-lock--open" role="status">
+          <div class="wf-lock-banner" role="status">
             Cierra al kickoff del primer partido eliminatorio:
             <strong>{{ bracketLockFormatted() }}</strong>
             (en {{ bracketLockCountdown() }}).
@@ -217,6 +216,27 @@ interface TeamLite { slug: string; name: string; flagCode: string; }
     }
   `,
   styles: [`
+    /* Wireframe-style header */
+    .bp-header {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--space-xl) var(--section-x-mobile) var(--space-md);
+    }
+    @media (min-width: 992px) {
+      .bp-header { padding: var(--space-2xl) var(--section-x-desktop) var(--space-md); }
+    }
+    .bp-header__h1 {
+      font-family: var(--wf-display);
+      font-size: 36px;
+      letter-spacing: 0.04em;
+      line-height: 1;
+      margin: 4px 0 var(--space-sm);
+      text-transform: none;
+    }
+    @media (min-width: 480px) {
+      .bp-header__h1 { font-size: 48px; }
+    }
+
     /* Reusamos .bracket-admin y .bracket-slot del page-shell.css. El slot
        no es clickeable como un todo (a diferencia del admin); cada row
        de equipo es su propio botón. */
@@ -283,7 +303,7 @@ interface TeamLite { slug: string; name: string; flagCode: string; }
       max-width: 440px;
       width: 100%;
       background: var(--color-primary-white);
-      border-radius: var(--radius-md);
+      border-radius: 14px;
       padding: var(--space-xl) var(--space-lg);
       text-align: center;
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
@@ -294,13 +314,13 @@ interface TeamLite { slug: string; name: string; flagCode: string; }
       to   { transform: scale(1); opacity: 1; }
     }
     .bp-modal__icon {
-      width: 72px;
-      height: 72px;
+      width: 64px;
+      height: 64px;
       border-radius: 50%;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 40px;
+      font-size: 32px;
       font-weight: bold;
       color: var(--color-primary-white);
       margin: 0 auto var(--space-md);
@@ -309,14 +329,14 @@ interface TeamLite { slug: string; name: string; flagCode: string; }
     .bp-modal__icon--err { background: var(--color-lost, #c33); }
     .bp-modal__title {
       font-family: var(--font-display);
-      font-size: var(--fs-2xl);
-      line-height: 1.1;
-      text-transform: uppercase;
+      font-size: 24px;
+      line-height: 1.05;
+      letter-spacing: 0.04em;
       margin-bottom: var(--space-sm);
     }
     .bp-modal__body {
-      color: var(--color-text-muted);
-      font-size: var(--fs-md);
+      color: var(--wf-ink-2);
+      font-size: 14px;
       line-height: 1.5;
       margin-bottom: var(--space-md);
     }

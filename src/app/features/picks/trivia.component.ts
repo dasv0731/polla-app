@@ -47,18 +47,20 @@ interface MatchInfo {
   imports: [RouterLink],
   template: `
     <header class="page-header">
-      <small>
-        @if (match()) {
-          <a [routerLink]="['/torneo/mundial-2026/partido', matchId]" class="link-green">
-            ← Detalle del partido
-          </a>
-        } @else {
-          Trivia
-        }
-      </small>
-      <h1>Trivia del partido</h1>
+      <div class="page-header__title">
+        <small>
+          @if (match()) {
+            <a [routerLink]="['/torneo/mundial-2026/partido', matchId]" class="link-green">
+              ← Detalle del partido
+            </a>
+          } @else {
+            Trivia
+          }
+        </small>
+        <h1>Trivia del partido</h1>
+      </div>
       @if (match()) {
-        <p style="margin-top: var(--space-sm); color: var(--color-text-muted);">
+        <p style="margin-top: var(--space-sm); color: var(--color-text-muted); font-size: var(--fs-sm);">
           {{ teamName(match()!.homeTeamId) }} vs {{ teamName(match()!.awayTeamId) }}
           @if (matchPhase() === 'pre-live') {
             · <strong>aún no empieza</strong>

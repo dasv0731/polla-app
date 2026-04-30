@@ -2,15 +2,16 @@
    Extracted from the inline <style> in mockups/{login,register,forgot-password}.html. */
 
 .auth-shell {
-  background: var(--color-primary-grey);
+  background: var(--wf-bg);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
 .auth-header {
-  background: var(--color-primary-black);
-  color: var(--color-primary-white);
+  background: var(--wf-paper);
+  color: var(--wf-ink);
+  border-bottom: 1px solid var(--wf-line-2);
   padding: var(--space-md) var(--section-x-mobile);
 }
 @media (min-width: 992px) {
@@ -27,11 +28,10 @@
 }
 .auth-header__logo img { height: 40px; }
 .auth-header__back {
-  color: var(--color-on-dark-muted);
-  font-size: var(--fs-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: var(--fw-semibold);
+  color: var(--wf-ink-2);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
 }
 .auth-header__back:hover { color: var(--color-primary-green); }
 

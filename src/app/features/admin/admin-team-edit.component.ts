@@ -15,7 +15,7 @@ const GROUP_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L
   template: `
     <header class="page-header" style="padding: 0 0 var(--space-md);">
       <small><a routerLink="/admin/teams" style="color: var(--color-primary-green);">← Equipos</a></small>
-      <h1 style="font-family: var(--font-display); font-size: 56px; line-height: 1; text-transform: uppercase;">
+      <h1 style="font-family: var(--font-display); font-size: 36px; line-height: 1.05; letter-spacing: 0.04em;">
         Editar equipo
       </h1>
     </header>

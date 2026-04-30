@@ -590,13 +590,25 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
     }
     .comodin-card {
       background: var(--color-primary-white);
-      border: var(--border-grey);
-      border-radius: var(--radius-md);
+      border: 1px solid var(--wf-line);
+      border-left: 3px solid var(--wf-line);
+      border-radius: 12px;
       padding: var(--space-md);
       display: grid;
       gap: var(--space-xs);
     }
-    .comodin-card--expired { opacity: 0.55; }
+    /* Border-left coloreado por estado (wireframe vibe) */
+    .comodin-card:has(.comodin-card__status.is-pending) {
+      border-left-color: var(--wf-warn);
+      background: var(--wf-warn-soft);
+    }
+    .comodin-card:has(.comodin-card__status.is-unassigned) { border-left-color: var(--wf-green); }
+    .comodin-card:has(.comodin-card__status.is-assigned) { border-left-color: var(--wf-ink); }
+    .comodin-card:has(.comodin-card__status.is-activated) { border-left-color: var(--wf-green); }
+    .comodin-card--expired {
+      opacity: 0.55;
+      border-left-color: var(--wf-danger);
+    }
     .comodin-card__head {
       display: flex;
       justify-content: space-between;
@@ -678,8 +690,9 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
       max-width: 720px; width: 100%;
       max-height: 88vh; overflow-y: auto;
       background: var(--color-primary-white);
-      border-radius: var(--radius-md);
+      border-radius: 12px;
       padding: var(--space-lg);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
     }
     .claim-modal__head {
       display: flex; justify-content: space-between; align-items: center;
@@ -687,9 +700,9 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
     }
     .claim-modal__head h2 {
       font-family: var(--font-display);
-      font-size: var(--fs-2xl);
-      text-transform: uppercase;
-      line-height: 1; margin: 0;
+      font-size: 24px;
+      letter-spacing: 0.04em;
+      line-height: 1.05; margin: 0;
     }
     .claim-modal__x {
       background: transparent; border: 0;
@@ -704,16 +717,17 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
     }
     .claim-option {
       width: 100%; text-align: left;
-      background: var(--color-primary-grey, #f4f4f4);
-      border: 2px solid transparent;
-      border-radius: var(--radius-sm);
+      background: var(--wf-fill);
+      border: 1.5px solid var(--wf-line);
+      border-radius: 10px;
       padding: var(--space-md);
       cursor: pointer;
       display: grid; gap: 4px;
-      transition: border 100ms;
+      transition: border 100ms, background 100ms;
     }
     .claim-option:hover:not(:disabled) {
       border-color: var(--color-primary-green);
+      background: var(--wf-paper);
     }
     .claim-option:disabled, .claim-option.is-owned {
       cursor: not-allowed; opacity: 0.5;

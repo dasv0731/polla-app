@@ -32,18 +32,19 @@ interface TeamItem {
   imports: [RouterLink, TeamFlagComponent],
   template: `
     <header class="page-header">
-      <small>
-        <a routerLink="/profile" style="color: var(--color-primary-green);">← Mi perfil</a>
-        · {{ totalPotential }} puntos potenciales
-      </small>
-      <h1>Picks especiales</h1>
+      <div class="page-header__title">
+        <small>
+          <a routerLink="/profile" style="color: var(--color-primary-green);">← Mi perfil</a>
+          · {{ totalPotential }} puntos potenciales
+        </small>
+        <h1>Picks especiales</h1>
+      </div>
 
       @if (availableModes().length > 1) {
-        <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-md); flex-wrap: wrap;">
+        <div class="wf-seg" role="tablist" style="max-width: 320px; margin-top: var(--space-md);">
           @for (m of availableModes(); track m) {
-            <button class="btn" type="button"
-                    [class.btn--primary]="mode() === m"
-                    [class.btn--ghost]="mode() !== m"
+            <button type="button" class="wf-seg__item"
+                    [class.is-active]="mode() === m"
                     (click)="switchMode(m)">
               {{ m === 'COMPLETE' ? 'Modo completo' : 'Modo simple' }}
             </button>
@@ -55,7 +56,7 @@ interface TeamItem {
         </p>
       }
 
-      <p style="color: var(--color-text-muted); font-size: var(--fs-md); margin-top: var(--space-md); max-width: 720px;">
+      <p style="color: var(--color-text-muted); font-size: var(--fs-sm); margin-top: var(--space-md); max-width: 720px;">
         Eliges 3 selecciones <strong>antes del kickoff del primer partido</strong> del Mundial.
         Una vez que arranque el torneo, no podrás editar.
       </p>

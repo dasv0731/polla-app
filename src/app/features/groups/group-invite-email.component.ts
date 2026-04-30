@@ -14,12 +14,14 @@ import { humanizeError } from '../../core/notifications/domain-errors';
     @let g = group();
 
     <header class="page-header">
-      <small>
-        <a [routerLink]="['/groups', id]" style="color: var(--color-primary-green);">
-          ← {{ g?.name ?? 'Volver al grupo' }}
-        </a>
-      </small>
-      <h1>Invitar por email</h1>
+      <div class="page-header__title">
+        <small>
+          <a [routerLink]="['/groups', id]" style="color: var(--color-primary-green);">
+            ← {{ g?.name ?? 'Volver al grupo' }}
+          </a>
+        </small>
+        <h1>Invitar por email</h1>
+      </div>
     </header>
 
     <main class="container-app" style="max-width: var(--container-narrow); display: grid; gap: var(--space-xl);">

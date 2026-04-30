@@ -21,12 +21,14 @@ interface GroupHeader {
     @let g = group();
 
     <header class="page-header">
-      <small>
-        <a [routerLink]="['/groups', id]" style="color: var(--color-primary-green);">
-          ← {{ g?.name ?? 'Volver al grupo' }}
-        </a>
-      </small>
-      <h1>Premios del grupo</h1>
+      <div class="page-header__title">
+        <small>
+          <a [routerLink]="['/groups', id]" style="color: var(--color-primary-green);">
+            ← {{ g?.name ?? 'Volver al grupo' }}
+          </a>
+        </small>
+        <h1>Premios del grupo</h1>
+      </div>
     </header>
 
     <main class="container-app" style="max-width: var(--container-narrow);">

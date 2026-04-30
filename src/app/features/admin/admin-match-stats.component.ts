@@ -71,7 +71,7 @@ interface QuestionStats {
       <small>
         <a routerLink="/admin/fixtures" style="color: var(--color-primary-green);">← Partidos</a>
       </small>
-      <h1 style="font-family: var(--font-display); font-size: 56px; line-height: 1; text-transform: uppercase;">
+      <h1 style="font-family: var(--font-display); font-size: 36px; line-height: 1.05; letter-spacing: 0.04em;">
         Estadísticas
       </h1>
       @if (match()) {

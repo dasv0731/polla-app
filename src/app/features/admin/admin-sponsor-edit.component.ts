@@ -62,7 +62,7 @@ interface CodeRow {
   template: `
     <header class="page-header" style="padding: 0 0 var(--space-md);">
       <small><a routerLink="/admin/sponsors" style="color: var(--color-primary-green);">← Sponsors</a></small>
-      <h1 style="font-family: var(--font-display); font-size: 56px; line-height: 1; text-transform: uppercase;">
+      <h1 style="font-family: var(--font-display); font-size: 36px; line-height: 1.05; letter-spacing: 0.04em;">
         {{ isNew() ? 'Nuevo sponsor' : 'Editar sponsor' }}
       </h1>
     </header>
