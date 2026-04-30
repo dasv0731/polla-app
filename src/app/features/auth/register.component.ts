@@ -469,7 +469,7 @@ export class RegisterComponent {
           // already exists
         }
       }
-      void this.router.navigate(['/picks']);
+      void this.router.navigate(['/onboarding']);
     } catch (e) {
       this.error.set((e as Error).message ?? 'Código inválido');
     } finally {

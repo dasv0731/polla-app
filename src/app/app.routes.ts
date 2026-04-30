@@ -23,6 +23,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/groups/group-join.component').then((m) => m.GroupJoinComponent),
   },
   {
+    // Onboarding standalone (sin shell de la app), 3 pasos post-registro.
+    path: 'onboarding',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/onboarding/onboarding.component').then((m) => m.OnboardingComponent),
+  },
+  {
     path: '',
     component: ShellComponent,
     canActivate: [authGuard],
