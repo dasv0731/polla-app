@@ -217,9 +217,9 @@ interface MatchInfo {
 
     .qcard {
       background: var(--color-primary-white);
-      border: var(--border-grey);
-      border-radius: var(--radius-md);
-      padding: var(--space-lg);
+      border: 1px solid var(--wf-line);
+      border-radius: 12px;
+      padding: var(--space-md);
       margin-bottom: var(--space-md);
     }
     .qcard--locked { opacity: 0.85; }
@@ -232,19 +232,21 @@ interface MatchInfo {
       gap: var(--space-sm);
     }
     .qcard__num {
-      font-size: var(--fs-xs);
+      font-size: 9px;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: var(--color-text-muted);
+      font-weight: 700;
     }
     .qcard__timer {
       font-family: ui-monospace, SFMono-Regular, monospace;
-      font-size: var(--fs-md);
-      font-weight: 600;
-      padding: 4px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 3px 10px;
       border-radius: 999px;
-      background: rgba(0, 200, 100, 0.15);
-      color: var(--color-primary-green);
+      background: var(--wf-green-soft);
+      color: var(--wf-green-ink);
+      border: 1px solid rgba(2, 204, 116, 0.3);
     }
     .qcard__timer--low {
       background: rgba(220, 50, 50, 0.15);
@@ -261,9 +263,9 @@ interface MatchInfo {
     }
     .qcard__prompt {
       font-family: var(--font-display);
-      font-size: var(--fs-xl);
+      font-size: 20px;
       line-height: 1.1;
-      text-transform: uppercase;
+      letter-spacing: 0.04em;
       margin-bottom: var(--space-md);
     }
     .qcard__opts {
@@ -280,9 +282,9 @@ interface MatchInfo {
       align-items: center;
       padding: var(--space-sm) var(--space-md);
       width: 100%;
-      background: var(--color-primary-grey, #f4f4f4);
-      border: 2px solid transparent;
-      border-radius: var(--radius-sm);
+      background: var(--wf-fill);
+      border: 1.5px solid var(--wf-line);
+      border-radius: 8px;
       cursor: pointer;
       font: inherit;
       text-align: left;

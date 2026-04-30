@@ -325,11 +325,12 @@ interface DayBlock {
       flex: 0 0 auto;
       width: 280px;
       aspect-ratio: 16 / 9;
-      background: var(--color-primary-grey, #f4f4f4);
-      border-radius: var(--radius-md);
+      background: var(--wf-fill);
+      border: 1px solid var(--wf-line);
+      border-radius: 12px;
       overflow: hidden;
       scroll-snap-align: start;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
     }
     .sponsor-banner-tile img {
       width: 100%;
@@ -481,31 +482,34 @@ interface DayBlock {
 
     .canjear-fab {
       position: fixed;
-      bottom: var(--space-lg);
-      right: var(--space-lg);
+      bottom: 80px;
+      right: var(--space-md);
       z-index: 50;
-      background: var(--color-primary-green);
-      color: var(--color-primary-white);
+      background: var(--wf-ink);
+      color: white;
       border: 0;
       border-radius: 999px;
-      padding: 12px 20px;
+      padding: 10px 16px;
       font: inherit;
-      font-weight: var(--fw-bold);
-      font-size: var(--fs-sm);
+      font-weight: 700;
+      font-size: 12px;
       cursor: pointer;
-      box-shadow: 0 4px 16px rgba(0,200,100,0.30);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.18);
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       transition: transform 100ms, box-shadow 100ms;
     }
     .canjear-fab:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 22px rgba(0,200,100,0.40);
+      box-shadow: 0 8px 22px rgba(0,0,0,0.25);
+    }
+    @media (min-width: 992px) {
+      .canjear-fab { bottom: var(--space-lg); right: var(--space-lg); }
     }
     @media (max-width: 480px) {
       .canjear-fab span { display: none; }
-      .canjear-fab { padding: 14px 16px; font-size: var(--fs-md); }
+      .canjear-fab { padding: 12px 14px; font-size: 14px; }
     }
   `],
 })
