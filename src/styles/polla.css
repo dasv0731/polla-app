@@ -817,8 +817,8 @@
    ============================================================ */
 .group-card {
   background: var(--color-primary-white);
-  border: var(--border-grey);
-  border-radius: var(--radius-lg);
+  border: 1px solid var(--wf-line);
+  border-radius: 12px;
   overflow: hidden;
   transition: border-color var(--transition-normal), transform var(--transition-normal);
   cursor: pointer;
@@ -830,7 +830,7 @@
   transform: translateY(-2px);
 }
 .group-card__header {
-  background: var(--color-primary-green);
+  background: linear-gradient(140deg, var(--color-primary-green) 0%, #007840 100%);
   color: var(--color-primary-white);
   padding: var(--space-sm) var(--space-md);
   display: flex;
@@ -839,8 +839,9 @@
 }
 .group-card__letter {
   font-family: var(--font-display);
-  font-size: var(--fs-2xl);
+  font-size: 24px;
   line-height: 1;
+  letter-spacing: 0.04em;
 }
 .group-card__meta {
   font-family: var(--font-primary);

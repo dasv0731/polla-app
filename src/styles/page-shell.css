@@ -148,24 +148,24 @@
   margin-bottom: var(--space-sm);
 }
 .join-card__icon {
-  width: 88px;
-  height: 88px;
-  border-radius: var(--radius-md);
-  background: var(--color-primary-black);
-  border: 2px solid var(--color-primary-green);
-  color: var(--color-primary-green);
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+  background: linear-gradient(140deg, var(--color-primary-green) 0%, #007840 100%);
+  color: var(--color-primary-white);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-family: var(--font-display);
-  font-size: 56px;
+  font-size: 36px;
   margin-bottom: var(--space-md);
+  box-shadow: 0 4px 14px rgba(2, 204, 116, 0.3);
 }
 .join-card__name {
   font-family: var(--font-display);
-  font-size: var(--fs-3xl);
-  text-transform: uppercase;
-  line-height: 1;
+  font-size: 32px;
+  letter-spacing: 0.04em;
+  line-height: 1.05;
   margin-bottom: var(--space-xs);
 }
 .join-card__owner {
@@ -1552,51 +1552,56 @@
 }
 
 .admin-sidebar {
-  background: var(--color-primary-black);
-  color: var(--color-primary-white);
-  padding: var(--space-lg);
+  background: var(--wf-paper);
+  color: var(--wf-ink);
+  padding: var(--space-md);
   display: flex;
   flex-direction: column;
-  gap: var(--space-xs);
+  gap: 4px;
+  border-right: 1px solid var(--wf-line-2);
 }
 .admin-sidebar__title {
-  font-family: var(--font-display);
-  font-size: var(--fs-md);
+  font-family: var(--font-primary);
+  font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--color-primary-green);
-  margin-bottom: var(--space-md);
+  color: var(--wf-ink-3);
+  font-weight: 700;
+  margin: var(--space-sm) 0 var(--space-xs);
+  padding: 0 var(--space-md);
 }
 .admin-sidebar a {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-md);
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-semibold);
-  color: rgba(255, 255, 255, 0.7);
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--wf-ink-2);
   transition: all var(--transition-normal);
+  text-decoration: none;
 }
 .admin-sidebar a:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--color-primary-white);
+  background: var(--wf-fill);
+  color: var(--wf-ink);
 }
 .admin-sidebar a.is-active {
-  background: var(--color-primary-green);
-  color: var(--color-primary-white);
+  background: var(--wf-green-soft);
+  color: var(--wf-green-ink);
 }
 .admin-sidebar a small {
   margin-left: auto;
-  font-family: var(--font-display);
-  font-size: var(--fs-md);
-  color: var(--color-primary-green);
-  background: rgba(2, 204, 116, 0.15);
+  font-family: var(--font-primary);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--wf-ink-3);
+  background: var(--wf-fill);
   padding: 2px 8px;
   border-radius: 999px;
 }
 .admin-sidebar a.is-active small {
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--color-primary-green);
   color: var(--color-primary-white);
 }
 
