@@ -541,17 +541,18 @@
 .stat-card strong {
   display: block;
   font-family: var(--font-display);
-  font-size: 56px;
+  font-size: 32px;
   color: var(--color-primary-green);
   line-height: 1;
+  letter-spacing: 0.02em;
 }
 .stat-card small {
   display: block;
-  font-size: var(--fs-xs);
+  font-size: 9px;
   color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-weight: var(--fw-bold);
+  font-weight: 700;
   margin-top: var(--space-xs);
 }
 
@@ -689,13 +690,14 @@
 }
 .group-hero__name {
   font-family: var(--font-display);
-  font-size: 56px;
-  line-height: 1;
+  font-size: 32px;
+  line-height: 1.05;
+  letter-spacing: 0.04em;
   color: var(--color-primary-white);
   text-transform: uppercase;
 }
 @media (min-width: 480px) {
-  .group-hero__name { font-size: 72px; }
+  .group-hero__name { font-size: 44px; }
 }
 .group-hero__meta {
   color: rgba(255, 255, 255, 0.7);
@@ -1076,8 +1078,9 @@
 .mh__side--winner strong { color: var(--color-primary-green); }
 .mh__score {
   font-family: var(--font-display);
-  font-size: 80px;
+  font-size: 56px;
   line-height: 1;
+  letter-spacing: 0.04em;
   color: var(--color-primary-white);
   white-space: nowrap;
 }
@@ -1114,16 +1117,16 @@
   font-family: var(--font-primary);
 }
 @media (min-width: 480px) {
-  .mh__score { font-size: 120px; }
-  .mh__side .flag { width: 130px; height: 130px; }
-  .mh__side strong { font-size: var(--fs-3xl); }
-  .mh__time { font-size: 56px; }
+  .mh__score { font-size: 72px; }
+  .mh__side .flag { width: 80px; height: 80px; }
+  .mh__side strong { font-size: 22px; }
+  .mh__time { font-size: 32px; }
 }
 @media (min-width: 992px) {
-  .mh { padding: var(--space-3xl) var(--section-x-desktop); }
-  .mh__score { font-size: 160px; }
-  .mh__side .flag { width: 160px; height: 160px; }
-  .mh__time { font-size: 72px; }
+  .mh { padding: var(--space-2xl) var(--section-x-desktop); }
+  .mh__score { font-size: 88px; }
+  .mh__side .flag { width: 96px; height: 96px; }
+  .mh__time { font-size: 36px; }
 }
 
 /* -------- Pick vs result (FINAL state) -------- */
@@ -1143,25 +1146,26 @@
 .pick-vs-result__pts {
   display: inline-block;
   font-family: var(--font-display);
-  font-size: 96px;
+  font-size: 64px;
   line-height: 1;
+  letter-spacing: 0.02em;
   color: var(--color-primary-green);
 }
 .pick-vs-result__pts small {
   display: block;
   font-family: var(--font-primary);
-  font-size: var(--fs-sm);
+  font-size: 10px;
   color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-weight: var(--fw-bold);
+  font-weight: 700;
   margin-top: 4px;
 }
 .pick-vs-result__verdict {
   font-family: var(--font-display);
-  font-size: var(--fs-xl);
-  text-transform: uppercase;
-  line-height: 1;
+  font-size: 22px;
+  letter-spacing: 0.04em;
+  line-height: 1.05;
   color: var(--color-primary-green);
   margin-bottom: var(--space-sm);
 }
@@ -1185,8 +1189,9 @@
 .pvr-cell strong {
   display: block;
   font-family: var(--font-display);
-  font-size: 64px;
+  font-size: 40px;
   line-height: 1;
+  letter-spacing: 0.02em;
   color: var(--color-primary-black);
   margin-bottom: var(--space-xs);
 }
