@@ -3418,9 +3418,12 @@ a.btn-wf { text-decoration: none; }
     padding: 20px;
     border-right: 1px solid var(--wf-line-2);
     background: var(--wf-paper);
+    /* align-self:start + max-height (no height fija) evita que el sidebar
+       se desborde sobre el grid-area "footer" cuando main es corto. */
+    align-self: start;
     position: sticky;
     top: 60px;
-    height: calc(100vh - 60px);
+    max-height: calc(100vh - 60px);
     overflow-y: auto;
   }
 
@@ -3431,9 +3434,10 @@ a.btn-wf { text-decoration: none; }
     padding: 20px;
     border-left: 1px solid var(--wf-line-2);
     background: var(--wf-paper);
+    align-self: start;
     position: sticky;
     top: 60px;
-    height: calc(100vh - 60px);
+    max-height: calc(100vh - 60px);
     overflow-y: auto;
   }
 

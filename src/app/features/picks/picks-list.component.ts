@@ -1,13 +1,17 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { getUrl } from 'aws-amplify/storage';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService } from '../../core/user/user-modes.service';
 import { TimeService } from '../../core/time/time.service';
+import { ToastService } from '../../core/notifications/toast.service';
+import { humanizeError } from '../../core/notifications/domain-errors';
 import { SponsorRedeemComponent } from './sponsor-redeem.component';
 import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
+
+const SAVE_DEBOUNCE_MS = 600;
 
 type BannerSlot = 'banner1' | 'banner2' | 'banner3';
 interface SponsorBanner {
@@ -205,13 +209,16 @@ interface TriviaInfo {
             }
           }
 
-          <!-- Template del match-card (readonly + click → /picks/match/:id) -->
+          <!-- Template del match-card · score editable inline para próximos
+               (auto-save con debounce); click en area no-input → detalle. -->
           <ng-template #cardTpl let-m>
             @let trivia = triviaInfo(m.id);
+            @let upcoming = !isPlayed(m) && !isLive(m);
+            @let saving = savingMatch() === m.id;
             <article class="match-card"
                      [class.match-card--accent]="!!trivia"
                      [class.match-card--dim]="m.pick === null && isPlayed(m)">
-              <a class="match-card__body" [routerLink]="['/picks/match', m.id]">
+              <div class="match-card__body" (click)="goToMatch(m.id)">
                 <div class="match-card__head">
                   <span>{{ formatKickoff(m.kickoffAt) }}@if (m.phaseLabel) { · {{ m.phaseLabel }} }</span>
                   @if (isLive(m)) {
@@ -231,16 +238,32 @@ interface TriviaInfo {
                       [size]="22" />
                     {{ m.homeTeamName }}
                   </div>
-                  <div class="score">
-                    <div class="score__num"
-                         [class.score__num--filled]="hasFilledScore(m, 'home')">
-                      {{ scoreDisplay(m, 'home') }}
-                    </div>
-                    <span>—</span>
-                    <div class="score__num"
-                         [class.score__num--filled]="hasFilledScore(m, 'away')">
-                      {{ scoreDisplay(m, 'away') }}
-                    </div>
+                  <div class="score" (click)="$event.stopPropagation()">
+                    @if (upcoming) {
+                      <input type="number" class="score__input" min="0" max="9"
+                             [value]="m.pick?.homeScorePred ?? ''"
+                             placeholder="0"
+                             [attr.aria-label]="'Goles ' + m.homeTeamName"
+                             (click)="$event.stopPropagation()"
+                             (input)="onScoreInput(m.id, 'home', $event)">
+                      <span>—</span>
+                      <input type="number" class="score__input" min="0" max="9"
+                             [value]="m.pick?.awayScorePred ?? ''"
+                             placeholder="0"
+                             [attr.aria-label]="'Goles ' + m.awayTeamName"
+                             (click)="$event.stopPropagation()"
+                             (input)="onScoreInput(m.id, 'away', $event)">
+                    } @else {
+                      <div class="score__num"
+                           [class.score__num--filled]="hasFilledScore(m, 'home')">
+                        {{ scoreDisplay(m, 'home') }}
+                      </div>
+                      <span>—</span>
+                      <div class="score__num"
+                           [class.score__num--filled]="hasFilledScore(m, 'away')">
+                        {{ scoreDisplay(m, 'away') }}
+                      </div>
+                    }
                   </div>
                   <div class="match__team match__team--right">
                     {{ m.awayTeamName }}
@@ -258,13 +281,13 @@ interface TriviaInfo {
                     <span class="pill pill--green">✓ Resultado · +{{ m.pick.pointsEarned ?? 0 }}</span>
                   } @else if (m.pick && isPlayed(m)) {
                     <span class="pill">Sin pts</span>
-                  } @else if (m.pick) {
-                    <span class="pill pill--green">✓ Guardado</span>
-                  } @else if (!isPlayed(m)) {
+                  } @else if (m.pick && upcoming) {
+                    <span class="pill pill--green">{{ saving ? 'Guardando…' : '✓ Guardado' }}</span>
+                  } @else if (upcoming) {
                     <span class="pill">Sin pick</span>
                   }
                 </div>
-              </a>
+              </div>
               @if (trivia) {
                 <a class="match-trivia"
                    [routerLink]="['/picks/trivia', m.id]"
@@ -462,11 +485,20 @@ interface TriviaInfo {
     }
   `],
 })
-export class PicksListComponent implements OnInit {
+export class PicksListComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private userModes = inject(UserModesService);
   private time = inject(TimeService);
+  private toast = inject(ToastService);
+  private router = inject(Router);
+
+  /** matchId actualmente guardando (para mostrar "Guardando…"). */
+  savingMatch = signal<string | null>(null);
+  private debounceTimer = new Map<string, ReturnType<typeof setTimeout>>();
+  /** Edits pendientes per match: lo último que el user tipeó pero aún no
+   *  llegó a upsertPick. */
+  private pendingEdits = new Map<string, { home: number; away: number }>();
 
   tab = signal<'upcoming' | 'played'>('upcoming');
   matches = signal<MatchWithMeta[]>([]);
@@ -563,6 +595,76 @@ export class PicksListComponent implements OnInit {
     const b = code.toUpperCase().charCodeAt(1);
     if (Number.isNaN(a) || Number.isNaN(b)) return '';
     return String.fromCodePoint(A + (a - 65), A + (b - 65));
+  }
+
+  /** Click en area no-input del card → navega al detail. */
+  goToMatch(id: string) {
+    void this.router.navigate(['/picks/match', id]);
+  }
+
+  /** Auto-save del marcador con debounce. Llamado desde input event. */
+  onScoreInput(matchId: string, side: 'home' | 'away', event: Event) {
+    const input = event.target as HTMLInputElement;
+    const raw = input.value.replace(/[^0-9]/g, '').slice(0, 1);
+    const v = raw === '' ? 0 : Math.max(0, Math.min(9, parseInt(raw, 10)));
+    if (raw !== '' && raw !== input.value) input.value = raw;
+
+    const cur = this.pendingEdits.get(matchId) ?? this.scoresFor(matchId);
+    const next = side === 'home' ? { home: v, away: cur.away } : { home: cur.home, away: v };
+    this.pendingEdits.set(matchId, next);
+
+    const existing = this.debounceTimer.get(matchId);
+    if (existing) clearTimeout(existing);
+    this.debounceTimer.set(
+      matchId,
+      setTimeout(() => void this.flushSave(matchId), SAVE_DEBOUNCE_MS),
+    );
+  }
+
+  private scoresFor(matchId: string): { home: number; away: number } {
+    const m = this.matches().find((x) => x.id === matchId);
+    const p = m?.pick;
+    return { home: p?.homeScorePred ?? 0, away: p?.awayScorePred ?? 0 };
+  }
+
+  private async flushSave(matchId: string) {
+    const edit = this.pendingEdits.get(matchId);
+    if (!edit) return;
+    this.pendingEdits.delete(matchId);
+    this.debounceTimer.delete(matchId);
+    this.savingMatch.set(matchId);
+    try {
+      await this.api.upsertPick(matchId, edit.home, edit.away);
+      // Update local match list para que el pill "Guardado" aparezca
+      // y la próxima edición parta del nuevo valor.
+      this.matches.update((arr) =>
+        arr.map((m) =>
+          m.id !== matchId ? m : ({
+            ...m,
+            pick: {
+              homeScorePred: edit.home,
+              awayScorePred: edit.away,
+              pointsEarned: m.pick?.pointsEarned ?? null,
+              exactScore: m.pick?.exactScore ?? null,
+              correctResult: m.pick?.correctResult ?? null,
+            },
+          }),
+        ),
+      );
+    } catch (e) {
+      this.toast.error(humanizeError(e));
+    } finally {
+      this.savingMatch.set(null);
+    }
+  }
+
+  ngOnDestroy() {
+    // Flush en unmount: si hay edits pendientes, persistirlos antes de salir.
+    for (const [matchId, t] of this.debounceTimer.entries()) {
+      clearTimeout(t);
+      void this.flushSave(matchId);
+    }
+    this.debounceTimer.clear();
   }
 
   /** Devuelve info de trivia para el row inline si hay preguntas para el match. */
