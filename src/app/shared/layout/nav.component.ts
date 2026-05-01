@@ -150,6 +150,29 @@ type DropdownKey = 'user' | null;
         </div>
 
         <div class="app-sidebar__section">
+          <div class="app-sidebar__kicker">Predicciones</div>
+          <a class="sidebar-row" routerLink="/picks/group-stage/predict"
+             routerLinkActive="is-active">
+            <span><span class="sidebar-row__icon">📋</span>Tabla de grupos</span>
+          </a>
+          @if (bracketReady()) {
+            <a class="sidebar-row" routerLink="/picks/bracket"
+               routerLinkActive="is-active">
+              <span><span class="sidebar-row__icon">🌳</span>Llaves (bracket)</span>
+            </a>
+          } @else {
+            <div class="sidebar-row is-disabled"
+                 title="Disponible cuando el admin cargue los partidos de eliminatoria">
+              <span><span class="sidebar-row__icon">🌳</span>Llaves (bracket)</span>
+              <span class="pill" style="padding:1px 6px;font-size:9px;">Pronto</span>
+            </div>
+          }
+          <p class="sidebar-empty" style="margin-top:6px;">
+            Aplican a tus grupos en modo simple y completo.
+          </p>
+        </div>
+
+        <div class="app-sidebar__section">
           <div class="app-sidebar__kicker">Mi cuenta</div>
           <a class="sidebar-row" routerLink="/profile/special-picks" routerLinkActive="is-active">
             <span><span class="sidebar-row__icon">⭐</span>Picks especiales</span>
@@ -291,6 +314,11 @@ export class NavComponent implements OnInit, OnDestroy {
   unreadCount = signal(0);
   private notifSub: { unsubscribe: () => void } | undefined;
 
+  /** True si hay al menos un partido cargado en fases eliminatorias
+   *  (phaseOrder ≥ 2). Mientras sea false, "Llaves" se muestra
+   *  deshabilitado en el sidebar — los equipos aún no se conocen. */
+  bracketReady = signal(false);
+
   async ngOnInit() {
     const userId = this.auth.user()?.sub;
     if (!userId) return;
@@ -305,6 +333,29 @@ export class NavComponent implements OnInit, OnDestroy {
         console.warn('[nav] notification subscription error', err);
       },
     });
+
+    // Chequeo de "bracketReady": si hay partidos en fases eliminatorias
+    // (phaseOrder ≥ 2), habilitamos el link en el sidebar. One-shot.
+    void this.checkBracketReady();
+  }
+
+  private async checkBracketReady() {
+    try {
+      const [matchesRes, phasesRes] = await Promise.all([
+        this.api.listMatches('mundial-2026'),
+        this.api.listPhases('mundial-2026'),
+      ]);
+      const koPhaseIds = new Set(
+        ((phasesRes.data ?? []) as Array<{ id: string; order: number }>)
+          .filter((p) => (p.order ?? 0) >= 2)
+          .map((p) => p.id),
+      );
+      const hasKO = ((matchesRes.data ?? []) as Array<{ phaseId: string }>)
+        .some((m) => koPhaseIds.has(m.phaseId));
+      this.bracketReady.set(hasKO);
+    } catch {
+      // ignore — queda en false (deshabilitado)
+    }
   }
 
   ngOnDestroy() {
