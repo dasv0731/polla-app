@@ -5,7 +5,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService, type UserGroup } from '../../core/user/user-modes.service';
 import { GroupActionsService } from '../../core/groups/group-actions.service';
 
-type DropdownKey = 'user' | null;
+type DropdownKey = 'user' | 'ranking' | null;
 
 @Component({
   standalone: true,
@@ -28,7 +28,51 @@ type DropdownKey = 'user' | null;
           } @else {
             <a class="app-topnav__item" routerLink="/picks" routerLinkActive="is-active" (click)="closeAll()">Mis picks</a>
             <a class="app-topnav__item" routerLink="/groups" routerLinkActive="is-active" (click)="closeAll()">Grupos</a>
-            <a class="app-topnav__item" routerLink="/ranking" routerLinkActive="is-active" (click)="closeAll()">Ranking</a>
+
+            <!-- Ranking dropdown: Global + per-group -->
+            <div class="app-topnav__dropdown" (click)="$event.stopPropagation()">
+              <button type="button" class="app-topnav__item app-topnav__item--has-dropdown"
+                      [class.is-active]="open() === 'ranking'"
+                      (click)="toggle('ranking')"
+                      [attr.aria-expanded]="open() === 'ranking'"
+                      aria-haspopup="true">
+                Ranking <span aria-hidden="true">▾</span>
+              </button>
+              @if (open() === 'ranking') {
+                <div class="app-topnav__panel" role="menu">
+                  <a class="app-topnav__panel-item" role="menuitem"
+                     routerLink="/ranking" [queryParams]="{scope: 'global'}"
+                     (click)="closeAll()">
+                    🌐 Ranking global
+                  </a>
+                  @if (myGroups().length > 0) {
+                    <hr class="app-topnav__panel-sep">
+                    <div class="app-topnav__panel-kicker">Mis grupos</div>
+                    @for (g of topGroups(); track g.id) {
+                      <a class="app-topnav__panel-item" role="menuitem"
+                         [routerLink]="['/groups', g.id]" (click)="closeAll()">
+                        <span class="text-bold">{{ g.name }}</span>
+                        <span class="text-mute" style="font-size:11px;">
+                          · {{ g.mode === 'COMPLETE' ? 'Completo' : 'Simple' }}
+                        </span>
+                      </a>
+                    }
+                    @if (myGroups().length > topGroups().length) {
+                      <a class="app-topnav__panel-item" role="menuitem"
+                         routerLink="/groups" (click)="closeAll()"
+                         style="color:var(--wf-green-ink);font-weight:700;">
+                        Ver todos los grupos →
+                      </a>
+                    }
+                  } @else {
+                    <hr class="app-topnav__panel-sep">
+                    <div class="app-topnav__panel-empty">
+                      Aún no estás en ningún grupo.
+                    </div>
+                  }
+                </div>
+              }
+            </div>
           }
         </nav>
       </div>
@@ -38,10 +82,41 @@ type DropdownKey = 'user' | null;
           🔔
           @if (unreadCount() > 0) { <span class="badge">{{ unreadCount() }}</span> }
         </a>
-        <a routerLink="/profile" class="app-topnav__user" (click)="closeAll()">
-          <span class="avatar">{{ avatar() }}</span>
-          <span class="name">{{ '@' + (handle() ?? '') }}</span>
-        </a>
+
+        <!-- User dropdown: notificaciones + perfil + cerrar sesión -->
+        <div class="app-topnav__dropdown" (click)="$event.stopPropagation()">
+          <button type="button" class="app-topnav__user app-topnav__user--has-dropdown"
+                  [class.is-active]="open() === 'user'"
+                  (click)="toggle('user')"
+                  [attr.aria-expanded]="open() === 'user'"
+                  aria-haspopup="true">
+            <span class="avatar">{{ avatar() }}</span>
+            <span class="name">{{ '@' + (handle() ?? '') }}</span>
+            <span aria-hidden="true">▾</span>
+          </button>
+          @if (open() === 'user') {
+            <div class="app-topnav__panel" role="menu">
+              <a class="app-topnav__panel-item" role="menuitem"
+                 routerLink="/notificaciones" (click)="closeAll()">
+                <span style="display:flex;justify-content:space-between;align-items:center;width:100%;">
+                  <span>🔔 Notificaciones</span>
+                  @if (unreadCount() > 0) {
+                    <span class="pill pill--solid">{{ unreadCount() }}</span>
+                  }
+                </span>
+              </a>
+              <a class="app-topnav__panel-item" role="menuitem"
+                 routerLink="/profile" (click)="closeAll()">
+                👤 Mi perfil
+              </a>
+              <hr class="app-topnav__panel-sep">
+              <button type="button" class="app-topnav__panel-item app-topnav__panel-item--danger"
+                      role="menuitem" (click)="logout()">
+                ⏻ Cerrar sesión
+              </button>
+            </div>
+          }
+        </div>
       </div>
     </header>
 
@@ -182,19 +257,6 @@ type DropdownKey = 'user' | null;
               <span><span class="sidebar-row__icon">🃏</span>Mis comodines</span>
             </a>
           }
-          <a class="sidebar-row" routerLink="/ranking" routerLinkActive="is-active">
-            <span><span class="sidebar-row__icon">🏆</span>Ranking global</span>
-          </a>
-          <a class="sidebar-row" routerLink="/notificaciones" routerLinkActive="is-active">
-            <span><span class="sidebar-row__icon">🔔</span>Notificaciones</span>
-            @if (unreadCount() > 0) { <span class="pill pill--solid">{{ unreadCount() }}</span> }
-          </a>
-          <a class="sidebar-row" routerLink="/profile" routerLinkActive="is-active">
-            <span><span class="sidebar-row__icon">👤</span>Mi perfil</span>
-          </a>
-          <button class="sidebar-row sidebar-row--logout" type="button" (click)="logout()">
-            <span><span class="sidebar-row__icon">⏻</span>Cerrar sesión</span>
-          </button>
         </div>
       }
     </aside>
@@ -234,6 +296,95 @@ type DropdownKey = 'user' | null;
     /* display: contents permite que los hijos del componente sean
        grid items directos del .app-shell (topnav, sidebar, main). */
     :host { display: contents; }
+
+    /* ---------- Dropdowns en el topnav (Ranking + User) ---------- */
+    .app-topnav__dropdown {
+      position: relative;
+    }
+    .app-topnav__item--has-dropdown,
+    .app-topnav__user--has-dropdown {
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .app-topnav__item--has-dropdown {
+      background: transparent;
+      border: 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--wf-ink);
+      padding: 8px 14px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .app-topnav__item--has-dropdown:hover { background: var(--wf-fill); }
+    .app-topnav__item--has-dropdown.is-active {
+      background: var(--wf-green-soft);
+      color: var(--wf-green-ink);
+    }
+    .app-topnav__user--has-dropdown {
+      border: 0;
+      background: transparent;
+      gap: 8px;
+    }
+    .app-topnav__user--has-dropdown.is-active { background: var(--wf-fill); }
+
+    /* Panel de dropdown (común a Ranking y User) */
+    .app-topnav__panel {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      min-width: 240px;
+      background: var(--wf-paper);
+      border: 1px solid var(--wf-line-2);
+      border-radius: 10px;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+      padding: 6px;
+      z-index: 50;
+    }
+    .app-topnav__dropdown:has(.app-topnav__item--has-dropdown) .app-topnav__panel {
+      left: 0;
+      right: auto;
+    }
+    .app-topnav__panel-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--wf-ink);
+      text-decoration: none;
+      cursor: pointer;
+      width: 100%;
+      background: transparent;
+      border: 0;
+      font-family: inherit;
+      text-align: left;
+    }
+    .app-topnav__panel-item:hover { background: var(--wf-fill); }
+    .app-topnav__panel-item--danger { color: var(--wf-danger); }
+    .app-topnav__panel-kicker {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      color: var(--wf-ink-3);
+      text-transform: uppercase;
+      padding: 6px 10px 4px;
+    }
+    .app-topnav__panel-empty {
+      padding: 10px;
+      font-size: 12px;
+      color: var(--wf-ink-3);
+      line-height: 1.4;
+    }
+    .app-topnav__panel-sep {
+      border: 0;
+      border-top: 1px solid var(--wf-line-2);
+      margin: 4px 0;
+    }
 
     /* Mobile menu (dropdown del avatar) — anclado bajo la topbar */
     .mobile-menu {

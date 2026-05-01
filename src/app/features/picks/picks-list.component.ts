@@ -8,7 +8,6 @@ import { UserModesService } from '../../core/user/user-modes.service';
 import { TimeService } from '../../core/time/time.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
-import { SponsorRedeemComponent } from './sponsor-redeem.component';
 import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
 
 const SAVE_DEBOUNCE_MS = 600;
@@ -70,7 +69,7 @@ interface TriviaInfo {
 @Component({
   standalone: true,
   selector: 'app-picks-list',
-  imports: [NgTemplateOutlet, RouterLink, RouterLinkActive, SponsorRedeemComponent, TeamFlagComponent],
+  imports: [NgTemplateOutlet, RouterLink, RouterLinkActive, TeamFlagComponent],
   template: `
     <section class="page">
 
@@ -116,10 +115,9 @@ interface TriviaInfo {
         </a>
       </nav>
 
-      <!-- Layout 2 cols (rail solo desktop ≥1200) -->
-      <div class="picks-layout">
-
-        <div>
+      <!-- Contenido principal · el rail (premios/comodines/canjear) vive
+           globalmente en el shell, no acá. -->
+      <div>
 
           <!-- Sub seg (Próximos / Jugados) -->
           <div class="picks-sub">
@@ -322,54 +320,6 @@ interface TriviaInfo {
             }
           }
 
-        </div>
-
-        <!-- Right rail (desktop ≥1200) -->
-        <aside>
-
-          @if (primaryPrizeGroup(); as p) {
-            <div class="rail-section">
-              <div class="rail-premios">
-                <div class="rail-premios__head">
-                  <span class="rail-premios__icon">🏆</span>
-                  <div>
-                    <div class="kicker" style="color:#7a5d00;">PREMIOS · {{ p.groupName.toUpperCase() }}</div>
-                    <div class="rail-premios__total">{{ p.totalLabel }}</div>
-                  </div>
-                </div>
-                <div style="background:var(--wf-paper);padding:8px 0;">
-                  @if (p.prize1st) {
-                    <div class="rail-premios__row">
-                      <span style="font-size:14px;">🥇</span>
-                      <span class="text-bold">1° lugar</span>
-                      <span class="amount">{{ p.prize1st }}</span>
-                    </div>
-                  }
-                  @if (p.prize2nd) {
-                    <div class="rail-premios__row">
-                      <span style="font-size:14px;">🥈</span>
-                      <span class="text-bold">2° lugar</span>
-                      <span class="amount">{{ p.prize2nd }}</span>
-                    </div>
-                  }
-                  @if (p.prize3rd) {
-                    <div class="rail-premios__row">
-                      <span style="font-size:14px;">🥉</span>
-                      <span class="text-bold">3° lugar</span>
-                      <span class="amount">{{ p.prize3rd }}</span>
-                    </div>
-                  }
-                </div>
-              </div>
-            </div>
-          }
-
-          <div class="rail-section">
-            <h3 class="rail-section__title">Sponsors</h3>
-            <app-sponsor-redeem />
-          </div>
-
-        </aside>
       </div>
 
     </section>
@@ -542,10 +492,9 @@ export class PicksListComponent implements OnInit, OnDestroy {
   }
 
   scrollToCanjear() {
-    // En mobile el rail está oculto: el bloque de canjear no existe en
-    // el DOM. Llevamos al user a una sección visible o abrimos el redeem
-    // como página independiente. Por ahora hacemos scroll al final.
-    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    // El canjear inline vive ahora en /mis-comodines (slot al final del
+    // grid). Navegamos allá; el form ya está visible en esa página.
+    void this.router.navigate(['/mis-comodines'], { fragment: 'card-canjear' });
   }
 
   // ---------- Helpers para el match-card inline ----------
