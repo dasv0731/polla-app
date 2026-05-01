@@ -1,6 +1,7 @@
 import { Component, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService } from '../../core/user/user-modes.service';
@@ -49,7 +50,7 @@ const SAVE_DEBOUNCE_MS = 1200;
 @Component({
   standalone: true,
   selector: 'app-bracket-picks',
-  imports: [RouterLink, RouterLinkActive, NgTemplateOutlet],
+  imports: [RouterLink, RouterLinkActive, NgTemplateOutlet, TeamFlagComponent],
   template: `
     <section class="page">
 
@@ -295,7 +296,11 @@ const SAVE_DEBOUNCE_MS = 1200;
                 [disabled]="bracketLocked()"
                 (click)="pickWinner(match.id, teamId)">
           <span class="bracket-slot__team">
-            <span class="flag">{{ flagEmoji(team?.flagCode || '') }}</span>{{ team?.name || teamId }}
+            <app-team-flag
+              [flagCode]="team?.flagCode ?? ''"
+              [name]="team?.name ?? null"
+              [size]="14" />
+            {{ team?.name || teamId }}
           </span>
           <span class="bracket-slot__score">{{ score != null ? score : '' }}</span>
         </button>

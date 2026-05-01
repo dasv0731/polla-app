@@ -3,6 +3,7 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService, type UserGroup } from '../../core/user/user-modes.service';
+import { GroupActionsService } from '../../core/groups/group-actions.service';
 
 type DropdownKey = 'user' | null;
 
@@ -275,6 +276,7 @@ export class NavComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private router = inject(Router);
   private userModes = inject(UserModesService);
+  private groupActions = inject(GroupActionsService);
 
   open = signal<DropdownKey>(null);
 
@@ -324,10 +326,13 @@ export class NavComponent implements OnInit, OnDestroy {
   goComodines() { this.closeAll(); void this.router.navigate(['/mis-comodines']); }
   goNotifications() { this.closeAll(); void this.router.navigate(['/notificaciones']); }
   goSpecialPicks() { this.closeAll(); void this.router.navigate(['/profile/special-picks']); }
-  goToGroupsNew() { this.closeAll(); void this.router.navigate(['/groups/new']); }
+  goToGroupsNew() {
+    this.closeAll();
+    this.groupActions.openCreate();
+  }
   goToGroupsJoin() {
     this.closeAll();
-    void this.router.navigate(['/groups'], { fragment: 'unirme' });
+    this.groupActions.openJoin();
   }
 
   async logout() {

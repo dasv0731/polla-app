@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService } from '../../core/user/user-modes.service';
+import { GroupActionsService } from '../../core/groups/group-actions.service';
 import { compareRankable } from '../../shared/util/tiebreakers';
 
 type GameMode = 'SIMPLE' | 'COMPLETE';
@@ -31,8 +32,12 @@ interface GroupRow {
           <h1>Mis grupos</h1>
         </div>
         <div class="page-header__actions">
-          <a class="btn btn--primary" routerLink="/groups/new">+ Crear grupo</a>
-          <a class="btn btn--ghost" href="#unirme">Unirme con código</a>
+          <button type="button" class="btn btn--primary" (click)="groupActions.openCreate()">
+            + Crear grupo
+          </button>
+          <button type="button" class="btn btn--ghost" (click)="groupActions.openJoin()">
+            Unirme con código
+          </button>
         </div>
       </div>
     </header>
@@ -80,24 +85,17 @@ interface GroupRow {
         <article class="empty-cta__card">
           <h3>Crear un nuevo grupo</h3>
           <p>Arma un grupo privado con tus amigos. Recibes un código de 6 caracteres para invitar a quien quieras.</p>
-          <a class="btn btn--primary" routerLink="/groups/new">+ Crear grupo</a>
+          <button type="button" class="btn btn--primary" (click)="groupActions.openCreate()">
+            + Crear grupo
+          </button>
         </article>
 
         <article class="empty-cta__card">
           <h3>Unirme con código</h3>
-          <p>¿Te invitaron? Pega el código que te enviaron. 6 caracteres del alfabeto seguro (sin 0/O/1/I).</p>
-          <form class="join-form" (ngSubmit)="join()">
-            <input type="text" name="code" placeholder="K7P2QM" maxlength="6"
-                   autocomplete="off" autocapitalize="characters"
-                   [(ngModel)]="codeInput"
-                   (input)="codeInput = codeInput.toUpperCase()">
-            <button class="btn btn--primary" type="submit" [disabled]="joining()">
-              {{ joining() ? 'Validando…' : 'Unirme' }}
-            </button>
-          </form>
-          @if (joinError()) {
-            <p class="form-card__hint" style="color: var(--color-lost); margin-top: var(--space-sm);">{{ joinError() }}</p>
-          }
+          <p>¿Te invitaron? Abrí el modal y pega el código de 6 caracteres.</p>
+          <button type="button" class="btn btn--primary" (click)="groupActions.openJoin()">
+            Unirme con código →
+          </button>
         </article>
       </section>
     </div>
@@ -108,6 +106,7 @@ export class GroupsListComponent implements OnInit {
   private auth = inject(AuthService);
   private router = inject(Router);
   private userModes = inject(UserModesService);
+  groupActions = inject(GroupActionsService);
 
   groups = signal<GroupRow[]>([]);
   loading = signal(true);

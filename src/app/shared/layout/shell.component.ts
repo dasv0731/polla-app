@@ -5,6 +5,7 @@ import { FooterComponent } from './footer.component';
 import { PicksPendingBannerComponent } from '../../features/picks/picks-pending-banner.component';
 import { ToastHostComponent } from '../../core/notifications/toast-host.component';
 import { TriviaPopupComponent } from '../../features/trivia/trivia-popup.component';
+import { GroupActionsModalsComponent } from './group-actions-modals.component';
 
 @Component({
   standalone: true,
@@ -12,6 +13,7 @@ import { TriviaPopupComponent } from '../../features/trivia/trivia-popup.compone
   imports: [
     RouterOutlet, NavComponent, FooterComponent,
     PicksPendingBannerComponent, ToastHostComponent, TriviaPopupComponent,
+    GroupActionsModalsComponent,
   ],
   template: `
     <div class="app-shell">
@@ -26,6 +28,8 @@ import { TriviaPopupComponent } from '../../features/trivia/trivia-popup.compone
     <!-- Popup global de trivia: visible en toda la app cuando hay
          preguntas activas no contestadas (modo COMPLETE). -->
     <app-trivia-popup />
+    <!-- Modales globales de "Crear grupo" / "Unirme con código" -->
+    <app-group-actions-modals />
   `,
   styles: [`
     :host { display: block; }

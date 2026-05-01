@@ -7,6 +7,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService } from '../../core/user/user-modes.service';
 import { TimeService } from '../../core/time/time.service';
 import { SponsorRedeemComponent } from './sponsor-redeem.component';
+import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
 
 type BannerSlot = 'banner1' | 'banner2' | 'banner3';
 interface SponsorBanner {
@@ -65,7 +66,7 @@ interface TriviaInfo {
 @Component({
   standalone: true,
   selector: 'app-picks-list',
-  imports: [NgTemplateOutlet, RouterLink, RouterLinkActive, SponsorRedeemComponent],
+  imports: [NgTemplateOutlet, RouterLink, RouterLinkActive, SponsorRedeemComponent, TeamFlagComponent],
   template: `
     <section class="page">
 
@@ -223,7 +224,11 @@ interface TriviaInfo {
                 </div>
                 <div class="match" style="padding:0;">
                   <div class="match__team">
-                    <span class="flag">{{ flagEmoji(m.homeFlag) }}</span>
+                    <app-team-flag
+                      [flagCode]="m.homeFlag"
+                      [crestUrl]="m.homeCrestUrl"
+                      [name]="m.homeTeamName"
+                      [size]="22" />
                     {{ m.homeTeamName }}
                   </div>
                   <div class="score">
@@ -239,7 +244,11 @@ interface TriviaInfo {
                   </div>
                   <div class="match__team match__team--right">
                     {{ m.awayTeamName }}
-                    <span class="flag">{{ flagEmoji(m.awayFlag) }}</span>
+                    <app-team-flag
+                      [flagCode]="m.awayFlag"
+                      [crestUrl]="m.awayCrestUrl"
+                      [name]="m.awayTeamName"
+                      [size]="22" />
                   </div>
                 </div>
                 <div class="match-card__pills">
