@@ -1,0 +1,9 @@
+{
+  "name": "polla-scripts",
+  "private": true,
+  "type": "module",
+  "description": "Scripts utilitarios fuera del bundle de la app (cleanup, smoke tests, etc).",
+  "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.660.0"
+  }
+}
