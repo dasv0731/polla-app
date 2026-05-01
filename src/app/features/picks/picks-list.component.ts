@@ -126,21 +126,14 @@ interface DayBlock {
           </div>
 
           @if (!hasComplete()) {
-            <div class="empty-block">
-              <h3>Modo completo no disponible</h3>
-              <p>
-                Los picks de marcador (1 partido = 1 marcador con multiplicadores
-                por fase) son del <strong>modo completo</strong>. Únete o crea
-                un grupo en modo completo para usarlos.
-              </p>
-              <a class="btn-wf btn-wf--primary" routerLink="/groups/new">Crear un grupo →</a>
-              <p style="margin-top:12px;font-size:12px;color:var(--wf-ink-3);">
-                Si tu grupo es <strong>modo simple</strong>, las predicciones de
-                tabla, llaves y campeón sí cuentan — están en
-                <a class="link-green" routerLink="/picks/group-stage">Tabla grupos</a>.
-              </p>
+            <div class="hint-banner">
+              <strong>Modo completo no activo.</strong>
+              Podés ver el calendario, pero los marcadores que predigás
+              acá no contarán hasta que estés en un grupo modo completo.
+              <a routerLink="/groups/new" class="link-green">Crear grupo →</a>
             </div>
-          } @else if (loading()) {
+          }
+          @if (loading()) {
             <p class="loading-msg">Cargando partidos…</p>
           } @else if (tab() === 'upcoming') {
             @if (visibleDays().length === 0) {
@@ -296,6 +289,19 @@ interface DayBlock {
       color: var(--wf-ink-3);
       font-size: 14px;
     }
+
+    .hint-banner {
+      padding: 12px 14px;
+      background: var(--wf-warn-soft);
+      border: 1px solid rgba(212, 165, 0, 0.4);
+      border-radius: 10px;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #7a5d00;
+      margin-bottom: 14px;
+    }
+    .hint-banner strong { color: #3a2c00; }
+    .hint-banner a { margin-left: 6px; }
 
     .link-green {
       color: var(--wf-green-ink);

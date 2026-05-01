@@ -19,8 +19,8 @@ import { TriviaPopupComponent } from '../../features/trivia/trivia-popup.compone
       <main class="app-main">
         <app-picks-pending-banner />
         <router-outlet />
-        <app-footer />
       </main>
+      <app-footer />
     </div>
     <app-toast-host />
     <!-- Popup global de trivia: visible en toda la app cuando hay

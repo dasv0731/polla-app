@@ -3282,21 +3282,26 @@ a.btn-wf { text-decoration: none; }
     padding-bottom: 0;
     display: grid;
     grid-template-columns: 240px 1fr;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto 1fr auto;
     grid-template-areas:
       "topnav  topnav"
-      "sidebar main";
+      "sidebar main"
+      "footer  footer";
   }
-  body.app.has-rail {
+  .app-shell.has-rail {
     grid-template-columns: 240px 1fr 300px;
     grid-template-areas:
       "topnav  topnav  topnav"
-      "sidebar main    rail";
+      "sidebar main    rail"
+      "footer  footer  footer";
   }
 
   /* Mobile bars ocultas en desktop */
-  body.app .app-topbar { display: none; }
-  body.app .app-tabbar { display: none; }
+  .app-shell .app-topbar { display: none; }
+  .app-shell .app-tabbar { display: none; }
+
+  /* Footer dentro del grid: ocupa toda la fila inferior */
+  .app-shell app-footer { grid-area: footer; }
 
   /* Top nav (sticky top) */
   .app-topnav {
