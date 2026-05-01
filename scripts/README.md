@@ -3,6 +3,69 @@
 Scripts utilitarios que viven fuera del bundle de la app. Se ejecutan
 local con tu identidad de AWS.
 
+## reset-test-env.mjs (recomendado)
+
+Script todo-en-uno para resetear el entorno de pruebas. Hace 3 cosas:
+
+1. Borra todas las filas de los modelos de usuario (User, Pick,
+   Group, Membership, Comodin, etc.) via GraphQL — autenticado como
+   smoketest@polla.local.
+2. Reschedule todos los Match a `2026-06-11` (preservando la
+   hora-del-día original), con `status=SCHEDULED`, `homeScore=null`,
+   `awayScore=null`, `pointsCalculated=false`.
+3. Borra todos los Cognito users excepto `smoketest@polla.local`.
+
+### Pre-requisitos
+
+- AWS credentials configuradas (perfil default o env vars).
+- IAM:
+  - `cognito-idp:ListUsers`
+  - `cognito-idp:AdminDeleteUser`
+- Que `USER_PASSWORD_AUTH` esté habilitado en el client del user pool
+  (default Amplify Gen 2).
+- Que el user `smoketest@polla.local` esté en el grupo `admins` en
+  Cognito (sino las mutaciones GraphQL fallan con auth denied).
+
+### Uso
+
+```sh
+cd scripts
+npm install
+
+# Dry-run · te muestra qué borraría sin tocar nada
+node reset-test-env.mjs
+
+# Ejecutar el wipe (necesita el password del smoketest)
+export ADMIN_PASSWORD=<password de smoketest>
+node reset-test-env.mjs --confirm
+```
+
+En PowerShell:
+
+```powershell
+$env:ADMIN_PASSWORD = "<password de smoketest>"
+node reset-test-env.mjs --confirm
+```
+
+### Cosas a tener en cuenta
+
+- La fila `User` del smoketest **también se borra** (porque borramos
+  todas). Tras el reset, al loguearse, su sesión Cognito sigue válida
+  pero sin perfil en GraphQL. Cuando registre o cree algo, se va a
+  recrear, o podés crear la fila manualmente desde `/admin/users` (si
+  ese flujo existe).
+- Los Match conservan sus `id` (no se recrean), solo se actualizan
+  los campos `status / kickoffAt / homeScore / awayScore /
+  pointsCalculated`. Los GSIs y referencias internas siguen intactos.
+- El reschedule preserva la hora-del-día original. Si tenés partidos
+  con kickoffs a las 14:00, 17:00, 20:00, todos terminan el 2026-06-11
+  con esos mismos horarios — solo cambia la fecha.
+- Si el script falla en un paso pero los anteriores ya hicieron daño,
+  podés re-ejecutarlo: es idempotente (cada paso revisa qué queda y
+  borra lo que falte).
+
+---
+
 ## delete-test-users.mjs
 
 Borra todos los usuarios de Cognito **excepto** los configurados en
