@@ -4,68 +4,6 @@ import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
-import { GroupLeaderboardComponent, type LeaderboardRow } from './group-leaderboard.component';
-
-const TOURNAMENT_ID = 'mundial-2026';
-
-type ComodinType =
-  | 'MULTIPLIER_X2' | 'PHASE_BOOST' | 'GROUP_SAFE_PICK' | 'BRACKET_SAFE_PICK'
-  | 'REASSIGN_CHAMP_RUNNER' | 'LATE_EDIT' | 'BRACKET_RESET' | 'GROUP_RESET'
-  | 'ANTI_PENALTY';
-
-interface UserComodin {
-  id: string;
-  type: ComodinType | null;
-  status: string;
-}
-
-const COMODIN_INFO: Record<ComodinType, { name: string; impact: string; example: string; }> = {
-  MULTIPLIER_X2: {
-    name: 'Multiplicador x2',
-    impact: 'Duplica los puntos de marcador en 1 partido (grupos u octavos).',
-    example: 'Si predijiste 2-1 y el partido termina 2-1, ganas 5 pts × 2 = 10.',
-  },
-  PHASE_BOOST: {
-    name: 'Boost de fase',
-    impact: '× 1.5 a marcadores de toda una fase eliminatoria (octavos o cuartos).',
-    example: 'Acertaste 3 marcadores de octavos: en vez de 22.5 pts ganas 33.75.',
-  },
-  GROUP_SAFE_PICK: {
-    name: 'Pick seguro de grupos',
-    impact: 'Si fallás 1 posición específica, recibís 50% en vez de 0.',
-    example: 'Aseguraste el 1° del Grupo A. Si tu equipo no clasificó, ganas 3 pts (50% de 5).',
-  },
-  BRACKET_SAFE_PICK: {
-    name: 'Pick seguro de llaves',
-    impact: 'Si fallás 1 equipo en una fase, recibís 50% en vez de 0.',
-    example: 'Aseguraste a Alemania en cuartos. Si no llega, ganas 3 pts (50% de 6).',
-  },
-  REASSIGN_CHAMP_RUNNER: {
-    name: 'Reasignación campeón / subcampeón',
-    impact: 'Cambiás la predicción post-grupos. Paga 50% si acierta.',
-    example: 'Reasignás campeón a Brasil. Si Brasil gana, ganás 7.5 pts (50% de 15).',
-  },
-  LATE_EDIT: {
-    name: 'Edición tardía',
-    impact: 'Editás un marcador hasta 15 min post-kickoff. Paga 50%.',
-    example: 'Vas perdiendo 0-0 y editás a 1-0 al min 14. Si termina 1-0, ganas 2.5 pts (50% de 5).',
-  },
-  BRACKET_RESET: {
-    name: 'Reseteo de fase eliminatoria',
-    impact: 'Reescribís todos los picks de una fase. Aciertos pagan 60%.',
-    example: 'Reseteás cuartos y aciertas los 4 equipos: ganas 14.4 pts (vs 24 sin reset, vs 0 si fallabas).',
-  },
-  GROUP_RESET: {
-    name: 'Reseteo de grupo',
-    impact: 'Reordenás las 4 posiciones tras J1. Aciertos pagan 50%.',
-    example: 'Reordenás Grupo C después de J1 y aciertas las 4: ganas 10 pts (vs 20 normal).',
-  },
-  ANTI_PENALTY: {
-    name: 'Anti-penalización',
-    impact: 'Anula la penalización del Pick seguro de llaves: paga 100% en vez de 50%.',
-    example: 'Tu safe pick de finalista falla. Sin anti-pen ganabas 5; con anti-pen ganas 10 (full).',
-  },
-};
 
 interface GroupHeader {
   id: string;
@@ -79,325 +17,222 @@ interface GroupHeader {
   prize3rd: string | null;
 }
 
+interface RankRow {
+  userId: string;
+  handle: string;
+  points: number;
+  exactCount: number;
+  resultCount: number;
+}
+
 @Component({
   standalone: true,
   selector: 'app-group-detail',
-  imports: [GroupLeaderboardComponent, RouterLink],
+  imports: [RouterLink],
   template: `
-    @let g = group();
+    <section class="page">
 
-    @if (loading()) {
-      <p style="padding: var(--space-2xl); text-align: center;">Cargando grupo…</p>
-    } @else if (g !== null) {
-      <!-- HERO -->
-      <section class="group-hero">
-        <div class="group-hero__content">
-          <div class="group-hero__title">
-            <span class="group-hero__icon">{{ icon() }}</span>
+      @if (loading()) {
+        <p class="loading-msg">Cargando grupo…</p>
+      } @else if (group() === null) {
+        <p class="loading-msg">Grupo no encontrado.</p>
+      }
+      @if (!loading() && group(); as g) {
+
+        <a routerLink="/groups" class="back-link">‹ Mis grupos</a>
+
+        <!-- Hero verde -->
+        <header class="group-hero">
+          <div class="group-hero__top">
             <div>
+              <div class="group-hero__meta">
+                {{ g.mode === 'COMPLETE' ? 'MODO COMPLETO' : 'MODO SIMPLE' }}
+                · {{ rows().length }} {{ rows().length === 1 ? 'MIEMBRO' : 'MIEMBROS' }}
+                @if (isAdminOfGroup()) { · TÚ ERES ADMIN }
+              </div>
               <h1 class="group-hero__name">{{ g.name }}</h1>
-              <p class="group-hero__meta">
-                <span style="display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.06em; margin-right: 8px;"
-                      [style.background]="g.mode === 'COMPLETE' ? 'var(--color-primary-green)' : 'rgba(255,200,0,0.4)'"
-                      [style.color]="g.mode === 'COMPLETE' ? 'var(--color-primary-white)' : 'var(--color-primary-black)'">
-                  {{ g.mode === 'COMPLETE' ? 'Modo completo' : 'Modo simple' }}
-                </span>
-                {{ rows().length }} miembros
-                @if (isAdminOfGroup()) {
-                   · Eres <strong>admin</strong>
-                }
-                · creado el {{ formatDate(g.createdAt) }}
-              </p>
             </div>
+            @if (isAdminOfGroup()) {
+              <button class="group-hero__menu" type="button"
+                      aria-label="Más opciones"
+                      (click)="scrollToAdmin()">⋯</button>
+            }
           </div>
           <div class="group-hero__stats">
-            <div class="group-hero__stat">
-              <strong>{{ myPos() ? '#' + myPos() : '—' }}</strong>
-              <small>Tu posición</small>
+            <div class="group-stat">
+              <div class="num">{{ myPos() ? myPos() + '°' : '—' }}</div>
+              <div class="lbl">Tu pos.</div>
             </div>
-            <div class="group-hero__stat">
-              <strong>{{ myPoints() }}</strong>
-              <small>Tus puntos</small>
+            <div class="group-stat">
+              <div class="num">{{ myPoints() }}</div>
+              <div class="lbl">Tus pts</div>
             </div>
-            <div class="group-hero__stat">
-              <strong>{{ gapToLeader() }}</strong>
-              <small>Al líder</small>
+            <div class="group-stat">
+              <div class="num">{{ rows().length }}</div>
+              <div class="lbl">Miembros</div>
             </div>
           </div>
-          <!-- Comodines solo aplican a Modo Completo (reglamento §1).
-               En grupos SIMPLE no se muestra ni los chips ni el modal. -->
-          @if (g.mode === 'COMPLETE' && myActiveComodines().length > 0) {
-            <div class="group-hero__comodines">
-              @for (c of myActiveComodines(); track c.id) {
-                <button type="button" class="group-hero__comodin-chip"
-                        (click)="openComodinesModal()"
-                        [class.is-pending]="c.status === 'PENDING_TYPE_CHOICE'"
-                        [class.is-activated]="c.status === 'ACTIVATED'"
-                        [title]="c.type ? typeInfo(c.type).name : 'Sin tipo elegido'">
-                  🃏 {{ c.type ? typeShort(c.type) : 'Elige tipo' }}
-                </button>
+        </header>
+
+        <!-- Pareja invitar + premios (en mobile invitar primero; desktop reordena) -->
+        <div class="group-pair">
+
+          <aside class="group-invitar">
+            <div class="kicker">CÓDIGO DE INVITACIÓN</div>
+            <div class="group-invitar__code">{{ g.joinCode }}</div>
+            <div class="group-invitar__actions">
+              <button class="btn-wf btn-wf--sm" type="button" (click)="copyLink()">
+                {{ copied() ? '✓ Copiado' : '📋 Copiar link' }}
+              </button>
+              @if (isAdminOfGroup()) {
+                <a class="btn-wf btn-wf--sm btn-wf--primary"
+                   [routerLink]="['/groups', g.id, 'invite']">✉ Invitar por email</a>
               }
             </div>
-          }
-        </div>
-      </section>
+          </aside>
 
-      @if (showComodinesModal()) {
-        <div class="comodin-overlay" role="dialog" aria-modal="true"
-             (click)="closeComodinesModal()">
-          <div class="comodin-modal" (click)="$event.stopPropagation()">
-            <header class="comodin-modal__head">
-              <h2>Tus comodines en este torneo</h2>
-              <button type="button" class="comodin-modal__x"
-                      (click)="closeComodinesModal()">×</button>
+          <aside class="group-premios">
+            <header class="group-premios__head">
+              <div class="left">
+                <span class="group-premios__icon">🏆</span>
+                <div>
+                  <div class="kicker" style="color:#7a5d00;">EN JUEGO</div>
+                  <div class="group-premios__total">{{ prizesTotalLabel() }}</div>
+                </div>
+              </div>
+              @if (isAdminOfGroup()) {
+                <a class="group-premios__edit" [routerLink]="['/groups', g.id, 'prizes']">
+                  Editar →
+                </a>
+              }
             </header>
-            <p class="form-card__hint" style="margin-bottom: var(--space-md);">
-              {{ myActiveComodines().length }} de 5 acumulados. Cada uno se asigna o
-              ejerce desde <a class="link-green" routerLink="/mis-comodines"
-                              (click)="closeComodinesModal()">/mis-comodines</a>.
-            </p>
-            <ul class="comodin-modal__list">
-              @for (c of myActiveComodines(); track c.id) {
-                @if (c.type) {
-                  @let info = COMODIN_INFO[c.type];
-                  <li class="comodin-modal__item">
-                    <strong>{{ info.name }}</strong>
-                    <p class="comodin-modal__impact">{{ info.impact }}</p>
-                    <p class="comodin-modal__example">
-                      <small><em>Ejemplo:</em> {{ info.example }}</small>
-                    </p>
-                    <span class="comodin-modal__status"
-                          [class.is-unassigned]="c.status === 'UNASSIGNED'"
-                          [class.is-assigned]="c.status === 'ASSIGNED'"
-                          [class.is-activated]="c.status === 'ACTIVATED'">
-                      {{ statusLabel(c.status) }}
-                    </span>
-                  </li>
-                } @else {
-                  <li class="comodin-modal__item">
-                    <strong>Sin tipo elegido</strong>
-                    <p class="comodin-modal__impact">
-                      Comodín pendiente de elegir tipo —
-                      <a class="link-green" routerLink="/mis-comodines"
-                         (click)="closeComodinesModal()">elige uno</a>.
-                    </p>
-                  </li>
-                }
+            @if (hasPrizes()) {
+              @if (g.prize1st) {
+                <div class="group-premios__row">
+                  <div class="medal">🥇</div>
+                  <div class="info">
+                    <div class="ptitle">1° lugar</div>
+                    <div class="psub">Premio mayor</div>
+                  </div>
+                  <div class="amount">{{ g.prize1st }}</div>
+                </div>
               }
-            </ul>
-          </div>
+              @if (g.prize2nd) {
+                <div class="group-premios__row">
+                  <div class="medal">🥈</div>
+                  <div class="info"><div class="ptitle">2° lugar</div></div>
+                  <div class="amount">{{ g.prize2nd }}</div>
+                </div>
+              }
+              @if (g.prize3rd) {
+                <div class="group-premios__row">
+                  <div class="medal">🥉</div>
+                  <div class="info"><div class="ptitle">3° lugar</div></div>
+                  <div class="amount">{{ g.prize3rd }}</div>
+                </div>
+              }
+            } @else {
+              <div class="group-premios__row">
+                <div class="medal">·</div>
+                <div class="info">
+                  <div class="ptitle">Sin premios definidos</div>
+                  @if (isAdminOfGroup()) {
+                    <div class="psub">Define los premios para motivar al grupo</div>
+                  }
+                </div>
+              </div>
+            }
+          </aside>
+
         </div>
-      }
 
-      <nav class="breadcrumb" style="padding-inline: var(--section-x-mobile);">
-        <a routerLink="/groups">Mis grupos</a>
-        <span class="breadcrumb__sep">/</span>
-        <span aria-current="page">{{ g.name }}</span>
-      </nav>
-
-      <div class="container-app group-detail-grid" style="display: grid;">
-        <!-- LEADERBOARD principal -->
-        <section>
-          <header class="section-heading">
-            <div class="section-heading__text">
-              <p class="kicker">Leaderboard del grupo</p>
-              <h2 class="h2">Ranking interno</h2>
+        <!-- Ranking interno -->
+        <section class="group-section">
+          <header class="group-section__head">
+            <h2 class="group-section__title">
+              Ranking interno · {{ rows().length }} {{ rows().length === 1 ? 'miembro' : 'miembros' }}
+            </h2>
+            <div class="seg" aria-label="Vista del ranking">
+              <button type="button" class="seg__item is-active">General</button>
+              <button type="button" class="seg__item" disabled
+                      title="Próximamente">Por jornada</button>
             </div>
-            <a class="link-green section-heading__cta" routerLink="/ranking">Ver ranking global →</a>
           </header>
 
-          <div class="standings-wrap">
-            <app-group-leaderboard [rows]="rows()" [currentUserId]="currentUserId" />
+          <div class="rank-table-wrap">
+            <table class="rank-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Jugador</th>
+                  <th>Pts</th>
+                  <th class="rank-table__desk">Exactos</th>
+                  <th class="rank-table__desk">Result.</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of rows(); track r.userId; let i = $index) {
+                  <tr [class.is-me]="r.userId === currentUserId">
+                    <td class="rank-table__pos">{{ i + 1 }}</td>
+                    <td class="text-bold">
+                      {{ '@' + r.handle }}@if (r.userId === currentUserId) { <span class="text-mute"> (tú)</span> }
+                    </td>
+                    <td class="rank-table__pts">{{ r.points }}</td>
+                    <td class="rank-table__desk">{{ r.exactCount }}</td>
+                    <td class="rank-table__desk">{{ r.resultCount }}</td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" style="text-align:center; padding: 22px; color: var(--wf-ink-3);">
+                      Aún no hay puntajes. Espera al primer partido.
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
           </div>
 
-          <p style="margin-top: var(--space-md); font-size: var(--fs-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.08em;">
-            Tabla refresca automáticamente al publicar resultados
+          <p class="rank-foot">
+            La tabla se actualiza automáticamente cuando se publican los resultados.
           </p>
         </section>
 
-        <!-- SIDEBAR -->
-        <aside class="sidebar">
-          <div class="invite-mini">
-            <h3>Código del grupo</h3>
-            <span class="invite-mini__code">{{ g.joinCode }}</span>
-            <p class="invite-mini__url">{{ inviteUrl() }}</p>
-            <div class="invite-mini__actions">
-              <button class="btn btn--primary btn--sm" type="button" (click)="copyLink()">
-                {{ copied() ? 'Copiado ✓' : '📋 Copiar' }}
+        <!-- Acciones admin -->
+        @if (isAdminOfGroup()) {
+          <section class="group-section" #adminAnchor>
+            <h2 class="group-section__title" style="margin-bottom:10px;">Acciones de admin</h2>
+            <div class="group-admin-actions">
+              <a class="btn-wf btn-wf--block" [routerLink]="['/groups', g.id, 'prizes']">
+                ⚙ Editar premios
+              </a>
+              <a class="btn-wf btn-wf--block" [routerLink]="['/groups', g.id, 'invite']">
+                ✉ Invitar por email
+              </a>
+              <button class="btn-wf btn-wf--block btn-wf--danger" type="button" (click)="del()">
+                🗑 Eliminar grupo
               </button>
-              @if (isAdminOfGroup()) {
-                <a class="btn btn--ghost btn--sm" [routerLink]="['/groups', g.id, 'invite']">📧 Email</a>
-              }
             </div>
-          </div>
+          </section>
+        }
 
-          @if (hasPrizes()) {
-            <div class="invite-mini">
-              <h3>Premios</h3>
-              <ul style="list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-sm);">
-                @if (g.prize1st) {
-                  <li style="display: flex; gap: var(--space-sm); align-items: baseline;">
-                    <span style="font-size: var(--fs-lg);">🥇</span>
-                    <span>{{ g.prize1st }}</span>
-                  </li>
-                }
-                @if (g.prize2nd) {
-                  <li style="display: flex; gap: var(--space-sm); align-items: baseline;">
-                    <span style="font-size: var(--fs-lg);">🥈</span>
-                    <span>{{ g.prize2nd }}</span>
-                  </li>
-                }
-                @if (g.prize3rd) {
-                  <li style="display: flex; gap: var(--space-sm); align-items: baseline;">
-                    <span style="font-size: var(--fs-lg);">🥉</span>
-                    <span>{{ g.prize3rd }}</span>
-                  </li>
-                }
-              </ul>
-            </div>
-          }
-
-          @if (isAdminOfGroup()) {
-            <div class="admin-actions">
-              <h3>Acciones de admin</h3>
-              <ul>
-                <li><a [routerLink]="['/groups', g.id, 'invite']"><span>Invitar por email</span><span>→</span></a></li>
-                <li><a [routerLink]="['/groups', g.id, 'prizes']"><span>Editar premios</span><span>→</span></a></li>
-                <li><a (click)="comingSoon('Renovar código', $event)"><span>Renovar código</span><span>→</span></a></li>
-                <li><a (click)="comingSoon('Editar nombre', $event)"><span>Editar nombre</span><span>→</span></a></li>
-                <li><a class="is-danger" (click)="del($event)"><span>Eliminar grupo</span><span>×</span></a></li>
-              </ul>
-              <p style="margin-top: var(--space-md); font-size: var(--fs-xs); color: var(--color-text-muted); line-height: var(--lh-body);">
-                Estas acciones solo aparecen porque eres admin del grupo.
-              </p>
-            </div>
-          }
-        </aside>
-      </div>
-    } @else {
-      <p style="padding: var(--space-2xl); text-align: center;">Grupo no encontrado.</p>
-    }
+      }
+    </section>
   `,
   styles: [`
-    .group-hero__stat--button {
-      background: transparent;
-      border: 0;
-      color: inherit;
-      font: inherit;
-      cursor: pointer;
-      padding: 0;
-      text-align: inherit;
-    }
-    .group-hero__stat--button:hover strong { color: var(--color-primary-green); }
+    :host { display: block; }
 
-    .group-hero__comodines {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: var(--space-md);
-      padding-top: var(--space-md);
-      border-top: 1px solid rgba(255,255,255,0.15);
-      grid-column: 1 / -1;
-    }
-    .group-hero__comodin-chip {
-      background: rgba(255,255,255,0.18);
-      color: var(--color-primary-white);
-      border: 0;
-      padding: 4px 10px;
-      border-radius: 999px;
-      font-size: var(--fs-xs);
-      font-weight: var(--fw-semibold);
-      letter-spacing: 0.04em;
-      cursor: pointer;
-      transition: background 100ms;
-    }
-    .group-hero__comodin-chip:hover { background: rgba(255,255,255,0.30); }
-    .group-hero__comodin-chip.is-pending {
-      background: rgba(255,200,0,0.40);
-      color: var(--color-primary-black);
-    }
-    .group-hero__comodin-chip.is-activated {
-      background: var(--color-primary-green);
-      color: var(--color-primary-white);
+    .loading-msg {
+      padding: 48px 16px;
+      text-align: center;
+      color: var(--wf-ink-3);
+      font-size: 14px;
     }
 
-    .comodin-overlay {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.55);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 1000; padding: var(--space-md);
-    }
-    .comodin-modal {
-      max-width: 640px; width: 100%;
-      max-height: 88vh; overflow-y: auto;
-      background: var(--color-primary-white);
-      border-radius: 12px;
-      padding: var(--space-lg);
-      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
-    }
-    .comodin-modal__head {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: var(--space-sm);
-    }
-    .comodin-modal__head h2 {
-      font-family: var(--font-display);
-      font-size: 24px;
-      letter-spacing: 0.04em;
-      line-height: 1.05; margin: 0;
-    }
-    .comodin-modal__x {
-      background: transparent; border: 0;
-      font-size: 28px; line-height: 1; cursor: pointer;
-      color: var(--color-text-muted);
-    }
-    .comodin-modal__list {
-      list-style: none; padding: 0; margin: 0;
-      display: grid; gap: var(--space-sm);
-    }
-    .comodin-modal__item {
-      background: var(--color-primary-grey, #f4f4f4);
-      border-radius: var(--radius-sm);
-      padding: var(--space-md);
-      display: grid; gap: 4px;
-      position: relative;
-    }
-    .comodin-modal__item strong {
-      font-family: var(--font-display);
-      font-size: var(--fs-lg);
-      text-transform: uppercase;
-      line-height: 1;
-    }
-    .comodin-modal__impact {
-      font-size: var(--fs-sm);
+    .rank-foot {
+      margin-top: 12px;
+      font-size: 11px;
+      color: var(--wf-ink-3);
       line-height: 1.4;
-    }
-    .comodin-modal__example {
-      font-size: var(--fs-xs);
-      color: var(--color-text-muted);
-      line-height: 1.4;
-    }
-    .comodin-modal__status {
-      position: absolute;
-      top: var(--space-md);
-      right: var(--space-md);
-      font-size: var(--fs-xs);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      padding: 3px 8px;
-      border-radius: 999px;
-      background: rgba(0,0,0,0.06);
-    }
-    .comodin-modal__status.is-unassigned {
-      background: rgba(255,200,0,0.18);
-      color: var(--color-primary-black);
-    }
-    .comodin-modal__status.is-assigned {
-      background: rgba(0,200,100,0.14);
-      color: var(--color-primary-green);
-    }
-    .comodin-modal__status.is-activated {
-      background: var(--color-primary-green);
-      color: var(--color-primary-white);
     }
   `],
 })
@@ -410,49 +245,37 @@ export class GroupDetailComponent implements OnInit {
   private router = inject(Router);
 
   group = signal<GroupHeader | null>(null);
-  rows = signal<LeaderboardRow[]>([]);
+  rows = signal<RankRow[]>([]);
   loading = signal(true);
   copied = signal(false);
   currentUserId = '';
 
-  // Comodines del user en el torneo (todos los grupos del torneo
-  // comparten cartera). Activos = no EXPIRED.
-  myComodines = signal<UserComodin[]>([]);
-  myActiveComodines = computed(() =>
-    this.myComodines().filter((c) => c.status !== 'EXPIRED'),
-  );
-  showComodinesModal = signal(false);
-  COMODIN_INFO = COMODIN_INFO;
-  typeInfo(t: ComodinType) { return COMODIN_INFO[t]; }
-  typeShort(t: ComodinType): string {
-    switch (t) {
-      case 'MULTIPLIER_X2':         return 'x2';
-      case 'PHASE_BOOST':           return 'Boost';
-      case 'GROUP_SAFE_PICK':       return 'Safe Grupos';
-      case 'BRACKET_SAFE_PICK':     return 'Safe Llaves';
-      case 'REASSIGN_CHAMP_RUNNER': return 'Reasign';
-      case 'LATE_EDIT':             return 'Edit. tardía';
-      case 'BRACKET_RESET':         return 'Reset Bracket';
-      case 'GROUP_RESET':           return 'Reset Grupo';
-      case 'ANTI_PENALTY':          return 'Anti-pen';
-    }
-  }
-  openComodinesModal() { this.showComodinesModal.set(true); }
-  closeComodinesModal() { this.showComodinesModal.set(false); }
-  statusLabel(s: string): string {
-    if (s === 'PENDING_TYPE_CHOICE') return 'Elige tipo';
-    if (s === 'UNASSIGNED') return 'Sin asignar';
-    if (s === 'ASSIGNED') return 'Asignado';
-    if (s === 'ACTIVATED') return 'Activado';
-    return s;
-  }
-
   isAdminOfGroup = computed(() => this.group()?.adminUserId === this.currentUserId);
+
   hasPrizes = computed(() => {
     const g = this.group();
     return !!(g?.prize1st || g?.prize2nd || g?.prize3rd);
   });
-  icon = computed(() => (this.isAdminOfGroup() ? '★' : (this.group()?.name?.[0] ?? '·').toUpperCase()));
+
+  /** Suma los $X de los 3 premios. Si todos parsean a número, devuelve "$N";
+   *  si hay alguno no numérico (ej. "Cena"), cae a contar premios. */
+  prizesTotalLabel = computed(() => {
+    const g = this.group();
+    if (!g) return '—';
+    const raws = [g.prize1st, g.prize2nd, g.prize3rd].filter((v): v is string => !!v);
+    if (raws.length === 0) return 'Sin definir';
+    const numbers = raws.map((s) => {
+      const m = s.match(/\$\s*(\d[\d.,]*)/);
+      return m ? parseFloat(m[1].replace(/,/g, '')) : null;
+    });
+    const allParsed = numbers.every((n) => n !== null);
+    if (allParsed) {
+      const sum = (numbers as number[]).reduce((a, n) => a + n, 0);
+      return `$${Math.round(sum)}`;
+    }
+    return `${raws.length} ${raws.length === 1 ? 'premio' : 'premios'}`;
+  });
+
   inviteUrl = computed(() => {
     const g = this.group();
     return g ? `${location.origin}/groups/join/${g.joinCode}` : '';
@@ -462,14 +285,9 @@ export class GroupDetailComponent implements OnInit {
     const i = this.rows().findIndex((r) => r.userId === this.currentUserId);
     return i >= 0 ? i + 1 : null;
   });
-  myPoints = computed(() => this.rows().find((r) => r.userId === this.currentUserId)?.points ?? 0);
-  gapToLeader = computed(() => {
-    const me = this.rows().find((r) => r.userId === this.currentUserId);
-    const leader = this.rows()[0];
-    if (!me || !leader || me.userId === leader.userId) return '—';
-    const gap = leader.points - me.points;
-    return gap > 0 ? `−${gap}` : '0';
-  });
+  myPoints = computed(() =>
+    this.rows().find((r) => r.userId === this.currentUserId)?.points ?? 0,
+  );
 
   async ngOnInit() {
     this.currentUserId = this.auth.user()?.sub ?? '';
@@ -501,7 +319,9 @@ export class GroupDetailComponent implements OnInit {
         }),
       );
 
-      const sorted = (totals.data ?? []).sort((a, b) => (b.points ?? 0) - (a.points ?? 0));
+      const sorted = (totals.data ?? []).sort(
+        (a, b) => (b.points ?? 0) - (a.points ?? 0),
+      );
       this.rows.set(
         sorted.map((t) => ({
           userId: t.userId,
@@ -514,46 +334,27 @@ export class GroupDetailComponent implements OnInit {
     } finally {
       this.loading.set(false);
     }
-
-    // Cargar comodines del user (best-effort, no bloquea la UI del grupo)
-    void this.loadMyComodines();
-  }
-
-  private async loadMyComodines() {
-    if (!this.currentUserId) return;
-    try {
-      const res = await this.api.listMyComodines(this.currentUserId, TOURNAMENT_ID);
-      const rows = ((res.data ?? []) as UserComodin[]);
-      this.myComodines.set(rows);
-    } catch {
-      // ignore — el icono no aparece si no carga
-    }
-  }
-
-  formatDate(iso: string): string {
-    try {
-      return new Date(iso).toLocaleDateString('es-EC', { day: '2-digit', month: 'short', year: 'numeric' });
-    } catch {
-      return '—';
-    }
   }
 
   async copyLink() {
-    await navigator.clipboard.writeText(this.inviteUrl());
-    this.copied.set(true);
-    setTimeout(() => this.copied.set(false), 2000);
-  }
-
-  comingSoon(label: string, event: Event) {
-    event.preventDefault();
-    this.toast.info(`${label} — próximamente`);
-  }
-
-  async del(event: Event) {
-    event.preventDefault();
-    if (!confirm('¿Eliminar el grupo? Todos los miembros perderán el acceso. Esta acción no se puede deshacer.')) {
-      return;
+    try {
+      await navigator.clipboard.writeText(this.inviteUrl());
+      this.copied.set(true);
+      setTimeout(() => this.copied.set(false), 2000);
+    } catch {
+      this.toast.error('No se pudo copiar el link');
     }
+  }
+
+  scrollToAdmin() {
+    const el = document.querySelector('section.group-section:last-of-type');
+    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  async del() {
+    if (!confirm(
+      '¿Eliminar el grupo? Todos los miembros perderán el acceso. Esta acción no se puede deshacer.',
+    )) return;
     try {
       await this.api.deleteGroup(this.id);
       this.toast.success('Grupo eliminado');

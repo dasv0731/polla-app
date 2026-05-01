@@ -22,6 +22,8 @@ interface ComodinRow {
   source: ComodinSource;
   status: ComodinStatus;
   createdAt: string;
+  expiredAt?: string | null;
+  pointsImpact?: number | null;
   // Target — set cuando status pasa a ASSIGNED. Forma depende del tipo.
   assignedMatchId?: string | null;
   assignedPhaseOrder?: number | null;
@@ -30,6 +32,8 @@ interface ComodinRow {
   assignedTeamSlug?: string | null;
   assignedComodinId?: string | null;
 }
+
+type FilterKey = 'all' | 'available' | 'used' | 'expired';
 
 interface MatchOption {
   id: string;
@@ -131,96 +135,249 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
   selector: 'app-comodines-list',
   imports: [RouterLink, FormsModule],
   template: `
-    <header class="page-header">
-      <div class="page-header__top">
-        <div class="page-header__title">
-          <small>Mundial 2026 · sistema de comodines</small>
-          <h1>Mis comodines</h1>
-        </div>
-        <div class="page-header__counts">
-          <div><strong>{{ activeCount() }}/5</strong><small>Acumulados</small></div>
-          <div><strong>{{ unassignedCount() }}</strong><small>Por asignar</small></div>
-          <div><strong>{{ assignedCount() }}</strong><small>Asignados</small></div>
-        </div>
-      </div>
-      <p class="form-card__hint" style="margin-top: var(--space-md);">
-        Solo aplica a Modo Completo. Máximo 5 comodines por usuario y máximo 1
-        de cada tipo. Las fuentes son: códigos de sponsor (máx 2), 20 trivias
-        correctas (1), llenar tus picks 7d antes del torneo (1) y predecir ≥80%
-        de marcadores antes del kickoff (1).
-      </p>
-    </header>
+    <section class="page">
 
-    <div class="container-app">
-      @if (loading()) {
-        <p>Cargando…</p>
-      } @else if (comodines().length === 0) {
-        <div class="empty-state">
-          <h3>Aún no tienes comodines</h3>
-          <p>
-            Canjeá un código de sponsor en
-            <a class="link-green" routerLink="/picks">tu home</a>
-            o sumá 20 trivias correctas para conseguir tu primer comodín.
+      <a routerLink="/picks" class="back-link">‹ Volver a Mis picks</a>
+
+      <header class="com-header">
+        <div>
+          <div class="kicker">MULTIPLICADORES Y BENEFICIOS</div>
+          <h1 class="com-header__title">Mis comodines</h1>
+          <p class="com-header__sub">
+            Úsalos antes del partido para multiplicar puntos o desbloquear beneficios.
+            Máximo 5 acumulados, 1 por tipo (excluyendo caducados).
           </p>
         </div>
+        <div class="com-header__stats">
+          <div class="com-header__stat">
+            <div class="num">{{ totalCount() }}</div>
+            <div class="lbl">Total</div>
+          </div>
+          <div class="com-header__stat">
+            <div class="num num--green">{{ unassignedCount() }}</div>
+            <div class="lbl">Disponibles</div>
+          </div>
+          <div class="com-header__stat">
+            <div class="num num--warn">{{ pendingCount() }}</div>
+            <div class="lbl">Pendientes</div>
+          </div>
+          <div class="com-header__stat">
+            <div class="num num--mute">+{{ ptsEarned() }}</div>
+            <div class="lbl">Pts ganados</div>
+          </div>
+        </div>
+      </header>
+
+      @if (pendingCount() > 0) {
+        <div class="com-pending-banner">
+          <span class="com-pending-banner__icon">⚠</span>
+          <div class="com-pending-banner__body">
+            <div class="com-pending-banner__title">
+              {{ pendingCount() === 1
+                  ? 'Tienes 1 comodín pendiente de configurar'
+                  : 'Tienes ' + pendingCount() + ' comodines pendientes de configurar' }}
+            </div>
+            <div class="com-pending-banner__sub">Elige el tipo antes de la fecha de expiración.</div>
+          </div>
+          <button type="button" class="btn-wf btn-wf--sm btn-wf--ink"
+                  (click)="scrollToFirstPending()">
+            Configurar ahora →
+          </button>
+        </div>
+      }
+
+      <!-- Filtros + canjear -->
+      <div class="com-filters">
+        <div class="seg">
+          <button type="button" class="seg__item"
+                  [class.is-active]="filter() === 'all'"
+                  (click)="filter.set('all')">
+            Todos · {{ totalCount() }}
+          </button>
+          <button type="button" class="seg__item"
+                  [class.is-active]="filter() === 'available'"
+                  (click)="filter.set('available')">
+            Disponibles · {{ availableCount() }}
+          </button>
+          <button type="button" class="seg__item"
+                  [class.is-active]="filter() === 'used'"
+                  (click)="filter.set('used')">
+            Usados · {{ usedCount() }}
+          </button>
+          <button type="button" class="seg__item"
+                  [class.is-active]="filter() === 'expired'"
+                  (click)="filter.set('expired')">
+            Expirados · {{ expiredCount() }}
+          </button>
+        </div>
+        <button type="button" class="btn-wf btn-wf--sm" (click)="scrollToCanjear()">
+          🎁 Canjear código
+        </button>
+      </div>
+
+      @if (loading()) {
+        <p class="loading-msg">Cargando comodines…</p>
       } @else {
-        <ul class="comodin-list">
-          @for (c of comodines(); track c.id) {
-            <li class="comodin-card" [class.comodin-card--expired]="c.status === 'EXPIRED'">
-              <header class="comodin-card__head">
-                <strong>{{ c.type ? typeInfo(c.type).name : 'Sin tipo elegido' }}</strong>
-                <span class="comodin-card__status"
-                      [class.is-pending]="c.status === 'PENDING_TYPE_CHOICE'"
-                      [class.is-unassigned]="c.status === 'UNASSIGNED'"
-                      [class.is-assigned]="c.status === 'ASSIGNED'"
-                      [class.is-activated]="c.status === 'ACTIVATED'"
-                      [class.is-expired]="c.status === 'EXPIRED'">
-                  {{ statusLabel(c.status) }}
+        <div class="com-grid">
+          @for (c of filteredComodines(); track c.id) {
+            <div class="com-card"
+                 [id]="c.status === 'PENDING_TYPE_CHOICE' ? 'card-pending-' + c.id : null"
+                 [class.com-card--pending]="c.status === 'PENDING_TYPE_CHOICE'"
+                 [class.com-card--available]="c.status === 'UNASSIGNED'"
+                 [class.com-card--used]="c.status === 'ASSIGNED' || c.status === 'ACTIVATED'"
+                 [class.com-card--expired]="c.status === 'EXPIRED'">
+
+              <div class="com-card__head">
+                <span class="com-card__badge"
+                      [class.com-card__badge--pending]="c.status === 'PENDING_TYPE_CHOICE'"
+                      [class.com-card__badge--available]="c.status === 'UNASSIGNED'"
+                      [class.com-card__badge--used]="c.status === 'ASSIGNED' || c.status === 'ACTIVATED'"
+                      [class.com-card__badge--expired]="c.status === 'EXPIRED'">
+                  {{ badgeLabel(c.status) }}
                 </span>
-              </header>
-              @if (c.type) {
-                <p class="comodin-card__impact">{{ typeInfo(c.type).impact }}</p>
-              } @else {
-                <p class="comodin-card__impact" style="color: var(--color-text-muted);">
-                  Otorgado por {{ sourceLabel(c.source) }}. Elige uno de los 9
-                  tipos disponibles para activarlo.
-                </p>
+              </div>
+
+              <div>
+                <h3 class="com-card__title">
+                  {{ c.type ? typeInfo(c.type).name : 'Comodín sin configurar' }}
+                </h3>
+                <div class="com-card__mech">
+                  @if (c.type) {
+                    {{ typeInfo(c.type).impact }}
+                  } @else {
+                    Elige uno de los 9 tipos disponibles para activarlo.
+                  }
+                </div>
+              </div>
+
+              <div class="com-card__row">
+                <span class="lbl">Fuente</span>
+                <span class="val">{{ sourceLabel(c.source) }}</span>
+              </div>
+
+              @if (c.status === 'ASSIGNED') {
+                <div class="com-card__row" style="border-top:none;padding-top:0;">
+                  <span class="lbl">Asignado a</span>
+                  <span class="val">{{ formatTarget(c) }}</span>
+                </div>
+              } @else if (c.status === 'EXPIRED' && c.expiredAt) {
+                <div class="com-card__row" style="border-top:none;padding-top:0;">
+                  <span class="lbl">Expiró</span>
+                  <span class="val">{{ formatDate(c.expiredAt) }}</span>
+                </div>
+              } @else if (c.type) {
+                <div class="com-card__row" style="border-top:none;padding-top:0;">
+                  <span class="lbl">Ventana</span>
+                  <span style="font-size:11px;color:var(--wf-ink-3);max-width:60%;text-align:right;line-height:1.3;">
+                    {{ typeInfo(c.type).window }}
+                  </span>
+                </div>
               }
-              <p class="comodin-card__meta">
-                Fuente: <strong>{{ sourceLabel(c.source) }}</strong>
-                · Obtenido: {{ formatDate(c.createdAt) }}
-              </p>
-              @if (c.type) {
-                <p class="comodin-card__window">⏱ {{ typeInfo(c.type).window }}</p>
-              }
+
               @if (c.status === 'PENDING_TYPE_CHOICE') {
-                <button class="btn btn--primary btn--sm" type="button"
-                        (click)="openClaimModal(c)"
-                        style="margin-top: var(--space-sm); justify-self: start;">
-                  Elegir tipo →
+                <div class="com-card__status">⚠ Elige el tipo antes que caduque</div>
+                <button type="button"
+                        class="btn-wf btn-wf--block btn-wf--primary btn-wf--sm com-card__cta"
+                        (click)="openClaimModal(c)">
+                  Configurar comodín →
                 </button>
               } @else if (c.status === 'UNASSIGNED' && canAssign(c.type)) {
-                <button class="btn btn--primary btn--sm" type="button"
-                        (click)="openAssignModal(c)"
-                        style="margin-top: var(--space-sm); justify-self: start;">
-                  Asignar →
+                <button type="button"
+                        class="btn-wf btn-wf--block btn-wf--primary btn-wf--sm com-card__cta"
+                        (click)="openAssignModal(c)">
+                  Aplicar a un partido →
                 </button>
               } @else if (c.status === 'UNASSIGNED' && canUse(c.type)) {
-                <button class="btn btn--primary btn--sm" type="button"
-                        (click)="openUseModal(c)"
-                        style="margin-top: var(--space-sm); justify-self: start;">
+                <button type="button"
+                        class="btn-wf btn-wf--block btn-wf--primary btn-wf--sm com-card__cta"
+                        (click)="openUseModal(c)">
                   Usar →
                 </button>
-              } @else if (c.status === 'ASSIGNED') {
-                <p class="comodin-card__assigned">
-                  ✓ Asignado a <strong>{{ formatTarget(c) }}</strong>
-                </p>
+              } @else if (c.status === 'ACTIVATED') {
+                <div class="com-card__foot">
+                  +{{ c.pointsImpact ?? 0 }} pts ganados · {{ formatDateShort(c.createdAt) }}
+                </div>
+              } @else if (c.status === 'EXPIRED') {
+                <div class="com-card__foot">No fue activado a tiempo</div>
               }
-            </li>
+            </div>
           }
-        </ul>
+
+          @if (filteredComodines().length === 0 && filter() !== 'all') {
+            <div style="grid-column: 1 / -1;">
+              <p class="loading-msg">
+                No hay comodines en este filtro.
+              </p>
+            </div>
+          }
+
+          <!-- Slot de canjear código (siempre visible al final) -->
+          <form id="card-canjear" class="com-card com-card--code"
+                (ngSubmit)="redeemCode(); $event.preventDefault()">
+            <div class="icon">🎁</div>
+            <div class="tit">¿Tienes un código?</div>
+            <div class="sub">Canjea códigos de sponsors para conseguir más comodines.</div>
+            <div class="form-row">
+              <input type="text" placeholder="PEPSI100" aria-label="Código de sponsor"
+                     [(ngModel)]="codeInput" name="code"
+                     [disabled]="redeemingCode()"
+                     (input)="codeInput = codeInput.toUpperCase()">
+              <button type="submit" class="btn-wf btn-wf--sm btn-wf--primary"
+                      [disabled]="redeemingCode() || !codeInput.trim()">
+                {{ redeemingCode() ? '…' : 'Canjear' }}
+              </button>
+            </div>
+            @if (redeemError()) {
+              <p style="font-size:11px;color:var(--wf-danger);margin-top:4px;">{{ redeemError() }}</p>
+            }
+            @if (redeemSuccess()) {
+              <p style="font-size:11px;color:var(--wf-green-ink);margin-top:4px;">✓ {{ redeemSuccess() }}</p>
+            }
+          </form>
+
+        </div>
+
+        @if (filteredComodines().length === 0 && filter() === 'all') {
+          <div class="empty-block" style="margin-top: 14px;">
+            <h3>Aún no tienes comodines</h3>
+            <p>
+              Canjea un código arriba o gana uno acumulando 20 trivias correctas,
+              llenando tus picks 7 días antes del torneo, o prediciendo ≥80% de
+              marcadores antes del kickoff.
+            </p>
+          </div>
+        }
       }
-    </div>
+
+      <!-- Cómo funcionan -->
+      <section class="com-howto">
+        <h2 class="com-howto__title">¿Cómo funcionan los comodines?</h2>
+        <div class="com-howto__steps">
+          <div class="com-howto__step">
+            <span class="num">1</span>
+            <div>
+              <div class="stitle">Consíguelos</div>
+              <div class="sdesc">Canjea códigos de sponsors o gánalos por trivias correctas, picks tempranos y rachas.</div>
+            </div>
+          </div>
+          <div class="com-howto__step">
+            <span class="num">2</span>
+            <div>
+              <div class="stitle">Aplícalos</div>
+              <div class="sdesc">Asigna a un partido específico antes de que empiece. Una vez aplicado no se puede mover.</div>
+            </div>
+          </div>
+          <div class="com-howto__step">
+            <span class="num">3</span>
+            <div>
+              <div class="stitle">Gana más</div>
+              <div class="sdesc">Si aciertas, multiplican tus puntos según el tipo de comodín.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </section>
 
     <!-- Modal Asignar -->
     @if (assigning()) {
@@ -580,6 +737,32 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
     }
   `,
   styles: [`
+    .loading-msg {
+      padding: 32px;
+      text-align: center;
+      color: var(--wf-ink-3);
+      font-size: 14px;
+    }
+    .empty-block {
+      padding: 24px;
+      text-align: center;
+      background: var(--wf-paper);
+      border: 1px dashed var(--wf-line);
+      border-radius: 10px;
+    }
+    .empty-block h3 {
+      font-family: var(--wf-display);
+      font-size: 18px;
+      letter-spacing: .04em;
+      margin: 0 0 8px;
+    }
+    .empty-block p {
+      color: var(--wf-ink-3);
+      font-size: 13px;
+      margin: 0;
+      line-height: 1.5;
+    }
+
     .comodin-list {
       list-style: none;
       padding: 0;
@@ -917,6 +1100,112 @@ export class ComodinesListComponent implements OnInit {
   assignedCount = computed(() =>
     this.comodines().filter((c) => c.status === 'ASSIGNED').length,
   );
+
+  // ---------- Stats / filtros para el wireframe nuevo ----------
+  totalCount = computed(() => this.comodines().length);
+  pendingCount = computed(() =>
+    this.comodines().filter((c) => c.status === 'PENDING_TYPE_CHOICE').length,
+  );
+  availableCount = computed(() =>
+    this.comodines().filter(
+      (c) => c.status === 'UNASSIGNED' || c.status === 'PENDING_TYPE_CHOICE',
+    ).length,
+  );
+  usedCount = computed(() =>
+    this.comodines().filter((c) => c.status === 'ASSIGNED' || c.status === 'ACTIVATED').length,
+  );
+  expiredCount = computed(() =>
+    this.comodines().filter((c) => c.status === 'EXPIRED').length,
+  );
+  ptsEarned = computed(() =>
+    this.comodines()
+      .filter((c) => c.status === 'ACTIVATED')
+      .reduce((sum, c) => sum + (c.pointsImpact ?? 0), 0),
+  );
+
+  filter = signal<FilterKey>('all');
+  filteredComodines = computed<ComodinRow[]>(() => {
+    const f = this.filter();
+    const list = this.comodines();
+    if (f === 'all') return list;
+    if (f === 'available') {
+      return list.filter(
+        (c) => c.status === 'UNASSIGNED' || c.status === 'PENDING_TYPE_CHOICE',
+      );
+    }
+    if (f === 'used') {
+      return list.filter((c) => c.status === 'ASSIGNED' || c.status === 'ACTIVATED');
+    }
+    if (f === 'expired') return list.filter((c) => c.status === 'EXPIRED');
+    return list;
+  });
+
+  badgeLabel(s: ComodinStatus): string {
+    switch (s) {
+      case 'PENDING_TYPE_CHOICE': return 'PENDIENTE';
+      case 'UNASSIGNED':          return 'DISPONIBLE';
+      case 'ASSIGNED':            return 'ASIGNADO';
+      case 'ACTIVATED':           return 'USADO';
+      case 'EXPIRED':             return 'EXPIRADO';
+    }
+  }
+
+  formatDateShort(iso: string): string {
+    try {
+      return new Date(iso).toLocaleDateString('es-EC', { day: '2-digit', month: 'short' });
+    } catch { return iso; }
+  }
+
+  scrollToFirstPending() {
+    const first = this.comodines().find((c) => c.status === 'PENDING_TYPE_CHOICE');
+    if (!first) return;
+    const el = document.getElementById('card-pending-' + first.id);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  scrollToCanjear() {
+    const el = document.getElementById('card-canjear');
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => {
+      el?.querySelector<HTMLInputElement>('input')?.focus();
+    }, 400);
+  }
+
+  // ---------- Canje de código de sponsor ----------
+  codeInput = '';
+  redeemingCode = signal(false);
+  redeemError = signal<string | null>(null);
+  redeemSuccess = signal<string | null>(null);
+
+  async redeemCode() {
+    const code = this.codeInput.trim().toUpperCase();
+    if (!code || this.redeemingCode()) return;
+    this.redeemError.set(null);
+    this.redeemSuccess.set(null);
+    this.redeemingCode.set(true);
+    try {
+      const res = await this.api.redeemSponsorCode(code);
+      if (res?.errors && res.errors.length > 0) {
+        this.redeemError.set(res.errors[0]?.message ?? 'Código inválido');
+        return;
+      }
+      this.redeemSuccess.set('Comodín agregado');
+      this.codeInput = '';
+      // refrescar lista
+      const userId = this.auth.user()?.sub;
+      if (userId) {
+        const list = await this.api.listMyComodines(userId, TOURNAMENT_ID);
+        const rows = ((list.data ?? []) as ComodinRow[])
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+        this.comodines.set(rows);
+      }
+      setTimeout(() => this.redeemSuccess.set(null), 4000);
+    } catch (e) {
+      this.redeemError.set(humanizeError(e));
+    } finally {
+      this.redeemingCode.set(false);
+    }
+  }
 
   typeInfo(t: ComodinType) { return TYPE_INFO[t]; }
   sourceLabel(s: ComodinSource) { return SOURCE_LABEL[s]; }

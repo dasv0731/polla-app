@@ -1,5 +1,6 @@
 import { Component, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { NgTemplateOutlet } from '@angular/common';
+import { ActivatedRoute, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService } from '../../core/user/user-modes.service';
@@ -11,375 +12,324 @@ type GameMode = 'SIMPLE' | 'COMPLETE';
 
 interface KnockoutMatch {
   id: string;
-  phaseOrder: number;
+  phaseOrder: number;        // 2=R32(16avos), 3=R16(octavos), 4=cuartos, 5=semis, 6=final+3er
   homeTeamId: string;
   awayTeamId: string;
   kickoffAt: string;
   bracketPosition: number | null;
-  venue: string | null;
+  status: string | null;
+  homeScore: number | null;
+  awayScore: number | null;
 }
 
-interface PhaseDef {
-  order: number;
-  label: string;
-  expectedMatches: number;
-  // Cuál array del BracketPick recibe los ganadores de esta ronda.
-  // Ganador de R32 → octavos; ganador de R16 → cuartos; ...; ganador de Final → champion.
-  feedsField: 'octavos' | 'cuartos' | 'semis' | 'final' | 'champion';
-  pointsLabel: string;
+interface TeamLite {
+  slug: string;
+  name: string;
+  flagCode: string;
 }
-
-const PHASES: PhaseDef[] = [
-  { order: 2, label: 'Dieciseisavos (R32)', expectedMatches: 16, feedsField: 'octavos',  pointsLabel: '3 pts/equipo correcto en octavos' },
-  { order: 3, label: 'Octavos (R16)',       expectedMatches: 8,  feedsField: 'cuartos',  pointsLabel: '6 pts/equipo correcto en cuartos' },
-  { order: 4, label: 'Cuartos',             expectedMatches: 4,  feedsField: 'semis',    pointsLabel: '8 pts/equipo correcto en semis' },
-  { order: 5, label: 'Semifinales',         expectedMatches: 2,  feedsField: 'final',    pointsLabel: '10 pts/finalista correcto' },
-  // Order 6 incluye Final + 3er puesto. El bracketPosition=1 (la Final)
-  // determina al campeón; el 3er puesto se muestra pero no se score (aún).
-  { order: 6, label: 'Final + 3er puesto',  expectedMatches: 2,  feedsField: 'champion', pointsLabel: '15 pts si campeón correcto (Final = bracketPosition 1)' },
-];
 
 const TOURNAMENT_ID = 'mundial-2026';
 const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-${mode}-${userId}`;
+const SAVE_DEBOUNCE_MS = 1200;
 
-interface TeamLite { slug: string; name: string; flagCode: string; }
-
+/**
+ * Bracket en formato wireframe Mundial 2026: tournament tree con 16avos
+ * a ambos lados. 9 columnas: 16avos · Octavos · Cuartos · Semis · FINAL ·
+ * Semis · Cuartos · Octavos · 16avos.
+ *
+ * Mapping bracketPosition → side:
+ *  - 16avos (8+8): pos 1-8 izq, 9-16 der
+ *  - Octavos (4+4): pos 1-4 izq, 5-8 der
+ *  - Cuartos (2+2): pos 1-2 izq, 3-4 der
+ *  - Semis (1+1):   pos 1 izq, 2 der
+ *  - Final (1):     centro (bracketPosition 1)
+ *  - 3er puesto (bracketPosition 2 dentro de phase 6): no se muestra
+ *    en el grid (no scorea, queda fuera del visual del wireframe).
+ */
 @Component({
   standalone: true,
   selector: 'app-bracket-picks',
-  imports: [RouterLink],
+  imports: [RouterLink, RouterLinkActive, NgTemplateOutlet],
   template: `
-    <header class="bp-header">
-      <span class="wf-kicker">PREDICCIONES · LLAVES ELIMINATORIAS</span>
-      <h1 class="bp-header__h1">Bracket</h1>
+    <section class="page">
 
-      @if (availableModes().length === 0 && !modesLoading()) {
-        <p class="form-card__hint" style="color: var(--color-lost);">
-          Necesitas pertenecer a al menos un grupo privado.
-          <a class="link-green" routerLink="/groups/new">Crea uno →</a>
-        </p>
-      } @else if (availableModes().length > 1) {
-        <div class="wf-seg" role="tablist" style="max-width: 320px; margin-top: var(--space-md);">
+      <!-- Header con stats (mismo patrón que /picks y /picks/group-stage) -->
+      <header class="page__header">
+        <div>
+          <div class="kicker">MUNDIAL 2026 · TU POLLA</div>
+          <h1 class="page__title">Mis picks</h1>
+        </div>
+        <div class="page__stats">
+          <div class="page__stat">
+            <div class="num">{{ totals().points }}</div>
+            <div class="lbl">pts</div>
+          </div>
+          <div class="page__stat">
+            <div class="num">{{ totals().exactCount }}</div>
+            <div class="lbl">exactos</div>
+          </div>
+          <div class="page__stat">
+            <div class="num">{{ totals().resultCount }}</div>
+            <div class="lbl">resultados</div>
+          </div>
+          <div class="page__stat">
+            <div class="num">{{ totals().globalRank ? '#' + totals().globalRank : '—' }}</div>
+            <div class="lbl">global</div>
+          </div>
+        </div>
+      </header>
+
+      <nav class="page-tabs" aria-label="Vistas de picks">
+        <a class="page-tabs__item" routerLink="/picks"
+           routerLinkActive="is-active" [routerLinkActiveOptions]="{exact: true}">Cronológico</a>
+        <a class="page-tabs__item" routerLink="/picks/group-stage"
+           routerLinkActive="is-active">Tabla grupos</a>
+        <a class="page-tabs__item is-active" routerLink="/picks/bracket">Bracket</a>
+      </nav>
+
+      <!-- Mode switch (si el user tiene > 1 modo) -->
+      @if (availableModes().length > 1) {
+        <div class="seg" style="max-width:280px;margin-bottom:14px;">
           @for (m of availableModes(); track m) {
-            <button type="button" class="wf-seg__item"
+            <button type="button" class="seg__item"
                     [class.is-active]="mode() === m"
                     (click)="switchMode(m)">
               {{ m === 'COMPLETE' ? 'Modo completo' : 'Modo simple' }}
             </button>
           }
         </div>
-      } @else if (mode()) {
-        <p class="form-card__hint" style="margin-top: var(--space-sm);">
-          Predicción <strong>{{ mode() === 'COMPLETE' ? 'modo completo' : 'modo simple' }}</strong>.
-        </p>
       }
 
-      @if (mode()) {
-        <p class="form-card__hint" style="margin-top: var(--space-sm); max-width: 720px;">
-          El admin define las llaves a partir de los resultados de la fase de grupos.
-          Tu trabajo: <strong>elegir el ganador de cada partido</strong>. Doble contabilidad —
-          un equipo bien puesto desde octavos hasta campeón suma 3+6+8+10+15 = 42 pts.
-        </p>
-      }
-
-      @if (mode() && bracketLockAt()) {
-        @if (bracketLocked()) {
-          <div class="wf-lock-banner wf-lock-banner--closed" role="status">
-            <strong>BLOQUEADO</strong> · El bracket cerró el {{ bracketLockFormatted() }}.
-            Ya no se aceptan cambios.
-          </div>
-        } @else {
-          <div class="wf-lock-banner" role="status">
-            Cierra al kickoff del primer partido eliminatorio:
-            <strong>{{ bracketLockFormatted() }}</strong>
-            (en {{ bracketLockCountdown() }}).
-          </div>
-        }
-      }
-    </header>
-
-    @if (loading()) {
-      <p style="padding: var(--space-2xl); text-align: center;">Cargando…</p>
-    } @else if (mode() && hasNoKnockoutMatches()) {
-      <div class="empty-state" style="padding: var(--space-2xl); text-align: center;">
-        <h3>Las llaves todavía no están armadas</h3>
+      <!-- Intro: descripción + status + edit -->
+      <div class="bracket-intro">
         <p>
-          El admin carga las llaves después de que termine la fase de grupos
-          (entre el último partido de grupos y el primero de octavos).
-          Vuelve cuando las llaves estén disponibles.
+          Tu predicción de la fase eliminatoria.
+          <b>+15 pts</b> por cada llave acertada · <b>+30 pts</b> por el campeón.
+          @if (bracketLocked()) {
+            <br><span class="text-mute">Bracket cerrado · {{ bracketLockFormatted() }}.</span>
+          } @else if (bracketLockFormatted()) {
+            <br><span class="text-mute">Cierra al kickoff de la 1ª llave · {{ bracketLockFormatted() }}.</span>
+          }
         </p>
+        <div class="bracket-intro__actions">
+          @if (saveStatus() === 'saving') {
+            <span class="pill">⏳ Guardando…</span>
+          } @else if (saveStatus() === 'saved') {
+            <span class="pill pill--green">✓ Bracket guardado</span>
+          } @else if (saveStatus() === 'dirty') {
+            <span class="pill pill--warn">● Cambios sin guardar</span>
+          } @else if (saveStatus() === 'error') {
+            <span class="pill" style="background:rgba(195,51,51,0.1);color:#c33;border-color:rgba(195,51,51,0.3);">⚠ Error</span>
+          }
+          <span class="text-mute" style="font-size:11px;">
+            {{ pickedCount() }} / {{ totalKnockoutMatches() }}
+          </span>
+        </div>
       </div>
-    } @else if (mode()) {
-      <div class="bracket-admin" [class.bp-readonly]="bracketLocked()">
-        @for (phase of PHASES; track phase.order) {
-          @let matches = matchesByPhase(phase.order);
-          @if (matches.length > 0) {
-            <div class="bracket-admin__col">
-              <h2 class="bracket-admin__head">
-                {{ phase.label }}
-                <small style="display: block; font-size: var(--fs-xs); color: var(--color-text-muted); font-family: var(--font-primary); letter-spacing: 0.08em; margin-top: 4px;">
-                  {{ matches.length }} {{ matches.length === 1 ? 'partido' : 'partidos' }} · {{ phase.pointsLabel }}
-                </small>
-              </h2>
 
-              @for (m of matches; track m.id) {
-                @let pickedSlug = winners().get(m.id);
-                <div class="bracket-slot bp-clickable">
-                  <span class="bracket-slot__pos">#{{ m.bracketPosition ?? '?' }}</span>
+      <!-- Filter pills (visual; "Tu camino" hace dim al resto) -->
+      <div class="bracket-filter">
+        <button type="button" class="bracket-filter__pill"
+                [class.is-active]="filter() === 'mine'"
+                (click)="filter.set('mine')">Tu camino</button>
+        <button type="button" class="bracket-filter__pill"
+                [class.is-active]="filter() === 'all'"
+                (click)="filter.set('all')">Todos</button>
+      </div>
 
-                  <button type="button"
-                          class="bracket-slot__row bp-row"
-                          [class.bracket-slot__row--winner]="pickedSlug === m.homeTeamId"
-                          [class.bp-row--lose]="pickedSlug && pickedSlug !== m.homeTeamId"
-                          (click)="pickWinner(m.id, m.homeTeamId)">
-                    <span class="fi bp-flag" [class]="'fi-' + (teamMap().get(m.homeTeamId)?.flagCode || '').toLowerCase()"></span>
-                    <span class="bracket-slot__name">{{ teamMap().get(m.homeTeamId)?.name || m.homeTeamId }}</span>
-                    <span class="bracket-slot__score">{{ pickedSlug === m.homeTeamId ? '✓' : '' }}</span>
-                  </button>
+      @if (loading()) {
+        <p class="loading-msg">Cargando bracket…</p>
+      } @else if (availableModes().length === 0) {
+        <div class="empty-block">
+          <h3>Sin grupos privados</h3>
+          <p>Necesitas pertenecer a al menos un grupo privado para usar el bracket.</p>
+          <a class="btn-wf btn-wf--primary" routerLink="/groups/new">Crear un grupo →</a>
+        </div>
+      } @else if (hasNoKnockoutMatches()) {
+        <div class="empty-block">
+          <h3>Las llaves todavía no están armadas</h3>
+          <p>
+            El admin carga las llaves después de que termine la fase de grupos.
+            Vuelve cuando estén disponibles.
+          </p>
+        </div>
+      } @else {
+        <!-- Grid del bracket: 9 columnas (16avos a ambos extremos) -->
+        <div class="bracket-scroll">
+          <div class="bracket-grid">
 
-                  <button type="button"
-                          class="bracket-slot__row bp-row"
-                          [class.bracket-slot__row--winner]="pickedSlug === m.awayTeamId"
-                          [class.bp-row--lose]="pickedSlug && pickedSlug !== m.awayTeamId"
-                          (click)="pickWinner(m.id, m.awayTeamId)">
-                    <span class="fi bp-flag" [class]="'fi-' + (teamMap().get(m.awayTeamId)?.flagCode || '').toLowerCase()"></span>
-                    <span class="bracket-slot__name">{{ teamMap().get(m.awayTeamId)?.name || m.awayTeamId }}</span>
-                    <span class="bracket-slot__score">{{ pickedSlug === m.awayTeamId ? '✓' : '' }}</span>
-                  </button>
+            <!-- Row 1: headers -->
+            <div class="bracket-col-h">16avos</div>
+            <div class="bracket-col-h">Octavos</div>
+            <div class="bracket-col-h">Cuartos</div>
+            <div class="bracket-col-h">Semis</div>
+            <div class="bracket-col-h">Final</div>
+            <div class="bracket-col-h">Semis</div>
+            <div class="bracket-col-h">Cuartos</div>
+            <div class="bracket-col-h">Octavos</div>
+            <div class="bracket-col-h">16avos</div>
 
-                  <p class="bracket-slot__meta">
-                    {{ formatKickoffShort(m.kickoffAt) }}
-                    @if (m.venue) { · {{ m.venue }} }
-                  </p>
+            <!-- Row 2: columnas con matches -->
+
+            <!-- 16avos izq -->
+            <div class="bracket-col bracket-col--16avos">
+              @for (m of matchesIn(2, 'left'); track m.id) {
+                <ng-container *ngTemplateOutlet="matchTpl; context: {$implicit: m, prefix: 'R32'}"></ng-container>
+              }
+            </div>
+
+            <!-- Octavos izq -->
+            <div class="bracket-col">
+              @for (m of matchesIn(3, 'left'); track m.id) {
+                <ng-container *ngTemplateOutlet="matchTpl; context: {$implicit: m, prefix: 'O'}"></ng-container>
+              }
+            </div>
+
+            <!-- Cuartos izq -->
+            <div class="bracket-col bracket-col--cuartos">
+              @for (m of matchesIn(4, 'left'); track m.id) {
+                <ng-container *ngTemplateOutlet="matchTpl; context: {$implicit: m, prefix: 'C'}"></ng-container>
+              }
+            </div>
+
+            <!-- Semis izq -->
+            <div class="bracket-col bracket-col--semis">
+              @for (m of matchesIn(5, 'left'); track m.id) {
+                <ng-container *ngTemplateOutlet="matchTpl; context: {$implicit: m, prefix: 'S'}"></ng-container>
+              }
+            </div>
+
+            <!-- FINAL (centro) -->
+            <div class="bracket-col bracket-col--final">
+              @let fm = finalMatch();
+              @if (fm) {
+                <div class="bracket-final-card">
+                  <div class="bracket-final-card__title">🏆 FINAL</div>
+                  <ng-container *ngTemplateOutlet="slotTpl; context: {match: fm, side: 'home'}"></ng-container>
+                  <ng-container *ngTemplateOutlet="slotTpl; context: {match: fm, side: 'away'}"></ng-container>
+                  @let champ = champion();
+                  @if (champ) {
+                    <div class="bracket-final-card__champion">
+                      CAMPEÓN · {{ champ }}
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="bracket-final-card">
+                  <div class="bracket-final-card__title">🏆 FINAL</div>
+                  <div class="text-mute" style="text-align:center;font-size:11px;padding:8px 4px;">
+                    Aún sin definir
+                  </div>
                 </div>
               }
             </div>
-          }
-        }
-      </div>
 
-      <footer class="bp-foot">
-        <p class="form-card__hint">
-          Tu predicción se guarda automáticamente en este navegador.
-          Al pulsar "Guardar en la base", se sube al servidor.
-          <strong>{{ pickedCount() }}</strong> de <strong>{{ totalKnockoutMatches() }}</strong> partidos elegidos.
-        </p>
-        <button class="btn btn--primary" type="button"
-                [disabled]="saving() || bracketLocked()"
-                (click)="saveAll()">
-          {{ bracketLocked() ? 'Bracket bloqueado' : (saving() ? 'Guardando…' : 'Guardar en la base') }}
+            <!-- Semis der -->
+            <div class="bracket-col bracket-col--semis">
+              @for (m of matchesIn(5, 'right'); track m.id) {
+                <ng-container *ngTemplateOutlet="matchTpl; context: {$implicit: m, prefix: 'S'}"></ng-container>
+              }
+            </div>
+
+            <!-- Cuartos der -->
+            <div class="bracket-col bracket-col--cuartos">
+              @for (m of matchesIn(4, 'right'); track m.id) {
+                <ng-container *ngTemplateOutlet="matchTpl; context: {$implicit: m, prefix: 'C'}"></ng-container>
+              }
+            </div>
+
+            <!-- Octavos der -->
+            <div class="bracket-col">
+              @for (m of matchesIn(3, 'right'); track m.id) {
+                <ng-container *ngTemplateOutlet="matchTpl; context: {$implicit: m, prefix: 'O'}"></ng-container>
+              }
+            </div>
+
+            <!-- 16avos der -->
+            <div class="bracket-col bracket-col--16avos">
+              @for (m of matchesIn(2, 'right'); track m.id) {
+                <ng-container *ngTemplateOutlet="matchTpl; context: {$implicit: m, prefix: 'R32'}"></ng-container>
+              }
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Leyenda -->
+        <div class="bracket-legend">
+          <span class="bracket-legend__item">
+            <span class="bracket-legend__icon bracket-legend__icon--mine"></span>
+            Tu predicción
+          </span>
+          <span class="bracket-legend__item">
+            <span class="bracket-legend__icon bracket-legend__icon--win"></span>
+            Ganador (real / proyectado)
+          </span>
+          <span class="text-mute">
+            ·
+            @if (bracketLocked()) { Bloqueado, solo lectura. }
+            @else { Click en un equipo para elegirlo como ganador. }
+          </span>
+        </div>
+      }
+
+      <!-- Templates compartidos -->
+      <ng-template #matchTpl let-m let-prefix="prefix">
+        <div class="bracket-match" [style.opacity]="dimmedFor(m) ? 0.4 : 1">
+          <span class="bracket-match__label">{{ prefix }}{{ m.bracketPosition }}</span>
+          <ng-container *ngTemplateOutlet="slotTpl; context: {match: m, side: 'home'}"></ng-container>
+          <ng-container *ngTemplateOutlet="slotTpl; context: {match: m, side: 'away'}"></ng-container>
+        </div>
+      </ng-template>
+
+      <ng-template #slotTpl let-match="match" let-side="side">
+        @let teamId = side === 'home' ? match.homeTeamId : match.awayTeamId;
+        @let team = teamMap().get(teamId);
+        @let isMine = winners().get(match.id) === teamId;
+        @let isWinner = realWinner(match) === teamId;
+        @let score = side === 'home' ? match.homeScore : match.awayScore;
+        <button type="button" class="bracket-slot"
+                [class.bracket-slot--win]="isWinner"
+                [class.bracket-slot--mine]="isMine"
+                [class.bracket-slot--locked]="bracketLocked()"
+                [disabled]="bracketLocked()"
+                (click)="pickWinner(match.id, teamId)">
+          <span class="bracket-slot__team">
+            <span class="flag">{{ flagEmoji(team?.flagCode || '') }}</span>{{ team?.name || teamId }}
+          </span>
+          <span class="bracket-slot__score">{{ score != null ? score : '' }}</span>
         </button>
-        @if (lastSavedAt()) {
-          <p class="form-card__hint" style="margin-top: var(--space-sm); color: var(--color-primary-green);">
-            ✓ Último guardado en la base: {{ formatDate(lastSavedAt()!) }}
-          </p>
-        }
-      </footer>
-    }
-
-    <!-- Modal de confirmación de guardado -->
-    @if (justSaved()) {
-      <div class="bp-modal" role="dialog" aria-modal="true" aria-labelledby="bp-modal-title"
-           (click)="dismissJustSaved()">
-        <div class="bp-modal__card" (click)="$event.stopPropagation()">
-          <div class="bp-modal__icon bp-modal__icon--ok">✓</div>
-          <h2 id="bp-modal-title" class="bp-modal__title">¡Predicción guardada!</h2>
-          <p class="bp-modal__body">
-            Tus <strong>{{ pickedCount() }}</strong>
-            {{ pickedCount() === 1 ? 'partido quedó' : 'partidos quedaron' }}
-            registrados en la base. Puedes seguir editando hasta que cierre el bracket.
-          </p>
-          <p class="bp-modal__time">Guardado: {{ lastSavedAt() ? formatDate(lastSavedAt()!) : '' }}</p>
-          <button class="btn btn--primary bp-modal__btn" type="button" (click)="dismissJustSaved()">
-            Entendido
-          </button>
-        </div>
-      </div>
-    }
-
-    <!-- Modal de error -->
-    @if (saveError()) {
-      <div class="bp-modal" role="dialog" aria-modal="true" aria-labelledby="bp-modal-err-title"
-           (click)="dismissError()">
-        <div class="bp-modal__card" (click)="$event.stopPropagation()">
-          <div class="bp-modal__icon bp-modal__icon--err">!</div>
-          <h2 id="bp-modal-err-title" class="bp-modal__title">No se pudo guardar</h2>
-          <p class="bp-modal__body">
-            El servidor rechazó la predicción. Detalle:
-          </p>
-          <p class="bp-modal__detail">{{ saveError() }}</p>
-          <button class="btn btn--primary bp-modal__btn" type="button" (click)="dismissError()">
-            Cerrar
-          </button>
-        </div>
-      </div>
-    }
+      </ng-template>
+    </section>
   `,
   styles: [`
-    /* Wireframe-style header */
-    .bp-header {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: var(--space-xl) var(--section-x-mobile) var(--space-md);
-    }
-    @media (min-width: 992px) {
-      .bp-header { padding: var(--space-2xl) var(--section-x-desktop) var(--space-md); }
-    }
-    .bp-header__h1 {
-      font-family: var(--wf-display);
-      font-size: 36px;
-      letter-spacing: 0.04em;
-      line-height: 1;
-      margin: 4px 0 var(--space-sm);
-      text-transform: none;
-    }
-    @media (min-width: 480px) {
-      .bp-header__h1 { font-size: 48px; }
-    }
+    :host { display: block; }
 
-    /* Reusamos .bracket-admin y .bracket-slot del page-shell.css. El slot
-       no es clickeable como un todo (a diferencia del admin); cada row
-       de equipo es su propio botón. */
-    .bp-clickable { cursor: default; }
-    .bp-clickable:hover {
-      border-color: var(--border-grey);
-      transform: none;
-    }
-    /* La row del bracket nativamente es display: grid con 3 columnas.
-       Hacemos que nuestro <button> ocupe todo el ancho y conserve el
-       grid layout del .bracket-slot__row, sobreescribiendo los defaults
-       de button. */
-    .bp-row {
-      width: 100%;
-      background: transparent;
-      border: 0;
-      font: inherit;
-      text-align: left;
-      cursor: pointer;
-      color: inherit;
-      transition: background 100ms;
-      border-radius: var(--radius-sm);
-    }
-    .bp-row:hover {
-      background: rgba(0, 200, 100, 0.08);
-    }
-    .bp-row--lose .bracket-slot__name,
-    .bp-row--lose .bracket-slot__score,
-    .bp-row--lose .bp-flag {
-      opacity: 0.45;
-    }
-    .bp-flag {
-      width: 22px;
-      height: 22px;
-      border-radius: 3px;
-      display: inline-block;
-    }
-    .bp-foot {
-      display: grid;
-      gap: var(--space-sm);
-      padding: var(--space-md);
-      background: var(--color-primary-white);
-      border: var(--border-grey);
-      border-radius: var(--radius-md);
-      margin: var(--space-xl) var(--section-x-mobile, var(--space-md)) 0;
-    }
-    /* Modal full-screen overlay */
-    .bp-modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.55);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: var(--space-md);
-      animation: bp-fade-in 150ms ease-out;
-    }
-    @keyframes bp-fade-in {
-      from { opacity: 0; }
-      to   { opacity: 1; }
-    }
-    .bp-modal__card {
-      max-width: 440px;
-      width: 100%;
-      background: var(--color-primary-white);
-      border-radius: 14px;
-      padding: var(--space-xl) var(--space-lg);
+    .empty-block {
+      padding: 24px;
       text-align: center;
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
-      animation: bp-pop 180ms cubic-bezier(0.2, 0.9, 0.3, 1.4);
+      background: var(--wf-paper);
+      border: 1px dashed var(--wf-line);
+      border-radius: 10px;
     }
-    @keyframes bp-pop {
-      from { transform: scale(0.92); opacity: 0; }
-      to   { transform: scale(1); opacity: 1; }
+    .empty-block h3 {
+      font-family: var(--wf-display);
+      font-size: 18px;
+      letter-spacing: .04em;
+      margin: 0 0 8px;
     }
-    .bp-modal__icon {
-      width: 64px;
-      height: 64px;
-      border-radius: 50%;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 32px;
-      font-weight: bold;
-      color: var(--color-primary-white);
-      margin: 0 auto var(--space-md);
-    }
-    .bp-modal__icon--ok { background: var(--color-primary-green); }
-    .bp-modal__icon--err { background: var(--color-lost, #c33); }
-    .bp-modal__title {
-      font-family: var(--font-display);
-      font-size: 24px;
-      line-height: 1.05;
-      letter-spacing: 0.04em;
-      margin-bottom: var(--space-sm);
-    }
-    .bp-modal__body {
-      color: var(--wf-ink-2);
-      font-size: 14px;
+    .empty-block p {
+      color: var(--wf-ink-3);
+      font-size: 13px;
+      margin: 0 0 12px;
       line-height: 1.5;
-      margin-bottom: var(--space-md);
     }
-    .bp-modal__time {
-      font-size: var(--fs-xs);
-      color: var(--color-text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      margin-bottom: var(--space-lg);
+    .loading-msg {
+      padding: 32px;
+      text-align: center;
+      color: var(--wf-ink-3);
+      font-size: 14px;
     }
-    .bp-modal__detail {
-      background: rgba(220, 50, 50, 0.08);
-      color: var(--color-lost, #c33);
-      padding: var(--space-sm);
-      border-radius: var(--radius-sm);
-      font-family: ui-monospace, SFMono-Regular, monospace;
-      font-size: var(--fs-xs);
-      margin-bottom: var(--space-lg);
-      word-break: break-word;
-    }
-    .bp-modal__btn { min-width: 160px; }
-    /* Banner del lock §4 */
-    .bp-lock {
-      margin-top: var(--space-md);
-      padding: var(--space-sm) var(--space-md);
-      border-radius: var(--radius-sm);
-      font-size: var(--fs-sm);
-      line-height: 1.4;
-    }
-    .bp-lock--open {
-      background: rgba(0, 200, 100, 0.10);
-      border-left: 3px solid var(--color-primary-green);
-    }
-    .bp-lock--closed {
-      background: rgba(220, 50, 50, 0.10);
-      border-left: 3px solid var(--color-lost, #c33);
-      color: var(--color-lost, #c33);
-    }
-    /* Cuando el bracket está bloqueado: filas read-only, cursor default,
-       sin hover effect. Las selecciones siguen visibles para que el user
-       vea su pick guardado. */
-    .bp-readonly .bp-row { cursor: not-allowed; }
-    .bp-readonly .bp-row:hover { background: transparent; }
   `],
 })
 export class BracketPicksComponent implements OnInit, OnDestroy {
@@ -391,16 +341,7 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
-  PHASES = PHASES;
-
   loading = signal(true);
-  modesLoading = signal(true);
-  saving = signal(false);
-  saveError = signal<string | null>(null);
-  lastSavedAt = signal<string | null>(null);
-  justSaved = signal(false);
-  private justSavedTimer: ReturnType<typeof setTimeout> | undefined;
-
   availableModes = computed(() => this.userModes.modes());
   mode = signal<GameMode | null>(null);
 
@@ -408,20 +349,28 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
   teamMap = signal<Map<string, TeamLite>>(new Map());
 
   matches = signal<KnockoutMatch[]>([]);
-  // matchId → ganador (slug)
+  /** matchId → ganador elegido (slug del team). */
   winners = signal<Map<string, string>>(new Map());
 
+  filter = signal<'mine' | 'all'>('all');
+
+  saveStatus = signal<'idle' | 'dirty' | 'saving' | 'saved' | 'error'>('idle');
+  private saveTimer: ReturnType<typeof setTimeout> | undefined;
   private serverId: string | null = null;
   private currentUserId = '';
-  private lockTicker: ReturnType<typeof setInterval> | undefined;
+
+  // Totals (para el header de stats)
+  totals = signal<{ points: number; exactCount: number; resultCount: number; globalRank: number | null }>(
+    { points: 0, exactCount: 0, resultCount: 0, globalRank: null },
+  );
 
   hasNoKnockoutMatches = computed(() => this.matches().length === 0);
   totalKnockoutMatches = computed(() => this.matches().length);
   pickedCount = computed(() => this.winners().size);
 
-  // Lock window §4: el bracket cierra al kickoff del primer partido
-  // eliminatorio. Si todavía no hay knockouts cargados, lockAt es null
-  // y el form queda abierto como draft.
+  // Lock: bracket cierra al kickoff del primer partido eliminatorio.
+  private nowTick = signal(Date.now());
+  private lockTicker: ReturnType<typeof setInterval> | undefined;
   bracketLockAt = computed<string | null>(() => {
     const ms = this.matches();
     if (ms.length === 0) return null;
@@ -429,45 +378,89 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
     for (const m of ms) if (m.kickoffAt < min) min = m.kickoffAt;
     return min;
   });
-  // Re-evaluado cada 30s vía nowTick para que el banner cambie de
-  // "abre, cierra en X" a "BLOQUEADO" sin refresh.
-  private nowTick = signal(Date.now());
   bracketLocked = computed(() => {
     const at = this.bracketLockAt();
     if (!at) return false;
     return this.nowTick() >= Date.parse(at);
-  });
-  bracketLockCountdown = computed(() => {
-    const at = this.bracketLockAt();
-    if (!at) return null;
-    return this.time.timeUntil(at);
   });
   bracketLockFormatted = computed(() => {
     const at = this.bracketLockAt();
     return at ? this.time.formatKickoff(at) : null;
   });
 
-  matchesByPhase(order: number): KnockoutMatch[] {
-    return this.matches()
-      .filter((m) => m.phaseOrder === order)
-      .sort((a, b) => {
-        const ap = a.bracketPosition ?? 999;
-        const bp = b.bracketPosition ?? 999;
-        if (ap !== bp) return ap - bp;
-        return a.kickoffAt.localeCompare(b.kickoffAt);
-      });
+  finalMatch = computed<KnockoutMatch | null>(() => {
+    return this.matches().find((m) => m.phaseOrder === 6 && m.bracketPosition === 1) ?? null;
+  });
+
+  /** El campeón es el ganador elegido del partido de la Final. */
+  champion = computed<string | null>(() => {
+    const fm = this.finalMatch();
+    if (!fm) return null;
+    const champSlug = this.winners().get(fm.id);
+    if (!champSlug) return null;
+    const team = this.teamMap().get(champSlug);
+    return team ? team.name : champSlug;
+  });
+
+  /** Los equipos que el user predijo como ganadores en cada match.
+   *  Se usa para el filtro "Tu camino": dim los matches donde NINGÚN
+   *  equipo está en este set. */
+  myAdvancers = computed<Set<string>>(() => {
+    const out = new Set<string>();
+    for (const slug of this.winners().values()) out.add(slug);
+    return out;
+  });
+
+  /** Para el filter "Tu camino": un match es "tuyo" si elegiste a uno
+   *  de los 2 equipos como ganador (en este match O en una ronda anterior
+   *  que llevó a este match). Simplificado: si home o away están en
+   *  myAdvancers, es parte de tu camino. */
+  dimmedFor(m: KnockoutMatch): boolean {
+    if (this.filter() !== 'mine') return false;
+    const set = this.myAdvancers();
+    return !set.has(m.homeTeamId) && !set.has(m.awayTeamId);
+  }
+
+  flagEmoji(code: string): string {
+    if (!code || code.length < 2) return '';
+    const A = 0x1F1E6;
+    const a = code.toUpperCase().charCodeAt(0);
+    const b = code.toUpperCase().charCodeAt(1);
+    if (Number.isNaN(a) || Number.isNaN(b)) return '';
+    return String.fromCodePoint(A + (a - 65), A + (b - 65));
+  }
+
+  /** Devuelve los matches de la fase, filtrados por lado del bracket
+   *  según bracketPosition (mid = total/2). */
+  matchesIn(phaseOrder: number, side: 'left' | 'right'): KnockoutMatch[] {
+    // El partido por el 3er puesto (phase 6 bracketPosition 2) lo filtramos
+    // del visual: no aparece en el bracket tree.
+    const all = this.matches()
+      .filter((m) => m.phaseOrder === phaseOrder)
+      .filter((m) => !(phaseOrder === 6 && m.bracketPosition !== 1))
+      .sort((a, b) => (a.bracketPosition ?? 999) - (b.bracketPosition ?? 999));
+    if (all.length === 0) return [];
+    if (phaseOrder === 6) return all; // solo la Final, pero Final va al col central, no aquí
+    const mid = Math.ceil(all.length / 2);
+    return side === 'left' ? all.slice(0, mid) : all.slice(mid);
+  }
+
+  /** Para un match con resultado FINAL, devuelve el slug del team que ganó.
+   *  Empate (penales/etc) → ningún winner determinado; null. */
+  realWinner(m: KnockoutMatch): string | null {
+    if (m.status !== 'FINAL') return null;
+    if (m.homeScore == null || m.awayScore == null) return null;
+    if (m.homeScore > m.awayScore) return m.homeTeamId;
+    if (m.awayScore > m.homeScore) return m.awayTeamId;
+    return null;
   }
 
   async ngOnInit() {
     this.currentUserId = this.auth.user()?.sub ?? '';
     if (!this.currentUserId) {
-      this.toast.error('Necesitas estar logueado');
-      this.modesLoading.set(false);
       this.loading.set(false);
       return;
     }
-    this.modesLoading.set(false);
-    // Tick global cada 30s para refrescar el countdown / cambiar a "bloqueado".
     this.lockTicker = setInterval(() => this.nowTick.set(Date.now()), 30_000);
 
     const requested = this.route.snapshot.queryParamMap.get('mode') as GameMode | null;
@@ -484,7 +477,11 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.lockTicker) clearInterval(this.lockTicker);
-    if (this.justSavedTimer) clearTimeout(this.justSavedTimer);
+    if (this.saveTimer) clearTimeout(this.saveTimer);
+    // Flush en unmount: si hay cambios sin guardar, intentamos persistir
+    if (this.saveStatus() === 'dirty') {
+      void this.saveAll();
+    }
   }
 
   async switchMode(m: GameMode) {
@@ -504,11 +501,13 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
     if (!m) return;
     this.loading.set(true);
     try {
-      const [teamsRes, matchesRes, phasesRes, bracketRes] = await Promise.all([
+      const [teamsRes, matchesRes, phasesRes, bracketRes, totalsRes, leaderboardRes] = await Promise.all([
         this.api.listTeams(TOURNAMENT_ID),
         this.api.listMatches(TOURNAMENT_ID),
         this.api.listPhases(TOURNAMENT_ID),
         this.api.getBracketPick(this.currentUserId, TOURNAMENT_ID, m),
+        this.api.myTotal(this.currentUserId, TOURNAMENT_ID),
+        this.api.listLeaderboard(TOURNAMENT_ID, 200),
       ]);
 
       const list = (teamsRes.data ?? [])
@@ -519,8 +518,6 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
       for (const t of list) tmap.set(t.slug, t);
       this.teamMap.set(tmap);
 
-      // Solo nos importan partidos de fases eliminatorias (order 2..6).
-      // Necesitamos el order de cada Phase para filtrar.
       const phaseOrderById = new Map<string, number>();
       for (const p of phasesRes.data ?? []) phaseOrderById.set(p.id, p.order);
 
@@ -532,19 +529,18 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
           awayTeamId: mm.awayTeamId,
           kickoffAt: mm.kickoffAt,
           bracketPosition: mm.bracketPosition ?? null,
-          venue: (mm as { venue?: string | null }).venue ?? null,
+          status: mm.status ?? null,
+          homeScore: mm.homeScore ?? null,
+          awayScore: mm.awayScore ?? null,
         }))
         .filter((k) => k.phaseOrder >= 2 && k.phaseOrder <= 6);
       this.matches.set(knockouts);
 
-      // Estado inicial de winners: leemos lo que esté en localStorage; si no
-      // hay nada, lo derivamos del row guardado en DB (si existe).
+      // Reconstruir winners: prioridad localStorage > DB row
       let winnersState = new Map<string, string>();
       const dbRow = (bracketRes.data ?? [])[0];
       if (dbRow) {
         this.serverId = dbRow.id;
-        // Reconstruir aproximado: para cada match, si su ganador (según
-        // octavos/cuartos/etc) está entre las dos selecciones, lo marcamos.
         const winnerSets: Record<number, Set<string>> = {
           2: new Set((dbRow.octavos ?? []).filter((s: string | null): s is string => !!s)),
           3: new Set((dbRow.cuartos ?? []).filter((s: string | null): s is string => !!s)),
@@ -560,7 +556,6 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
         }
       }
 
-      // Sobreescribir con localStorage si existe (más fresco)
       const lsRaw = localStorage.getItem(STORAGE_KEY(this.currentUserId, m));
       if (lsRaw) {
         try {
@@ -570,6 +565,18 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
       }
 
       this.winners.set(winnersState);
+      this.saveStatus.set(dbRow ? 'saved' : 'idle');
+
+      // Totals + global rank
+      const myTotal = (totalsRes.data ?? [])[0];
+      const sorted = (leaderboardRes.data ?? []).sort((a, b) => (b.points ?? 0) - (a.points ?? 0));
+      const rankIdx = sorted.findIndex((t) => t.userId === this.currentUserId);
+      this.totals.set({
+        points: myTotal?.points ?? 0,
+        exactCount: myTotal?.exactCount ?? 0,
+        resultCount: myTotal?.resultCount ?? 0,
+        globalRank: rankIdx >= 0 ? rankIdx + 1 : null,
+      });
     } finally {
       this.loading.set(false);
     }
@@ -580,13 +587,14 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
     this.winners.update((prev) => {
       const next = new Map(prev);
       if (next.get(matchId) === teamSlug) {
-        next.delete(matchId);   // click el mismo team de nuevo → des-elige
+        next.delete(matchId);   // re-click → des-elige
       } else {
         next.set(matchId, teamSlug);
       }
       return next;
     });
     this.persistLocal();
+    this.scheduleSave();
   }
 
   private persistLocal() {
@@ -599,57 +607,23 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
     } catch { /* localStorage full or disabled */ }
   }
 
-  dismissJustSaved() {
-    if (this.justSavedTimer) clearTimeout(this.justSavedTimer);
-    this.justSaved.set(false);
-  }
-
-  dismissError() {
-    this.saveError.set(null);
-  }
-
-  @HostListener('document:keydown.escape')
-  onEscape() {
-    if (this.justSaved()) this.dismissJustSaved();
-    else if (this.saveError()) this.dismissError();
-  }
-
-  formatDate(iso: string): string {
-    try {
-      return new Date(iso).toLocaleString('es-EC', {
-        day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-      });
-    } catch { return iso; }
-  }
-
-  formatKickoffShort(iso: string): string {
-    try {
-      return new Date(iso).toLocaleString('es-EC', {
-        day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-      });
-    } catch { return '—'; }
+  private scheduleSave() {
+    this.saveStatus.set('dirty');
+    if (this.saveTimer) clearTimeout(this.saveTimer);
+    this.saveTimer = setTimeout(() => void this.saveAll(), SAVE_DEBOUNCE_MS);
   }
 
   async saveAll() {
     const m = this.mode();
     if (!m) return;
-    if (this.bracketLocked()) {
-      this.saveError.set('La ventana de predicciones del bracket ya se cerró.');
-      return;
-    }
-    this.saveError.set(null);
-    this.saving.set(true);
+    if (this.bracketLocked()) return;
+    this.saveStatus.set('saving');
     try {
-      // Iteramos partidos ordenados por bracketPosition (mismo orden que la
-      // UI). Para la fase 6 esto importa: el seed la llama "Final + 3er"
-      // con 2 partidos — bracketPosition=1 es la Final y bracketPosition=2
-      // el 3er puesto. El campeón es el ganador de la Final, no del 3ero.
+      // Iteramos partidos ordenados por (phaseOrder, bracketPosition).
       const winnersByPhase: Record<number, string[]> = { 2: [], 3: [], 4: [], 5: [], 6: [] };
       const sortedMatches = [...this.matches()].sort((a, b) => {
         if (a.phaseOrder !== b.phaseOrder) return a.phaseOrder - b.phaseOrder;
-        const ap = a.bracketPosition ?? 999;
-        const bp = b.bracketPosition ?? 999;
-        return ap - bp;
+        return (a.bracketPosition ?? 999) - (b.bracketPosition ?? 999);
       });
       for (const km of sortedMatches) {
         const winner = this.winners().get(km.id);
@@ -663,11 +637,10 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
         userId: this.currentUserId,
         tournamentId: TOURNAMENT_ID,
         mode: m,
-        octavos:  winnersByPhase[2] ?? [],   // R32 winners → en octavos
-        cuartos:  winnersByPhase[3] ?? [],   // R16 winners → en cuartos
-        semis:    winnersByPhase[4] ?? [],   // QF winners → en semis
-        final:    winnersByPhase[5] ?? [],   // SF winners → en final (los 2 finalistas)
-        // bracketPosition=1 es la Final (orden 6), su ganador es el campeón.
+        octavos:  winnersByPhase[2] ?? [],
+        cuartos:  winnersByPhase[3] ?? [],
+        semis:    winnersByPhase[4] ?? [],
+        final:    winnersByPhase[5] ?? [],
         champion: (winnersByPhase[6] ?? [])[0] ?? '',
       };
 
@@ -675,20 +648,20 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
       if (res?.errors && res.errors.length > 0) {
         // eslint-disable-next-line no-console
         console.error('[upsertBracketPick] errors:', res.errors);
-        this.saveError.set(res.errors[0]!.message ?? 'No se pudo guardar el bracket');
+        this.toast.error(res.errors[0]?.message ?? 'No se pudo guardar el bracket');
+        this.saveStatus.set('error');
         return;
       }
       if (res?.data?.id) this.serverId = res.data.id;
-      this.lastSavedAt.set(new Date().toISOString());
-      this.toast.success('Bracket guardado en la base');
-      // Banner verde visible por 5s
-      if (this.justSavedTimer) clearTimeout(this.justSavedTimer);
-      this.justSaved.set(true);
-      this.justSavedTimer = setTimeout(() => this.justSaved.set(false), 5000);
+      this.saveStatus.set('saved');
     } catch (e) {
-      this.saveError.set(humanizeError(e));
-    } finally {
-      this.saving.set(false);
+      this.toast.error(humanizeError(e));
+      this.saveStatus.set('error');
     }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    // Reservado para futuros modales si se agregan acá.
   }
 }

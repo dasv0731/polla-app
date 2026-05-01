@@ -33,7 +33,11 @@ export const routes: Routes = [
     component: ShellComponent,
     canActivate: [authGuard],
     children: [
-      { path: '', redirectTo: 'picks', pathMatch: 'full' },
+      { path: '', redirectTo: 'home', pathMatch: 'full' },
+      {
+        path: 'home',
+        loadComponent: () => import('./features/home/home.component').then((m) => m.HomeComponent),
+      },
       {
         path: 'picks',
         loadComponent: () => import('./features/picks/picks-list.component').then((m) => m.PicksListComponent),
@@ -44,6 +48,10 @@ export const routes: Routes = [
       },
       {
         path: 'picks/group-stage',
+        loadComponent: () => import('./features/picks/picks-tabla-grupos.component').then((m) => m.PicksTablaGruposComponent),
+      },
+      {
+        path: 'picks/group-stage/predict',
         loadComponent: () => import('./features/picks/group-stage-picks.component').then((m) => m.GroupStagePicksComponent),
       },
       {
@@ -104,5 +112,5 @@ export const routes: Routes = [
       },
     ],
   },
-  { path: '**', redirectTo: 'picks' },
+  { path: '**', redirectTo: 'home' },
 ];

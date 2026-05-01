@@ -6,7 +6,7 @@ import { ApiService } from '../../core/api/api.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
 
-type Step = 1 | 2 | 3;
+type Step = 1 | 2 | 3 | 4 | 5;
 
 @Component({
   selector: 'app-onboarding',
@@ -14,251 +14,214 @@ type Step = 1 | 2 | 3;
   imports: [FormsModule, RouterLink],
   template: `
     <div class="onb-shell">
-      <header class="onb-top">
-        <div class="brand">
-          <span class="logo-icon">⚽</span>
-          <span class="brand-name">POLLA</span>
+      <div class="onb-card">
+
+        <!-- Top: brand + skip -->
+        <div class="onb-top">
+          <a routerLink="/picks" class="topbar__brand" style="text-decoration:none;color:inherit;">
+            <span class="topbar__logo">⚽</span>
+            <span class="topbar__title">POLLA</span>
+          </a>
+          @if (step() < 5) {
+            <a href="#" (click)="onSkip($event)" class="onb-skip">Saltar</a>
+          }
         </div>
-        <a class="skip-link" (click)="skip()">Saltar</a>
-      </header>
 
-      <div class="onb-dots">
-        <span class="dot" [class.is-active]="step() === 1" [class.is-done]="step() > 1"></span>
-        <span class="dot" [class.is-active]="step() === 2" [class.is-done]="step() > 2"></span>
-        <span class="dot" [class.is-active]="step() === 3"></span>
-      </div>
+        <!-- Dots -->
+        <div class="dots">
+          @for (i of stepIndices; track i) {
+            <span class="dots__d" [class.is-active]="step() === i"></span>
+          }
+        </div>
 
-      <main class="onb-body">
-        <!-- PASO 1 — Bienvenida -->
+        <!-- ===== PASO 1: BIENVENIDA ===== -->
         @if (step() === 1) {
-          <div class="hero-illustration">
-            <div class="hero-emoji">⚽</div>
-            <div class="hero-glow"></div>
+          <div class="onb-hero onb-hero--ready">⚽</div>
+          <div class="kicker">PASO 1 DE 5</div>
+          <h1 class="onb-title">Bienvenido,<br>{{ '@' + (handle() ?? 'jugador') }}</h1>
+          <p class="onb-sub">
+            El Mundial 2026 está a la vuelta. Te tomará 1 minuto entender cómo
+            funciona y configurar tu polla.
+          </p>
+
+          <div class="onb-actions">
+            <button class="btn-wf btn-wf--block btn-wf--primary" type="button" (click)="next()">
+              Empezar →
+            </button>
           </div>
-          <span class="kicker">PASO 1 DE 3</span>
-          <h1 class="onb-title">Bienvenido<br>{{ '@' + (handle() ?? 'jugador') }}</h1>
-          <p class="onb-desc">
-            Predice el marcador de los <strong>104 partidos</strong> del Mundial 2026.
-            Sumas pts por aciertos. Compites con tus panas en grupos privados.
+        }
+
+        <!-- ===== PASO 2: MODO SIMPLE ===== -->
+        @if (step() === 2) {
+          <div class="onb-hero onb-hero--simple">📋</div>
+          <div class="kicker">PASO 2 DE 5 · MODO 1 DE 2</div>
+          <h1 class="onb-title">Modo Simple</h1>
+          <p class="onb-sub">
+            Predice quién avanza en cada fase. Liviano y rápido,
+            sin tener que adivinar marcadores.
           </p>
 
           <ul class="feat-list">
-            <li><span class="feat-icon">⚽</span> Pronostica todos los partidos del torneo</li>
-            <li><span class="feat-icon">👥</span> Crea o únete a grupos privados con código</li>
-            <li><span class="feat-icon">🏆</span> Ranking en vivo · global y por grupo</li>
-            <li><span class="feat-icon">🎁</span> Comodines de sponsors para potenciar tus picks</li>
+            <li><span class="feat-icon">📋</span><div><strong>Tabla de grupos</strong><div class="feat-sub">Orden final de cada grupo del Mundial</div></div></li>
+            <li><span class="feat-icon">🌳</span><div><strong>Bracket eliminatorio</strong><div class="feat-sub">De octavos a la final</div></div></li>
+            <li><span class="feat-icon">⭐</span><div><strong>Picks especiales</strong><div class="feat-sub">Campeón, subcampeón y revelación</div></div></li>
           </ul>
+
+          <div class="onb-note">
+            <strong>Importante:</strong> los grupos en modo simple <strong>no entran al ranking global</strong>.
+          </div>
+
+          <div class="onb-footer">
+            <button class="btn-wf btn-wf--sm" type="button" (click)="back()">‹ Atrás</button>
+            <button class="btn-wf btn-wf--sm btn-wf--ink" type="button" (click)="next()">Siguiente →</button>
+          </div>
         }
 
-        <!-- PASO 2 — Grupo (centro del onboarding) -->
-        @if (step() === 2) {
-          <div class="hero-illustration">
-            <div class="hero-emoji">👥</div>
-            <div class="hero-glow"></div>
+        <!-- ===== PASO 3: MODO COMPLETO ===== -->
+        @if (step() === 3) {
+          <div class="onb-hero onb-hero--complete">⚽</div>
+          <div class="kicker">PASO 3 DE 5 · MODO 2 DE 2</div>
+          <h1 class="onb-title">Modo Completo</h1>
+          <p class="onb-sub">
+            Todo lo del simple, más el marcador exacto de cada partido.
+            Más reto, más puntos.
+          </p>
+
+          <ul class="feat-list">
+            <li><span class="feat-icon">⚽</span><div><strong>Marcadores</strong><div class="feat-sub">Predice el resultado exacto de los 104 partidos</div></div></li>
+            <li><span class="feat-icon">🎁</span><div><strong>Comodines</strong><div class="feat-sub">Potencia tus picks con multiplicadores de sponsors</div></div></li>
+            <li><span class="feat-icon">🧠</span><div><strong>Trivias</strong><div class="feat-sub">Gana puntos extra contestando preguntas en vivo</div></div></li>
+          </ul>
+
+          <div class="onb-note onb-note--good">
+            <strong>Sí cuenta</strong> para el ranking global de la app.
           </div>
-          <span class="kicker">PASO 2 DE 3</span>
+
+          <div class="onb-footer">
+            <button class="btn-wf btn-wf--sm" type="button" (click)="back()">‹ Atrás</button>
+            <button class="btn-wf btn-wf--sm btn-wf--ink" type="button" (click)="next()">Siguiente →</button>
+          </div>
+        }
+
+        <!-- ===== PASO 4: ÚNETE A UN GRUPO ===== -->
+        @if (step() === 4) {
+          <div class="onb-hero onb-hero--group">👥</div>
+          <div class="kicker">PASO 4 DE 5</div>
           <h1 class="onb-title">Únete a un grupo<br>o crea el tuyo</h1>
-          <p class="onb-desc">
-            Compite contra tus panas. Cada grupo tiene su propio ranking,
-            premios y comodines.
+          <p class="onb-sub">
+            Compite contra tus panas. Cada grupo tiene su propio modo de juego
+            (simple o completo), ranking, premios y comodines.
           </p>
 
           @if (showJoinInput()) {
-            <div class="join-input-wrap">
-              <label class="kicker-label">CÓDIGO DE INVITACIÓN</label>
-              <div class="input-card">
-                <input type="text" [(ngModel)]="codeInput" name="code"
-                       maxlength="6" placeholder="ABCD23"
-                       (input)="codeInput = codeInput.toUpperCase()"
-                       autocomplete="off"
-                       style="font-family: var(--wf-display); font-size: 22px; letter-spacing: 6px; text-align: center;">
-              </div>
-              @if (joinError()) { <p class="form-error">{{ joinError() }}</p> }
-              <button class="btn-wf btn-primary" type="button"
+            <div class="onb-actions" style="gap:8px;">
+              <label class="auth-label" style="margin-top:6px;">Código de invitación</label>
+              <input class="auth-input" type="text"
+                     [(ngModel)]="codeInput" name="code"
+                     maxlength="6" placeholder="ABCD23"
+                     (input)="codeInput = codeInput.toUpperCase()"
+                     autocomplete="off"
+                     style="font-family: var(--wf-display); font-size: 22px; letter-spacing: 6px; text-align: center; text-transform: uppercase;">
+              @if (joinError()) {
+                <p class="auth-error">{{ joinError() }}</p>
+              }
+              <button class="btn-wf btn-wf--block btn-wf--primary" type="button"
                       [disabled]="joining() || codeInput.length !== 6"
                       (click)="joinByCode()">
                 {{ joining() ? 'Validando…' : 'Unirme con este código' }}
               </button>
-              <button class="btn-wf btn-cancel" type="button"
+              <button class="btn-wf btn-wf--block" type="button"
+                      style="border:none;background:transparent;color:var(--wf-ink-3);"
                       (click)="showJoinInput.set(false)">
                 ← Cancelar
               </button>
             </div>
           } @else {
             <div class="onb-actions">
-              <button class="btn-wf btn-primary" type="button"
+              <button class="btn-wf btn-wf--block btn-wf--primary" type="button"
                       (click)="showJoinInput.set(true)">
                 <span>👥</span> Tengo un código de invitación
               </button>
-              <button class="btn-wf btn-secondary" type="button"
+              <button class="btn-wf btn-wf--block" type="button"
                       (click)="goCreateGroup()">
                 <span>＋</span> Crear mi grupo
               </button>
-              <button class="btn-wf btn-skip" type="button" (click)="step.set(3)">
+              <button class="btn-wf btn-wf--block" type="button"
+                      style="border-style:dashed;color:var(--wf-ink-3);"
+                      (click)="next()">
                 Más tarde
               </button>
             </div>
           }
+
+          @if (!showJoinInput()) {
+            <div class="onb-footer">
+              <button class="btn-wf btn-wf--sm" type="button" (click)="back()">‹ Atrás</button>
+              <button class="btn-wf btn-wf--sm btn-wf--ink" type="button" (click)="next()">Siguiente →</button>
+            </div>
+          }
         }
 
-        <!-- PASO 3 — Listo -->
-        @if (step() === 3) {
-          <div class="hero-illustration">
-            <div class="hero-emoji">🏆</div>
-            <div class="hero-glow"></div>
+        <!-- ===== PASO 5: LISTO ===== -->
+        @if (step() === 5) {
+          <div class="onb-hero onb-hero--ready">🏆</div>
+          <div class="kicker">PASO 5 DE 5</div>
+          <h1 class="onb-title">¡Estás listo!</h1>
+          <p class="onb-sub">
+            Vamos a tu primer pick. El Mundial empieza pronto y cada partido
+            cuenta para tu ranking.
+          </p>
+
+          <div class="onb-actions">
+            <button class="btn-wf btn-wf--block btn-wf--primary" type="button" (click)="finish()">
+              Empezar a jugar →
+            </button>
           </div>
-          <span class="kicker">PASO 3 DE 3</span>
-          <h1 class="onb-title">¡Listo para empezar!</h1>
-          <p class="onb-desc">
-            Todo está configurado. Cuando empiece el Mundial el 11 de junio,
-            vas a ver los partidos del día acá. <strong>Mientras tanto:</strong>
-          </p>
 
-          <ul class="feat-list">
-            <li><span class="feat-icon">📅</span> Predice marcadores de los 72 partidos de fase de grupos</li>
-            <li><span class="feat-icon">🌳</span> Arma tu bracket de octavos a final</li>
-            <li><span class="feat-icon">⭐</span> Elige campeón, subcampeón y revelación pre-torneo</li>
-          </ul>
+          <div class="onb-footer onb-footer--single">
+            <button class="btn-wf btn-wf--sm" type="button" (click)="back()">‹ Atrás</button>
+          </div>
+        }
 
-          <p class="hint" style="margin-top: 18px;">
-            Estos picks especiales cierran al kickoff inaugural —
-            <strong>11 jun · 14:00</strong> hora Quito.
-          </p>
-        }
-      </main>
-
-      <footer class="onb-foot">
-        @if (step() === 1) {
-          <span></span>
-          <button class="btn-wf btn-ink" type="button" (click)="next()">
-            Siguiente →
-          </button>
-        }
-        @if (step() === 2 && !showJoinInput()) {
-          <button class="btn-wf btn-ghost" type="button" (click)="back()">
-            ‹ Atrás
-          </button>
-          <button class="btn-wf btn-ink" type="button" (click)="next()">
-            Siguiente →
-          </button>
-        }
-        @if (step() === 3) {
-          <button class="btn-wf btn-ghost" type="button" (click)="back()">
-            ‹ Atrás
-          </button>
-          <button class="btn-wf btn-primary" type="button" (click)="finish()">
-            Empezar a predecir →
-          </button>
-        }
-      </footer>
+      </div>
     </div>
   `,
   styles: [`
     :host { display: block; }
 
-    .onb-shell {
-      max-width: 480px;
-      margin: 0 auto;
-      min-height: 100vh;
-      background: var(--wf-paper);
-      padding: 24px 22px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .onb-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .brand { display: flex; align-items: center; gap: 8px; }
-    .logo-icon {
-      width: 32px; height: 32px;
-      background: var(--wf-green-soft);
-      color: var(--wf-green-ink);
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 16px;
-    }
-    .brand-name {
-      font-family: var(--wf-display);
-      font-size: 18px;
-      letter-spacing: 0.08em;
-    }
-    .skip-link {
-      font-size: 12px;
-      color: var(--wf-ink-3);
-      cursor: pointer;
-      text-decoration: none;
-    }
-    .skip-link:hover { color: var(--wf-ink); }
-
-    .onb-dots {
-      display: flex;
-      gap: 6px;
-      justify-content: center;
-      margin: 24px 0 16px;
-    }
-    .dot {
-      width: 7px; height: 7px;
-      border-radius: 999px;
-      background: var(--wf-line);
-      transition: all 200ms;
-    }
-    .dot.is-active { background: var(--wf-green); width: 22px; }
-    .dot.is-done { background: var(--wf-green-ink); }
-
-    .onb-body {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .hero-illustration {
-      position: relative;
-      height: 140px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 18px;
-    }
-    .hero-emoji {
+    /* Variantes de hero por paso */
+    .onb-hero--simple {
+      background: linear-gradient(140deg, #d4a500 0%, #a37e00 100%);
+      color: white;
       font-size: 64px;
-      position: relative;
-      z-index: 2;
-      animation: bounce 2s ease-in-out infinite;
+      border: none;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(212, 165, 0, 0.20);
     }
-    .hero-glow {
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at center, var(--wf-green-soft) 0%, transparent 60%);
-      z-index: 1;
+    .onb-hero--complete {
+      background: linear-gradient(140deg, #1a1a1a 0%, #2a2a2a 100%);
+      color: white;
+      font-size: 64px;
+      border: none;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
     }
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-6px); }
-    }
-
-    .kicker {
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-weight: 700;
-      color: var(--wf-green-ink);
-    }
-    .onb-title {
-      font-family: var(--wf-display);
-      font-size: 30px;
-      letter-spacing: 0.03em;
-      line-height: 1.05;
-      font-weight: normal;
-      margin-top: 6px;
-    }
-    .onb-desc {
-      font-size: 14px;
-      color: var(--wf-ink-2);
-      line-height: 1.5;
-      margin-top: 10px;
+    .onb-hero--group {
+      background: linear-gradient(140deg, #4a90e2 0%, #2c6ec3 100%);
+      color: white;
+      font-size: 64px;
+      border: none;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(74, 144, 226, 0.18);
     }
 
     .feat-list {
@@ -267,11 +230,11 @@ type Step = 1 | 2 | 3;
       margin: 18px 0 0;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
     .feat-list li {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 12px;
       padding: 10px 12px;
       background: var(--wf-fill);
@@ -283,118 +246,42 @@ type Step = 1 | 2 | 3;
       width: 32px; height: 32px;
       background: var(--wf-paper);
       border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 16px;
-      flex-shrink: 0;
-    }
-
-    .onb-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-top: 18px;
-    }
-
-    .join-input-wrap {
-      margin-top: 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .kicker-label {
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-weight: 700;
-      color: var(--wf-ink-3);
-      display: block;
-    }
-    .input-card {
-      background: var(--wf-paper);
-      border: 1px solid var(--wf-line);
-      border-radius: 10px;
-      padding: 12px 14px;
-      transition: border-color 100ms;
-    }
-    .input-card:focus-within { border-color: var(--wf-green); }
-    .input-card input {
-      border: none;
-      outline: none;
-      width: 100%;
-      font-family: var(--wf-ui);
-      color: var(--wf-ink);
-      background: transparent;
-      text-transform: uppercase;
-    }
-    .input-card input::placeholder { color: var(--wf-ink-3); }
-
-    .btn-wf {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      width: 100%;
-      padding: 14px;
-      border-radius: 10px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: var(--wf-ui);
-      border: 1px solid var(--wf-line);
-      background: var(--wf-paper);
-      color: var(--wf-ink);
+      font-size: 16px;
+      flex-shrink: 0;
     }
-    .btn-wf:disabled { cursor: not-allowed; opacity: 0.6; }
-    .btn-primary {
-      background: var(--wf-green);
-      color: white;
-      border-color: var(--wf-green);
-    }
-    .btn-secondary { /* default look */ }
-    .btn-skip {
-      border-style: dashed;
+    .feat-sub {
+      font-size: 11px;
       color: var(--wf-ink-3);
-    }
-    .btn-cancel {
-      border: 0;
-      background: transparent;
-      color: var(--wf-ink-3);
-      padding: 8px;
-      font-size: 13px;
-    }
-    .btn-ink {
-      background: var(--wf-ink);
-      color: white;
-      border-color: var(--wf-ink);
-    }
-    .btn-ghost {
-      background: transparent;
-      border: 0;
-      color: var(--wf-ink-2);
-    }
-    .btn-ghost:hover { color: var(--wf-ink); }
-
-    .onb-foot {
-      margin-top: auto;
-      padding-top: 18px;
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-    }
-    .onb-foot .btn-wf {
-      width: auto;
-      padding: 10px 14px;
-      font-size: 13px;
+      margin-top: 2px;
+      line-height: 1.4;
     }
 
-    .hint { font-size: 12px; color: var(--wf-ink-3); line-height: 1.5; }
-    .form-error {
+    .onb-note {
+      margin-top: 14px;
+      padding: 10px 12px;
+      background: rgba(212, 165, 0, 0.10);
+      border: 1px solid rgba(212, 165, 0, 0.3);
+      border-radius: 8px;
       font-size: 12px;
-      color: var(--wf-danger, #c33);
+      color: #7a5d00;
+      line-height: 1.4;
+    }
+    .onb-note--good {
+      background: var(--wf-green-soft);
+      border-color: rgba(0, 200, 100, 0.3);
+      color: var(--wf-green-ink);
+    }
+
+    .auth-error {
+      font-size: 12px;
+      color: var(--wf-danger);
       padding: 8px 12px;
-      background: rgba(231, 76, 60, 0.08);
+      background: rgba(195, 51, 51, 0.08);
       border-radius: 6px;
-      border: 1px solid rgba(231, 76, 60, 0.2);
+      border: 1px solid rgba(195, 51, 51, 0.2);
       margin: 0;
     }
   `],
@@ -406,6 +293,8 @@ export class OnboardingComponent {
   private toast = inject(ToastService);
 
   step = signal<Step>(1);
+  readonly stepIndices: Step[] = [1, 2, 3, 4, 5];
+
   showJoinInput = signal(false);
   codeInput = '';
   joining = signal(false);
@@ -415,7 +304,7 @@ export class OnboardingComponent {
 
   next() {
     const cur = this.step();
-    if (cur < 3) this.step.set((cur + 1) as Step);
+    if (cur < 5) this.step.set((cur + 1) as Step);
   }
 
   back() {
@@ -423,8 +312,9 @@ export class OnboardingComponent {
     if (cur > 1) this.step.set((cur - 1) as Step);
   }
 
-  skip() {
-    void this.router.navigate(['/picks']);
+  onSkip(event: Event) {
+    event.preventDefault();
+    void this.router.navigate(['/home']);
   }
 
   goCreateGroup() {
@@ -453,6 +343,6 @@ export class OnboardingComponent {
   }
 
   finish() {
-    void this.router.navigate(['/picks']);
+    void this.router.navigate(['/home']);
   }
 }

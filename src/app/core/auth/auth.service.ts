@@ -49,11 +49,16 @@ export class AuthService {
     await this.loadUser();
   }
 
-  async register(email: string, password: string, handle: string) {
+  async register(email: string, password: string, handle: string, name?: string) {
+    const userAttributes: Record<string, string> = {
+      email,
+      preferred_username: handle,
+    };
+    if (name) userAttributes['given_name'] = name;
     await signUp({
       username: email,
       password,
-      options: { userAttributes: { email, preferred_username: handle } },
+      options: { userAttributes },
     });
   }
 

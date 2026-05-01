@@ -19,6 +19,40 @@ interface TriviaQuestion {
   explanation: string | null;
 }
 
+interface SponsorOption {
+  id: string;
+  name: string;
+}
+
+/**
+ * Convención temporal para asociar sponsor a una pregunta sin tener
+ * un campo `sponsorId` en el modelo TriviaQuestion: el campo `explanation`
+ * se prefija con `[BRAND:<name>:<icon>]`. El front lo parsea y muestra
+ * la variante de modal con marca. Sin prefijo = "sin marca".
+ *
+ * Cuando el schema agregue `sponsorId`, esta convención se puede retirar.
+ */
+function parseSponsorPrefix(explanation: string | null | undefined): {
+  sponsorName: string;
+  sponsorIcon: string;
+  rest: string;
+} {
+  if (!explanation) return { sponsorName: '', sponsorIcon: '', rest: '' };
+  const m = explanation.match(/^\s*\[BRAND:([^:\]]+):([^\]]+)\]\s*(.*)$/s);
+  if (!m) return { sponsorName: '', sponsorIcon: '', rest: explanation };
+  return { sponsorName: m[1].trim(), sponsorIcon: m[2].trim(), rest: m[3].trim() };
+}
+
+function buildExplanation(rest: string, sponsorName: string, sponsorIcon: string): string | null {
+  const cleanRest = rest.trim();
+  const cleanName = sponsorName.trim();
+  const cleanIcon = sponsorIcon.trim() || '🎁';
+  if (cleanName) {
+    return `[BRAND:${cleanName}:${cleanIcon}]${cleanRest ? ' ' + cleanRest : ''}`;
+  }
+  return cleanRest || null;
+}
+
 interface MatchInfo {
   id: string;
   homeTeamId: string; awayTeamId: string;
@@ -121,6 +155,38 @@ interface MatchInfo {
                     placeholder="Opcional — se muestra después del cierre cuando se revela la respuesta correcta."></textarea>
         </div>
 
+        <!-- Asociación de sponsor (marca):
+             como TriviaQuestion no tiene campo sponsorId en el schema,
+             guardamos la asociación como prefijo del campo explanation
+             con la forma [BRAND:nombre:icono] resto-del-texto.
+             El user-side parsea esto y muestra la variante de modal con
+             marca. Si se deja en "Sin marca", el modal usa la variante
+             limpia (sin sponsor). -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-md); padding: var(--space-md); background: rgba(0, 200, 100, 0.04); border: 1px dashed var(--wf-line); border-radius: var(--radius-sm);">
+          <div class="form-card__field" style="margin: 0;">
+            <label class="form-card__label" for="sponsor">🎁 Marca / Sponsor</label>
+            <select class="form-card__select" id="sponsor" name="sponsorId"
+                    [(ngModel)]="form.sponsorName">
+              <option value="">— Sin marca —</option>
+              @for (s of sponsors(); track s.id) {
+                <option [value]="s.name">{{ s.name }}</option>
+              }
+            </select>
+            <span class="form-card__hint">
+              Si la pregunta es patrocinada, el modal muestra el header rojo de marca.
+            </span>
+          </div>
+          <div class="form-card__field" style="margin: 0;">
+            <label class="form-card__label" for="sponsorIcon">Icono</label>
+            <input class="form-card__input" id="sponsorIcon" name="sponsorIcon"
+                   type="text" maxlength="4"
+                   [(ngModel)]="form.sponsorIcon"
+                   placeholder="🥤"
+                   [disabled]="!form.sponsorName">
+            <span class="form-card__hint">Emoji para el logo del sponsor.</span>
+          </div>
+        </div>
+
         @if (error()) {
           <p class="form-card__hint" style="color: var(--color-lost);">{{ error() }}</p>
         }
@@ -185,9 +251,15 @@ interface MatchInfo {
                   </li>
                 }
               </ul>
-              @if (q.explanation) {
+              @let qParsed = parseSponsorPrefix(q.explanation);
+              @if (qParsed.sponsorName) {
+                <p style="margin-top: var(--space-sm); padding: 6px 10px; background: rgba(230, 57, 70, 0.08); border-left: 3px solid #e63946; border-radius: var(--radius-sm); font-size: var(--fs-sm);">
+                  <strong>{{ qParsed.sponsorIcon }} Patrocinada por {{ qParsed.sponsorName }}</strong>
+                </p>
+              }
+              @if (qParsed.rest) {
                 <p style="margin-top: var(--space-sm); padding: var(--space-sm); background: rgba(0,0,0,0.04); border-radius: var(--radius-sm); font-size: var(--fs-sm); color: var(--color-text-muted);">
-                  <strong>Explicación:</strong> {{ q.explanation }}
+                  <strong>Explicación:</strong> {{ qParsed.rest }}
                 </p>
               }
             </article>
@@ -215,6 +287,7 @@ export class AdminTriviaComponent implements OnInit {
   match = signal<MatchInfo | null>(null);
   teams = signal<Map<string, string>>(new Map());
   questions = signal<TriviaQuestion[]>([]);
+  sponsors = signal<SponsorOption[]>([]);
 
   publishedLocal = '';
 
@@ -227,6 +300,8 @@ export class AdminTriviaComponent implements OnInit {
     correctOption: 'A' as 'A' | 'B' | 'C' | 'D',
     timerSeconds: 120,
     explanation: '',
+    sponsorName: '',
+    sponsorIcon: '🎁',
   };
 
   sortedQuestions = computed(() =>
@@ -240,11 +315,16 @@ export class AdminTriviaComponent implements OnInit {
   async load() {
     this.loading.set(true);
     try {
-      const [mRes, tRes, qRes] = await Promise.all([
+      const [mRes, tRes, qRes, sRes] = await Promise.all([
         this.api.getMatch(this.matchId),
         this.api.listTeams(TOURNAMENT_ID),
         this.api.listTriviaByMatch(this.matchId),
+        this.api.listSponsors(200),
       ]);
+
+      this.sponsors.set(
+        (sRes.data ?? []).map((s) => ({ id: s.id, name: s.name })),
+      );
 
       if (mRes.data) {
         this.match.set({
@@ -279,6 +359,7 @@ export class AdminTriviaComponent implements OnInit {
     }
   }
 
+  parseSponsorPrefix = parseSponsorPrefix;
   teamName(slug: string): string { return this.teams().get(slug) ?? slug; }
   optionText(q: TriviaQuestion, opt: 'A' | 'B' | 'C' | 'D'): string {
     return opt === 'A' ? q.optionA : opt === 'B' ? q.optionB : opt === 'C' ? q.optionC : q.optionD;
@@ -294,12 +375,15 @@ export class AdminTriviaComponent implements OnInit {
 
   startEdit(q: TriviaQuestion) {
     this.editingId.set(q.id);
+    const parsed = parseSponsorPrefix(q.explanation);
     this.form = {
       prompt: q.prompt,
       optionA: q.optionA, optionB: q.optionB, optionC: q.optionC, optionD: q.optionD,
       correctOption: q.correctOption,
       timerSeconds: q.timerSeconds,
-      explanation: q.explanation ?? '',
+      explanation: parsed.rest,
+      sponsorName: parsed.sponsorName,
+      sponsorIcon: parsed.sponsorIcon || '🎁',
     };
     this.publishedLocal = isoToLocalInput(q.publishedAt);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -317,6 +401,8 @@ export class AdminTriviaComponent implements OnInit {
       correctOption: 'A',
       timerSeconds: 120,
       explanation: '',
+      sponsorName: '',
+      sponsorIcon: '🎁',
     };
     if (this.match()) this.publishedLocal = isoToLocalInput(this.match()!.kickoffAt);
     this.error.set(null);
@@ -340,7 +426,7 @@ export class AdminTriviaComponent implements OnInit {
         correctOption: this.form.correctOption,
         publishedAt,
         timerSeconds: this.form.timerSeconds,
-        explanation: this.form.explanation.trim() || null,
+        explanation: buildExplanation(this.form.explanation, this.form.sponsorName, this.form.sponsorIcon),
       };
 
       if (this.editingId()) {

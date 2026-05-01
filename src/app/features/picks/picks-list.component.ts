@@ -1,5 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { getUrl } from 'aws-amplify/storage';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -12,7 +12,7 @@ type BannerSlot = 'banner1' | 'banner2' | 'banner3';
 interface SponsorBanner {
   sponsorId: string;
   sponsorName: string;
-  url: string | null;     // null mientras se resuelve la signed URL
+  url: string | null;
 }
 
 const TOURNAMENT_ID = 'mundial-2026';
@@ -50,120 +50,136 @@ interface Totals {
 }
 
 interface DayBlock {
-  dateKey: string;          // YYYY-MM-DD
-  label: string;            // "Hoy", "Mañana", "lunes 14 jun"
+  dateKey: string;
+  label: string;
   matches: MatchWithMeta[];
 }
 
 @Component({
   standalone: true,
   selector: 'app-picks-list',
-  imports: [PickCardComponent, RouterLink, SponsorRedeemComponent],
+  imports: [PickCardComponent, RouterLink, RouterLinkActive, SponsorRedeemComponent],
   template: `
-    <header class="picks-list__header">
-      <div class="picks-list__header-top">
+    <section class="page">
+
+      <!-- Header con stats -->
+      <header class="page__header">
         <div>
-          <span class="wf-kicker">MUNDIAL 2026 · TU POLLA</span>
-          <h1 class="picks-list__h1">Mis picks</h1>
+          <div class="kicker">MUNDIAL 2026 · TU POLLA</div>
+          <h1 class="page__title">Mis picks</h1>
         </div>
-        <div class="picks-list__stats">
-          <div><strong>{{ totals().points }}</strong><small>Pts</small></div>
-          <div><strong>{{ totals().exactCount }}</strong><small>Exactos</small></div>
-          <div><strong>{{ totals().resultCount }}</strong><small>Resultados</small></div>
-          <div><strong>{{ totals().globalRank ? '#' + totals().globalRank : '—' }}</strong><small>Global</small></div>
-        </div>
-      </div>
-
-      <div class="wf-tabs wf-tabs--scroll" role="tablist" aria-label="Modo de vista">
-        <span class="wf-tabs__item is-active">📅 Cronológico</span>
-        <a class="wf-tabs__item" routerLink="/picks/by-group">🏆 Por grupo</a>
-        <span class="wf-tabs__item" style="opacity: 0.4; pointer-events: none;">🌳 Llaves</span>
-      </div>
-
-      <div class="picks-list__seg-wrap">
-        <div class="wf-seg" role="tablist" aria-label="Tabs de picks">
-          <button type="button" class="wf-seg__item"
-                  [class.is-active]="tab() === 'upcoming'"
-                  (click)="tab.set('upcoming')">
-            Próximos · {{ upcomingCount() }}
-          </button>
-          <button type="button" class="wf-seg__item"
-                  [class.is-active]="tab() === 'played'"
-                  (click)="tab.set('played')">
-            Jugados · {{ playedCount() }}
-          </button>
-        </div>
-      </div>
-    </header>
-
-    <div class="picks-layout">
-      <!-- MAIN COLUMN: cronológico por días -->
-      <div class="picks-layout__main">
-        @if (!hasComplete()) {
-          <div class="empty-state">
-            <h3>Modo completo no disponible</h3>
-            <p>
-              Los picks de marcador (1 partido = 1 marcador con multiplicadores por fase)
-              son del <strong>modo completo</strong>. Para usarlos, necesitas pertenecer a
-              al menos un grupo en modo completo.
-            </p>
-            <p>
-              <a class="btn btn--primary" routerLink="/groups/new">Crear un grupo →</a>
-            </p>
-            <p style="margin-top: var(--space-md); font-size: var(--fs-sm); color: var(--color-text-muted);">
-              Si tu grupo es <strong>modo simple</strong>, las predicciones de tabla, llaves
-              y campeón sí cuentan. Las encuentras en
-              <a class="link-green" routerLink="/picks/group-stage">Tabla de grupos</a>.
-            </p>
+        <div class="page__stats">
+          <div class="page__stat">
+            <div class="num">{{ totals().points }}</div>
+            <div class="lbl">pts</div>
           </div>
-        } @else if (loading()) {
-          <div class="empty-state"><h3>Cargando…</h3></div>
-        } @else if (tab() === 'upcoming') {
-          @if (visibleDays().length === 0) {
-            <div class="empty-state">
-              <h3>No hay partidos próximos en este rango</h3>
+          <div class="page__stat">
+            <div class="num">{{ totals().exactCount }}</div>
+            <div class="lbl">exactos</div>
+          </div>
+          <div class="page__stat">
+            <div class="num">{{ totals().resultCount }}</div>
+            <div class="lbl">resultados</div>
+          </div>
+          <div class="page__stat">
+            <div class="num">{{ totals().globalRank ? '#' + totals().globalRank : '—' }}</div>
+            <div class="lbl">global</div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page tabs (Cronológico / Tabla grupos / Bracket) -->
+      <nav class="page-tabs" aria-label="Vistas de picks">
+        <a class="page-tabs__item" routerLink="/picks"
+           routerLinkActive="is-active" [routerLinkActiveOptions]="{exact: true}">
+          Cronológico
+        </a>
+        <a class="page-tabs__item" routerLink="/picks/group-stage"
+           routerLinkActive="is-active">
+          Tabla grupos
+        </a>
+        <a class="page-tabs__item" routerLink="/picks/bracket"
+           routerLinkActive="is-active">
+          Bracket
+        </a>
+      </nav>
+
+      <!-- Layout 2 cols (rail solo desktop ≥1200) -->
+      <div class="picks-layout">
+
+        <div>
+
+          <!-- Sub seg (Próximos / Jugados) -->
+          <div class="picks-sub">
+            <div class="seg" style="max-width:300px;" role="tablist">
+              <button type="button" class="seg__item"
+                      [class.is-active]="tab() === 'upcoming'"
+                      (click)="tab.set('upcoming')">
+                Próximos · {{ upcomingCount() }}
+              </button>
+              <button type="button" class="seg__item"
+                      [class.is-active]="tab() === 'played'"
+                      (click)="tab.set('played')">
+                Jugados · {{ playedCount() }}
+              </button>
+            </div>
+          </div>
+
+          @if (!hasComplete()) {
+            <div class="empty-block">
+              <h3>Modo completo no disponible</h3>
               <p>
-                @if (allUpcomingDays().length > 0) {
-                  Probá cargando los próximos días.
-                } @else {
-                  Ya jugaste todos los partidos del torneo o el admin no
-                  cargó más fixtures.
-                }
+                Los picks de marcador (1 partido = 1 marcador con multiplicadores
+                por fase) son del <strong>modo completo</strong>. Únete o crea
+                un grupo en modo completo para usarlos.
+              </p>
+              <a class="btn-wf btn-wf--primary" routerLink="/groups/new">Crear un grupo →</a>
+              <p style="margin-top:12px;font-size:12px;color:var(--wf-ink-3);">
+                Si tu grupo es <strong>modo simple</strong>, las predicciones de
+                tabla, llaves y campeón sí cuentan — están en
+                <a class="link-green" routerLink="/picks/group-stage">Tabla grupos</a>.
               </p>
             </div>
-          }
-          @for (day of visibleDays(); track day.dateKey) {
-            <section class="day-block">
-              <header class="day-block__head">
-                <h2>📅 {{ day.label }}</h2>
-                <small>{{ day.matches.length }} partido{{ day.matches.length === 1 ? '' : 's' }}</small>
-              </header>
-              <div class="day-block__matches">
-                @for (m of day.matches; track m.id) {
-                  <app-pick-card
-                    [match]="m"
-                    [phaseLabel]="m.phaseLabel"
-                    [existingPick]="m.pick"
-                    [pointsEarned]="m.pick?.pointsEarned" />
-                }
+          } @else if (loading()) {
+            <p class="loading-msg">Cargando partidos…</p>
+          } @else if (tab() === 'upcoming') {
+            @if (visibleDays().length === 0) {
+              <div class="empty-block">
+                <h3>No hay partidos próximos en este rango</h3>
+                <p>
+                  @if (allUpcomingDays().length > 0) {
+                    Probá cargando los próximos días.
+                  } @else {
+                    Ya jugaste todos los partidos del torneo o el admin no
+                    cargó más fixtures.
+                  }
+                </p>
               </div>
-            </section>
-          }
-          @if (canLoadMore()) {
-            <button class="btn btn--ghost btn--block" type="button"
-                    (click)="loadNextTwoDays()" style="width: 100%; margin-top: var(--space-md);">
-              Próximos 2 días →
-            </button>
-          }
-        } @else {
-          <!-- Jugados — flat reverse-chrono -->
-          @if (playedMatches().length === 0) {
-            <div class="empty-state">
-              <h3>Aún no jugaste partidos</h3>
-              <p>Tus picks jugados aparecerán acá con el resultado y los puntos.</p>
-            </div>
+            }
+            @for (day of visibleDays(); track day.dateKey) {
+              <div class="day-kicker">📅 {{ day.label }} · {{ day.matches.length }} {{ day.matches.length === 1 ? 'partido' : 'partidos' }}</div>
+              @for (m of day.matches; track m.id) {
+                <app-pick-card
+                  [match]="m"
+                  [phaseLabel]="m.phaseLabel"
+                  [existingPick]="m.pick"
+                  [pointsEarned]="m.pick?.pointsEarned" />
+              }
+            }
+            @if (canLoadMore()) {
+              <button class="btn-wf btn-wf--block" type="button"
+                      (click)="loadNextTwoDays()" style="margin-top:14px;">
+                Próximos 2 días →
+              </button>
+            }
           } @else {
-            <section class="picks-grid">
+            <!-- Jugados: lista plana por fecha desc -->
+            @if (playedMatches().length === 0) {
+              <div class="empty-block">
+                <h3>Aún no jugaste partidos</h3>
+                <p>Tus picks jugados aparecerán acá con el resultado y los puntos.</p>
+              </div>
+            } @else {
               @for (m of playedMatches(); track m.id) {
                 <app-pick-card
                   [match]="m"
@@ -171,345 +187,175 @@ interface DayBlock {
                   [existingPick]="m.pick"
                   [pointsEarned]="m.pick?.pointsEarned" />
               }
-            </section>
-          }
-        }
-      </div>
-
-      <!-- SIDEBAR -->
-      <aside class="picks-layout__sidebar">
-        @if (myPrizes().length > 0) {
-          <section class="sidebar-card sidebar-card--prizes">
-            <h3>🏆 Premios</h3>
-            @for (p of myPrizes(); track p.groupId) {
-              <article class="sidebar-prize">
-                <strong>{{ p.groupName }}</strong>
-                <ul>
-                  @if (p.prize1st) { <li>🥇 {{ p.prize1st }}</li> }
-                  @if (p.prize2nd) { <li>🥈 {{ p.prize2nd }}</li> }
-                  @if (p.prize3rd) { <li>🥉 {{ p.prize3rd }}</li> }
-                </ul>
-              </article>
             }
-          </section>
-        }
-
-        <section class="sidebar-card">
-          <h3>Mis grupos</h3>
-          @if (myGroupsList().length === 0) {
-            <p style="color: var(--color-text-muted); font-size: var(--fs-sm);">
-              Aún no estás en ningún grupo.
-            </p>
-          } @else {
-            <ul class="sidebar-groups">
-              @for (g of myGroupsList(); track g.id) {
-                <li>
-                  <a [routerLink]="['/groups', g.id]">
-                    <span>{{ g.name }}</span>
-                    <small [class.is-complete]="g.mode === 'COMPLETE'">
-                      {{ g.mode === 'COMPLETE' ? 'Completo' : 'Simple' }}
-                    </small>
-                  </a>
-                </li>
-              }
-            </ul>
           }
-        </section>
 
-        <a class="sidebar-card sidebar-card--cta" routerLink="/groups/new">
-          <strong>+ Crear grupo</strong>
-          <small>Arma uno privado con tus amigos</small>
-        </a>
+          <!-- Banners de sponsors: 3 hileras, una por slot. Solo visible
+               si hay sponsors con imagen en ese slot. -->
+          @for (slot of bannerSlotKeys; track slot) {
+            @let banners = sponsorBannersForSlot(slot);
+            @if (banners.length > 0) {
+              <section class="sponsor-banner-row">
+                @for (b of banners; track b.sponsorId) {
+                  <div class="sponsor-banner-tile" [title]="b.sponsorName">
+                    @if (b.url) {
+                      <img [src]="b.url" [alt]="b.sponsorName" loading="lazy">
+                    } @else {
+                      <div class="sponsor-banner-tile__placeholder">{{ b.sponsorName }}</div>
+                    }
+                  </div>
+                }
+              </section>
+            }
+          }
 
-        <a class="sidebar-card sidebar-card--cta" routerLink="/groups" fragment="unirme">
-          <strong>→ Unirme con código</strong>
-          <small>¿Te invitaron? Pega el código de 6 caracteres</small>
-        </a>
-      </aside>
-    </div>
+        </div>
 
-    <!-- Banners de sponsors: 3 hileras, una por slot. Cada hilera muestra
-         las imágenes subidas por los sponsors en ese slot. Si no hay
-         sponsors con un slot dado, esa sección se oculta. -->
-    @for (slot of bannerSlotKeys; track slot) {
-      @let banners = sponsorBannersForSlot(slot);
-      @if (banners.length > 0) {
-        <section class="sponsor-banner-row">
-          @for (b of banners; track b.sponsorId) {
-            <div class="sponsor-banner-tile" [title]="b.sponsorName">
-              @if (b.url) {
-                <img [src]="b.url" [alt]="b.sponsorName" loading="lazy">
-              } @else {
-                <div class="sponsor-banner-tile__placeholder">{{ b.sponsorName }}</div>
-              }
+        <!-- Right rail (desktop ≥1200) -->
+        <aside>
+
+          @if (primaryPrizeGroup(); as p) {
+            <div class="rail-section">
+              <div class="rail-premios">
+                <div class="rail-premios__head">
+                  <span class="rail-premios__icon">🏆</span>
+                  <div>
+                    <div class="kicker" style="color:#7a5d00;">PREMIOS · {{ p.groupName.toUpperCase() }}</div>
+                    <div class="rail-premios__total">{{ p.totalLabel }}</div>
+                  </div>
+                </div>
+                <div style="background:var(--wf-paper);padding:8px 0;">
+                  @if (p.prize1st) {
+                    <div class="rail-premios__row">
+                      <span style="font-size:14px;">🥇</span>
+                      <span class="text-bold">1° lugar</span>
+                      <span class="amount">{{ p.prize1st }}</span>
+                    </div>
+                  }
+                  @if (p.prize2nd) {
+                    <div class="rail-premios__row">
+                      <span style="font-size:14px;">🥈</span>
+                      <span class="text-bold">2° lugar</span>
+                      <span class="amount">{{ p.prize2nd }}</span>
+                    </div>
+                  }
+                  @if (p.prize3rd) {
+                    <div class="rail-premios__row">
+                      <span style="font-size:14px;">🥉</span>
+                      <span class="text-bold">3° lugar</span>
+                      <span class="amount">{{ p.prize3rd }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
             </div>
           }
-        </section>
-      }
-    }
 
-    <!-- Bloque de canje de códigos sponsor: visible para todos los users
-         logueados (independiente del modo del grupo). -->
-    <section id="canjear-codigo" style="max-width: 720px; margin: var(--space-2xl) auto 0;">
-      <app-sponsor-redeem />
+          <div class="rail-section">
+            <h3 class="rail-section__title">Sponsors</h3>
+            <app-sponsor-redeem />
+          </div>
+
+        </aside>
+      </div>
+
     </section>
 
-    <!-- FAB persistente bottom-right para canjear código rápido -->
+    <!-- FAB de canjear código (mobile) -->
     <button type="button" class="canjear-fab" (click)="scrollToCanjear()"
             title="Canjear código de sponsor">
       🎁 <span>Canjear código</span>
     </button>
   `,
   styles: [`
-    /* Wireframe-style header (sustituye a .page-header) */
-    .picks-list__header {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: var(--space-md) var(--section-x-mobile) 0;
-    }
-    .picks-list__header-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      gap: var(--space-md);
-      flex-wrap: wrap;
-      margin-bottom: var(--space-md);
-    }
-    .picks-list__h1 {
-      font-family: var(--wf-display);
-      font-size: var(--fs-2xl);
-      letter-spacing: 0.04em;
-      line-height: 1;
-      margin: 4px 0 0;
-      text-transform: none;
-    }
-    .picks-list__stats {
-      display: flex;
-      gap: var(--space-md);
-      align-items: flex-end;
-    }
-    .picks-list__stats > div {
+    :host { display: block; }
+
+    .empty-block {
+      padding: 24px;
       text-align: center;
+      background: var(--wf-paper);
+      border: 1px dashed var(--wf-line);
+      border-radius: 10px;
     }
-    .picks-list__stats strong {
-      display: block;
+    .empty-block h3 {
       font-family: var(--wf-display);
-      font-size: var(--fs-lg);
-      line-height: 1;
+      font-size: 18px;
+      letter-spacing: .04em;
+      margin: 0 0 8px;
     }
-    .picks-list__stats small {
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
+    .empty-block p {
       color: var(--wf-ink-3);
-      font-weight: 700;
-    }
-    .picks-list__seg-wrap {
-      margin-top: var(--space-md);
-      max-width: 320px;
-    }
-    @media (min-width: 992px) {
-      .picks-list__seg-wrap { max-width: 360px; }
+      font-size: 13px;
+      margin: 0 0 12px;
+      line-height: 1.5;
     }
 
+    .loading-msg {
+      padding: 32px;
+      text-align: center;
+      color: var(--wf-ink-3);
+      font-size: 14px;
+    }
+
+    .link-green {
+      color: var(--wf-green-ink);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    /* Sponsor banners (preservados del layout previo) */
     .sponsor-banner-row {
       display: flex;
-      gap: var(--space-sm);
+      gap: 8px;
       overflow-x: auto;
-      padding: var(--space-sm) 0;
-      margin: var(--space-md) auto 0;
-      max-width: 1100px;
-      scroll-snap-type: x mandatory;
+      padding: 12px 0;
+      margin-top: 18px;
     }
     .sponsor-banner-tile {
       flex: 0 0 auto;
       width: 280px;
-      aspect-ratio: 16 / 9;
-      background: var(--wf-fill);
+      height: 84px;
+      background: var(--wf-paper);
       border: 1px solid var(--wf-line);
-      border-radius: 12px;
+      border-radius: 8px;
       overflow: hidden;
-      scroll-snap-align: start;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .sponsor-banner-tile img {
       width: 100%;
       height: 100%;
-      object-fit: contain;
-      display: block;
+      object-fit: cover;
     }
     .sponsor-banner-tile__placeholder {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: var(--font-display);
-      font-size: var(--fs-xl);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: var(--color-text-muted);
+      font-size: 12px;
+      color: var(--wf-ink-3);
+      text-align: center;
+      padding: 0 12px;
     }
 
-    .picks-layout {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: var(--space-lg);
-      padding: 0 var(--section-x-mobile);
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    @media (min-width: 992px) {
-      .picks-layout { grid-template-columns: minmax(0, 1fr) 320px; }
-    }
-    .picks-layout__main { display: grid; gap: var(--space-md); align-content: start; }
-    .picks-layout__sidebar {
-      display: grid;
-      gap: var(--space-md);
-      align-content: start;
-    }
-    @media (min-width: 992px) {
-      .picks-layout__sidebar { position: sticky; top: var(--space-lg); }
-    }
-
-    .day-block {
-      background: var(--color-primary-white);
-      border: var(--border-grey);
-      border-radius: var(--radius-md);
-      padding: var(--space-md);
-    }
-    .day-block__head {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      margin-bottom: var(--space-md);
-      padding-bottom: var(--space-sm);
-      border-bottom: 1px solid var(--color-primary-grey);
-    }
-    .day-block__head h2 {
-      font-family: var(--font-display);
-      font-size: var(--fs-2xl);
-      text-transform: uppercase;
-      line-height: 1;
-    }
-    .day-block__head small {
-      font-size: var(--fs-xs);
-      color: var(--color-text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-    .day-block__matches { display: grid; gap: var(--space-sm); }
-
-    .sidebar-card {
-      background: var(--color-primary-white);
-      border: 1px solid var(--wf-line);
-      border-radius: 12px;
-      padding: var(--space-md);
-      display: block;
-      text-decoration: none;
-      color: inherit;
-    }
-    .sidebar-card h3 {
-      font-family: var(--font-display);
-      font-size: 18px;
-      letter-spacing: 0.04em;
-      line-height: 1.05;
-      margin-bottom: var(--space-sm);
-    }
-    .sidebar-card--prizes {
-      background: linear-gradient(135deg, #fff8d6, #fff3a0);
-      border: 1px solid rgba(212, 165, 0, 0.4);
-    }
-    .sidebar-prize {
-      padding: var(--space-xs) 0;
-      border-bottom: 1px solid rgba(0,0,0,0.05);
-    }
-    .sidebar-prize:last-child { border-bottom: 0; }
-    .sidebar-prize strong {
-      display: block;
-      font-size: var(--fs-sm);
-      margin-bottom: 4px;
-    }
-    .sidebar-prize ul {
-      list-style: none; padding: 0; margin: 0;
-      font-size: var(--fs-sm); line-height: 1.6;
-    }
-    .sidebar-groups {
-      list-style: none; padding: 0; margin: 0;
-      display: grid; gap: 4px;
-    }
-    .sidebar-groups a {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 6px 8px;
-      border-radius: var(--radius-sm);
-      text-decoration: none;
-      color: inherit;
-      transition: background 100ms;
-    }
-    .sidebar-groups a:hover { background: rgba(0,200,100,0.06); }
-    .sidebar-groups small {
-      font-size: var(--fs-xs);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: var(--color-text-muted);
-      padding: 2px 6px;
-      border-radius: 999px;
-      background: rgba(0,0,0,0.06);
-    }
-    .sidebar-groups small.is-complete {
-      background: var(--color-primary-green);
-      color: var(--color-primary-white);
-    }
-    .sidebar-card--cta {
-      transition: transform 100ms, box-shadow 100ms;
-    }
-    .sidebar-card--cta:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,200,100,0.15);
-      border-color: var(--color-primary-green);
-    }
-    .sidebar-card--cta strong {
-      display: block;
-      font-size: var(--fs-md);
-      color: var(--color-primary-green);
-      margin-bottom: 2px;
-    }
-    .sidebar-card--cta small {
-      font-size: var(--fs-xs);
-      color: var(--color-text-muted);
-      line-height: 1.4;
-    }
-
+    /* FAB mobile para canjear código */
     .canjear-fab {
       position: fixed;
-      bottom: 80px;
-      right: var(--space-md);
+      bottom: 76px;
+      left: 16px;
       z-index: 50;
-      background: var(--wf-ink);
+      background: var(--wf-warn);
       color: white;
       border: 0;
+      padding: 10px 14px;
       border-radius: 999px;
-      padding: 10px 16px;
-      font: inherit;
-      font-weight: 700;
-      font-size: 12px;
-      cursor: pointer;
       box-shadow: 0 6px 16px rgba(0,0,0,0.18);
-      display: inline-flex;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
       align-items: center;
       gap: 6px;
-      transition: transform 100ms, box-shadow 100ms;
-    }
-    .canjear-fab:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 22px rgba(0,0,0,0.25);
     }
     @media (min-width: 992px) {
-      .canjear-fab { bottom: var(--space-lg); right: var(--space-lg); }
-    }
-    @media (max-width: 480px) {
-      .canjear-fab span { display: none; }
-      .canjear-fab { padding: 12px 14px; font-size: 14px; }
+      .canjear-fab { display: none; } /* en desktop ya está en el rail */
     }
   `],
 })
@@ -525,8 +371,6 @@ export class PicksListComponent implements OnInit {
   totals = signal<Totals>({ points: 0, exactCount: 0, resultCount: 0, globalRank: null });
   hasComplete = computed(() => this.userModes.hasComplete());
 
-  // Cronológico por días: cargamos HOY+MAÑANA por default; botón
-  // "Próximos 2 días" extiende ventana de 2 en 2.
   daysWindow = signal(2);
 
   myGroupsList = computed(() => this.userModes.groups());
@@ -539,8 +383,13 @@ export class PicksListComponent implements OnInit {
       })),
   );
 
-  // Banners de sponsors agrupados por slot. Resolved-async desde S3
-  // via Amplify Storage signed URLs.
+  /** Primer grupo del user con premios definidos — para mostrar en el rail. */
+  primaryPrizeGroup = computed(() => {
+    const p = this.myPrizes()[0];
+    if (!p) return null;
+    return { ...p, totalLabel: this.totalLabel(p.prize1st, p.prize2nd, p.prize3rd) };
+  });
+
   bannerSlotKeys: BannerSlot[] = ['banner1', 'banner2', 'banner3'];
   private banners = signal<Record<BannerSlot, SponsorBanner[]>>({
     banner1: [], banner2: [], banner3: [],
@@ -550,33 +399,27 @@ export class PicksListComponent implements OnInit {
   }
 
   scrollToCanjear() {
-    const el = document.getElementById('canjear-codigo');
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    // Auto-focus en el input del bloque tras un breve delay para mejor UX
-    setTimeout(() => {
-      const input = el?.querySelector<HTMLInputElement>('.sr__input');
-      input?.focus();
-    }, 400);
+    // En mobile el rail está oculto: el bloque de canjear no existe en
+    // el DOM. Llevamos al user a una sección visible o abrimos el redeem
+    // como página independiente. Por ahora hacemos scroll al final.
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   }
 
   upcomingCount = computed(() => this.matches().filter((m) => !this.time.isPast(m.kickoffAt)).length);
   playedCount = computed(() => this.matches().filter((m) => this.time.isPast(m.kickoffAt)).length);
 
-  /** Próximos partidos sortidos por kickoff asc */
   private upcomingSorted = computed(() =>
     this.matches()
       .filter((m) => !this.time.isPast(m.kickoffAt))
       .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt)),
   );
 
-  /** Jugados sortidos por kickoff desc (más recientes primero) */
   playedMatches = computed(() =>
     this.matches()
       .filter((m) => this.time.isPast(m.kickoffAt))
       .sort((a, b) => b.kickoffAt.localeCompare(a.kickoffAt)),
   );
 
-  /** Todos los días (con al menos 1 partido) próximos, agrupados */
   allUpcomingDays = computed<DayBlock[]>(() => {
     const byDate = new Map<string, MatchWithMeta[]>();
     for (const m of this.upcomingSorted()) {
@@ -592,7 +435,6 @@ export class PicksListComponent implements OnInit {
     return days.sort((a, b) => a.dateKey.localeCompare(b.dateKey));
   });
 
-  /** Sólo los primeros N días (paginación incremental) */
   visibleDays = computed<DayBlock[]>(() =>
     this.allUpcomingDays().slice(0, this.daysWindow()),
   );
@@ -604,7 +446,6 @@ export class PicksListComponent implements OnInit {
   }
 
   private dateKey(iso: string): string {
-    // YYYY-MM-DD en zona local del usuario para agrupar correctamente.
     const d = new Date(iso);
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -623,6 +464,21 @@ export class PicksListComponent implements OnInit {
     return date.toLocaleDateString('es-EC', {
       weekday: 'long', day: '2-digit', month: 'long',
     });
+  }
+
+  /** Suma $X de los 3 premios; si alguno no es numérico cae a "N premios". */
+  private totalLabel(p1: string | null, p2: string | null, p3: string | null): string {
+    const raws = [p1, p2, p3].filter((v): v is string => !!v);
+    if (raws.length === 0) return 'Sin definir';
+    const numbers = raws.map((s) => {
+      const m = s.match(/\$\s*(\d[\d.,]*)/);
+      return m ? parseFloat(m[1].replace(/,/g, '')) : null;
+    });
+    if (numbers.every((n) => n !== null)) {
+      const sum = (numbers as number[]).reduce((a, n) => a + n, 0);
+      return `$${Math.round(sum)} en juego`;
+    }
+    return `${raws.length} ${raws.length === 1 ? 'premio' : 'premios'}`;
   }
 
   async ngOnInit() {
@@ -692,7 +548,6 @@ export class PicksListComponent implements OnInit {
 
       this.matches.set(enriched);
 
-      // Totals + global rank
       const myTotal = (totalsRes.data ?? [])[0];
       const sorted = (leaderboardRes.data ?? []).sort((a, b) => (b.points ?? 0) - (a.points ?? 0));
       const rankIdx = sorted.findIndex((t) => t.userId === userId);
@@ -706,56 +561,48 @@ export class PicksListComponent implements OnInit {
       this.loading.set(false);
     }
 
-    // Carga de banners de sponsors (best-effort, no bloquea UI)
     void this.loadSponsorBanners();
   }
 
   private async loadSponsorBanners() {
     try {
-      const res = await this.api.listSponsors(50);
-      const sponsors = ((res.data ?? []) as Array<{
-        id: string; name: string;
-        banner1?: string | null; banner2?: string | null; banner3?: string | null;
-      }>);
-
-      const buckets: Record<BannerSlot, SponsorBanner[]> = {
-        banner1: [], banner2: [], banner3: [],
-      };
-
-      // Pre-llenar buckets con placeholders (url=null) para que la UI
-      // muestre algo mientras se resuelven las signed URLs.
-      for (const s of sponsors) {
+      const res = await this.api.listSponsors(200);
+      const all: Record<BannerSlot, SponsorBanner[]> = { banner1: [], banner2: [], banner3: [] };
+      for (const s of res.data ?? []) {
+        const keys = (s.bannerKeys ?? []) as Array<string | null>;
         for (const slot of this.bannerSlotKeys) {
-          const key = (s as Record<BannerSlot, string | null | undefined>)[slot];
+          const idx = slot === 'banner1' ? 0 : slot === 'banner2' ? 1 : 2;
+          const key = keys[idx];
           if (key) {
-            buckets[slot].push({ sponsorId: s.id, sponsorName: s.name, url: null });
+            all[slot].push({ sponsorId: s.id, sponsorName: s.name, url: null });
           }
         }
       }
-      this.banners.set({ ...buckets });
+      this.banners.set(all);
 
-      // Resolver URLs en paralelo
-      await Promise.all(
-        sponsors.flatMap((s) =>
-          this.bannerSlotKeys.map(async (slot) => {
-            const key = (s as Record<BannerSlot, string | null | undefined>)[slot];
-            if (!key) return;
-            try {
-              const u = await getUrl({ path: key, options: { expiresIn: 3600 } });
-              this.banners.update((cur) => {
-                const next = { ...cur };
-                next[slot] = next[slot].map((b) =>
-                  b.sponsorId === s.id ? { ...b, url: u.url.toString() } : b,
-                );
-                return next;
-              });
-            } catch { /* skip silenciosamente */ }
-          }),
-        ),
-      );
+      // Resolve signed URLs in background (best-effort)
+      for (const slot of this.bannerSlotKeys) {
+        for (let i = 0; i < all[slot].length; i++) {
+          const item = all[slot][i];
+          const sponsor = (res.data ?? []).find((x) => x.id === item.sponsorId);
+          if (!sponsor) continue;
+          const idx = slot === 'banner1' ? 0 : slot === 'banner2' ? 1 : 2;
+          const key = (sponsor.bannerKeys ?? [])[idx];
+          if (!key) continue;
+          try {
+            const out = await getUrl({ key, options: { accessLevel: 'guest' } });
+            const updated = { ...all };
+            updated[slot] = [...updated[slot]];
+            updated[slot][i] = { ...item, url: out.url.toString() };
+            all[slot] = updated[slot];
+            this.banners.set({ ...all });
+          } catch {
+            /* ignore single-asset failure */
+          }
+        }
+      }
     } catch {
-      // Sin sponsors o sin permiso — la UI omite las secciones cuando
-      // los buckets quedan vacíos.
+      /* ignore — banners are best-effort */
     }
   }
 }

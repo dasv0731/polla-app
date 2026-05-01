@@ -1,404 +1,259 @@
-import { Component, inject, signal } from '@angular/core';
+import {
+  Component, ElementRef, QueryList, ViewChildren,
+  computed, inject, signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { apiClient } from '../../core/api/client';
+
+type Step = 'form' | 'confirm';
+type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
 
 @Component({
   selector: 'app-register',
   standalone: true,
   imports: [FormsModule, RouterLink],
   template: `
-    <div class="login-layout">
-      <!-- Panel izquierdo branding (solo desktop) -->
-      <aside class="login-brand">
+    <div class="auth-shell">
+
+      <!-- Panel de marca (solo desktop) -->
+      <aside class="auth-brand">
+        <div class="auth-brand__top">
+          <span class="auth-brand__logo">⚽</span>
+          <span class="auth-brand__title">POLLA · MUNDIAL 2026</span>
+        </div>
         <div>
-          <div class="brand-header">
-            <span class="logo-icon">⚽</span>
-            <span class="brand-name">POLLA · MUNDIAL 2026</span>
-          </div>
-          <h1 class="brand-title">Predice cada partido.<br>Gana contra tus panas.</h1>
-          <p class="brand-desc">
+          <h1 class="auth-brand__h1">
+            Predice cada partido.<br>
+            Gana contra tus panas.
+          </h1>
+          <p class="auth-brand__sub">
             Crea grupos privados, asigna premios, gana comodines y demuestra
             quién sabe más de fútbol.
           </p>
-          <div class="brand-stats">
-            <div>
-              <div class="stat-value">2.4k</div>
-              <div class="stat-label">Jugadores</div>
-            </div>
-            <div>
-              <div class="stat-value">180</div>
-              <div class="stat-label">Grupos activos</div>
-            </div>
-            <div>
-              <div class="stat-value">$15k</div>
-              <div class="stat-label">En premios</div>
-            </div>
+          <div class="auth-brand__stats">
+            <div><div class="num">2.4k</div><div class="lbl">Jugadores</div></div>
+            <div><div class="num">180</div><div class="lbl">Grupos activos</div></div>
+            <div><div class="num">$15k</div><div class="lbl">En premios</div></div>
           </div>
         </div>
-        <div class="brand-footer">
+        <div class="auth-brand__foot">
           © 2026 Polla Mundialista · Términos · Privacidad
         </div>
       </aside>
 
-      <!-- Panel derecho form -->
-      <main class="login-form-container">
-        <div class="login-form-wrapper">
-          <!-- Mobile header -->
-          <div class="mobile-header">
-            <span class="logo-icon mobile-logo">⚽</span>
-            <h1 class="mobile-title">Polla Mundialista</h1>
-            <span class="mobile-subtitle">MUNDIAL 2026</span>
-          </div>
+      <!-- Formulario -->
+      <section class="auth-form">
+        <div class="auth-form__inner">
 
           @if (step() === 'form') {
-            <form (ngSubmit)="submitForm()" #f="ngForm">
-              <span class="kicker desktop-only">PASO 1 DE 2</span>
-              <h2 class="form-title desktop-only">Tus datos</h2>
-              <p class="form-subtitle desktop-only">Verificamos tu email en el siguiente paso.</p>
 
-              <div class="form-group">
-                <label class="kicker-label" for="reg-handle">HANDLE (&#64;USUARIO)</label>
-                <div class="input-card">
-                  <input id="reg-handle" name="handle" type="text"
-                         [(ngModel)]="handle" placeholder="@tu_usuario"
-                         autocomplete="username" required
-                         pattern="[a-zA-Z0-9_]{3,20}">
-                </div>
-                <p class="hint">3-20 caracteres. Cómo te verán en el ranking.</p>
-                @if (handleError()) {
-                  <p class="form-error">{{ handleError() }}</p>
-                }
+            <a routerLink="/login" class="auth-back">‹ Volver a Entrar</a>
+
+            <div class="auth-step-head">
+              <div class="kicker">PASO 1 DE 2</div>
+              <h1>Crear cuenta</h1>
+              <p>Verificamos tu email en el siguiente paso.</p>
+            </div>
+
+            <form (ngSubmit)="submitForm()">
+
+              <div class="auth-field">
+                <label for="reg-name" class="auth-label">Nombre</label>
+                <input
+                  type="text"
+                  id="reg-name"
+                  name="name"
+                  class="auth-input"
+                  placeholder="Juan Pérez"
+                  autocomplete="name"
+                  required
+                  [(ngModel)]="name">
               </div>
 
-              <div class="form-group" style="margin-top: 14px;">
-                <label class="kicker-label" for="reg-email">EMAIL</label>
-                <div class="input-card">
-                  <input id="reg-email" name="email" type="email"
-                         [(ngModel)]="email" placeholder="tu@correo.com"
-                         autocomplete="email" required>
+              <div class="auth-field">
+                <label for="reg-handle" class="auth-label">Handle (&#64;usuario)</label>
+                <div class="auth-input-wrap">
+                  <input
+                    type="text"
+                    id="reg-handle"
+                    name="handle"
+                    class="auth-input"
+                    [class.auth-input--has-pill]="handleStatus() !== 'idle'"
+                    placeholder="@tu_usuario"
+                    autocomplete="username"
+                    required
+                    pattern="[a-zA-Z0-9_]{3,20}"
+                    [(ngModel)]="handle"
+                    (ngModelChange)="onHandleChange($event)">
+                  @if (handleStatus() === 'available') {
+                    <span class="auth-input-pill">✓ disponible</span>
+                  } @else if (handleStatus() === 'taken') {
+                    <span class="auth-input-pill pill-taken">✗ en uso</span>
+                  } @else if (handleStatus() === 'checking') {
+                    <span class="auth-input-pill pill-checking">verificando…</span>
+                  }
                 </div>
-                <p class="hint">Te enviamos un código de confirmación.</p>
+                <div class="auth-helper">Así te verán tus panas en el ranking.</div>
               </div>
 
-              <div class="form-group" style="margin-top: 14px;">
-                <label class="kicker-label" for="reg-pwd">CONTRASEÑA</label>
-                <div class="input-card pass-card">
-                  <input id="reg-pwd" name="password"
-                         [type]="showPassword() ? 'text' : 'password'"
-                         [(ngModel)]="password" placeholder="••••••••"
-                         autocomplete="new-password" required minlength="8">
-                  <span class="eye-icon" (click)="showPassword.set(!showPassword())">
-                    {{ showPassword() ? '🙈' : '👁' }}
-                  </span>
-                </div>
-                <p class="hint">Mínimo 8 caracteres.</p>
+              <div class="auth-field">
+                <label for="reg-email" class="auth-label">Email</label>
+                <input
+                  type="email"
+                  id="reg-email"
+                  name="email"
+                  class="auth-input"
+                  placeholder="tu@correo.com"
+                  autocomplete="email"
+                  required
+                  [(ngModel)]="email">
               </div>
+
+              <div class="auth-field">
+                <label for="reg-pwd" class="auth-label">Contraseña</label>
+                <input
+                  type="password"
+                  id="reg-pwd"
+                  name="password"
+                  class="auth-input"
+                  placeholder="••••••••"
+                  autocomplete="new-password"
+                  required
+                  minlength="8"
+                  [(ngModel)]="password"
+                  (ngModelChange)="onPasswordChange($event)">
+                <div class="auth-strength">
+                  <div class="bar bar--sm flex-1" [style.background]="strengthColor(0)"></div>
+                  <div class="bar bar--sm flex-1" [style.background]="strengthColor(1)"></div>
+                  <div class="bar bar--sm flex-1" [style.background]="strengthColor(2)"></div>
+                  <div class="bar bar--sm flex-1" [style.background]="strengthColor(3)"></div>
+                </div>
+                <div class="auth-helper">Mín 8 caracteres · 1 número · 1 mayúscula</div>
+              </div>
+
+              <label class="auth-check">
+                <input type="checkbox" name="terms" required [(ngModel)]="acceptTerms">
+                <span>
+                  Acepto los <a href="#">Términos</a> y la <a href="#">Privacidad</a>
+                </span>
+              </label>
 
               @if (error()) {
-                <p class="form-error">{{ error() }}</p>
+                <p class="auth-error">{{ error() }}</p>
               }
 
-              <button class="btn-wf btn-primary" type="submit" [disabled]="loading()">
+              <button
+                type="submit"
+                class="btn-wf btn-wf--block btn-wf--primary"
+                style="padding:14px;font-size:14px;margin-top:14px;"
+                [disabled]="loading() || !canSubmit()">
                 {{ loading() ? 'Creando…' : 'Continuar →' }}
               </button>
-
-              <div class="form-footer">
-                <span class="text-mute">¿Ya tienes cuenta? </span>
-                <a routerLink="/login" class="link-green">Entrar</a>
-              </div>
             </form>
+
+            <div class="auth-bottom">
+              <span class="text-mute">¿Ya tienes cuenta? </span>
+              <a routerLink="/login" class="auth-bottom__link">Entrar</a>
+            </div>
+
           } @else {
-            <form (ngSubmit)="submitConfirm()">
-              <span class="kicker desktop-only">PASO 2 DE 2</span>
-              <h2 class="form-title desktop-only">Verifica tu email</h2>
-              <p class="form-subtitle desktop-only">
-                Te enviamos un código de 6 dígitos a
-                <strong style="color: var(--wf-ink);">{{ email }}</strong>
+
+            <a href="#" (click)="goBackToForm($event)" class="auth-back">‹ Volver a tus datos</a>
+
+            <div class="auth-step-head">
+              <div class="kicker">PASO 2 DE 2</div>
+              <h1>Verifica tu email</h1>
+              <p>
+                Te enviamos un código de 6 dígitos a<br>
+                <strong style="color:var(--wf-ink);">{{ email }}</strong>
               </p>
+            </div>
 
-              <div class="form-group">
-                <label class="kicker-label" for="reg-code">CÓDIGO DE 6 DÍGITOS</label>
-                <div class="input-card">
-                  <input id="reg-code" name="code" type="text"
-                         [(ngModel)]="code" placeholder="000000"
-                         maxlength="6" required
-                         style="font-family: var(--wf-display); font-size: 22px; letter-spacing: 6px; text-align: center;">
-                </div>
-                <p class="hint">El código caduca en 10 minutos. Revisa también spam.</p>
-              </div>
-
-              @if (error()) {
-                <p class="form-error">{{ error() }}</p>
+            <div class="otp">
+              @for (i of indices; track i) {
+                <input
+                  #otpInput
+                  class="otp__d"
+                  maxlength="1"
+                  inputmode="numeric"
+                  placeholder="—"
+                  [attr.aria-label]="'Dígito ' + (i + 1)"
+                  [value]="otpDigits()[i]"
+                  (input)="onOtpInput($event, i)"
+                  (keydown)="onOtpKey($event, i)"
+                  (paste)="onOtpPaste($event)">
               }
+            </div>
 
-              <button class="btn-wf btn-primary" type="submit" [disabled]="loading()">
-                {{ loading() ? 'Confirmando…' : 'Verificar →' }}
-              </button>
-
-              <div class="form-footer">
-                @if (resendCooldown() > 0) {
-                  <span class="text-mute">Reenviar disponible en {{ resendCooldown() }}s</span>
-                } @else {
-                  <span class="text-mute">¿No te llegó? </span>
-                  <a href="#" (click)="resendCode($event)" class="link-green">Reenviar</a>
-                }
-              </div>
-              @if (resendInfo()) {
-                <p class="form-success">✓ {{ resendInfo() }}</p>
+            <div class="auth-resend">
+              @if (resendCooldown() > 0) {
+                <span class="text-mute">¿No te llegó? </span>
+                <span class="text-green text-bold">Reenviar ({{ formatCooldown() }})</span>
+              } @else {
+                <span class="text-mute">¿No te llegó? </span>
+                <a href="#" (click)="resendCode($event)" class="auth-bottom__link">Reenviar</a>
               }
-            </form>
+            </div>
+
+            @if (error()) {
+              <p class="auth-error">{{ error() }}</p>
+            }
+            @if (resendInfo()) {
+              <p class="auth-success">✓ {{ resendInfo() }}</p>
+            }
+
+            <button
+              type="button"
+              class="btn-wf btn-wf--block btn-wf--primary"
+              style="padding:14px;font-size:14px;margin-top:14px;"
+              [disabled]="loading() || code().length !== 6"
+              (click)="submitConfirm()">
+              {{ loading() ? 'Verificando…' : 'Verificar →' }}
+            </button>
+
+            <div class="auth-tip">
+              💡 Revisa tu spam si no lo encuentras. El código caduca en 10 minutos.
+            </div>
+
           }
+
         </div>
-      </main>
+      </section>
     </div>
   `,
   styles: [`
     :host { display: block; }
 
-    .login-layout {
-      display: flex;
-      width: 100%;
-      min-height: 100vh;
-      background: var(--wf-paper);
+    .auth-input-pill.pill-taken {
+      background: rgba(195, 51, 51, 0.1);
+      color: var(--wf-danger);
+      border-color: rgba(195, 51, 51, 0.3);
     }
-
-    .login-brand {
-      flex: 1.1;
-      background: linear-gradient(140deg, var(--wf-green) 0%, #007840 100%);
-      color: white;
-      padding: 48px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      position: relative;
-      overflow: hidden;
-    }
-    .login-brand::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at 80% 20%, rgba(255,255,255,0.18) 0%, transparent 50%);
-      pointer-events: none;
-    }
-    .login-brand > * { position: relative; z-index: 1; }
-
-    .brand-header { display: flex; align-items: center; gap: 8px; }
-    .logo-icon {
-      background: rgba(255, 255, 255, 0.2);
-      width: 36px; height: 36px;
-      border-radius: 8px;
-      display: flex; justify-content: center; align-items: center;
-      font-size: 18px;
-    }
-    .brand-name {
-      font-family: var(--wf-display);
-      font-size: 18px;
-      letter-spacing: 0.08em;
-    }
-    .brand-title {
-      font-family: var(--wf-display);
-      font-size: 54px;
-      letter-spacing: 0.02em;
-      line-height: 1.05;
-      font-weight: normal;
-      margin-top: 20px;
-    }
-    .brand-desc {
-      font-size: 14px;
-      margin-top: 14px;
-      opacity: 0.9;
-      max-width: 380px;
-      line-height: 1.4;
-    }
-    .brand-stats { display: flex; gap: 24px; margin-top: 32px; }
-    .stat-value {
-      font-family: var(--wf-display);
-      font-size: 30px;
-      line-height: 1;
-    }
-    .stat-label {
-      font-size: 11px;
-      text-transform: uppercase;
-      opacity: 0.85;
-      letter-spacing: 0.06em;
-      margin-top: 4px;
-    }
-    .brand-footer { font-size: 12px; opacity: 0.7; }
-
-    .login-form-container {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 48px;
-      background: var(--wf-paper);
-    }
-    .login-form-wrapper { width: 100%; max-width: 380px; }
-
-    .mobile-header { display: none; }
-
-    .kicker {
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-weight: 700;
+    .auth-input-pill.pill-checking {
+      background: var(--wf-fill);
       color: var(--wf-ink-3);
-    }
-    .form-title {
-      font-family: var(--wf-display);
-      font-size: 30px;
-      letter-spacing: 0.04em;
-      margin-top: 4px;
-      font-weight: normal;
-      line-height: 1.05;
-    }
-    .form-subtitle {
-      font-size: 14px;
-      color: var(--wf-ink-3);
-      margin-top: 6px;
-      line-height: 1.5;
+      border-color: var(--wf-line);
     }
 
-    .form-group { margin-top: 20px; }
-    .kicker-label {
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-weight: 700;
-      color: var(--wf-ink-3);
-      margin-bottom: 6px;
-      display: block;
-    }
-    .link-green {
+    .auth-error {
       font-size: 12px;
-      color: var(--wf-green-ink);
-      font-weight: 700;
-      text-decoration: none;
-    }
-    .link-green:hover { text-decoration: underline; }
-
-    .input-card {
-      background: var(--wf-paper);
-      border: 1px solid var(--wf-line);
-      border-radius: 10px;
-      padding: 12px 14px;
-      display: flex;
-      align-items: center;
-      transition: border-color 100ms;
-    }
-    .input-card:focus-within { border-color: var(--wf-green); }
-    .input-card input {
-      border: none;
-      outline: none;
-      width: 100%;
-      font-size: 14px;
-      font-family: var(--wf-ui);
-      color: var(--wf-ink);
-      background: transparent;
-    }
-    .input-card input::placeholder { color: var(--wf-ink-3); }
-    .pass-card input { letter-spacing: 4px; }
-    .pass-card input::placeholder { letter-spacing: normal; }
-    .eye-icon {
-      font-size: 14px;
-      color: var(--wf-ink-3);
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .hint {
-      font-size: 11px;
-      color: var(--wf-ink-3);
-      margin-top: 4px;
-      line-height: 1.4;
-    }
-
-    .btn-wf {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      width: 100%;
-      padding: 14px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: var(--wf-ui);
-      border: 1px solid var(--wf-line);
-      background: var(--wf-paper);
-      color: var(--wf-ink);
-    }
-    .btn-wf:disabled { cursor: not-allowed; opacity: 0.6; }
-    .btn-primary {
-      background: var(--wf-green);
-      color: white;
-      border-color: var(--wf-green);
-      margin-top: 18px;
-    }
-
-    .form-footer {
-      text-align: center;
-      margin-top: 18px;
-      font-size: 14px;
-    }
-    .text-mute { color: var(--wf-ink-3); }
-
-    .form-error {
-      font-size: 12px;
-      color: var(--wf-danger, #c33);
+      color: var(--wf-danger);
       margin-top: 12px;
       padding: 8px 12px;
-      background: rgba(231, 76, 60, 0.08);
+      background: rgba(195, 51, 51, 0.08);
       border-radius: 6px;
-      border: 1px solid rgba(231, 76, 60, 0.2);
+      border: 1px solid rgba(195, 51, 51, 0.2);
     }
-    .form-success {
+    .auth-success {
       font-size: 12px;
       color: var(--wf-green-ink);
       margin-top: 8px;
       padding: 8px 12px;
       background: var(--wf-green-soft);
       border-radius: 6px;
-      border: 1px solid rgba(2, 204, 116, 0.2);
-    }
-
-    @media (max-width: 800px) {
-      .login-brand { display: none; }
-      .login-form-container {
-        padding: 24px 20px;
-        align-items: flex-start;
-      }
-      .mobile-header {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        margin-bottom: 24px;
-        margin-top: 12px;
-      }
-      .mobile-logo {
-        background: transparent;
-        color: var(--wf-ink);
-        font-size: 22px;
-        margin-bottom: 12px;
-      }
-      .mobile-title {
-        font-family: var(--wf-display);
-        font-size: 26px;
-        letter-spacing: 0.04em;
-        line-height: 1;
-        font-weight: normal;
-      }
-      .mobile-subtitle {
-        font-size: 11px;
-        color: var(--wf-ink-3);
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        margin-top: 4px;
-      }
-      .desktop-only { display: none; }
+      border: 1px solid rgba(0, 200, 100, 0.2);
     }
   `],
 })
@@ -406,19 +261,54 @@ export class RegisterComponent {
   private auth = inject(AuthService);
   private router = inject(Router);
 
-  step = signal<'form' | 'confirm'>('form');
+  step = signal<Step>('form');
+
+  name = '';
   handle = '';
   email = '';
   password = '';
-  code = '';
+  acceptTerms = false;
+
   loading = signal(false);
   error = signal<string | null>(null);
-  handleError = signal<string | null>(null);
-  showPassword = signal(false);
+  resendInfo = signal<string | null>(null);
+
+  handleStatus = signal<HandleStatus>('idle');
+  passwordStrength = signal(0);
+
+  readonly indices = [0, 1, 2, 3, 4, 5];
+  otpDigits = signal<string[]>(['', '', '', '', '', '']);
+  code = computed(() => this.otpDigits().join(''));
 
   resendCooldown = signal(0);
-  resendInfo = signal<string | null>(null);
-  private cooldownTimer: ReturnType<typeof setInterval> | undefined;
+  private cooldownTimer?: ReturnType<typeof setInterval>;
+  private handleDebounce?: ReturnType<typeof setTimeout>;
+
+  @ViewChildren('otpInput') otpRefs?: QueryList<ElementRef<HTMLInputElement>>;
+
+  canSubmit(): boolean {
+    return !!this.name && !!this.handle && !!this.email
+      && this.password.length >= 8 && this.acceptTerms
+      && this.handleStatus() !== 'taken' && this.handleStatus() !== 'checking';
+  }
+
+  // ---------- Handle live availability ----------
+  onHandleChange(value: string) {
+    if (this.handleDebounce) clearTimeout(this.handleDebounce);
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(value)) {
+      this.handleStatus.set('idle');
+      return;
+    }
+    this.handleStatus.set('checking');
+    this.handleDebounce = setTimeout(async () => {
+      try {
+        const unique = await this.checkHandleUnique(value);
+        this.handleStatus.set(unique ? 'available' : 'taken');
+      } catch {
+        this.handleStatus.set('idle');
+      }
+    }, 400);
+  }
 
   private async checkHandleUnique(handle: string): Promise<boolean> {
     const res = await apiClient.models.User.list({
@@ -429,19 +319,83 @@ export class RegisterComponent {
     return (res.data ?? []).length === 0;
   }
 
-  async submitForm() {
+  // ---------- Password strength ----------
+  onPasswordChange(value: string) {
+    let score = 0;
+    if (value.length >= 8) score++;
+    if (/[A-Z]/.test(value)) score++;
+    if (/[0-9]/.test(value)) score++;
+    if (/[^a-zA-Z0-9]/.test(value)) score++;
+    this.passwordStrength.set(score);
+  }
+
+  strengthColor(idx: number): string {
+    const score = this.passwordStrength();
+    if (idx >= score) return '';
+    if (score <= 1) return 'var(--wf-danger)';
+    if (score === 2) return 'var(--wf-warn)';
+    return 'var(--wf-green)';
+  }
+
+  // ---------- OTP handlers ----------
+  onOtpInput(event: Event, idx: number) {
+    const input = event.target as HTMLInputElement;
+    const v = input.value.replace(/\D/g, '').slice(0, 1);
+    const arr = [...this.otpDigits()];
+    arr[idx] = v;
+    this.otpDigits.set(arr);
+    input.value = v;
+    if (v && idx < 5) {
+      this.otpRefs?.toArray()[idx + 1]?.nativeElement.focus();
+    }
+  }
+
+  onOtpKey(event: KeyboardEvent, idx: number) {
+    if (event.key === 'Backspace' && !this.otpDigits()[idx] && idx > 0) {
+      this.otpRefs?.toArray()[idx - 1]?.nativeElement.focus();
+    }
+  }
+
+  onOtpPaste(event: ClipboardEvent) {
+    event.preventDefault();
+    const text = event.clipboardData?.getData('text') ?? '';
+    const digits = text.replace(/\D/g, '').slice(0, 6).split('');
+    if (digits.length === 0) return;
+    const arr = ['', '', '', '', '', ''];
+    digits.forEach((d, i) => arr[i] = d);
+    this.otpDigits.set(arr);
+    const lastIdx = Math.min(digits.length, 5);
+    setTimeout(() => this.otpRefs?.toArray()[lastIdx]?.nativeElement.focus(), 0);
+  }
+
+  formatCooldown(): string {
+    const s = this.resendCooldown();
+    return `00:${String(s).padStart(2, '0')}`;
+  }
+
+  goBackToForm(event: Event) {
+    event.preventDefault();
+    this.step.set('form');
     this.error.set(null);
-    this.handleError.set(null);
+  }
+
+  // ---------- Submit ----------
+  async submitForm() {
+    if (!this.canSubmit()) return;
+    this.error.set(null);
     this.loading.set(true);
     try {
+      // Doble check antes de pasar a Cognito (por si caducó el debounce)
       const unique = await this.checkHandleUnique(this.handle);
       if (!unique) {
-        this.handleError.set('Ese handle ya está en uso. Prueba otro.');
+        this.handleStatus.set('taken');
         this.loading.set(false);
         return;
       }
-      await this.auth.register(this.email, this.password, this.handle);
+      await this.auth.register(this.email, this.password, this.handle, this.name);
       this.step.set('confirm');
+      this.otpDigits.set(['', '', '', '', '', '']);
+      this.startCooldown(60);
     } catch (e) {
       this.error.set((e as Error).message ?? 'No se pudo crear la cuenta');
     } finally {
@@ -450,10 +404,11 @@ export class RegisterComponent {
   }
 
   async submitConfirm() {
+    if (this.code().length !== 6) return;
     this.error.set(null);
     this.loading.set(true);
     try {
-      await this.auth.confirm(this.email, this.code);
+      await this.auth.confirm(this.email, this.code());
       await this.auth.login(this.email, this.password);
       const u = this.auth.user();
       if (u) {

@@ -5,6 +5,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 
 const TOURNAMENT_ID = 'mundial-2026';
+const TOTAL_SPECIAL_PICKS = 3; // Campeón, Subcampeón, Revelación
 
 interface Totals {
   points: number;
@@ -13,140 +14,169 @@ interface Totals {
   globalRank: number | null;
 }
 
-import { SponsorRedeemComponent } from '../picks/sponsor-redeem.component';
-
 @Component({
   standalone: true,
   selector: 'app-profile',
-  imports: [RouterLink, SponsorRedeemComponent],
+  imports: [RouterLink],
   template: `
     @let u = user();
 
     @if (u !== null) {
-      <section class="profile-hero">
-        <div class="profile-hero__content">
-          <span class="profile-hero__avatar">{{ avatar() }}</span>
+      <section class="page">
+
+        <!-- Hero del perfil -->
+        <header class="profile-hero">
+          <div class="profile-hero__top">
+            <div class="profile-hero__avatar">{{ avatar() }}</div>
+            <div class="profile-hero__name-block">
+              <h1>{{ '@' + u.handle }}</h1>
+              <div class="profile-hero__meta">
+                {{ u.email }}
+                @if (memberSince()) { · miembro desde {{ memberSince() }} }
+              </div>
+              <button type="button" class="btn-wf btn-wf--sm profile-hero__edit"
+                      (click)="editProfile()">
+                Editar perfil
+              </button>
+            </div>
+          </div>
+          <div class="profile-hero__stats">
+            <div class="profile-stat">
+              <div class="num">{{ totals().points }}</div>
+              <div class="lbl">Pts</div>
+            </div>
+            <div class="profile-stat">
+              <div class="num">{{ totals().exactCount }}</div>
+              <div class="lbl">Exactos</div>
+            </div>
+            <div class="profile-stat">
+              <div class="num">{{ totals().resultCount }}</div>
+              <div class="lbl">Result.</div>
+            </div>
+            <div class="profile-stat">
+              <div class="num">{{ totals().globalRank ? '#' + totals().globalRank : '—' }}</div>
+              <div class="lbl">Global</div>
+            </div>
+          </div>
+        </header>
+
+        <div class="profile-grid">
+
+          <!-- Columna 1: Mi juego -->
           <div>
-            <h1 class="profile-hero__handle">{{ '@' + u.handle }}</h1>
-            <p class="profile-hero__email">{{ u.email }}</p>
-            <p class="profile-hero__since">Miembro desde {{ memberSince() ?? '—' }}</p>
+            <section class="profile-section profile-section--first">
+              <h2 class="profile-section__title">Mi juego</h2>
+              <div class="profile-list">
+
+                <a routerLink="/mis-comodines" class="profile-list-item">
+                  <span class="profile-list-item__icon">🎁</span>
+                  <div class="profile-list-item__body">
+                    <div class="profile-list-item__title">Mis comodines</div>
+                    <div class="profile-list-item__sub">{{ comodinesSub() }}</div>
+                  </div>
+                  @if (comodinesPending() > 0) {
+                    <span class="pill pill--solid">!</span>
+                  } @else if (comodinesAvailable() > 0) {
+                    <span class="pill pill--green">{{ comodinesAvailable() }}</span>
+                  }
+                </a>
+
+                <a routerLink="/profile/special-picks" class="profile-list-item">
+                  <span class="profile-list-item__icon">⭐</span>
+                  <div class="profile-list-item__body">
+                    <div class="profile-list-item__title">Picks especiales</div>
+                    <div class="profile-list-item__sub">Campeón, subcampeón, revelación</div>
+                  </div>
+                  <span class="pill">{{ specialPicksDone() }}/{{ totalSpecial }}</span>
+                </a>
+
+                <a routerLink="/notificaciones" class="profile-list-item">
+                  <span class="profile-list-item__icon">🔔</span>
+                  <div class="profile-list-item__body">
+                    <div class="profile-list-item__title">Notificaciones</div>
+                    <div class="profile-list-item__sub">
+                      {{ unreadNotifs() === 0 ? 'Al día' : unreadNotifs() + ' sin leer' }}
+                    </div>
+                  </div>
+                  @if (unreadNotifs() > 0) {
+                    <span class="pill pill--solid">{{ unreadNotifs() }}</span>
+                  }
+                </a>
+
+              </div>
+            </section>
           </div>
+
+          <!-- Columna 2: Sponsors + Cuenta -->
+          <div>
+            <section class="profile-section profile-section--first">
+              <h2 class="profile-section__title">Sponsors</h2>
+              <a routerLink="/mis-comodines" class="profile-sponsor"
+                 style="text-decoration:none;color:inherit;">
+                <div class="profile-sponsor__body">
+                  <div class="profile-sponsor__title">🎁 Canjear código</div>
+                  <div class="profile-sponsor__sub">¿Tienes código de sponsor?</div>
+                </div>
+                <span class="btn-wf btn-wf--sm btn-wf--ink" style="text-decoration:none;">
+                  Canjear →
+                </span>
+              </a>
+            </section>
+
+            <section class="profile-section">
+              <h2 class="profile-section__title">Cuenta</h2>
+              <div class="profile-list">
+
+                <a routerLink="/forgot-password" class="profile-list-item">
+                  <span class="profile-list-item__icon">🔒</span>
+                  <div class="profile-list-item__body">
+                    <div class="profile-list-item__title">Cambiar contraseña</div>
+                  </div>
+                  <span class="profile-list-item__chev">›</span>
+                </a>
+
+                <button type="button" class="profile-list-item"
+                        (click)="comingSoon('Preferencias')">
+                  <span class="profile-list-item__icon">⚙</span>
+                  <div class="profile-list-item__body">
+                    <div class="profile-list-item__title">Preferencias</div>
+                  </div>
+                  <span class="profile-list-item__chev">›</span>
+                </button>
+
+                <button type="button" class="profile-list-item"
+                        (click)="comingSoon('Ayuda')">
+                  <span class="profile-list-item__icon">❓</span>
+                  <div class="profile-list-item__body">
+                    <div class="profile-list-item__title">Ayuda</div>
+                  </div>
+                  <span class="profile-list-item__chev">›</span>
+                </button>
+
+                @if (daysUntilLock() !== null && daysUntilLock()! === 0) {
+                  <!-- Si el torneo ya empezó, no tiene sentido mostrar "días para cierre" arriba.
+                       Si querés agregar atajo a admin / soporte, va acá. -->
+                }
+
+                <button type="button" class="profile-list-item profile-list-item--danger"
+                        (click)="logout()">
+                  <span class="profile-list-item__icon">↩</span>
+                  <div class="profile-list-item__body">
+                    <div class="profile-list-item__title">Cerrar sesión</div>
+                  </div>
+                </button>
+
+              </div>
+            </section>
+          </div>
+
         </div>
+
       </section>
-
-      <div class="stats-row">
-        <div class="stat-card"><strong>{{ totals().points }}</strong><small>Puntos totales</small></div>
-        <div class="stat-card"><strong>{{ totals().exactCount }}</strong><small>Marcadores exactos</small></div>
-        <div class="stat-card"><strong>{{ totals().resultCount }}</strong><small>Resultados acertados</small></div>
-        <div class="stat-card">
-          <strong>{{ totals().globalRank ? '#' + totals().globalRank : '—' }}</strong>
-          <small>Ranking global</small>
-        </div>
-      </div>
-
-      <div class="container-app">
-        <!-- Picks especiales CTA -->
-        <section>
-          <a routerLink="/profile/special-picks" class="empty-cta__card"
-             style="display: block; text-decoration: none; color: inherit;">
-            <h3>Picks especiales</h3>
-            <p>
-              Campeón · Subcampeón · Equipo revelación.
-              @if (daysUntilLock() !== null && daysUntilLock()! > 0) {
-                Editable hasta el kickoff del primer partido del torneo ({{ daysUntilLock() }} días).
-              } @else {
-                Bloqueados — el torneo ya empezó.
-              }
-            </p>
-            <span class="link-green">Editar mis picks especiales →</span>
-          </a>
-        </section>
-
-        <!-- Datos de la cuenta -->
-        <section class="settings-section">
-          <h3>Datos de la cuenta</h3>
-          <div class="settings-row">
-            <div class="settings-row__label">
-              <small>Handle público</small>
-              <strong>{{ '@' + u.handle }}</strong>
-            </div>
-            <a class="settings-row__action" (click)="comingSoon('Cambiar handle', $event)">Cambiar →</a>
-          </div>
-          <div class="settings-row">
-            <div class="settings-row__label">
-              <small>Email</small>
-              <strong>{{ u.email }}</strong>
-            </div>
-            <a class="settings-row__action" (click)="comingSoon('Cambiar email', $event)">Cambiar →</a>
-          </div>
-          <div class="settings-row">
-            <div class="settings-row__label">
-              <small>Password</small>
-              <strong>••••••••••</strong>
-            </div>
-            <a class="settings-row__action" routerLink="/forgot-password">Resetear →</a>
-          </div>
-        </section>
-
-        <!-- Notificaciones -->
-        <section class="settings-section">
-          <h3>Notificaciones</h3>
-          <div class="settings-row">
-            <div class="settings-row__label">
-              <small>Email transaccional</small>
-              <strong>Welcome, invitaciones, password reset</strong>
-            </div>
-            <label class="toggle">
-              <input type="checkbox" [checked]="notifEmail()" (change)="notifEmail.set($any($event.target).checked)">
-              <span class="toggle__track"></span>
-            </label>
-          </div>
-          <div class="settings-row">
-            <div class="settings-row__label">
-              <small>Recordatorio de picks</small>
-              <strong>Email diario con picks pendientes</strong>
-            </div>
-            <label class="toggle">
-              <input type="checkbox" [checked]="notifReminder()" (change)="notifReminder.set($any($event.target).checked)">
-              <span class="toggle__track"></span>
-            </label>
-          </div>
-          <div class="settings-row">
-            <div class="settings-row__label">
-              <small>Banner in-app de picks pendientes</small>
-              <strong>Mostrar al entrar a la app</strong>
-            </div>
-            <label class="toggle">
-              <input type="checkbox" [checked]="notifBanner()" (change)="notifBanner.set($any($event.target).checked)">
-              <span class="toggle__track"></span>
-            </label>
-          </div>
-        </section>
-
-        <!-- Cuenta -->
-        <section class="settings-section">
-          <h3>Cuenta</h3>
-          <div class="settings-row">
-            <div class="settings-row__label">
-              <small>Cerrar sesión</small>
-              <strong>Salir de esta sesión en este dispositivo</strong>
-            </div>
-            <a class="settings-row__action" (click)="logout($event)">Salir →</a>
-          </div>
-          <div class="settings-row">
-            <div class="settings-row__label">
-              <small>Eliminar cuenta</small>
-              <strong>Borra todos tus datos. Esta acción es irreversible.</strong>
-            </div>
-            <a class="settings-row__action settings-row__action--danger" (click)="deleteAccount($event)">Eliminar →</a>
-          </div>
-        </section>
-
-        <!-- Sponsor codes (canje de cupones promocionales) -->
-        <section style="margin-top: var(--space-xl);">
-          <app-sponsor-redeem />
-        </section>
-      </div>
+    } @else {
+      <p style="padding:48px;text-align:center;color:var(--wf-ink-3);">
+        Cargando perfil…
+      </p>
     }
   `,
 })
@@ -156,16 +186,28 @@ export class ProfileComponent implements OnInit {
   private toast = inject(ToastService);
   private router = inject(Router);
 
+  readonly totalSpecial = TOTAL_SPECIAL_PICKS;
+
   user = computed(() => this.auth.user());
   totals = signal<Totals>({ points: 0, exactCount: 0, resultCount: 0, globalRank: null });
   memberSince = signal<string | null>(null);
   daysUntilLock = signal<number | null>(null);
 
-  // Notification toggles — local-only state for now (no backend persistence yet,
-  // sees mock the spec §7.2 banner dismiss + future T22 email opt-out flow)
-  notifEmail = signal(true);
-  notifReminder = signal(false);
-  notifBanner = signal(true);
+  // Counts del listado "Mi juego"
+  comodinesAvailable = signal(0);  // status === UNASSIGNED
+  comodinesPending = signal(0);    // status === PENDING_TYPE_CHOICE
+  specialPicksDone = signal(0);    // 0..3
+  unreadNotifs = signal(0);
+
+  comodinesSub = computed(() => {
+    const a = this.comodinesAvailable();
+    const p = this.comodinesPending();
+    if (a === 0 && p === 0) return 'Sin comodines disponibles';
+    const parts: string[] = [];
+    if (a > 0) parts.push(`${a} ${a === 1 ? 'disponible' : 'disponibles'}`);
+    if (p > 0) parts.push(`${p} ${p === 1 ? 'pendiente' : 'pendientes'}`);
+    return parts.join(' · ');
+  });
 
   avatar = computed(() => (this.user()?.handle?.[0] ?? '?').toUpperCase());
 
@@ -191,44 +233,88 @@ export class ProfileComponent implements OnInit {
         globalRank: rankIdx >= 0 ? rankIdx + 1 : null,
       });
 
-      // member since (createdAt from User row)
       if (profile.data?.createdAt) {
         this.memberSince.set(
           new Date(profile.data.createdAt).toLocaleDateString('es-EC', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
+            month: 'short', year: 'numeric',
           }),
         );
       }
 
-      // days until specials lock
       if (tournament.data?.specialsLockAt) {
         const lockMs = Date.parse(tournament.data.specialsLockAt);
         const days = Math.max(0, Math.ceil((lockMs - Date.now()) / 86_400_000));
         this.daysUntilLock.set(days);
       }
     } catch {
-      // silent — partial data is fine
+      // datos parciales son OK; los signals quedan en su default
+    }
+
+    // Counts adicionales (best-effort, no bloquean el render del perfil)
+    void this.loadComodineCounts(u.sub);
+    void this.loadSpecialPicks(u.sub);
+    void this.loadUnreadNotifs(u.sub);
+  }
+
+  private async loadComodineCounts(userId: string) {
+    try {
+      const res = await this.api.listMyComodines(userId, TOURNAMENT_ID);
+      const list = (res.data ?? []) as Array<{ status: string }>;
+      let a = 0, p = 0;
+      for (const c of list) {
+        if (c.status === 'UNASSIGNED') a++;
+        else if (c.status === 'PENDING_TYPE_CHOICE') p++;
+      }
+      this.comodinesAvailable.set(a);
+      this.comodinesPending.set(p);
+    } catch {
+      /* ignore */
     }
   }
 
-  async logout(event: Event) {
-    event.preventDefault();
-    await this.auth.logout();
-    void this.router.navigate(['/login']);
+  private async loadSpecialPicks(userId: string) {
+    try {
+      // mySpecialPicks devuelve los picks de specialPick del torneo. Cada uno
+      // representa un slot (CHAMPION/RUNNER_UP/DARK_HORSE). Contamos los
+      // que existen para mostrar el progreso 0..3.
+      // Preferimos COMPLETE; si el user solo tiene SIMPLE, igual cuenta.
+      const [completeRes, simpleRes] = await Promise.all([
+        this.api.mySpecialPicks(TOURNAMENT_ID, 'COMPLETE'),
+        this.api.mySpecialPicks(TOURNAMENT_ID, 'SIMPLE'),
+      ]);
+      const types = new Set<string>();
+      for (const p of (completeRes.data ?? []) as Array<{ type: string; userId: string }>) {
+        if (p.userId === userId) types.add(p.type);
+      }
+      for (const p of (simpleRes.data ?? []) as Array<{ type: string; userId: string }>) {
+        if (p.userId === userId) types.add(p.type);
+      }
+      this.specialPicksDone.set(Math.min(types.size, TOTAL_SPECIAL_PICKS));
+    } catch {
+      /* ignore */
+    }
   }
 
-  comingSoon(label: string, event: Event) {
-    event.preventDefault();
+  private async loadUnreadNotifs(userId: string) {
+    try {
+      const res = await this.api.listMyNotifications(userId, 100);
+      const items = (res.data ?? []) as Array<{ readAt: string | null }>;
+      this.unreadNotifs.set(items.filter((n) => !n.readAt).length);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  editProfile() {
+    this.toast.info('Editar perfil — próximamente');
+  }
+
+  comingSoon(label: string) {
     this.toast.info(`${label} — próximamente`);
   }
 
-  deleteAccount(event: Event) {
-    event.preventDefault();
-    if (!confirm('¿Eliminar tu cuenta? Esto borra tus picks, grupos y datos personales. Acción irreversible.')) {
-      return;
-    }
-    this.toast.info('Eliminar cuenta — próximamente (requiere flujo de admin Cognito + cleanup de datos)');
+  async logout() {
+    await this.auth.logout();
+    void this.router.navigate(['/login']);
   }
 }

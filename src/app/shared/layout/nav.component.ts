@@ -4,243 +4,269 @@ import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService, type UserGroup } from '../../core/user/user-modes.service';
 
-type DropdownKey = 'groups' | 'picks' | 'rankings' | 'user' | null;
+type DropdownKey = 'user' | null;
 
 @Component({
   standalone: true,
   selector: 'app-nav',
   imports: [RouterLink, RouterLinkActive],
   template: `
-    <!-- ============ DESKTOP NAV (≥992px) ============ -->
-    <header class="wf-desk-nav app-nav-desktop">
-      <div class="wf-row" style="align-items: center;">
-        <a routerLink="/picks" class="wf-topbar__brand app-nav__brand-link" aria-label="Polla Mundial 2026" (click)="closeAll()">
-          <span class="wf-topbar__logo">⚽</span>
-          <span class="wf-topbar__title">POLLA</span>
+    <!-- ============ DESKTOP TOPNAV (≥992px) ============ -->
+    <header class="app-topnav">
+      <div class="app-topnav__left">
+        <a routerLink="/home" class="app-topnav__brand" aria-label="Polla Mundial 2026" (click)="closeAll()">
+          <span class="app-topnav__logo">⚽</span>
+          <span class="app-topnav__title">POLLA</span>
         </a>
-        <nav class="wf-desk-nav__menu" aria-label="Principal">
+        <nav class="app-topnav__menu" aria-label="Principal">
           @if (isAdmin()) {
-            <a class="wf-desk-nav__item" routerLink="/admin" routerLinkActive="is-active" [routerLinkActiveOptions]="{exact: true}" (click)="closeAll()">Dashboard</a>
-            <a class="wf-desk-nav__item" routerLink="/admin/groups-overview" routerLinkActive="is-active" (click)="closeAll()">Grupos</a>
-            <a class="wf-desk-nav__item" routerLink="/admin/rankings-overview" routerLinkActive="is-active" (click)="closeAll()">Rankings</a>
-            <a class="wf-desk-nav__item" routerLink="/admin/fixtures" routerLinkActive="is-active" (click)="closeAll()">Partidos</a>
+            <a class="app-topnav__item" routerLink="/admin" routerLinkActive="is-active" [routerLinkActiveOptions]="{exact: true}" (click)="closeAll()">Dashboard</a>
+            <a class="app-topnav__item" routerLink="/admin/groups-overview" routerLinkActive="is-active" (click)="closeAll()">Grupos</a>
+            <a class="app-topnav__item" routerLink="/admin/rankings-overview" routerLinkActive="is-active" (click)="closeAll()">Rankings</a>
+            <a class="app-topnav__item" routerLink="/admin/fixtures" routerLinkActive="is-active" (click)="closeAll()">Partidos</a>
           } @else {
-            <a class="wf-desk-nav__item" routerLink="/picks" routerLinkActive="is-active" (click)="closeAll()">Mis picks</a>
-            <a class="wf-desk-nav__item" routerLink="/groups" routerLinkActive="is-active" (click)="closeAll()">Grupos</a>
-            <a class="wf-desk-nav__item" routerLink="/ranking" routerLinkActive="is-active" (click)="closeAll()">Ranking</a>
+            <a class="app-topnav__item" routerLink="/picks" routerLinkActive="is-active" (click)="closeAll()">Mis picks</a>
+            <a class="app-topnav__item" routerLink="/groups" routerLinkActive="is-active" (click)="closeAll()">Grupos</a>
+            <a class="app-topnav__item" routerLink="/ranking" routerLinkActive="is-active" (click)="closeAll()">Ranking</a>
           }
         </nav>
       </div>
 
-      <div class="wf-row wf-row--gap-sm" style="align-items: center;">
-        <a routerLink="/notificaciones" class="wf-topbar__bell app-nav__bell" aria-label="Notificaciones" (click)="closeAll()">
+      <div class="app-topnav__right">
+        <a routerLink="/notificaciones" class="app-topnav__bell" aria-label="Notificaciones" (click)="closeAll()">
           🔔
-          @if (unreadCount() > 0) { <span class="wf-topbar__bell-badge">{{ unreadCount() }}</span> }
+          @if (unreadCount() > 0) { <span class="badge">{{ unreadCount() }}</span> }
         </a>
-        <div class="user-menu app-nav__user-anchor" (click)="$event.stopPropagation()">
-          <button class="app-nav__user-btn" type="button" aria-haspopup="true"
-                  [attr.aria-expanded]="open() === 'user'" aria-label="Cuenta"
-                  (click)="toggle('user')">
-            <span class="wf-topbar__avatar">{{ avatar() }}</span>
-            <span class="wf-text-bold" style="font-size: 13px;">{{ '@' + (handle() ?? '') }}</span>
-            <span class="user-menu__chevron" [class.is-open]="open() === 'user'" aria-hidden="true">▾</span>
-          </button>
-          @if (open() === 'user') {
-            <div class="user-menu__panel" role="menu">
-              @if (hasComplete()) {
-                <a class="user-menu__item" role="menuitem" (click)="goComodines()">
-                  <span class="user-menu__icon" aria-hidden="true">🃏</span>
-                  Mis comodines
-                </a>
-              }
-              <a class="user-menu__item" role="menuitem" (click)="goSpecialPicks()">
-                <span class="user-menu__icon" aria-hidden="true">⭐</span>
-                Picks especiales
-              </a>
-              <a class="user-menu__item" role="menuitem" (click)="goNotifications()">
-                <span class="user-menu__icon" aria-hidden="true">🔔</span>
-                Notificaciones
-                @if (unreadCount() > 0) {
-                  <span class="app-nav__pill-count">{{ unreadCount() }}</span>
-                }
-              </a>
-              <a class="user-menu__item" role="menuitem" (click)="goProfile()">
-                <span class="user-menu__icon" aria-hidden="true">⚙</span>
-                Editar perfil
-              </a>
-              <hr class="user-menu__sep">
-              <a class="user-menu__item user-menu__item--danger" role="menuitem" (click)="logout()">
-                <span class="user-menu__icon" aria-hidden="true">⏻</span>
-                Cerrar sesión
-              </a>
-            </div>
-          }
-        </div>
+        <a routerLink="/profile" class="app-topnav__user" (click)="closeAll()">
+          <span class="avatar">{{ avatar() }}</span>
+          <span class="name">{{ '@' + (handle() ?? '') }}</span>
+        </a>
       </div>
     </header>
 
     <!-- ============ MOBILE TOPBAR (<992px) ============ -->
-    <header class="wf-topbar app-nav-mobile">
-      <a routerLink="/picks" class="wf-topbar__brand app-nav__brand-link" aria-label="Polla" (click)="closeAll()">
-        <span class="wf-topbar__logo">⚽</span>
-        <span class="wf-topbar__title">POLLA</span>
+    <header class="app-topbar">
+      <a routerLink="/home" class="app-topbar__brand" aria-label="Polla" (click)="closeAll()">
+        <span class="app-topbar__logo">⚽</span>
+        <span class="app-topbar__title">POLLA</span>
       </a>
-      <div class="wf-topbar__icons">
-        <a routerLink="/notificaciones" class="wf-topbar__bell" aria-label="Notificaciones" (click)="closeAll()">
+      <div class="app-topbar__actions">
+        <a routerLink="/notificaciones" class="app-topbar__bell" aria-label="Notificaciones" (click)="closeAll()">
           🔔
-          @if (unreadCount() > 0) { <span class="wf-topbar__bell-badge">{{ unreadCount() }}</span> }
+          @if (unreadCount() > 0) { <span class="badge">{{ unreadCount() }}</span> }
         </a>
-        <button class="app-nav__avatar-btn" type="button" aria-label="Cuenta"
-                (click)="toggle('user'); $event.stopPropagation()">
-          <span class="wf-topbar__avatar">{{ avatar() }}</span>
-        </button>
+        <button class="app-topbar__avatar" type="button" aria-label="Cuenta"
+                (click)="toggle('user'); $event.stopPropagation()">{{ avatar() }}</button>
       </div>
     </header>
 
-    <!-- Mobile user menu (anchored top-right under avatar) -->
+    <!-- Mobile user menu (anclado top-right bajo el avatar) -->
     @if (open() === 'user') {
-      <div class="user-menu__panel app-nav__mobile-menu" role="menu" (click)="$event.stopPropagation()">
+      <div class="mobile-menu" role="menu" (click)="$event.stopPropagation()">
         @if (hasComplete()) {
-          <a class="user-menu__item" role="menuitem" (click)="goComodines()">🃏 Mis comodines</a>
+          <a class="mobile-menu__item" role="menuitem" (click)="goComodines()">🃏 Mis comodines</a>
         }
-        <a class="user-menu__item" role="menuitem" (click)="goSpecialPicks()">⭐ Picks especiales</a>
-        <a class="user-menu__item" role="menuitem" (click)="goNotifications()">
+        <a class="mobile-menu__item" role="menuitem" (click)="goSpecialPicks()">⭐ Picks especiales</a>
+        <a class="mobile-menu__item" role="menuitem" (click)="goNotifications()">
           🔔 Notificaciones
-          @if (unreadCount() > 0) { <span class="app-nav__pill-count">{{ unreadCount() }}</span> }
+          @if (unreadCount() > 0) { <span class="pill pill--solid">{{ unreadCount() }}</span> }
         </a>
-        <a class="user-menu__item" role="menuitem" (click)="goProfile()">⚙ Editar perfil</a>
+        <a class="mobile-menu__item" role="menuitem" (click)="goProfile()">⚙ Editar perfil</a>
         @if (isAdmin()) {
-          <hr class="user-menu__sep">
-          <a class="user-menu__item" role="menuitem" routerLink="/admin/fixtures" (click)="closeAll()">🛠 Partidos</a>
-          <a class="user-menu__item" role="menuitem" routerLink="/admin/results" (click)="closeAll()">📋 Resultados</a>
-          <a class="user-menu__item" role="menuitem" routerLink="/admin/teams" (click)="closeAll()">🏳 Equipos</a>
-          <a class="user-menu__item" role="menuitem" routerLink="/admin/sponsors" (click)="closeAll()">🎁 Sponsors</a>
-          <a class="user-menu__item" role="menuitem" routerLink="/admin/users" (click)="closeAll()">👥 Usuarios</a>
+          <hr class="mobile-menu__sep">
+          <a class="mobile-menu__item" role="menuitem" routerLink="/admin/fixtures" (click)="closeAll()">🛠 Partidos</a>
+          <a class="mobile-menu__item" role="menuitem" routerLink="/admin/results" (click)="closeAll()">📋 Resultados</a>
+          <a class="mobile-menu__item" role="menuitem" routerLink="/admin/teams" (click)="closeAll()">🏳 Equipos</a>
+          <a class="mobile-menu__item" role="menuitem" routerLink="/admin/sponsors" (click)="closeAll()">🎁 Sponsors</a>
+          <a class="mobile-menu__item" role="menuitem" routerLink="/admin/users" (click)="closeAll()">👥 Usuarios</a>
         }
-        <hr class="user-menu__sep">
-        <a class="user-menu__item user-menu__item--danger" role="menuitem" (click)="logout()">⏻ Cerrar sesión</a>
+        <hr class="mobile-menu__sep">
+        <a class="mobile-menu__item mobile-menu__item--danger" role="menuitem" (click)="logout()">⏻ Cerrar sesión</a>
       </div>
     }
 
-    <!-- ============ MOBILE TABBAR (<992px) ============ -->
-    <nav class="wf-tabbar app-nav-tabbar" aria-label="Navegación principal">
+    <!-- ============ SIDEBAR DESKTOP (≥992px) ============ -->
+    <aside class="app-sidebar">
       @if (isAdmin()) {
-        <a class="wf-tabbar__item" routerLink="/admin" routerLinkActive="is-active" [routerLinkActiveOptions]="{exact: true}" (click)="closeAll()">
-          <span class="wf-tabbar__icon">🏠</span><span>Home</span>
+        <div class="app-sidebar__section">
+          <div class="app-sidebar__kicker">Admin</div>
+          <a class="sidebar-row" routerLink="/admin" routerLinkActive="is-active" [routerLinkActiveOptions]="{exact: true}">
+            <span><span class="sidebar-row__icon">🏠</span>Dashboard</span>
+          </a>
+          <a class="sidebar-row" routerLink="/admin/groups-overview" routerLinkActive="is-active">
+            <span><span class="sidebar-row__icon">👥</span>Grupos</span>
+          </a>
+          <a class="sidebar-row" routerLink="/admin/rankings-overview" routerLinkActive="is-active">
+            <span><span class="sidebar-row__icon">🏆</span>Rankings</span>
+          </a>
+          <a class="sidebar-row" routerLink="/admin/fixtures" routerLinkActive="is-active">
+            <span><span class="sidebar-row__icon">⚽</span>Partidos</span>
+          </a>
+          <a class="sidebar-row" routerLink="/admin/results" routerLinkActive="is-active">
+            <span><span class="sidebar-row__icon">📋</span>Resultados</span>
+          </a>
+          <a class="sidebar-row" routerLink="/admin/teams" routerLinkActive="is-active">
+            <span><span class="sidebar-row__icon">🏳</span>Equipos</span>
+          </a>
+          <a class="sidebar-row" routerLink="/admin/sponsors" routerLinkActive="is-active">
+            <span><span class="sidebar-row__icon">🎁</span>Sponsors</span>
+          </a>
+          <a class="sidebar-row" routerLink="/admin/users" routerLinkActive="is-active">
+            <span><span class="sidebar-row__icon">👤</span>Usuarios</span>
+          </a>
+        </div>
+
+        <div class="app-sidebar__section">
+          <div class="app-sidebar__kicker">Mi cuenta</div>
+          <a class="sidebar-row" routerLink="/profile" routerLinkActive="is-active">
+            <span><span class="sidebar-row__icon">⚙</span>Mi perfil</span>
+          </a>
+          <button class="sidebar-row sidebar-row--logout" type="button" (click)="logout()">
+            <span><span class="sidebar-row__icon">⏻</span>Cerrar sesión</span>
+          </button>
+        </div>
+      } @else {
+        <div class="app-sidebar__section">
+          <div class="app-sidebar__kicker">Mis grupos</div>
+          @for (g of topGroups(); track g.id) {
+            <a class="sidebar-row" [routerLink]="['/groups', g.id]" routerLinkActive="is-active">
+              <span>{{ g.name }}</span>
+              <span class="sidebar-row__pos">{{ g.mode === 'COMPLETE' ? 'C' : 'S' }}</span>
+            </a>
+          }
+          @if (myGroups().length > topGroups().length) {
+            <a class="sidebar-row sidebar-row--more" routerLink="/groups">
+              <span>Ver todos ({{ myGroups().length }})</span>
+            </a>
+          }
+          @if (myGroups().length === 0) {
+            <p class="sidebar-empty">Aún no estás en ningún grupo.</p>
+          }
+          <button class="btn-wf btn-wf--block btn-wf--sm" type="button"
+                  (click)="goToGroupsNew()" style="margin-top:10px;">+ Crear grupo</button>
+          <button class="btn-wf btn-wf--block btn-wf--sm" type="button"
+                  (click)="goToGroupsJoin()" style="margin-top:6px;">→ Unirme con código</button>
+        </div>
+
+        <div class="app-sidebar__section">
+          <div class="app-sidebar__kicker">Mi cuenta</div>
+          <a class="sidebar-row" routerLink="/profile/special-picks" routerLinkActive="is-active">
+            <span><span class="sidebar-row__icon">⭐</span>Picks especiales</span>
+          </a>
+          @if (hasComplete()) {
+            <a class="sidebar-row" routerLink="/mis-comodines" routerLinkActive="is-active">
+              <span><span class="sidebar-row__icon">🃏</span>Mis comodines</span>
+            </a>
+          }
+          <a class="sidebar-row" routerLink="/ranking" routerLinkActive="is-active">
+            <span><span class="sidebar-row__icon">🏆</span>Ranking global</span>
+          </a>
+          <a class="sidebar-row" routerLink="/notificaciones" routerLinkActive="is-active">
+            <span><span class="sidebar-row__icon">🔔</span>Notificaciones</span>
+            @if (unreadCount() > 0) { <span class="pill pill--solid">{{ unreadCount() }}</span> }
+          </a>
+          <a class="sidebar-row" routerLink="/profile" routerLinkActive="is-active">
+            <span><span class="sidebar-row__icon">👤</span>Mi perfil</span>
+          </a>
+          <button class="sidebar-row sidebar-row--logout" type="button" (click)="logout()">
+            <span><span class="sidebar-row__icon">⏻</span>Cerrar sesión</span>
+          </button>
+        </div>
+      }
+    </aside>
+
+    <!-- ============ MOBILE TABBAR (<992px) ============ -->
+    <nav class="app-tabbar" aria-label="Navegación principal">
+      @if (isAdmin()) {
+        <a class="app-tabbar__item" routerLink="/admin" routerLinkActive="is-active" [routerLinkActiveOptions]="{exact: true}" (click)="closeAll()">
+          <span class="icon">🏠</span><span>Home</span>
         </a>
-        <a class="wf-tabbar__item" routerLink="/admin/groups-overview" routerLinkActive="is-active" (click)="closeAll()">
-          <span class="wf-tabbar__icon">👥</span><span>Grupos</span>
+        <a class="app-tabbar__item" routerLink="/admin/groups-overview" routerLinkActive="is-active" (click)="closeAll()">
+          <span class="icon">👥</span><span>Grupos</span>
         </a>
-        <a class="wf-tabbar__item" routerLink="/admin/rankings-overview" routerLinkActive="is-active" (click)="closeAll()">
-          <span class="wf-tabbar__icon">🏆</span><span>Rankings</span>
+        <a class="app-tabbar__item" routerLink="/admin/rankings-overview" routerLinkActive="is-active" (click)="closeAll()">
+          <span class="icon">🏆</span><span>Rankings</span>
         </a>
-        <a class="wf-tabbar__item" routerLink="/admin/fixtures" routerLinkActive="is-active" (click)="closeAll()">
-          <span class="wf-tabbar__icon">🛠</span><span>Partidos</span>
+        <a class="app-tabbar__item" routerLink="/admin/fixtures" routerLinkActive="is-active" (click)="closeAll()">
+          <span class="icon">⚽</span><span>Partidos</span>
         </a>
       } @else {
-        <a class="wf-tabbar__item" routerLink="/picks" routerLinkActive="is-active" (click)="closeAll()">
-          <span class="wf-tabbar__icon">⚽</span><span>Picks</span>
+        <a class="app-tabbar__item" routerLink="/picks" routerLinkActive="is-active" (click)="closeAll()">
+          <span class="icon">⚽</span><span>Picks</span>
         </a>
-        <a class="wf-tabbar__item" routerLink="/groups" routerLinkActive="is-active" (click)="closeAll()">
-          <span class="wf-tabbar__icon">👥</span><span>Grupos</span>
+        <a class="app-tabbar__item" routerLink="/groups" routerLinkActive="is-active" (click)="closeAll()">
+          <span class="icon">👥</span><span>Grupos</span>
         </a>
-        <a class="wf-tabbar__item" routerLink="/ranking" routerLinkActive="is-active" (click)="closeAll()">
-          <span class="wf-tabbar__icon">🏆</span><span>Ranking</span>
+        <a class="app-tabbar__item" routerLink="/ranking" routerLinkActive="is-active" (click)="closeAll()">
+          <span class="icon">🏆</span><span>Ranking</span>
         </a>
-        <a class="wf-tabbar__item" routerLink="/profile" routerLinkActive="is-active" (click)="closeAll()">
-          <span class="wf-tabbar__icon">👤</span><span>Perfil</span>
+        <a class="app-tabbar__item" routerLink="/profile" routerLinkActive="is-active" (click)="closeAll()">
+          <span class="icon">👤</span><span>Perfil</span>
         </a>
       }
     </nav>
   `,
   styles: [`
-    /* ===========================================================
-       Visibility: desktop nav ≥992px, mobile topbar+tabbar <992px
-       =========================================================== */
-    .app-nav-desktop { display: none; }
-    .app-nav-mobile  { display: flex; }
-    .app-nav-tabbar  {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      z-index: 50;
-      box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
-    }
+    /* display: contents permite que los hijos del componente sean
+       grid items directos del .app-shell (topnav, sidebar, main). */
+    :host { display: contents; }
 
-    @media (min-width: 992px) {
-      .app-nav-desktop { display: flex; }
-      .app-nav-mobile  { display: none; }
-      .app-nav-tabbar  { display: none; }
-    }
-
-    /* Brand link sin underline */
-    .app-nav__brand-link { text-decoration: none; color: inherit; }
-    .app-nav__brand-link:hover { text-decoration: none; }
-
-    /* Bell común */
-    .app-nav__bell { font-size: 16px; }
-
-    /* Avatar btn (mobile) — botón sin border */
-    .app-nav__avatar-btn {
-      background: transparent;
-      border: 0;
-      padding: 0;
-      cursor: pointer;
-    }
-
-    /* User dropdown desktop */
-    .app-nav__user-anchor { position: relative; }
-    .app-nav__user-btn {
-      background: transparent;
-      border: 0;
-      padding: 4px 8px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      border-radius: 6px;
-      font: inherit;
-    }
-    .app-nav__user-btn:hover { background: rgba(0,0,0,0.04); }
-
-    /* Mobile user menu — anchored top-right under topbar */
-    :host ::ng-deep .app-nav__mobile-menu {
+    /* Mobile menu (dropdown del avatar) — anclado bajo la topbar */
+    .mobile-menu {
       position: fixed;
       top: 56px;
       right: 12px;
       min-width: 220px;
       z-index: 60;
+      background: var(--wf-paper);
+      border: 1px solid var(--wf-line-2);
+      border-radius: 10px;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+      padding: 6px;
     }
-    @media (min-width: 992px) { :host ::ng-deep .app-nav__mobile-menu { display: none; } }
+    @media (min-width: 992px) { .mobile-menu { display: none; } }
 
-    /* Pill count para badges en items del dropdown */
-    .app-nav__pill-count {
-      margin-left: auto;
-      background: var(--wf-green);
-      color: white;
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-size: 11px;
+    .mobile-menu__item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--wf-ink);
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .mobile-menu__item:hover { background: var(--wf-fill); }
+    .mobile-menu__item--danger { color: var(--wf-danger); }
+    .mobile-menu__sep {
+      border: 0;
+      border-top: 1px solid var(--wf-line-2);
+      margin: 6px 0;
+    }
+
+    /* Sidebar — ítem extra "ver todos" + estado vacío + logout */
+    .sidebar-row--more {
+      color: var(--wf-green-ink);
       font-weight: 700;
     }
-
-    /* Active state para wf-tabbar items via routerLinkActive */
-    :host ::ng-deep .wf-tabbar__item.is-active {
-      color: var(--wf-green-ink);
+    .sidebar-empty {
+      font-size: 11px;
+      color: var(--wf-ink-3);
+      padding: 8px 10px;
+      margin: 0;
+      line-height: 1.4;
     }
-    :host ::ng-deep .wf-tabbar__item.is-active .wf-tabbar__icon {
-      color: var(--wf-green);
-    }
-
-    /* Active state para wf-desk-nav__item via routerLinkActive */
-    :host ::ng-deep .wf-desk-nav__item.is-active {
-      background: var(--wf-green-soft);
-      color: var(--wf-green-ink);
-    }
-
-    /* Padding-bottom global del :host para que el contenido no quede
-       tapado por la tabbar fija en mobile. La tabbar mide ~60px. */
-    @media (max-width: 991px) {
-      :host { display: block; padding-bottom: 64px; }
+    .sidebar-row--logout {
+      width: 100%;
+      text-align: left;
+      border: 0;
+      background: transparent;
+      color: var(--wf-danger);
+      font-family: inherit;
+      cursor: pointer;
+      margin-top: 8px;
     }
   `],
 })
@@ -250,7 +276,6 @@ export class NavComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private userModes = inject(UserModesService);
 
-  drawerOpen = signal(false);
   open = signal<DropdownKey>(null);
 
   isAdmin = computed(() => this.auth.user()?.isAdmin ?? false);
@@ -258,22 +283,15 @@ export class NavComponent implements OnInit, OnDestroy {
   avatar = computed(() => (this.handle() ?? '?')[0]?.toUpperCase() ?? '?');
   hasSimple = computed(() => this.userModes.hasSimple());
   hasComplete = computed(() => this.userModes.hasComplete());
-  eligibleGlobal = computed(() => this.userModes.eligibleForGlobalRanking());
   myGroups = computed<UserGroup[]>(() => this.userModes.groups());
-  // Dropdown desktop limita a 3 grupos para no llenar la pantalla;
-  // si el user tiene más, hint "+ N más" + link "Ver todos los grupos".
-  topGroups = computed<UserGroup[]>(() => this.myGroups().slice(0, 3));
+  topGroups = computed<UserGroup[]>(() => this.myGroups().slice(0, 5));
 
-  // Badge de notificaciones unread. AppSync subscription via observeQuery
-  // mantiene el contador en tiempo real (sin polling). El Observable
-  // se cancela en ngOnDestroy para evitar leaks.
   unreadCount = signal(0);
   private notifSub: { unsubscribe: () => void } | undefined;
 
   async ngOnInit() {
     const userId = this.auth.user()?.sub;
     if (!userId) return;
-    // Initial count + live updates
     this.notifSub = this.api.observeMyNotifications(userId).subscribe({
       next: (snap) => {
         const items = snap.items as Array<{ readAt: string | null }>;
@@ -294,66 +312,22 @@ export class NavComponent implements OnInit, OnDestroy {
   toggle(key: DropdownKey) {
     this.open.update((cur) => (cur === key ? null : key));
   }
-  closeAll() {
-    this.open.set(null);
-    this.drawerOpen.set(false);
-  }
-  closeDrawer() { this.drawerOpen.set(false); }
+  closeAll() { this.open.set(null); }
 
   @HostListener('document:click')
   onDocumentClick() { this.open.set(null); }
 
   @HostListener('document:keydown.escape')
-  onEsc() {
-    if (this.open()) this.open.set(null);
-    else if (this.drawerOpen()) this.closeDrawer();
-  }
+  onEsc() { if (this.open()) this.open.set(null); }
 
-  goProfile() {
-    this.closeAll();
-    void this.router.navigate(['/profile']);
-  }
-
-  goComodines() {
-    this.closeAll();
-    void this.router.navigate(['/mis-comodines']);
-  }
-
-  goNotifications() {
-    this.closeAll();
-    void this.router.navigate(['/notificaciones']);
-  }
-
-  goSpecialPicks() {
-    this.closeAll();
-    void this.router.navigate(['/profile/special-picks']);
-  }
-
-  goToGroup(id: string) {
-    this.closeAll();
-    void this.router.navigate(['/groups', id]);
-  }
-  goToGroups() {
-    this.closeAll();
-    void this.router.navigate(['/groups']);
-  }
-  goToGroupsNew() {
-    this.closeAll();
-    void this.router.navigate(['/groups/new']);
-  }
-  /** Lleva al user al form de unirse-con-código en /groups (anchor #unirme). */
+  goProfile() { this.closeAll(); void this.router.navigate(['/profile']); }
+  goComodines() { this.closeAll(); void this.router.navigate(['/mis-comodines']); }
+  goNotifications() { this.closeAll(); void this.router.navigate(['/notificaciones']); }
+  goSpecialPicks() { this.closeAll(); void this.router.navigate(['/profile/special-picks']); }
+  goToGroupsNew() { this.closeAll(); void this.router.navigate(['/groups/new']); }
   goToGroupsJoin() {
     this.closeAll();
     void this.router.navigate(['/groups'], { fragment: 'unirme' });
-  }
-
-  goToRankingGrupos() {
-    this.closeAll();
-    void this.router.navigate(['/ranking'], { queryParams: { scope: 'grupos' } });
-  }
-  goToRankingGlobal() {
-    this.closeAll();
-    void this.router.navigate(['/ranking'], { queryParams: { scope: 'global' } });
   }
 
   async logout() {

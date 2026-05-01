@@ -14,16 +14,21 @@ import { TriviaPopupComponent } from '../../features/trivia/trivia-popup.compone
     PicksPendingBannerComponent, ToastHostComponent, TriviaPopupComponent,
   ],
   template: `
-    <app-nav />
-    <app-picks-pending-banner />
-    <main class="app-main">
-      <router-outlet />
-    </main>
-    <app-footer />
+    <div class="app-shell">
+      <app-nav />
+      <main class="app-main">
+        <app-picks-pending-banner />
+        <router-outlet />
+        <app-footer />
+      </main>
+    </div>
     <app-toast-host />
     <!-- Popup global de trivia: visible en toda la app cuando hay
          preguntas activas no contestadas (modo COMPLETE). -->
     <app-trivia-popup />
   `,
+  styles: [`
+    :host { display: block; }
+  `],
 })
 export class ShellComponent {}

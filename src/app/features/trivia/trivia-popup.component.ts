@@ -9,137 +9,140 @@ const POST_FINAL_WINDOW_MS = 10 * 60_000;
 
 type Opt = 'A' | 'B' | 'C' | 'D';
 
+interface SponsorMeta {
+  name: string;
+  icon: string;
+}
+
 interface ActiveQuestion {
   id: string;
   matchId: string;
   prompt: string;
   optionA: string; optionB: string; optionC: string; optionD: string;
   homeTeam: string; awayTeam: string;
+  /** Si la trivia está patrocinada, sponsor info parseada del prefijo
+   *  [BRAND:<name>:<icon>] del campo `explanation`. null = sin marca. */
+  sponsor: SponsorMeta | null;
+  /** El resto del explanation (sin el prefijo de marca). */
+  cleanExplanation: string;
 }
 
 /**
- * Popup de trivia global persistente. Se monta en el ShellComponent
- * (visible en toda la app autenticada). Cada 60s busca preguntas
- * activas (matches LIVE o FINAL hace <10 min) que el user no haya
- * contestado y muestra una a la vez.
+ * UX nueva (wireframe Mundial 2026): FAB pill flotante + modal.
+ * - El FAB aparece cuando hay al menos una pregunta activa no contestada.
+ * - Click en el FAB abre el modal. Modal tiene variantes:
+ *     · `trivia-modal--marca`: cuando la pregunta está patrocinada
+ *       (sponsor parseado del prefijo [BRAND:<name>:<icon>] en explanation).
+ *     · `trivia-modal--sinad`: cuando no hay sponsor (header oscuro limpio).
  *
- * Requisito spec: solo modo COMPLETE (las trivias scorean en COMPLETE).
- * SIMPLE-only users no ven el popup.
- *
- * Dismiss: ✕ oculta para esta sesión (en memoria; al reload reaparece
- * si todavía hay activa).
+ * Convención temporal hasta que el modelo TriviaQuestion tenga `sponsorId`:
+ * El admin guarda el `explanation` con prefijo `[BRAND:Coca-Cola:🥤] Texto…`
+ * y el front lo parsea para decidir qué variante de modal mostrar.
  */
 @Component({
   standalone: true,
   selector: 'app-trivia-popup',
   template: `
     @if (current(); as q) {
-      <div class="trivia-popup" role="dialog" aria-live="polite">
-        <header class="trivia-popup__head">
-          <span class="trivia-popup__kicker">
-            ⚡ Trivia · {{ q.homeTeam }} vs {{ q.awayTeam }}
-          </span>
-          <button type="button" class="trivia-popup__x"
-                  (click)="dismiss()" title="Ocultar">×</button>
-        </header>
-        <p class="trivia-popup__prompt">{{ q.prompt }}</p>
-        <div class="trivia-popup__opts">
-          @for (opt of OPTS; track opt.key) {
-            <button type="button" class="trivia-popup__opt"
-                    [disabled]="submitting()"
-                    [class.is-selected]="picked() === opt.key"
-                    (click)="answer(q, opt.key)">
-              <strong>{{ opt.key }}</strong> {{ q[opt.field] }}
-            </button>
-          }
-        </div>
-        @if (msg()) {
-          <p class="trivia-popup__msg">{{ msg() }}</p>
+      <!-- FAB pill (visible permanentemente mientras haya pregunta activa) -->
+      <button type="button" class="trivia-fab"
+              aria-label="Jugar trivia"
+              (click)="openModal()">
+        <span class="trivia-fab__icon">⚡</span>
+        <span>Trivia · +10 pts</span>
+        @if (queueRemaining() > 1) {
+          <span class="trivia-fab__time">{{ queueRemaining() }}</span>
         }
+      </button>
+
+      <!-- Modal (con variante marca/sinad) -->
+      <div class="trivia-modal"
+           [class.is-open]="modalOpen()"
+           [class.trivia-modal--marca]="q.sponsor !== null"
+           [class.trivia-modal--sinad]="q.sponsor === null"
+           role="dialog" aria-modal="true">
+        <button type="button" class="trivia-modal__close-overlay"
+                aria-label="Cerrar" (click)="closeModal()"></button>
+        <div class="trivia-modal__card">
+
+          @if (q.sponsor; as s) {
+            <div class="trivia-sponsor">
+              <div class="trivia-sponsor__left">
+                <div class="trivia-sponsor__logo">{{ s.icon }}</div>
+                <div>
+                  <div class="trivia-sponsor__kicker">PRESENTADA POR</div>
+                  <div class="trivia-sponsor__name">{{ s.name }}</div>
+                </div>
+              </div>
+              <span class="trivia-sponsor__ad">PUBLICIDAD</span>
+            </div>
+          }
+
+          <div class="trivia-head">
+            <div class="trivia-head__left">
+              <span class="trivia-head__icon">⚡</span>
+              <div>
+                <div class="trivia-head__title">TRIVIA · {{ q.homeTeam }} vs {{ q.awayTeam }}</div>
+                <div class="trivia-head__sub">+10 pts si aciertas</div>
+              </div>
+            </div>
+            <div class="trivia-head__right">
+              <button type="button" class="trivia-head__close"
+                      aria-label="Cerrar" (click)="closeModal()">✕</button>
+            </div>
+          </div>
+
+          <div class="trivia-body">
+            <div class="trivia-step">PREGUNTA {{ currentIndex() + 1 }} DE {{ queue().length }}</div>
+
+            <h2 class="trivia-question">{{ q.prompt }}</h2>
+
+            <div class="trivia-options">
+              @for (opt of OPTS; track opt.key) {
+                <button type="button" class="trivia-option"
+                        [class.is-selected]="picked() === opt.key"
+                        [disabled]="submitting()"
+                        (click)="select(opt.key)">
+                  <span class="trivia-option__letter">{{ opt.key }}</span>
+                  <span class="trivia-option__text">{{ q[opt.field] }}</span>
+                  <span class="trivia-option__check">✓</span>
+                </button>
+              }
+            </div>
+
+            @if (msg()) {
+              <p class="trivia-msg">{{ msg() }}</p>
+            }
+
+            <div class="trivia-actions">
+              <button type="button" class="trivia-skip" (click)="skip()">↶ Saltar</button>
+              <button type="button" class="trivia-next"
+                      [disabled]="picked() === null || submitting()"
+                      (click)="confirm()">
+                {{ submitting() ? 'Enviando…' : 'Confirmar →' }}
+              </button>
+            </div>
+          </div>
+
+          @if (q.sponsor) {
+            <div class="trivia-foot">
+              <span class="trivia-foot__text">Trivia patrocinada · acierta y gana un comodín</span>
+            </div>
+          }
+
+        </div>
       </div>
     }
   `,
   styles: [`
-    .trivia-popup {
-      position: fixed;
-      bottom: var(--space-lg);
-      left: var(--space-lg);
-      z-index: 60;
-      width: 360px;
-      max-width: calc(100vw - 2 * var(--space-lg));
-      background: var(--color-primary-white);
-      border: 1px solid rgba(0,0,0,0.08);
-      border-left: 3px solid var(--color-primary-green);
-      border-radius: var(--radius-md);
-      padding: var(--space-md);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-      animation: trivia-pop 200ms cubic-bezier(0.2, 0.9, 0.3, 1.4);
-    }
-    @keyframes trivia-pop {
-      from { transform: translateY(20px); opacity: 0; }
-      to   { transform: translateY(0); opacity: 1; }
-    }
-    .trivia-popup__head {
-      display: flex; justify-content: space-between; align-items: flex-start;
-      gap: var(--space-sm);
-      margin-bottom: var(--space-sm);
-    }
-    .trivia-popup__kicker {
-      font-size: var(--fs-xs);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      font-weight: var(--fw-bold);
-      color: var(--color-primary-green);
-      line-height: 1.3;
-    }
-    .trivia-popup__x {
-      background: transparent; border: 0;
-      cursor: pointer; font-size: 22px; line-height: 1;
-      color: var(--color-text-muted);
-      padding: 0; margin: -4px -4px 0 0;
-    }
-    .trivia-popup__prompt {
-      font-size: var(--fs-sm);
-      line-height: 1.4;
-      margin-bottom: var(--space-sm);
-      font-weight: var(--fw-semibold);
-    }
-    .trivia-popup__opts {
-      display: grid; gap: 4px;
-    }
-    .trivia-popup__opt {
-      text-align: left;
-      background: var(--color-primary-grey, #f4f4f4);
-      border: 0;
+    .trivia-msg {
+      margin-top: 12px;
       padding: 8px 10px;
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      font: inherit;
-      font-size: var(--fs-sm);
-      transition: background 100ms;
-    }
-    .trivia-popup__opt:hover:not(:disabled) {
-      background: rgba(0, 200, 100, 0.10);
-    }
-    .trivia-popup__opt.is-selected {
-      background: var(--color-primary-green);
-      color: var(--color-primary-white);
-    }
-    .trivia-popup__opt strong { margin-right: 6px; }
-    .trivia-popup__opt:disabled { opacity: 0.6; cursor: not-allowed; }
-    .trivia-popup__msg {
-      font-size: var(--fs-xs);
-      color: var(--color-primary-green);
-      margin-top: var(--space-sm);
-    }
-
-    @media (max-width: 480px) {
-      .trivia-popup {
-        left: var(--space-sm);
-        right: var(--space-sm);
-        bottom: var(--space-sm);
-        width: auto;
-      }
+      background: var(--wf-fill);
+      border-radius: 6px;
+      font-size: 12px;
+      color: var(--wf-ink-2);
+      text-align: center;
     }
   `],
 })
@@ -155,16 +158,24 @@ export class TriviaPopupComponent implements OnInit, OnDestroy {
     { key: 'D' as Opt, field: 'optionD' as const },
   ];
 
-  /** Cola de preguntas activas no contestadas */
-  private queue = signal<ActiveQuestion[]>([]);
-  /** IDs dismissed esta sesión */
+  queue = signal<ActiveQuestion[]>([]);
   private dismissed = signal<Set<string>>(new Set());
 
-  current = computed<ActiveQuestion | null>(() => {
+  /** Cola sin las dismisseadas. */
+  private visibleQueue = computed(() => {
     const dismissed = this.dismissed();
-    return this.queue().find((q) => !dismissed.has(q.id)) ?? null;
+    return this.queue().filter((q) => !dismissed.has(q.id));
   });
 
+  current = computed<ActiveQuestion | null>(() => this.visibleQueue()[0] ?? null);
+  currentIndex = computed(() => {
+    const cur = this.current();
+    if (!cur) return 0;
+    return this.queue().findIndex((q) => q.id === cur.id);
+  });
+  queueRemaining = computed(() => this.visibleQueue().length);
+
+  modalOpen = signal(false);
   picked = signal<Opt | null>(null);
   submitting = signal(false);
   msg = signal<string | null>(null);
@@ -172,7 +183,6 @@ export class TriviaPopupComponent implements OnInit, OnDestroy {
   private pollTimer: ReturnType<typeof setInterval> | undefined;
 
   async ngOnInit() {
-    // Solo COMPLETE-mode users (las trivias scorean solo en COMPLETE).
     if (!this.userModes.hasComplete()) return;
     await this.refresh();
     this.pollTimer = setInterval(() => void this.refresh(), POLL_MS);
@@ -182,7 +192,20 @@ export class TriviaPopupComponent implements OnInit, OnDestroy {
     if (this.pollTimer) clearInterval(this.pollTimer);
   }
 
-  dismiss() {
+  openModal() {
+    this.modalOpen.set(true);
+    this.picked.set(null);
+    this.msg.set(null);
+  }
+  closeModal() {
+    this.modalOpen.set(false);
+  }
+
+  select(opt: Opt) {
+    this.picked.set(opt);
+  }
+
+  skip() {
     const cur = this.current();
     if (!cur) return;
     this.dismissed.update((s) => {
@@ -192,30 +215,35 @@ export class TriviaPopupComponent implements OnInit, OnDestroy {
     });
     this.picked.set(null);
     this.msg.set(null);
+    if (this.queueRemaining() === 0) {
+      this.closeModal();
+    }
   }
 
-  async answer(q: ActiveQuestion, opt: Opt) {
-    if (this.submitting()) return;
+  async confirm() {
+    const cur = this.current();
+    const opt = this.picked();
+    if (!cur || !opt || this.submitting()) return;
     const userId = this.auth.user()?.sub;
     if (!userId) return;
-    this.picked.set(opt);
+
     this.submitting.set(true);
     this.msg.set(null);
     try {
       await this.api.upsertTriviaAnswer({
-        userId, questionId: q.id, matchId: q.matchId, selectedOption: opt,
+        userId, questionId: cur.id, matchId: cur.matchId, selectedOption: opt,
       });
-      this.msg.set('Respuesta enviada — la veremos cuando termine el partido.');
-      // Quitar la pregunta de la cola tras 1.5s para que el user vea el feedback
+      this.msg.set('✓ Respuesta enviada');
       setTimeout(() => {
-        this.queue.update((arr) => arr.filter((x) => x.id !== q.id));
+        this.queue.update((arr) => arr.filter((x) => x.id !== cur.id));
         this.picked.set(null);
         this.msg.set(null);
-      }, 1500);
+        if (this.queueRemaining() === 0) this.closeModal();
+      }, 1200);
     } catch (err) {
       this.msg.set('No se pudo guardar. Intenta de nuevo.');
       // eslint-disable-next-line no-console
-      console.warn('[trivia-popup] answer failed', err);
+      console.warn('[trivia] answer failed', err);
     } finally {
       this.submitting.set(false);
     }
@@ -236,15 +264,12 @@ export class TriviaPopupComponent implements OnInit, OnDestroy {
       const teamMap = new Map<string, string>();
       for (const t of teamsRes.data ?? []) teamMap.set(t.slug, t.name);
 
-      // Match "live trivia window" = no FINAL OR FINAL hace <10min.
       const now = Date.now();
       const liveMatches = (matchesRes.data ?? []).filter((m) => {
         if (m.status === 'FINAL') {
           const upd = m.updatedAt ? Date.parse(m.updatedAt) : 0;
           return now < upd + POST_FINAL_WINDOW_MS;
         }
-        // Solo dentro de 0..3h post-kickoff (heurístico para no sondear
-        // matches lejanos en el futuro).
         const k = Date.parse(m.kickoffAt);
         return now >= k && now < k + 3 * 60 * 60_000;
       });
@@ -254,32 +279,61 @@ export class TriviaPopupComponent implements OnInit, OnDestroy {
         return;
       }
 
-      // Para cada match en ventana, traer questions + mis answers.
       const collected: ActiveQuestion[] = [];
       for (const m of liveMatches) {
         const [qRes, aRes] = await Promise.all([
           this.api.listTriviaByMatch(m.id),
           this.api.myTriviaAnswers(userId, m.id),
         ]);
-        const answeredQids = new Set(((aRes.data ?? []) as Array<{ questionId: string }>).map((a) => a.questionId));
+        const answeredQids = new Set(
+          ((aRes.data ?? []) as Array<{ questionId: string }>).map((a) => a.questionId),
+        );
         for (const q of (qRes.data ?? []) as Array<{
           id: string; prompt: string;
           optionA: string; optionB: string; optionC: string; optionD: string;
+          explanation: string | null;
         }>) {
           if (answeredQids.has(q.id)) continue;
+          const parsed = parseSponsor(q.explanation);
           collected.push({
             id: q.id, matchId: m.id, prompt: q.prompt,
             optionA: q.optionA, optionB: q.optionB,
             optionC: q.optionC, optionD: q.optionD,
             homeTeam: teamMap.get(m.homeTeamId) ?? m.homeTeamId,
             awayTeam: teamMap.get(m.awayTeamId) ?? m.awayTeamId,
+            sponsor: parsed.sponsor,
+            cleanExplanation: parsed.cleanExplanation,
           });
         }
       }
       this.queue.set(collected);
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.warn('[trivia-popup] refresh failed', err);
+      console.warn('[trivia] refresh failed', err);
     }
   }
+}
+
+/**
+ * Parsea el prefijo [BRAND:<name>:<icon>] del campo explanation.
+ * - Con prefijo: `[BRAND:Coca-Cola:🥤] Esta es la explicación.`
+ *   → { sponsor: { name: "Coca-Cola", icon: "🥤" }, cleanExplanation: "Esta es la explicación." }
+ * - Sin prefijo: `Texto explicación normal`
+ *   → { sponsor: null, cleanExplanation: "Texto explicación normal" }
+ *
+ * Esta es una convención temporal mientras TriviaQuestion no tiene el
+ * campo `sponsorId` en el schema. Cuando se agregue, este parser puede
+ * sustituirse por una resolución real al modelo Sponsor.
+ */
+function parseSponsor(explanation: string | null | undefined): {
+  sponsor: SponsorMeta | null;
+  cleanExplanation: string;
+} {
+  if (!explanation) return { sponsor: null, cleanExplanation: '' };
+  const m = explanation.match(/^\s*\[BRAND:([^:\]]+):([^\]]+)\]\s*(.*)$/s);
+  if (!m) return { sponsor: null, cleanExplanation: explanation };
+  return {
+    sponsor: { name: m[1].trim(), icon: m[2].trim() },
+    cleanExplanation: m[3].trim(),
+  };
 }
