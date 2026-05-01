@@ -29,7 +29,7 @@ import {
   CognitoIdentityProviderClient,
   ListUsersCommand,
   AdminDeleteUserCommand,
-  InitiateAuthCommand,
+  AdminInitiateAuthCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -58,9 +58,12 @@ async function adminAuth() {
   if (!ADMIN_PASSWORD) {
     throw new Error('Falta env ADMIN_PASSWORD (password de smoketest)');
   }
-  const res = await cognito.send(new InitiateAuthCommand({
+  // Usamos AdminInitiateAuth (requiere AWS creds con cognito-idp:AdminInitiateAuth).
+  // El client tiene ALLOW_ADMIN_USER_PASSWORD_AUTH habilitado, no USER_PASSWORD_AUTH.
+  const res = await cognito.send(new AdminInitiateAuthCommand({
+    UserPoolId: USER_POOL_ID,
     ClientId: CLIENT_ID,
-    AuthFlow: 'USER_PASSWORD_AUTH',
+    AuthFlow: 'ADMIN_USER_PASSWORD_AUTH',
     AuthParameters: {
       USERNAME: ADMIN_EMAIL,
       PASSWORD: ADMIN_PASSWORD,
@@ -68,8 +71,7 @@ async function adminAuth() {
   }));
   const idToken = res.AuthenticationResult?.IdToken;
   if (!idToken) {
-    throw new Error('No id-token devuelto. Verificá que USER_PASSWORD_AUTH esté habilitado ' +
-                    'en el client del pool, y que el admin smoketest no esté en CHALLENGE pendiente.');
+    throw new Error('No id-token devuelto. ¿Hay challenge pendiente en el user (NEW_PASSWORD_REQUIRED, MFA, etc.)?');
   }
   return idToken;
 }
