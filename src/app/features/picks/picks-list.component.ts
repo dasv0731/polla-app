@@ -1,11 +1,11 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { getUrl } from 'aws-amplify/storage';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService } from '../../core/user/user-modes.service';
 import { TimeService } from '../../core/time/time.service';
-import { PickCardComponent } from './pick-card.component';
 import { SponsorRedeemComponent } from './sponsor-redeem.component';
 
 type BannerSlot = 'banner1' | 'banner2' | 'banner3';
@@ -55,10 +55,17 @@ interface DayBlock {
   matches: MatchWithMeta[];
 }
 
+interface TriviaInfo {
+  count: number;
+  title: string;
+  sub: string;
+  branded: boolean;
+}
+
 @Component({
   standalone: true,
   selector: 'app-picks-list',
-  imports: [PickCardComponent, RouterLink, RouterLinkActive, SponsorRedeemComponent],
+  imports: [NgTemplateOutlet, RouterLink, RouterLinkActive, SponsorRedeemComponent],
   template: `
     <section class="page">
 
@@ -149,14 +156,32 @@ interface DayBlock {
                 </p>
               </div>
             }
-            @for (day of visibleDays(); track day.dateKey) {
+            @for (day of visibleDays(); track day.dateKey; let dayIdx = $index) {
               <div class="day-kicker">📅 {{ day.label }} · {{ day.matches.length }} {{ day.matches.length === 1 ? 'partido' : 'partidos' }}</div>
               @for (m of day.matches; track m.id) {
-                <app-pick-card
-                  [match]="m"
-                  [phaseLabel]="m.phaseLabel"
-                  [existingPick]="m.pick"
-                  [pointsEarned]="m.pick?.pointsEarned" />
+                <ng-container *ngTemplateOutlet="cardTpl; context: {$implicit: m}"></ng-container>
+              }
+              @if (dayIdx === 0 && visibleDays().length > 1) {
+                <div class="ad-feed ad-feed--coca">
+                  <span class="ad-feed__badge">AD</span>
+                  <span class="ad-feed__icon">🥤</span>
+                  <div class="ad-feed__body">
+                    <div class="ad-feed__title">Coca-Cola refresca tu Mundial</div>
+                    <div class="ad-feed__sponsor">COCA-COLA · Patrocinador oficial</div>
+                  </div>
+                  <a href="#" class="ad-feed__cta" (click)="$event.preventDefault()">Ver promo</a>
+                </div>
+              }
+              @if (dayIdx === 2) {
+                <div class="ad-feed ad-feed--adidas">
+                  <span class="ad-feed__badge">AD</span>
+                  <span class="ad-feed__icon">👟</span>
+                  <div class="ad-feed__body">
+                    <div class="ad-feed__title">adidas — Equípate para el Mundial</div>
+                    <div class="ad-feed__sponsor">ADIDAS · Sponsor oficial</div>
+                  </div>
+                  <a href="#" class="ad-feed__cta" (click)="$event.preventDefault()">Ver colección</a>
+                </div>
               }
             }
             @if (canLoadMore()) {
@@ -174,14 +199,77 @@ interface DayBlock {
               </div>
             } @else {
               @for (m of playedMatches(); track m.id) {
-                <app-pick-card
-                  [match]="m"
-                  [phaseLabel]="m.phaseLabel"
-                  [existingPick]="m.pick"
-                  [pointsEarned]="m.pick?.pointsEarned" />
+                <ng-container *ngTemplateOutlet="cardTpl; context: {$implicit: m}"></ng-container>
               }
             }
           }
+
+          <!-- Template del match-card (readonly + click → /picks/match/:id) -->
+          <ng-template #cardTpl let-m>
+            @let trivia = triviaInfo(m.id);
+            <article class="match-card"
+                     [class.match-card--accent]="!!trivia"
+                     [class.match-card--dim]="m.pick === null && isPlayed(m)">
+              <a class="match-card__body" [routerLink]="['/picks/match', m.id]">
+                <div class="match-card__head">
+                  <span>{{ formatKickoff(m.kickoffAt) }}@if (m.phaseLabel) { · {{ m.phaseLabel }} }</span>
+                  @if (isLive(m)) {
+                    <span class="live">EN VIVO</span>
+                  } @else if (isPlayed(m)) {
+                    <span class="text-mute">Final</span>
+                  } @else {
+                    <span class="text-mute">{{ countdown(m.kickoffAt) }}</span>
+                  }
+                </div>
+                <div class="match" style="padding:0;">
+                  <div class="match__team">
+                    <span class="flag">{{ flagEmoji(m.homeFlag) }}</span>
+                    {{ m.homeTeamName }}
+                  </div>
+                  <div class="score">
+                    <div class="score__num"
+                         [class.score__num--filled]="hasFilledScore(m, 'home')">
+                      {{ scoreDisplay(m, 'home') }}
+                    </div>
+                    <span>—</span>
+                    <div class="score__num"
+                         [class.score__num--filled]="hasFilledScore(m, 'away')">
+                      {{ scoreDisplay(m, 'away') }}
+                    </div>
+                  </div>
+                  <div class="match__team match__team--right">
+                    {{ m.awayTeamName }}
+                    <span class="flag">{{ flagEmoji(m.awayFlag) }}</span>
+                  </div>
+                </div>
+                <div class="match-card__pills">
+                  @if (m.pick && isPlayed(m) && m.pick.exactScore) {
+                    <span class="pill pill--green">✓ Exacto · +{{ m.pick.pointsEarned ?? 0 }}</span>
+                  } @else if (m.pick && isPlayed(m) && m.pick.correctResult) {
+                    <span class="pill pill--green">✓ Resultado · +{{ m.pick.pointsEarned ?? 0 }}</span>
+                  } @else if (m.pick && isPlayed(m)) {
+                    <span class="pill">Sin pts</span>
+                  } @else if (m.pick) {
+                    <span class="pill pill--green">✓ Guardado</span>
+                  } @else if (!isPlayed(m)) {
+                    <span class="pill">Sin pick</span>
+                  }
+                </div>
+              </a>
+              @if (trivia) {
+                <a class="match-trivia"
+                   [routerLink]="['/picks/trivia', m.id]"
+                   (click)="$event.stopPropagation()">
+                  <span class="match-trivia__icon">⚡</span>
+                  <div class="match-trivia__body">
+                    <div class="match-trivia__title">{{ trivia.title }}</div>
+                    <div class="match-trivia__sub">{{ trivia.sub }}</div>
+                  </div>
+                  <span class="btn-wf btn-wf--sm btn-wf--ink">Jugar</span>
+                </a>
+              }
+            </article>
+          </ng-template>
 
           <!-- Banners de sponsors: 3 hileras, una por slot. Solo visible
                si hay sponsors con imagen en ese slot. -->
@@ -396,6 +484,14 @@ export class PicksListComponent implements OnInit {
     return { ...p, totalLabel: this.totalLabel(p.prize1st, p.prize2nd, p.prize3rd) };
   });
 
+  /** Mapa matchId → preguntas de trivia del torneo. Pre-cargado en
+   *  ngOnInit para que el row inline `match-trivia` se renderice sin
+   *  fetch adicional por card. */
+  private triviaByMatch = signal<Map<string, Array<{
+    id: string;
+    explanation: string | null;
+  }>>>(new Map());
+
   bannerSlotKeys: BannerSlot[] = ['banner1', 'banner2', 'banner3'];
   private banners = signal<Record<BannerSlot, SponsorBanner[]>>({
     banner1: [], banner2: [], banner3: [],
@@ -409,6 +505,73 @@ export class PicksListComponent implements OnInit {
     // el DOM. Llevamos al user a una sección visible o abrimos el redeem
     // como página independiente. Por ahora hacemos scroll al final.
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  }
+
+  // ---------- Helpers para el match-card inline ----------
+  isLive(m: MatchWithMeta): boolean {
+    return m.status === 'IN_PROGRESS' || m.status === 'LIVE';
+  }
+  isPlayed(m: MatchWithMeta): boolean {
+    return m.status === 'FINAL';
+  }
+  hasFilledScore(m: MatchWithMeta, side: 'home' | 'away'): boolean {
+    if (this.isPlayed(m) || this.isLive(m)) {
+      const v = side === 'home' ? m.homeScore : m.awayScore;
+      return v != null;
+    }
+    if (m.pick) {
+      const v = side === 'home' ? m.pick.homeScorePred : m.pick.awayScorePred;
+      return v != null;
+    }
+    return false;
+  }
+  scoreDisplay(m: MatchWithMeta, side: 'home' | 'away'): string {
+    if (this.isPlayed(m) || this.isLive(m)) {
+      const v = side === 'home' ? m.homeScore : m.awayScore;
+      return v != null ? String(v) : '—';
+    }
+    if (m.pick) {
+      return String(side === 'home' ? m.pick.homeScorePred : m.pick.awayScorePred);
+    }
+    return '—';
+  }
+  formatKickoff(iso: string): string {
+    return this.time.formatKickoff(iso);
+  }
+  countdown(iso: string): string {
+    const ms = new Date(iso).getTime() - Date.now();
+    if (ms < 0) return 'jugando';
+    const h = Math.round(ms / 3_600_000);
+    if (h < 1) return 'pronto';
+    if (h < 24) return `en ${h}h`;
+    const d = Math.round(h / 24);
+    return d === 1 ? 'mañana' : `en ${d}d`;
+  }
+  flagEmoji(code: string): string {
+    if (!code || code.length < 2) return '';
+    const A = 0x1F1E6;
+    const a = code.toUpperCase().charCodeAt(0);
+    const b = code.toUpperCase().charCodeAt(1);
+    if (Number.isNaN(a) || Number.isNaN(b)) return '';
+    return String.fromCodePoint(A + (a - 65), A + (b - 65));
+  }
+
+  /** Devuelve info de trivia para el row inline si hay preguntas para el match. */
+  triviaInfo(matchId: string): TriviaInfo | null {
+    const list = this.triviaByMatch().get(matchId);
+    if (!list || list.length === 0) return null;
+    const sponsor = parseSponsor(list[0]?.explanation ?? null);
+    const points = list.length * 10;
+    return {
+      count: list.length,
+      title: list.length === 1
+        ? `Trivia · +${points} pts si aciertas`
+        : `Trivia · +${points} pts si aciertas las ${list.length}`,
+      sub: sponsor
+        ? `Patrocinada por ${sponsor.name}`
+        : 'Versión sin publicidad',
+      branded: !!sponsor,
+    };
   }
 
   upcomingCount = computed(() => this.matches().filter((m) => !this.time.isPast(m.kickoffAt)).length);
@@ -495,14 +658,26 @@ export class PicksListComponent implements OnInit {
     }
 
     try {
-      const [matchesRes, picksRes, phasesRes, teamsRes, totalsRes, leaderboardRes] = await Promise.all([
+      const [matchesRes, picksRes, phasesRes, teamsRes, totalsRes, leaderboardRes, triviaRes] = await Promise.all([
         this.api.listMatches(TOURNAMENT_ID),
         this.api.myPicks(userId),
         this.api.listPhases(TOURNAMENT_ID),
         this.api.listTeams(TOURNAMENT_ID),
         this.api.myTotal(userId, TOURNAMENT_ID),
         this.api.listLeaderboard(TOURNAMENT_ID, 200),
+        this.api.listTriviaByTournament(TOURNAMENT_ID),
       ]);
+
+      // Map matchId → preguntas de trivia para el row inline
+      const triviaMap = new Map<string, Array<{ id: string; explanation: string | null }>>();
+      for (const q of (triviaRes.data ?? []) as Array<{
+        id: string; matchId: string; explanation: string | null;
+      }>) {
+        const arr = triviaMap.get(q.matchId) ?? [];
+        arr.push({ id: q.id, explanation: q.explanation ?? null });
+        triviaMap.set(q.matchId, arr);
+      }
+      this.triviaByMatch.set(triviaMap);
 
       const phaseLabels = new Map<string, string>(
         (phasesRes.data ?? []).map((p) => [p.id, p.name]),
@@ -611,4 +786,16 @@ export class PicksListComponent implements OnInit {
       /* ignore — banners are best-effort */
     }
   }
+}
+
+/**
+ * Parsea el prefijo `[BRAND:<nombre>:<icono>]` del campo `explanation`
+ * de una TriviaQuestion. Esta es la convención temporal hasta que el
+ * schema agregue un campo `sponsorId` real (ver
+ * docs/sponsor-trivia-schema-migration.md).
+ */
+function parseSponsor(explanation: string | null): { name: string; icon: string } | null {
+  if (!explanation) return null;
+  const m = explanation.match(/^\s*\[BRAND:([^:\]]+):([^\]]+)\]\s*/);
+  return m ? { name: m[1].trim(), icon: m[2].trim() } : null;
 }

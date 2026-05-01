@@ -439,6 +439,12 @@ export class ApiService {
       limit: 200,
     });
   }
+  listTriviaByTournament(tournamentId: string) {
+    return apiClient.models.TriviaQuestion.list({
+      filter: { tournamentId: { eq: tournamentId } },
+      limit: 1000,
+    });
+  }
   createTriviaQuestion(input: {
     matchId: string;
     tournamentId: string;
