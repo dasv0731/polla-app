@@ -5,6 +5,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { TimeService } from '../../core/time/time.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
+import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
 
 const TOURNAMENT_ID = 'mundial-2026';
 const SAVE_DEBOUNCE_MS = 600;
@@ -65,7 +66,7 @@ interface Totals {
 @Component({
   standalone: true,
   selector: 'app-picks-tabla-grupos',
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink, RouterLinkActive, TeamFlagComponent],
   template: `
     <section class="page">
 
@@ -118,20 +119,27 @@ interface Totals {
         </div>
       </div>
 
-      @if (view() === 'pred') {
+      @if (loading()) {
+        <p class="loading-msg">Cargando tabla…</p>
+      } @else if (view() === 'pred' && !hasAnyPrediction()) {
         <div class="empty-block">
-          <h3>Tu predicción de tabla final</h3>
+          <h3>Aún no tienes predicción de tabla</h3>
           <p>
             Arrastra equipos en el editor para predecir cómo terminará cada grupo.
             La predicción cierra al kickoff inaugural.
           </p>
           <a class="btn-wf btn-wf--primary" routerLink="/picks/group-stage/predict">
-            ✏ Editar mi predicción →
+            ✏ Hacer mi predicción →
           </a>
         </div>
-      } @else if (loading()) {
-        <p class="loading-msg">Cargando tabla…</p>
       } @else {
+        @if (view() === 'pred') {
+          <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+            <a class="btn-wf btn-wf--sm" routerLink="/picks/group-stage/predict">
+              ✏ Editar mi predicción →
+            </a>
+          </div>
+        }
         <div class="standings-grid">
           @for (g of groups(); track g.letter) {
             <div class="standings-card">
@@ -144,25 +152,52 @@ interface Totals {
                   <tr>
                     <th>#</th>
                     <th>Selección</th>
-                    <th class="center">PJ</th>
-                    <th class="center">DG</th>
-                    <th class="center">PTS</th>
+                    @if (view() === 'real') {
+                      <th class="center">PJ</th>
+                      <th class="center">DG</th>
+                      <th class="center">PTS</th>
+                    }
                   </tr>
                 </thead>
                 <tbody>
-                  @for (r of g.rows; track r.team.slug; let i = $index) {
-                    <tr [class.qualify]="i < 2">
-                      <td class="pos">{{ i + 1 }}</td>
-                      <td>
-                        @if (r.team.flagCode) {
-                          <span class="fi fi-{{ r.team.flagCode.toLowerCase() }} flag-inline"></span>
-                        }
-                        <span class="text-bold">{{ r.team.name }}</span>
-                      </td>
-                      <td class="num-cell">{{ r.played }}</td>
-                      <td class="num-cell">{{ r.gd > 0 ? '+' + r.gd : r.gd }}</td>
-                      <td class="pts-cell">{{ r.pts }}</td>
-                    </tr>
+                  @if (view() === 'real') {
+                    @for (r of g.rows; track r.team.slug; let i = $index) {
+                      <tr [class.qualify]="i < 2">
+                        <td class="pos">{{ i + 1 }}</td>
+                        <td>
+                          <app-team-flag
+                            [flagCode]="r.team.flagCode"
+                            [name]="r.team.name"
+                            [size]="18" />
+                          <span class="text-bold" style="margin-left:6px;">{{ r.team.name }}</span>
+                        </td>
+                        <td class="num-cell">{{ r.played }}</td>
+                        <td class="num-cell">{{ r.gd > 0 ? '+' + r.gd : r.gd }}</td>
+                        <td class="pts-cell">{{ r.pts }}</td>
+                      </tr>
+                    }
+                  } @else {
+                    @let predRows = predRowsFor(g.letter);
+                    @if (predRows.length > 0) {
+                      @for (t of predRows; track t.slug; let i = $index) {
+                        <tr [class.qualify]="i < 2">
+                          <td class="pos">{{ i + 1 }}</td>
+                          <td>
+                            <app-team-flag
+                              [flagCode]="t.flagCode"
+                              [name]="t.name"
+                              [size]="18" />
+                            <span class="text-bold" style="margin-left:6px;">{{ t.name }}</span>
+                          </td>
+                        </tr>
+                      }
+                    } @else {
+                      <tr>
+                        <td colspan="2" style="text-align:center;color:var(--wf-ink-3);font-size:11px;padding:14px 8px;">
+                          Sin predicción para este grupo
+                        </td>
+                      </tr>
+                    }
                   }
                 </tbody>
               </table>
@@ -182,8 +217,10 @@ interface Totals {
             <span class="picks-tabla-legend__bar"></span>
             Clasifica a octavos
           </span>
-          @if (groups().length > 0) {
+          @if (view() === 'real') {
             <span>· La tabla se actualiza a medida que se publican resultados.</span>
+          } @else {
+            <span>· Tu predicción · cierra al kickoff inaugural.</span>
           }
         </div>
       }
@@ -239,22 +276,23 @@ interface Totals {
                     </div>
                     <div class="match" style="padding:0;">
                       <div class="match__team">
-                        @if (teamFlag(m.homeTeamId)) {
-                          <span class="fi fi-{{ teamFlag(m.homeTeamId) }} flag"></span>
-                        }
+                        <app-team-flag
+                          [flagCode]="teamFlag(m.homeTeamId)"
+                          [name]="teamName(m.homeTeamId)"
+                          [size]="22" />
                         {{ teamName(m.homeTeamId) }}
                       </div>
 
                       <div class="score">
                         @if (isUpcoming) {
                           <input type="number" class="score__input" min="0" max="9"
-                                 [value]="pick?.homeScorePred ?? ''"
+                                 [value]="bannerScore(m.id, 'home')"
                                  placeholder="0"
                                  (input)="onScoreInput(m.id, 'home', $event)"
                                  [attr.aria-label]="'Goles ' + teamName(m.homeTeamId)">
                           <span>—</span>
                           <input type="number" class="score__input" min="0" max="9"
-                                 [value]="pick?.awayScorePred ?? ''"
+                                 [value]="bannerScore(m.id, 'away')"
                                  placeholder="0"
                                  (input)="onScoreInput(m.id, 'away', $event)"
                                  [attr.aria-label]="'Goles ' + teamName(m.awayTeamId)">
@@ -271,9 +309,10 @@ interface Totals {
 
                       <div class="match__team match__team--right">
                         {{ teamName(m.awayTeamId) }}
-                        @if (teamFlag(m.awayTeamId)) {
-                          <span class="fi fi-{{ teamFlag(m.awayTeamId) }} flag"></span>
-                        }
+                        <app-team-flag
+                          [flagCode]="teamFlag(m.awayTeamId)"
+                          [name]="teamName(m.awayTeamId)"
+                          [size]="22" />
                       </div>
                     </div>
 
@@ -356,6 +395,25 @@ export class PicksTablaGruposComponent implements OnInit {
   groups = signal<GroupBlock[]>([]);
   pickByMatch = signal<Map<string, PickLite>>(new Map());
 
+  /** Predicción del user por grupo: groupLetter → [pos1Slug..pos4Slug].
+   *  Se carga en ngOnInit (prefiriendo COMPLETE > SIMPLE). */
+  private predByGroup = signal<Map<string, string[]>>(new Map());
+
+  hasAnyPrediction = computed(() => this.predByGroup().size > 0);
+
+  /** Para el view 'pred': ordena teams del grupo según pos1..pos4
+   *  guardados, resolviendo el slug a TeamLite. */
+  predRowsFor(letter: string): TeamLite[] {
+    const order = this.predByGroup().get(letter);
+    if (!order || order.length === 0) return [];
+    const out: TeamLite[] = [];
+    for (const slug of order) {
+      const t = this.teamMap.get(slug);
+      if (t) out.push(t);
+    }
+    return out;
+  }
+
   /** Letra del grupo abierto en el modal (null = cerrado). */
   openGroup = signal<string | null>(null);
 
@@ -424,7 +482,22 @@ export class PicksTablaGruposComponent implements OnInit {
     );
   }
 
+  /** Para el [value] de los inputs en el modal: prefiere pendingEdits
+   *  (la edición optimista latest) sobre la fila DB. Así si el user
+   *  edita el otro lado mientras el primer save está en vuelo, no
+   *  se pisan valores. */
+  bannerScore(matchId: string, side: 'home' | 'away'): number | string {
+    const pe = this.pendingEdits.get(matchId);
+    if (pe) return side === 'home' ? pe.home : pe.away;
+    const p = this.pickByMatch().get(matchId);
+    const v = side === 'home' ? p?.homeScorePred : p?.awayScorePred;
+    return v ?? '';
+  }
+
   private scoresFor(matchId: string): { home: number; away: number } {
+    // Prefiere pendingEdits sobre la fila DB.
+    const pe = this.pendingEdits.get(matchId);
+    if (pe) return pe;
     const p = this.pickByMatch().get(matchId);
     return { home: p?.homeScorePred ?? 0, away: p?.awayScorePred ?? 0 };
   }
@@ -432,13 +505,13 @@ export class PicksTablaGruposComponent implements OnInit {
   private async flushSave(matchId: string) {
     const edit = this.pendingEdits.get(matchId);
     if (!edit) return;
-    this.pendingEdits.delete(matchId);
+    // NO borramos pendingEdits acá — sigue siendo el "latest known"
+    // mientras await corre. Sin esto, una edición concurrente lee
+    // desde pickByMatch (stale) y pisa el otro lado con 0.
     this.debounceTimer.delete(matchId);
     this.savingMatch.set(matchId);
     try {
       await this.api.upsertPick(matchId, edit.home, edit.away);
-      // Update local cache so el pill "Guardado" se muestra y la próxima
-      // edición parta del valor recién persistido.
       const map = new Map(this.pickByMatch());
       const prev = map.get(matchId);
       map.set(matchId, {
@@ -450,6 +523,12 @@ export class PicksTablaGruposComponent implements OnInit {
         correctResult: prev?.correctResult ?? null,
       });
       this.pickByMatch.set(map);
+      // Si pendingEdits aún coincide con lo que se guardó (sin nuevas
+      // ediciones en vuelo), lo limpiamos.
+      const cur = this.pendingEdits.get(matchId);
+      if (cur && cur.home === edit.home && cur.away === edit.away) {
+        this.pendingEdits.delete(matchId);
+      }
     } catch (e) {
       this.toast.error(humanizeError(e));
     } finally {
@@ -464,13 +543,39 @@ export class PicksTablaGruposComponent implements OnInit {
       return;
     }
     try {
-      const [matchesRes, teamsRes, picksRes, totalsRes, leaderboardRes] = await Promise.all([
+      const [matchesRes, teamsRes, picksRes, totalsRes, leaderboardRes,
+             predCompleteRes, predSimpleRes] = await Promise.all([
         this.api.listMatches(TOURNAMENT_ID),
         this.api.listTeams(TOURNAMENT_ID),
         this.api.myPicks(userId),
         this.api.myTotal(userId, TOURNAMENT_ID),
         this.api.listLeaderboard(TOURNAMENT_ID, 200),
+        this.api.listGroupStandingPicks(userId, 'COMPLETE'),
+        this.api.listGroupStandingPicks(userId, 'SIMPLE'),
       ]);
+
+      // Predicción de tabla por grupo: prefiero COMPLETE; si no hay,
+      // caigo a SIMPLE. Luego de cargar teamMap (más abajo), los slugs
+      // se resuelven a TeamLite via predRowsFor().
+      type PredRow = { groupLetter: string; pos1: string; pos2: string; pos3: string; pos4: string };
+      const predList = ((predCompleteRes.data ?? []) as PredRow[]).filter(
+        (p) => !!p && !!p.groupLetter,
+      );
+      const predFallback = ((predSimpleRes.data ?? []) as PredRow[]).filter(
+        (p) => !!p && !!p.groupLetter,
+      );
+      const predMap = new Map<string, string[]>();
+      const completeLetters = new Set(predList.map((p) => p.groupLetter));
+      for (const p of predList) {
+        predMap.set(p.groupLetter, [p.pos1, p.pos2, p.pos3, p.pos4]);
+      }
+      // Solo agrega SIMPLE para grupos donde no haya COMPLETE.
+      for (const p of predFallback) {
+        if (!completeLetters.has(p.groupLetter)) {
+          predMap.set(p.groupLetter, [p.pos1, p.pos2, p.pos3, p.pos4]);
+        }
+      }
+      this.predByGroup.set(predMap);
 
       // Build team map + group teams by letter
       const byLetter = new Map<string, TeamLite[]>();

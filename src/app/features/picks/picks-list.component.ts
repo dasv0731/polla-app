@@ -551,7 +551,10 @@ export class PicksListComponent implements OnInit, OnDestroy {
     void this.router.navigate(['/picks/match', id]);
   }
 
-  /** Auto-save del marcador con debounce. Llamado desde input event. */
+  /** Auto-save del marcador con debounce. Llamado desde input event.
+   *  Mantiene `latestState` SIEMPRE poblado (no se vacía durante el
+   *  save), así si el user escribe en el otro input mientras el primer
+   *  save está en vuelo, no se pierde el valor de éste. */
   onScoreInput(matchId: string, side: 'home' | 'away', event: Event) {
     const input = event.target as HTMLInputElement;
     const raw = input.value.replace(/[^0-9]/g, '').slice(0, 1);
@@ -571,6 +574,10 @@ export class PicksListComponent implements OnInit, OnDestroy {
   }
 
   private scoresFor(matchId: string): { home: number; away: number } {
+    // Prefiere pendingEdits (estado optimista latest) sobre la fila DB
+    // (que puede estar desactualizada durante un save en vuelo).
+    const pe = this.pendingEdits.get(matchId);
+    if (pe) return pe;
     const m = this.matches().find((x) => x.id === matchId);
     const p = m?.pick;
     return { home: p?.homeScorePred ?? 0, away: p?.awayScorePred ?? 0 };
@@ -579,13 +586,15 @@ export class PicksListComponent implements OnInit, OnDestroy {
   private async flushSave(matchId: string) {
     const edit = this.pendingEdits.get(matchId);
     if (!edit) return;
-    this.pendingEdits.delete(matchId);
+    // NO borramos pendingEdits acá — sigue siendo el "latest known".
+    // Si el user edita el otro lado mientras el await corre, scoresFor
+    // sigue leyendo el latest desde pendingEdits, no la fila DB stale.
     this.debounceTimer.delete(matchId);
     this.savingMatch.set(matchId);
     try {
       await this.api.upsertPick(matchId, edit.home, edit.away);
       // Update local match list para que el pill "Guardado" aparezca
-      // y la próxima edición parta del nuevo valor.
+      // y la próxima edición (después del save) lea desde matches.
       this.matches.update((arr) =>
         arr.map((m) =>
           m.id !== matchId ? m : ({
@@ -600,6 +609,13 @@ export class PicksListComponent implements OnInit, OnDestroy {
           }),
         ),
       );
+      // Si pendingEdits sigue exactamente igual al edit que acabamos de
+      // persistir (no hubo edits durante el await), lo limpiamos para
+      // que la próxima edición lea desde matches.
+      const cur = this.pendingEdits.get(matchId);
+      if (cur && cur.home === edit.home && cur.away === edit.away) {
+        this.pendingEdits.delete(matchId);
+      }
     } catch (e) {
       this.toast.error(humanizeError(e));
     } finally {

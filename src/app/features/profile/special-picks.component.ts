@@ -269,6 +269,21 @@ export class SpecialPicksComponent implements OnInit {
     const m = this.mode();
     if (!userId || !m) return;
 
+    // Validación: el mismo equipo no puede ser campeón Y subcampeón
+    // (lógicamente uno gana al otro). Ni mismo team en cualquier
+    // combinación de los 3 slots.
+    const others = this.picksByType();
+    for (const k of Object.keys(others) as SpecialKey[]) {
+      if (k === type) continue;
+      if (others[k] === teamId) {
+        const otherLabel = TYPES.find((t) => t.key === k)?.label ?? k;
+        this.toast.error(
+          `Ese equipo ya está elegido como ${otherLabel}. Cámbialo primero o elige otro.`,
+        );
+        return;
+      }
+    }
+
     this.saving.update((s) => ({ ...s, [type]: true }));
     try {
       await this.api.upsertSpecialPick(userId, type, teamId, TOURNAMENT_ID, m);
