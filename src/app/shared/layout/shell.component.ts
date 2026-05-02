@@ -6,6 +6,7 @@ import { PicksPendingBannerComponent } from '../../features/picks/picks-pending-
 import { ToastHostComponent } from '../../core/notifications/toast-host.component';
 import { TriviaPopupComponent } from '../../features/trivia/trivia-popup.component';
 import { GroupActionsModalsComponent } from './group-actions-modals.component';
+import { RedeemModalComponent } from './redeem-modal.component';
 import { RightRailComponent } from './right-rail.component';
 import { RightRailService } from '../../core/layout/right-rail.service';
 
@@ -15,7 +16,7 @@ import { RightRailService } from '../../core/layout/right-rail.service';
   imports: [
     RouterOutlet, NavComponent, FooterComponent,
     PicksPendingBannerComponent, ToastHostComponent, TriviaPopupComponent,
-    GroupActionsModalsComponent, RightRailComponent,
+    GroupActionsModalsComponent, RedeemModalComponent, RightRailComponent,
   ],
   template: `
     <div class="app-shell" [class.has-rail]="rail.visible()">
@@ -33,6 +34,8 @@ import { RightRailService } from '../../core/layout/right-rail.service';
     <app-trivia-popup />
     <!-- Modales globales de "Crear grupo" / "Unirme con código" -->
     <app-group-actions-modals />
+    <!-- Modal global de "Canjear código de sponsor" -->
+    <app-redeem-modal />
   `,
   styles: [`
     :host { display: block; }

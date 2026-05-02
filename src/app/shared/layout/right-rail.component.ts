@@ -4,7 +4,7 @@ import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService, type UserGroup } from '../../core/user/user-modes.service';
 import { RightRailService } from '../../core/layout/right-rail.service';
-import { SponsorRedeemComponent } from '../../features/picks/sponsor-redeem.component';
+import { RedeemModalService } from '../../core/sponsors/redeem-modal.service';
 
 const TOURNAMENT_ID = 'mundial-2026';
 
@@ -17,7 +17,7 @@ interface ComodinPreview {
 @Component({
   standalone: true,
   selector: 'app-right-rail',
-  imports: [RouterLink, SponsorRedeemComponent],
+  imports: [RouterLink],
   template: `
     @if (rail.visible()) {
       <aside class="app-rail">
@@ -60,10 +60,10 @@ interface ComodinPreview {
           </div>
         }
 
-        <!-- Mis comodines preview -->
-        @if (hasComplete()) {
-          <div class="rail-section">
-            <h3 class="rail-section__title">🎁 Mis comodines</h3>
+        <!-- Mis comodines preview + canjear (modal) -->
+        <div class="rail-section">
+          <h3 class="rail-section__title">🎁 Mis comodines</h3>
+          @if (hasComplete()) {
             @if (comodinesLoading()) {
               <p class="rail-empty">Cargando…</p>
             } @else if (comodinesPreview().length === 0) {
@@ -86,14 +86,20 @@ interface ComodinPreview {
                 </div>
               }
             }
-            <a routerLink="/mis-comodines" class="rail-section__link">Ver todos →</a>
-          </div>
-        }
-
-        <!-- Canjear código -->
-        <div class="rail-section">
-          <h3 class="rail-section__title">Sponsors</h3>
-          <app-sponsor-redeem />
+          } @else {
+            <p class="rail-empty">
+              Únete a un grupo en modo completo para usar comodines.
+            </p>
+          }
+          <button type="button" class="btn-wf btn-wf--block btn-wf--sm"
+                  style="margin-top:10px;"
+                  (click)="redeem.open()">
+            🎁 Canjear código
+          </button>
+          @if (hasComplete()) {
+            <a routerLink="/mis-comodines" class="rail-section__link"
+               style="margin-top:6px;">Ver todos →</a>
+          }
         </div>
 
         <!-- Botón cerrar (solo en bracket) -->
@@ -169,6 +175,7 @@ interface ComodinPreview {
 })
 export class RightRailComponent implements OnInit {
   rail = inject(RightRailService);
+  redeem = inject(RedeemModalService);
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private userModes = inject(UserModesService);
