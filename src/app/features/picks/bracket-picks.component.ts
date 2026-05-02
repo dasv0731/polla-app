@@ -8,6 +8,7 @@ import { UserModesService } from '../../core/user/user-modes.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { TimeService } from '../../core/time/time.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
+import { RailModalsService } from '../../core/layout/rail-modals.service';
 
 type GameMode = 'SIMPLE' | 'COMPLETE';
 
@@ -57,7 +58,7 @@ const SAVE_DEBOUNCE_MS = 1200;
       <!-- Header con stats (mismo patrón que /picks y /picks/group-stage) -->
       <header class="page__header">
         <div>
-          <div class="kicker">MUNDIAL 2026 · TU POLLA</div>
+          <div class="kicker">MUNDIAL 2026 · GOLGANA</div>
           <h1 class="page__title">Mis picks</h1>
         </div>
         <div class="page__stats">
@@ -79,6 +80,16 @@ const SAVE_DEBOUNCE_MS = 1200;
           </div>
         </div>
       </header>
+
+      <div class="page__rail-actions">
+        <button type="button" class="page__rail-action" (click)="rail.openPremios()">
+          🏆 <span>Premios</span>
+        </button>
+        <button type="button" class="page__rail-action page__rail-action--alt"
+                (click)="rail.openComodines()">
+          🎁 <span>Comodines</span>
+        </button>
+      </div>
 
       <nav class="page-tabs" aria-label="Vistas de picks">
         <a class="page-tabs__item" routerLink="/picks"
@@ -356,6 +367,7 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
   private time = inject(TimeService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  rail = inject(RailModalsService);
 
   loading = signal(true);
   availableModes = computed(() => this.userModes.modes());

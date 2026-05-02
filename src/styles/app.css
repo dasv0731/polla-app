@@ -79,11 +79,12 @@ a.btn-wf { text-decoration: none; }
 .pill--warn  { background: var(--wf-warn-soft); color: #8a6a00; border-color: rgba(212, 165, 0, 0.4); }
 .pill--solid { background: var(--wf-green); color: white; border-color: var(--wf-green); }
 
-/* ---------- Topbar (mobile sticky top) ---------- */
+/* ---------- Topbar (mobile sticky top) — DARK con logo Golgana ---------- */
 .app-topbar {
   position: sticky; top: 0;
-  background: var(--wf-paper);
-  border-bottom: 1px solid var(--wf-line-2);
+  background: #0a0a0a;
+  color: white;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -96,28 +97,24 @@ a.btn-wf { text-decoration: none; }
   align-items: center;
   gap: 8px;
   text-decoration: none;
-  color: inherit;
-}
-.app-topbar__logo {
-  width: 28px; height: 28px;
-  border-radius: 6px;
-  background: var(--wf-green);
   color: white;
-  display: flex;
-  align-items: center; justify-content: center;
-  font-family: var(--wf-display);
-  font-size: 14px;
+}
+.app-topbar__logo-img {
+  height: 28px;
+  width: auto;
+  display: block;
 }
 .app-topbar__title {
   font-family: var(--wf-display);
-  font-size: 18px;
-  letter-spacing: .04em;
+  font-size: 16px;
+  letter-spacing: .06em;
+  color: white;
 }
 .app-topbar__actions { display: flex; align-items: center; gap: 12px; }
 .app-topbar__bell {
   position: relative;
   font-size: 18px;
-  color: var(--wf-ink-2);
+  color: rgba(255, 255, 255, 0.85);
   text-decoration: none;
   cursor: pointer;
   background: transparent;
@@ -136,8 +133,8 @@ a.btn-wf { text-decoration: none; }
 .app-topbar__avatar {
   width: 32px; height: 32px;
   border-radius: 999px;
-  background: var(--wf-ink);
-  color: white;
+  background: white;
+  color: #0a0a0a;
   display: flex;
   align-items: center; justify-content: center;
   font-size: 12px; font-weight: 700;
@@ -311,6 +308,34 @@ a.btn-wf { text-decoration: none; }
   color: var(--wf-ink-3);
   text-transform: uppercase;
   letter-spacing: .06em;
+}
+
+/* ---------- Acciones inline Premios / Comodines (debajo de page__stats) ---------- */
+.page__rail-actions {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0 14px;
+  flex-wrap: wrap;
+}
+.page__rail-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--wf-ink);
+  color: white;
+  border: 0;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 80ms ease, filter 80ms ease;
+}
+.page__rail-action:hover { transform: translateY(-1px); filter: brightness(1.1); }
+.page__rail-action--alt {
+  background: var(--wf-warn, #d4a500);
+  color: #1f1500;
 }
 
 /* ---------- Page tabs (sub-nav dentro de una página) ---------- */
@@ -3516,15 +3541,16 @@ a.btn-wf { text-decoration: none; }
   /* Footer dentro del grid: ocupa toda la fila inferior */
   .app-shell app-footer { grid-area: footer; }
 
-  /* Top nav (sticky top) */
+  /* Top nav (sticky top) — variante DARK con logo Golgana */
   .app-topnav {
     grid-area: topnav;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 10px 24px;
-    background: var(--wf-paper);
-    border-bottom: 1px solid var(--wf-line-2);
+    background: #0a0a0a;
+    color: white;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     position: sticky;
     top: 0;
     z-index: 30;
@@ -3534,23 +3560,20 @@ a.btn-wf { text-decoration: none; }
   .app-topnav__brand {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     text-decoration: none;
-    color: inherit;
+    color: white;
   }
-  .app-topnav__logo {
-    width: 28px; height: 28px;
-    border-radius: 6px;
-    background: var(--wf-green); color: white;
-    display: flex;
-    align-items: center; justify-content: center;
-    font-family: var(--wf-display);
-    font-size: 14px;
+  .app-topnav__logo-img {
+    height: 32px;
+    width: auto;
+    display: block;
   }
   .app-topnav__title {
     font-family: var(--wf-display);
     font-size: 18px;
-    letter-spacing: .04em;
+    letter-spacing: .06em;
+    color: white;
   }
   .app-topnav__menu { display: flex; gap: 4px; }
   .app-topnav__item {
@@ -3558,25 +3581,25 @@ a.btn-wf { text-decoration: none; }
     border-radius: 6px;
     font-size: 13px;
     font-weight: 600;
-    color: var(--wf-ink);
+    color: rgba(255, 255, 255, 0.78);
     text-decoration: none;
     cursor: pointer;
     background: transparent;
     border: 0;
     font-family: inherit;
   }
-  .app-topnav__item:hover { background: var(--wf-fill); }
+  .app-topnav__item:hover { background: rgba(255, 255, 255, 0.08); color: white; }
   .app-topnav__item.is-active {
-    background: var(--wf-green-soft);
-    color: var(--wf-green-ink);
+    background: rgba(2, 204, 116, 0.20);
+    color: #4dffa0;
   }
   .app-topnav__right { display: flex; align-items: center; gap: 12px; }
   .app-topnav__search {
-    background: var(--wf-fill);
+    background: rgba(255, 255, 255, 0.08);
     border-radius: 6px;
     padding: 6px 10px;
     font-size: 12px;
-    color: var(--wf-ink-3);
+    color: rgba(255, 255, 255, 0.6);
     display: flex;
     gap: 6px;
     align-items: center;
@@ -3585,7 +3608,7 @@ a.btn-wf { text-decoration: none; }
   .app-topnav__bell {
     position: relative;
     font-size: 16px;
-    color: var(--wf-ink-2);
+    color: rgba(255, 255, 255, 0.78);
     text-decoration: none;
     background: transparent;
     border: 0;
@@ -3604,7 +3627,7 @@ a.btn-wf { text-decoration: none; }
     align-items: center;
     gap: 8px;
     text-decoration: none;
-    color: inherit;
+    color: white;
     background: transparent;
     border: 0;
     cursor: pointer;
@@ -3612,16 +3635,16 @@ a.btn-wf { text-decoration: none; }
     border-radius: 6px;
     font: inherit;
   }
-  .app-topnav__user:hover { background: var(--wf-fill); }
+  .app-topnav__user:hover { background: rgba(255, 255, 255, 0.08); }
   .app-topnav__user .avatar {
     width: 32px; height: 32px;
     border-radius: 999px;
-    background: var(--wf-ink); color: white;
+    background: white; color: #0a0a0a;
     display: flex;
     align-items: center; justify-content: center;
     font-size: 12px; font-weight: 700;
   }
-  .app-topnav__user .name { font-size: 13px; font-weight: 600; }
+  .app-topnav__user .name { font-size: 13px; font-weight: 600; color: white; }
 
   /* Wrapper que ocupa la celda "sidebar" del grid. Su rol crítico es
      ESTABLECER el containing block del sticky del aside via

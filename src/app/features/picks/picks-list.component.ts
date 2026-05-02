@@ -10,6 +10,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
 import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
 import { TriviaModalService } from '../../core/trivia/trivia-modal.service';
+import { RailModalsService } from '../../core/layout/rail-modals.service';
 
 const SAVE_DEBOUNCE_MS = 600;
 
@@ -77,7 +78,7 @@ interface TriviaInfo {
       <!-- Header con stats -->
       <header class="page__header">
         <div>
-          <div class="kicker">MUNDIAL 2026 · TU POLLA</div>
+          <div class="kicker">MUNDIAL 2026 · GOLGANA</div>
           <h1 class="page__title">Mis picks</h1>
         </div>
         <div class="page__stats">
@@ -99,6 +100,17 @@ interface TriviaInfo {
           </div>
         </div>
       </header>
+
+      <!-- Acciones inline: abren modales globales (Premios / Comodines) -->
+      <div class="page__rail-actions">
+        <button type="button" class="page__rail-action" (click)="rail.openPremios()">
+          🏆 <span>Premios</span>
+        </button>
+        <button type="button" class="page__rail-action page__rail-action--alt"
+                (click)="rail.openComodines()">
+          🎁 <span>Comodines</span>
+        </button>
+      </div>
 
       <!-- Page tabs (Cronológico / Tabla grupos / Bracket) -->
       <nav class="page-tabs" aria-label="Vistas de picks">
@@ -445,6 +457,7 @@ export class PicksListComponent implements OnInit, OnDestroy {
   private toast = inject(ToastService);
   private router = inject(Router);
   private triviaModal = inject(TriviaModalService);
+  rail = inject(RailModalsService);
 
   /** Abre el modal de trivia scoped al match dado (evita el routerLink
    *  al /picks/trivia/:id legacy — la trivia ahora siempre es modal). */

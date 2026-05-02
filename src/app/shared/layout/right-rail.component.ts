@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService, type UserGroup } from '../../core/user/user-modes.service';
-import { RightRailService } from '../../core/layout/right-rail.service';
+import { RailModalsService } from '../../core/layout/rail-modals.service';
 import { RedeemModalService } from '../../core/sponsors/redeem-modal.service';
 
 const TOURNAMENT_ID = 'mundial-2026';
@@ -15,34 +15,20 @@ interface ComodinPreview {
 }
 
 /**
- * Reemplazo del aside lateral por dos FABs flotantes ("🏆 Premios" y
- * "🎁 Comodines"). Cada uno abre un modal con la info que antes vivía
- * en el rail. El modal de comodines tiene un botón para navegar a la
- * pantalla completa /mis-comodines.
+ * Renderiza los modales globales de Premios y Comodines. Los botones
+ * que los disparan ahora viven INLINE en cada page (debajo de
+ * page__stats) — ya no FABs flotantes — y abren los modales vía
+ * `RailModalsService` (signals compartidos).
  *
- * Esto libera la columna `rail` del grid y permite que `main` use todo
- * el ancho — clave para el bracket que de otro modo se sale del viewport.
+ * Este componente sigue mounted en el shell para tener un único host
+ * que carga datos de comodines / grupos y un único punto de overlay.
  */
 @Component({
   standalone: true,
   selector: 'app-right-rail',
   imports: [RouterLink],
   template: `
-    @if (rail.visible()) {
-      <div class="rail-fabs">
-        <button type="button" class="rail-fab" (click)="openPremios()"
-                aria-label="Ver premios">
-          <span class="rail-fab__icon">🏆</span>
-          <span class="rail-fab__label">Premios</span>
-        </button>
-        <button type="button" class="rail-fab rail-fab--alt" (click)="openComodines()"
-                aria-label="Ver comodines">
-          <span class="rail-fab__icon">🎁</span>
-          <span class="rail-fab__label">Comodines</span>
-        </button>
-      </div>
-
-      <!-- Modal Premios -->
+    <!-- Modal Premios -->
       @if (premiosOpen()) {
         <div class="picks-modal is-open" role="dialog" aria-modal="true">
           <button type="button" class="picks-modal__close-overlay"
@@ -180,60 +166,9 @@ interface ComodinPreview {
           </div>
         </div>
       }
-    }
   `,
   styles: [`
     :host { display: contents; }
-
-    /* Stack vertical de FABs flotantes (top-right del viewport).
-       En mobile están bajo el topbar (60px); desktop bajo el topnav (60px). */
-    .rail-fabs {
-      position: fixed;
-      top: 70px;
-      right: 14px;
-      z-index: 40;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    @media (min-width: 992px) {
-      .rail-fabs { top: 80px; right: 18px; }
-    }
-
-    .rail-fab {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      background: var(--wf-ink);
-      color: white;
-      padding: 9px 14px;
-      border-radius: 999px;
-      font-family: inherit;
-      font-size: 12px;
-      font-weight: 700;
-      border: 0;
-      cursor: pointer;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.22);
-      transition: transform 80ms ease, box-shadow 80ms ease;
-    }
-    .rail-fab:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 22px rgba(0,0,0,0.26);
-    }
-    .rail-fab:active { transform: translateY(0); }
-    .rail-fab--alt {
-      background: var(--wf-warn, #d4a500);
-      color: #1f1500;
-    }
-    .rail-fab__icon { font-size: 14px; line-height: 1; }
-    .rail-fab__label { font-size: 12px; }
-
-    /* En pantallas muy chicas escondemos la label, dejando solo el icono */
-    @media (max-width: 480px) {
-      .rail-fab__label { display: none; }
-      .rail-fab { padding: 10px 12px; }
-      .rail-fab__icon { font-size: 16px; }
-    }
 
     .rail-empty {
       font-size: 13px;
@@ -244,14 +179,17 @@ interface ComodinPreview {
   `],
 })
 export class RightRailComponent implements OnInit {
-  rail = inject(RightRailService);
+  rail = inject(RailModalsService);
   redeem = inject(RedeemModalService);
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private userModes = inject(UserModesService);
 
-  premiosOpen = signal(false);
-  comodinesOpen = signal(false);
+  // Atajos para usar en el template (siguen siendo signals readonly desde service)
+  premiosOpen = this.rail.premiosOpen;
+  comodinesOpen = this.rail.comodinesOpen;
+  closePremios = () => this.rail.closePremios();
+  closeComodines = () => this.rail.closeComodines();
 
   hasComplete = computed(() => this.userModes.hasComplete());
   myGroups = computed<UserGroup[]>(() => this.userModes.groups());
@@ -292,12 +230,8 @@ export class RightRailComponent implements OnInit {
     }
   }
 
-  openPremios()    { this.premiosOpen.set(true); }
-  closePremios()   { this.premiosOpen.set(false); }
-  openComodines()  { this.comodinesOpen.set(true); }
-  closeComodines() { this.comodinesOpen.set(false); }
   openCanjear() {
-    this.closeComodines();
+    this.rail.closeComodines();
     this.redeem.open();
   }
 

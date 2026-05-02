@@ -15,9 +15,9 @@ type DropdownKey = 'user' | 'ranking' | null;
     <!-- ============ DESKTOP TOPNAV (≥992px) ============ -->
     <header class="app-topnav">
       <div class="app-topnav__left">
-        <a routerLink="/home" class="app-topnav__brand" aria-label="Polla Mundial 2026" (click)="closeAll()">
-          <span class="app-topnav__logo">⚽</span>
-          <span class="app-topnav__title">POLLA</span>
+        <a routerLink="/home" class="app-topnav__brand" aria-label="Golgana" (click)="closeAll()">
+          <img src="assets/logo-golgana.png" alt="" class="app-topnav__logo-img">
+          <span class="app-topnav__title">GOLGANA</span>
         </a>
         <nav class="app-topnav__menu" aria-label="Principal">
           @if (isAdmin()) {
@@ -122,9 +122,9 @@ type DropdownKey = 'user' | 'ranking' | null;
 
     <!-- ============ MOBILE TOPBAR (<992px) ============ -->
     <header class="app-topbar">
-      <a routerLink="/home" class="app-topbar__brand" aria-label="Polla" (click)="closeAll()">
-        <span class="app-topbar__logo">⚽</span>
-        <span class="app-topbar__title">POLLA</span>
+      <a routerLink="/home" class="app-topbar__brand" aria-label="Golgana" (click)="closeAll()">
+        <img src="assets/logo-golgana.png" alt="" class="app-topbar__logo-img">
+        <span class="app-topbar__title">GOLGANA</span>
       </a>
       <div class="app-topbar__actions">
         <a routerLink="/notificaciones" class="app-topbar__bell" aria-label="Notificaciones" (click)="closeAll()">

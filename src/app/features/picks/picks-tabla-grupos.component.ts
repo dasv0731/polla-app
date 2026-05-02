@@ -6,6 +6,7 @@ import { TimeService } from '../../core/time/time.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
 import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
+import { RailModalsService } from '../../core/layout/rail-modals.service';
 
 const TOURNAMENT_ID = 'mundial-2026';
 const SAVE_DEBOUNCE_MS = 600;
@@ -73,7 +74,7 @@ interface Totals {
       <!-- Header (mismo patrón que /picks) -->
       <header class="page__header">
         <div>
-          <div class="kicker">MUNDIAL 2026 · TU POLLA</div>
+          <div class="kicker">MUNDIAL 2026 · GOLGANA</div>
           <h1 class="page__title">Mis picks</h1>
         </div>
         <div class="page__stats">
@@ -95,6 +96,16 @@ interface Totals {
           </div>
         </div>
       </header>
+
+      <div class="page__rail-actions">
+        <button type="button" class="page__rail-action" (click)="rail.openPremios()">
+          🏆 <span>Premios</span>
+        </button>
+        <button type="button" class="page__rail-action page__rail-action--alt"
+                (click)="rail.openComodines()">
+          🎁 <span>Comodines</span>
+        </button>
+      </div>
 
       <nav class="page-tabs" aria-label="Vistas de picks">
         <a class="page-tabs__item" routerLink="/picks"
@@ -396,6 +407,7 @@ export class PicksTablaGruposComponent implements OnInit {
   private auth = inject(AuthService);
   private time = inject(TimeService);
   private toast = inject(ToastService);
+  rail = inject(RailModalsService);
 
   view = signal<'real' | 'pred'>('real');
   loading = signal(true);

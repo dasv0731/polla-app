@@ -15,9 +15,9 @@ type Step = 1 | 2 | 3 | 4 | 5;
 
         <!-- Top: brand + skip -->
         <div class="onb-top">
-          <a routerLink="/picks" class="topbar__brand" style="text-decoration:none;color:inherit;">
-            <span class="topbar__logo">⚽</span>
-            <span class="topbar__title">POLLA</span>
+          <a routerLink="/picks" class="topbar__brand" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:8px;">
+            <img src="assets/logo-golgana.png" alt="" style="height:24px;width:auto;">
+            <span class="topbar__title">GOLGANA</span>
           </a>
           @if (step() < 5) {
             <a href="#" (click)="onSkip($event)" class="onb-skip">Saltar</a>

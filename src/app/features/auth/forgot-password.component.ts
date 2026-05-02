@@ -16,8 +16,8 @@ import { AuthService } from '../../core/auth/auth.service';
       <!-- Panel de marca (solo desktop) -->
       <aside class="auth-brand">
         <div class="auth-brand__top">
-          <span class="auth-brand__logo">⚽</span>
-          <span class="auth-brand__title">POLLA · MUNDIAL 2026</span>
+          <img src="assets/logo-golgana.png" alt="" class="auth-brand__logo-img" style="height:32px;width:auto;">
+          <span class="auth-brand__title">GOLGANA · MUNDIAL 2026</span>
         </div>
         <div>
           <h1 class="auth-brand__h1">
