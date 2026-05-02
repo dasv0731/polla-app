@@ -3469,7 +3469,14 @@ a.btn-wf { text-decoration: none; }
   }
   .app-topnav__user .name { font-size: 13px; font-weight: 600; }
 
-  /* Sidebar izq sticky · ocupa todo el alto del viewport bajo el topnav */
+  /* Sidebar izq sticky · ocupa TODO el alto del viewport bajo el topnav.
+     Combinación clave para que no se solape con el footer:
+       · align-self: start  → la celda del grid no fuerza stretch
+       · height: 100vh - 60 → ocupa todo el alto disponible
+       · main tiene min-height igual → row 2 nunca es más corto que el aside
+       · row 3 (footer) queda debajo del row 2; al scrollear, el aside
+         sticky se mueve hacia arriba con su containing block y libera
+         espacio para el footer. */
   .app-sidebar {
     grid-area: sidebar;
     display: flex;
@@ -3477,16 +3484,14 @@ a.btn-wf { text-decoration: none; }
     padding: 20px;
     border-right: 1px solid var(--wf-line-2);
     background: var(--wf-paper);
-    /* align-self:start + max-height (no height fija) evita que el sidebar
-       se desborde sobre el grid-area "footer" cuando main es corto. */
     align-self: start;
     position: sticky;
     top: 60px;
-    max-height: calc(100vh - 60px);
+    height: calc(100vh - 60px);
     overflow-y: auto;
   }
 
-  /* Right rail sticky · misma lógica */
+  /* Right rail · misma lógica */
   .app-rail {
     grid-area: rail;
     display: block;
@@ -3496,11 +3501,14 @@ a.btn-wf { text-decoration: none; }
     align-self: start;
     position: sticky;
     top: 60px;
-    max-height: calc(100vh - 60px);
+    height: calc(100vh - 60px);
     overflow-y: auto;
   }
 
-  /* Main */
+  /* Main · min-height match con el aside para que el row 2 del grid
+     siempre sea al menos del alto del aside. Sin esto, en pantallas
+     con poco contenido el aside (height fijo) desborda sobre el
+     grid-area "footer". */
   .app-main {
     grid-area: main;
     min-width: 0;
