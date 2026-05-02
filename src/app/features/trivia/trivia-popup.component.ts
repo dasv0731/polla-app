@@ -1,7 +1,8 @@
-import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService } from '../../core/user/user-modes.service';
+import { TriviaModalService } from '../../core/trivia/trivia-modal.service';
 
 const TOURNAMENT_ID = 'mundial-2026';
 const POLL_MS = 60_000;
@@ -20,44 +21,56 @@ interface ActiveQuestion {
   prompt: string;
   optionA: string; optionB: string; optionC: string; optionD: string;
   homeTeam: string; awayTeam: string;
+  /** Respuesta correcta — usada para el reveal post-save / post-timer. */
+  correctOption: Opt;
+  /** Segundos de timer (default 120) — el modal arranca contador y
+   *  auto-revela cuando llega a 0 si el user no contestó aún. */
+  timerSeconds: number;
+  /** Cuándo se publicó la pregunta (publishedAt) — el timer cuenta
+   *  desde acá, no desde que el user abrió el modal. */
+  publishedAt: string;
   /** Si la trivia está patrocinada, sponsor info parseada del prefijo
    *  [BRAND:<name>:<icon>] del campo `explanation`. null = sin marca. */
   sponsor: SponsorMeta | null;
-  /** El resto del explanation (sin el prefijo de marca). */
+  /** El resto del explanation (sin el prefijo de marca) — se muestra
+   *  en el reveal post-respuesta. */
   cleanExplanation: string;
 }
 
 /**
- * UX nueva (wireframe Mundial 2026): FAB pill flotante + modal.
- * - El FAB aparece cuando hay al menos una pregunta activa no contestada.
- * - Click en el FAB abre el modal. Modal tiene variantes:
- *     · `trivia-modal--marca`: cuando la pregunta está patrocinada
- *       (sponsor parseado del prefijo [BRAND:<name>:<icon>] en explanation).
- *     · `trivia-modal--sinad`: cuando no hay sponsor (header oscuro limpio).
+ * Modal global de trivia. Variantes visuales:
+ *   · `trivia-modal--marca`: pregunta patrocinada (sponsor parseado de
+ *     [BRAND:<name>:<icon>] al inicio del explanation).
+ *   · `trivia-modal--sinad`: sin sponsor (header oscuro limpio).
  *
- * Convención temporal hasta que el modelo TriviaQuestion tenga `sponsorId`:
- * El admin guarda el `explanation` con prefijo `[BRAND:Coca-Cola:🥤] Texto…`
- * y el front lo parsea para decidir qué variante de modal mostrar.
+ * Estados internos por pregunta:
+ *   1) Answering: user elige una opción (CSS neutro/azul, NO check verde).
+ *   2) Revealed: tras click en "Responder" o expiración del timer, se
+ *      muestra la opción correcta (verde) y la pick errónea del user (rojo)
+ *      + bloque de explicación. Botón cambia a "Siguiente →" / "Cerrar".
+ *
+ * Apertura:
+ *   - FAB pill (visible cuando hay preguntas live no respondidas) → `open()`.
+ *   - Inline "Jugar" en picks-list → `openForMatch(matchId)`.
  */
 @Component({
   standalone: true,
   selector: 'app-trivia-popup',
   template: `
-    @if (current(); as q) {
-      <!-- FAB pill (visible permanentemente mientras haya pregunta activa) -->
+    @if (showFab()) {
       <button type="button" class="trivia-fab"
               aria-label="Jugar trivia"
-              (click)="openModal()">
+              (click)="modal.open()">
         <span class="trivia-fab__icon">⚡</span>
         <span>Trivia · +10 pts</span>
         @if (queueRemaining() > 1) {
           <span class="trivia-fab__time">{{ queueRemaining() }}</span>
         }
       </button>
+    }
 
-      <!-- Modal (con variante marca/sinad) -->
-      <div class="trivia-modal"
-           [class.is-open]="modalOpen()"
+    @if (modal.isOpen() && current(); as q) {
+      <div class="trivia-modal is-open"
            [class.trivia-modal--marca]="q.sponsor !== null"
            [class.trivia-modal--sinad]="q.sponsor === null"
            role="dialog" aria-modal="true">
@@ -87,40 +100,86 @@ interface ActiveQuestion {
               </div>
             </div>
             <div class="trivia-head__right">
+              @if (!revealed() && secondsLeft() > 0) {
+                <span class="trivia-timer"
+                      [class.trivia-timer--low]="secondsLeft() <= 15">
+                  ⏱ {{ formatTimer(secondsLeft()) }}
+                </span>
+              }
               <button type="button" class="trivia-head__close"
                       aria-label="Cerrar" (click)="closeModal()">✕</button>
             </div>
           </div>
 
           <div class="trivia-body">
-            <div class="trivia-step">PREGUNTA {{ currentIndex() + 1 }} DE {{ queue().length }}</div>
+            <div class="trivia-step">
+              @if (visibleQueue().length > 1) {
+                PREGUNTA {{ currentIndex() + 1 }} DE {{ visibleQueue().length }}
+              } @else {
+                PREGUNTA
+              }
+            </div>
 
             <h2 class="trivia-question">{{ q.prompt }}</h2>
 
             <div class="trivia-options">
               @for (opt of OPTS; track opt.key) {
+                @let userPicked = picked() === opt.key;
+                @let isCorrect = revealed() && opt.key === q.correctOption;
+                @let isUserWrong = revealed() && userPicked && opt.key !== q.correctOption;
                 <button type="button" class="trivia-option"
-                        [class.is-selected]="picked() === opt.key"
-                        [disabled]="submitting()"
+                        [class.is-selected]="userPicked && !revealed()"
+                        [class.trivia-option--correct]="isCorrect"
+                        [class.trivia-option--wrong]="isUserWrong"
+                        [disabled]="submitting() || revealed()"
                         (click)="select(opt.key)">
                   <span class="trivia-option__letter">{{ opt.key }}</span>
                   <span class="trivia-option__text">{{ q[opt.field] }}</span>
-                  <span class="trivia-option__check">✓</span>
+                  @if (isCorrect) {
+                    <span class="trivia-option__badge trivia-option__badge--correct">✓</span>
+                  } @else if (isUserWrong) {
+                    <span class="trivia-option__badge trivia-option__badge--wrong">✕</span>
+                  }
                 </button>
               }
             </div>
 
-            @if (msg()) {
+            @if (revealed()) {
+              @if (picked() === q.correctOption) {
+                <div class="trivia-reveal trivia-reveal--ok">
+                  ✓ ¡Acertaste! +10 pts
+                </div>
+              } @else if (picked() && picked() !== q.correctOption) {
+                <div class="trivia-reveal trivia-reveal--bad">
+                  ✕ Respuesta correcta: <strong>{{ q.correctOption }}</strong>
+                </div>
+              } @else {
+                <div class="trivia-reveal trivia-reveal--skip">
+                  ⏱ Tiempo agotado · Respuesta correcta: <strong>{{ q.correctOption }}</strong>
+                </div>
+              }
+              @if (q.cleanExplanation) {
+                <p class="trivia-explanation"><strong>Por qué:</strong> {{ q.cleanExplanation }}</p>
+              }
+            } @else if (msg()) {
               <p class="trivia-msg">{{ msg() }}</p>
             }
 
             <div class="trivia-actions">
-              <button type="button" class="trivia-skip" (click)="skip()">↶ Saltar</button>
-              <button type="button" class="trivia-next"
-                      [disabled]="picked() === null || submitting()"
-                      (click)="confirm()">
-                {{ submitting() ? 'Enviando…' : 'Confirmar →' }}
-              </button>
+              @if (!revealed()) {
+                <button type="button" class="trivia-skip" (click)="skip()">↶ Saltar</button>
+                <button type="button" class="trivia-next"
+                        [disabled]="picked() === null || submitting()"
+                        (click)="answer()">
+                  {{ submitting() ? 'Enviando…' : 'Responder' }}
+                </button>
+              } @else {
+                @let isLast = currentIndex() >= visibleQueue().length - 1;
+                <span></span>
+                <button type="button" class="trivia-next" (click)="advance()">
+                  {{ isLast ? 'Cerrar' : 'Siguiente →' }}
+                </button>
+              }
             </div>
           </div>
 
@@ -150,6 +209,7 @@ export class TriviaPopupComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private userModes = inject(UserModesService);
+  modal = inject(TriviaModalService);
 
   OPTS = [
     { key: 'A' as Opt, field: 'optionA' as const },
@@ -158,50 +218,105 @@ export class TriviaPopupComponent implements OnInit, OnDestroy {
     { key: 'D' as Opt, field: 'optionD' as const },
   ];
 
-  queue = signal<ActiveQuestion[]>([]);
+  /** Cola completa cargada en background (live matches con triv no contestada). */
+  private allQueue = signal<ActiveQuestion[]>([]);
+  /** Cola scoped: cuando el modal se abrió `openForMatch(id)`, cargamos
+   *  preguntas de ese match aunque no esté "live" — el user clickeó
+   *  explícitamente "Jugar" en la fila inline y espera ver la pregunta. */
+  private scopedQueue = signal<ActiveQuestion[]>([]);
   private dismissed = signal<Set<string>>(new Set());
 
-  /** Cola sin las dismisseadas. */
-  private visibleQueue = computed(() => {
+  /** Cola visible: scoped si hay scope, sino allQueue. Filtra dismissed. */
+  visibleQueue = computed(() => {
     const dismissed = this.dismissed();
-    return this.queue().filter((q) => !dismissed.has(q.id));
+    const scope = this.modal.scopedMatchId();
+    const source = scope ? this.scopedQueue() : this.allQueue();
+    return source.filter((q) => !dismissed.has(q.id));
   });
 
-  current = computed<ActiveQuestion | null>(() => this.visibleQueue()[0] ?? null);
-  currentIndex = computed(() => {
-    const cur = this.current();
-    if (!cur) return 0;
-    return this.queue().findIndex((q) => q.id === cur.id);
+  /** Pregunta actual: la primera no dismisseada de visibleQueue. */
+  current = computed<ActiveQuestion | null>(() => {
+    const idx = this.activeIndex();
+    return this.visibleQueue()[idx] ?? null;
   });
+
+  /** Index de la pregunta visible actual. Se controla con advance(). */
+  private activeIndex = signal(0);
+  currentIndex = computed(() => this.activeIndex());
+
   queueRemaining = computed(() => this.visibleQueue().length);
 
-  modalOpen = signal(false);
+  /** FAB: visible solo si hay queue normal (no scoped) Y modal cerrado. */
+  showFab = computed(() => !this.modal.isOpen() && this.allQueue().length > 0);
+
   picked = signal<Opt | null>(null);
   submitting = signal(false);
   msg = signal<string | null>(null);
+  revealed = signal(false);
+
+  /** Tick reactivo cada 1s para el timer countdown. */
+  private nowMs = signal(Date.now());
+  private tickTimer: ReturnType<typeof setInterval> | undefined;
+
+  /** Segundos restantes del timer de la pregunta actual. */
+  secondsLeft = computed(() => {
+    const q = this.current();
+    if (!q) return 0;
+    const closeMs = Date.parse(q.publishedAt) + q.timerSeconds * 1000;
+    return Math.max(0, Math.ceil((closeMs - this.nowMs()) / 1000));
+  });
 
   private pollTimer: ReturnType<typeof setInterval> | undefined;
 
+  constructor() {
+    // Effect: cuando service.refreshTick cambia (modal se abre o re-abre),
+    // resetear estado de la pregunta y recargar scopedQueue si aplica.
+    effect(() => {
+      this.modal.refreshTick();   // dependency
+      const scope = this.modal.scopedMatchId();
+      if (this.modal.isOpen()) {
+        this.activeIndex.set(0);
+        this.resetQuestionState();
+        if (scope) {
+          void this.loadScopedQueue(scope);
+        }
+      }
+    });
+
+    // Effect: auto-reveal cuando el timer llega a 0 (sin haber respondido).
+    effect(() => {
+      if (this.modal.isOpen() && this.current() && this.secondsLeft() === 0 && !this.revealed()) {
+        this.revealed.set(true);
+      }
+    });
+  }
+
   async ngOnInit() {
-    if (!this.userModes.hasComplete()) return;
-    await this.refresh();
-    this.pollTimer = setInterval(() => void this.refresh(), POLL_MS);
+    if (this.userModes.hasComplete()) {
+      await this.refreshAll();
+      this.pollTimer = setInterval(() => void this.refreshAll(), POLL_MS);
+    }
+    this.tickTimer = setInterval(() => this.nowMs.set(Date.now()), 1000);
   }
 
   ngOnDestroy() {
     if (this.pollTimer) clearInterval(this.pollTimer);
+    if (this.tickTimer) clearInterval(this.tickTimer);
   }
 
-  openModal() {
-    this.modalOpen.set(true);
+  closeModal() {
+    this.modal.close();
+    this.resetQuestionState();
+  }
+
+  private resetQuestionState() {
     this.picked.set(null);
     this.msg.set(null);
-  }
-  closeModal() {
-    this.modalOpen.set(false);
+    this.revealed.set(false);
   }
 
   select(opt: Opt) {
+    if (this.revealed()) return;   // bloqueado tras reveal
     this.picked.set(opt);
   }
 
@@ -213,17 +328,15 @@ export class TriviaPopupComponent implements OnInit, OnDestroy {
       n.add(cur.id);
       return n;
     });
-    this.picked.set(null);
-    this.msg.set(null);
-    if (this.queueRemaining() === 0) {
-      this.closeModal();
-    }
+    this.resetQuestionState();
+    if (this.queueRemaining() === 0) this.closeModal();
   }
 
-  async confirm() {
+  /** "Responder" → save → reveal correct + explanation. */
+  async answer() {
     const cur = this.current();
     const opt = this.picked();
-    if (!cur || !opt || this.submitting()) return;
+    if (!cur || !opt || this.submitting() || this.revealed()) return;
     const userId = this.auth.user()?.sub;
     if (!userId) return;
 
@@ -233,13 +346,7 @@ export class TriviaPopupComponent implements OnInit, OnDestroy {
       await this.api.upsertTriviaAnswer({
         userId, questionId: cur.id, matchId: cur.matchId, selectedOption: opt,
       });
-      this.msg.set('✓ Respuesta enviada');
-      setTimeout(() => {
-        this.queue.update((arr) => arr.filter((x) => x.id !== cur.id));
-        this.picked.set(null);
-        this.msg.set(null);
-        if (this.queueRemaining() === 0) this.closeModal();
-      }, 1200);
+      this.revealed.set(true);
     } catch (err) {
       this.msg.set('No se pudo guardar. Intenta de nuevo.');
       // eslint-disable-next-line no-console
@@ -249,11 +356,40 @@ export class TriviaPopupComponent implements OnInit, OnDestroy {
     }
   }
 
-  private async refresh() {
+  /** "Siguiente →" o "Cerrar" tras el reveal. */
+  advance() {
+    const cur = this.current();
+    if (cur) {
+      // Marca la actual como dismissed para que no vuelva a aparecer
+      // — server ya tiene la respuesta y no debería reaparecer en el
+      // próximo poll, pero la dismissed local protege contra timing.
+      this.dismissed.update((s) => {
+        const n = new Set(s);
+        n.add(cur.id);
+        return n;
+      });
+    }
+    this.resetQuestionState();
+    if (this.queueRemaining() === 0) {
+      this.closeModal();
+    }
+    // Quedarse en index 0: visibleQueue ya filtra dismissed, así que la
+    // siguiente pregunta es la nueva primera.
+    this.activeIndex.set(0);
+  }
+
+  formatTimer(secs: number): string {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+
+  /** Carga la cola "live" (todas las preguntas no contestadas de matches en vivo). */
+  private async refreshAll() {
     const userId = this.auth.user()?.sub;
     if (!userId) return;
     if (!this.userModes.hasComplete()) {
-      this.queue.set([]);
+      this.allQueue.set([]);
       return;
     }
     try {
@@ -275,42 +411,83 @@ export class TriviaPopupComponent implements OnInit, OnDestroy {
       });
 
       if (liveMatches.length === 0) {
-        this.queue.set([]);
+        this.allQueue.set([]);
         return;
       }
 
       const collected: ActiveQuestion[] = [];
       for (const m of liveMatches) {
-        const [qRes, aRes] = await Promise.all([
-          this.api.listTriviaByMatch(m.id),
-          this.api.myTriviaAnswers(userId, m.id),
-        ]);
-        const answeredQids = new Set(
-          ((aRes.data ?? []) as Array<{ questionId: string }>).map((a) => a.questionId),
-        );
-        for (const q of (qRes.data ?? []) as Array<{
-          id: string; prompt: string;
-          optionA: string; optionB: string; optionC: string; optionD: string;
-          explanation: string | null;
-        }>) {
-          if (answeredQids.has(q.id)) continue;
-          const parsed = parseSponsor(q.explanation);
-          collected.push({
-            id: q.id, matchId: m.id, prompt: q.prompt,
-            optionA: q.optionA, optionB: q.optionB,
-            optionC: q.optionC, optionD: q.optionD,
-            homeTeam: teamMap.get(m.homeTeamId) ?? m.homeTeamId,
-            awayTeam: teamMap.get(m.awayTeamId) ?? m.awayTeamId,
-            sponsor: parsed.sponsor,
-            cleanExplanation: parsed.cleanExplanation,
-          });
-        }
+        const list = await this.collectForMatch(m, userId, teamMap);
+        collected.push(...list);
       }
-      this.queue.set(collected);
+      this.allQueue.set(collected);
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.warn('[trivia] refresh failed', err);
+      console.warn('[trivia] refreshAll failed', err);
     }
+  }
+
+  /** Carga preguntas de UN match específico — usado al abrir scoped. */
+  private async loadScopedQueue(matchId: string) {
+    const userId = this.auth.user()?.sub;
+    if (!userId) return;
+    try {
+      const [mRes, teamsRes] = await Promise.all([
+        this.api.getMatch(matchId),
+        this.api.listTeams(TOURNAMENT_ID),
+      ]);
+      if (!mRes.data) {
+        this.scopedQueue.set([]);
+        return;
+      }
+      const teamMap = new Map<string, string>();
+      for (const t of teamsRes.data ?? []) teamMap.set(t.slug, t.name);
+      const list = await this.collectForMatch(mRes.data, userId, teamMap);
+      this.scopedQueue.set(list);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('[trivia] loadScopedQueue failed', err);
+      this.scopedQueue.set([]);
+    }
+  }
+
+  private async collectForMatch(
+    m: { id: string; homeTeamId: string; awayTeamId: string },
+    userId: string,
+    teamMap: Map<string, string>,
+  ): Promise<ActiveQuestion[]> {
+    const [qRes, aRes] = await Promise.all([
+      this.api.listTriviaByMatch(m.id),
+      this.api.myTriviaAnswers(userId, m.id),
+    ]);
+    const answeredQids = new Set(
+      ((aRes.data ?? []) as Array<{ questionId: string }>).map((a) => a.questionId),
+    );
+    const out: ActiveQuestion[] = [];
+    for (const q of (qRes.data ?? []) as Array<{
+      id: string; prompt: string;
+      optionA: string; optionB: string; optionC: string; optionD: string;
+      correctOption?: string | null;
+      publishedAt: string;
+      timerSeconds?: number | null;
+      explanation: string | null;
+    }>) {
+      if (answeredQids.has(q.id)) continue;
+      const parsed = parseSponsor(q.explanation);
+      out.push({
+        id: q.id, matchId: m.id, prompt: q.prompt,
+        optionA: q.optionA, optionB: q.optionB,
+        optionC: q.optionC, optionD: q.optionD,
+        correctOption: ((q.correctOption ?? 'A') as Opt),
+        timerSeconds: q.timerSeconds ?? 120,
+        publishedAt: q.publishedAt,
+        homeTeam: teamMap.get(m.homeTeamId) ?? m.homeTeamId,
+        awayTeam: teamMap.get(m.awayTeamId) ?? m.awayTeamId,
+        sponsor: parsed.sponsor,
+        cleanExplanation: parsed.cleanExplanation,
+      });
+    }
+    return out;
   }
 }
 
@@ -320,10 +497,6 @@ export class TriviaPopupComponent implements OnInit, OnDestroy {
  *   → { sponsor: { name: "Coca-Cola", icon: "🥤" }, cleanExplanation: "Esta es la explicación." }
  * - Sin prefijo: `Texto explicación normal`
  *   → { sponsor: null, cleanExplanation: "Texto explicación normal" }
- *
- * Esta es una convención temporal mientras TriviaQuestion no tiene el
- * campo `sponsorId` en el schema. Cuando se agregue, este parser puede
- * sustituirse por una resolución real al modelo Sponsor.
  */
 function parseSponsor(explanation: string | null | undefined): {
   sponsor: SponsorMeta | null;

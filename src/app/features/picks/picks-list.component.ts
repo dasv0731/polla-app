@@ -9,6 +9,7 @@ import { TimeService } from '../../core/time/time.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
 import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
+import { TriviaModalService } from '../../core/trivia/trivia-modal.service';
 
 const SAVE_DEBOUNCE_MS = 600;
 
@@ -289,16 +290,15 @@ interface TriviaInfo {
                 </div>
               </div>
               @if (trivia) {
-                <a class="match-trivia"
-                   [routerLink]="['/picks/trivia', m.id]"
-                   (click)="$event.stopPropagation()">
+                <button type="button" class="match-trivia"
+                        (click)="openTrivia(m.id, $event)">
                   <span class="match-trivia__icon">⚡</span>
                   <div class="match-trivia__body">
                     <div class="match-trivia__title">{{ trivia.title }}</div>
                     <div class="match-trivia__sub">{{ trivia.sub }}</div>
                   </div>
                   <span class="btn-wf btn-wf--sm btn-wf--ink">Jugar</span>
-                </a>
+                </button>
               }
             </article>
           </ng-template>
@@ -444,6 +444,14 @@ export class PicksListComponent implements OnInit, OnDestroy {
   private time = inject(TimeService);
   private toast = inject(ToastService);
   private router = inject(Router);
+  private triviaModal = inject(TriviaModalService);
+
+  /** Abre el modal de trivia scoped al match dado (evita el routerLink
+   *  al /picks/trivia/:id legacy — la trivia ahora siempre es modal). */
+  openTrivia(matchId: string, event: Event) {
+    event.stopPropagation();   // evita que el card-body navegue al detail
+    this.triviaModal.openForMatch(matchId);
+  }
 
   /** matchId actualmente guardando (para mostrar "Guardando…"). */
   savingMatch = signal<string | null>(null);

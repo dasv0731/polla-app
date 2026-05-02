@@ -815,25 +815,123 @@ a.btn-wf { text-decoration: none; }
   font-size: 12px;
   display: none;
 }
+/* "Selected" mientras se contesta — NEUTRAL (no verde con check, que
+   confunde con respuesta correcta). Borde azul-tinta + bg sutil + el
+   letter pill se rellena oscuro para indicar la elección. */
 .trivia-option.is-selected {
-  border: 2px solid var(--wf-green);
-  background: var(--wf-green-soft);
+  border: 2px solid var(--wf-ink);
+  background: rgba(0, 0, 0, 0.03);
 }
 .trivia-option.is-selected .trivia-option__letter {
-  background: var(--wf-green);
+  background: var(--wf-ink);
   color: white;
   border: none;
 }
-.trivia-option.is-selected .trivia-option__check {
-  display: block;
-  color: var(--wf-green);
-}
 .trivia-modal--marca .trivia-option.is-selected {
-  border-color: #e63946;
-  background: rgba(230, 57, 70, 0.06);
+  border-color: #1e1e1e;
+  background: rgba(0, 0, 0, 0.04);
 }
-.trivia-modal--marca .trivia-option.is-selected .trivia-option__letter { background: #e63946; }
-.trivia-modal--marca .trivia-option.is-selected .trivia-option__check { color: #e63946; }
+.trivia-modal--marca .trivia-option.is-selected .trivia-option__letter { background: #1e1e1e; }
+
+/* Reveal: respuesta correcta marcada VERDE con ✓. */
+.trivia-option--correct {
+  border: 2px solid var(--wf-green) !important;
+  background: var(--wf-green-soft) !important;
+}
+.trivia-option--correct .trivia-option__letter {
+  background: var(--wf-green) !important;
+  color: white !important;
+  border: none !important;
+}
+
+/* Reveal: pick del user que NO acertó marcada ROJA con ✕. */
+.trivia-option--wrong {
+  border: 2px solid #c33 !important;
+  background: rgba(195, 51, 51, 0.10) !important;
+}
+.trivia-option--wrong .trivia-option__letter {
+  background: #c33 !important;
+  color: white !important;
+  border: none !important;
+}
+
+.trivia-option__badge {
+  margin-left: auto;
+  font-size: 14px;
+  font-weight: 800;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.trivia-option__badge--correct { color: var(--wf-green); }
+.trivia-option__badge--wrong { color: #c33; }
+
+/* Bloque de feedback post-respuesta */
+.trivia-reveal {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+.trivia-reveal--ok {
+  background: var(--wf-green-soft);
+  color: var(--wf-green-ink);
+  border: 1px solid rgba(2, 204, 116, 0.35);
+}
+.trivia-reveal--bad {
+  background: rgba(195, 51, 51, 0.10);
+  color: #a02a2a;
+  border: 1px solid rgba(195, 51, 51, 0.35);
+}
+.trivia-reveal--skip {
+  background: rgba(212, 165, 0, 0.12);
+  color: #7a5d00;
+  border: 1px solid rgba(212, 165, 0, 0.35);
+}
+.trivia-explanation {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--wf-ink-2);
+}
+.trivia-explanation strong { color: var(--wf-ink); }
+
+/* Timer countdown en el header del modal */
+.trivia-timer {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--wf-fill);
+  color: var(--wf-ink);
+  border: 1px solid var(--wf-line);
+  margin-right: 8px;
+}
+.trivia-timer--low {
+  background: rgba(195, 51, 51, 0.12);
+  color: #c33;
+  border-color: rgba(195, 51, 51, 0.35);
+  animation: trivia-pulse 1s infinite;
+}
+@keyframes trivia-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+.trivia-modal--sinad .trivia-timer {
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.25);
+}
 
 .trivia-actions {
   display: flex;
