@@ -222,6 +222,9 @@ type DropdownKey = 'user' | 'ranking' | null;
 
         <div class="app-sidebar__section">
           <div class="app-sidebar__kicker">Predicciones</div>
+          <a class="sidebar-row" routerLink="/profile/special-picks" routerLinkActive="is-active">
+            <span><span class="sidebar-row__icon">⭐</span>Picks especiales</span>
+          </a>
           <a class="sidebar-row" routerLink="/picks/group-stage/predict"
              routerLinkActive="is-active">
             <span><span class="sidebar-row__icon">📋</span>Tabla de grupos</span>
@@ -241,18 +244,6 @@ type DropdownKey = 'user' | 'ranking' | null;
           <p class="sidebar-empty" style="margin-top:6px;">
             Aplican a tus grupos en modo simple y completo.
           </p>
-        </div>
-
-        <div class="app-sidebar__section">
-          <div class="app-sidebar__kicker">Mi cuenta</div>
-          <a class="sidebar-row" routerLink="/profile/special-picks" routerLinkActive="is-active">
-            <span><span class="sidebar-row__icon">⭐</span>Picks especiales</span>
-          </a>
-          @if (hasComplete()) {
-            <a class="sidebar-row" routerLink="/mis-comodines" routerLinkActive="is-active">
-              <span><span class="sidebar-row__icon">🃏</span>Mis comodines</span>
-            </a>
-          }
         </div>
       }
     </aside>
