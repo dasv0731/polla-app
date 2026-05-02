@@ -596,6 +596,8 @@ export class PicksListComponent implements OnInit {
     const next = side === 'home'
       ? { home: v, away: cur.away }
       : { home: cur.home, away: v };
+    // eslint-disable-next-line no-console
+    console.log('[picks-list] onScoreInput', { matchId, side, raw, v, cur, next });
     this.sync.enqueue('pick', matchId, next);
   }
 

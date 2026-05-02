@@ -47,14 +47,17 @@ type Kind =
   | 'best-thirds';      // BestThirdsPick: key = `${userId}:${mode}`,
                         //   payload = full upsertBestThirdsPick input
 
+type EntryStatus = 'pending' | 'syncing' | 'synced';
+
 interface PendingEntry {
   kind: Kind;
   key: string;
   payload: Record<string, unknown>;
+  status: EntryStatus;
   attempts: number;
   /** Timestamp de cuando se enqueó por última vez. Si cambia entre que
-   *  el sync arranca y termina, NO borramos la entry al success (porque
-   *  el user re-editó durante el await y queremos pushear el nuevo valor). */
+   *  el sync arranca y termina, NO marcamos la entry como synced
+   *  (porque el user re-editó durante el await y queremos re-pushear). */
   enqueuedAt: number;
   lastAttemptAt: number;
 }
@@ -69,14 +72,16 @@ export class PicksSyncService {
   private lastError = signal<string | null>(null);
   private syncTimer: ReturnType<typeof setTimeout> | null = null;
 
-  /** Cantidad de pendientes — para badge en topnav. */
-  pending = computed(() => this.store().size);
+  /** Cantidad de pendientes (no-synced) — para badge en topnav. */
+  pending = computed(() =>
+    [...this.store().values()].filter((e) => e.status !== 'synced').length,
+  );
 
   /** Status agregado para el indicador del topnav. */
   status = computed<'idle' | 'pending' | 'syncing' | 'error'>(() => {
     if (this.syncing()) return 'syncing';
     if (this.lastError()) return 'error';
-    if (this.store().size > 0) return 'pending';
+    if (this.pending() > 0) return 'pending';
     return 'idle';
   });
 
@@ -114,14 +119,18 @@ export class PicksSyncService {
     }
   }
 
-  /** Encola un edit. Dedupe por (kind, key) — el último write gana. */
+  /** Encola un edit. Dedupe por (kind, key) — el último write gana.
+   *  Si la entry estaba 'synced' y vuelve a editarse, pasa a 'pending'. */
   enqueue(kind: Kind, key: string, payload: Record<string, unknown>) {
     const fullKey = `${kind}:${key}`;
+    // eslint-disable-next-line no-console
+    console.log('[sync] enqueue', kind, key, payload);
     this.store.update((prev) => {
       const next = new Map(prev);
       const existing = next.get(fullKey);
       next.set(fullKey, {
         kind, key, payload,
+        status: 'pending',
         attempts: existing?.attempts ?? 0,
         enqueuedAt: Date.now(),
         lastAttemptAt: existing?.lastAttemptAt ?? 0,
@@ -132,17 +141,17 @@ export class PicksSyncService {
     this.scheduleSync();
   }
 
-  /** Lee la última payload optimista para (kind, key). null si no hay
-   *  pendiente. Componentes la usan para mostrar el valor "as if
-   *  saved" en sus inputs/displays. */
+  /** Lee la última payload conocida para (kind, key) — pending O synced.
+   *  Es la "fuente de verdad" para inputs/displays mientras la sesión
+   *  esté abierta. Tras refresh la app vuelve a leer de DB. */
   getPending<T extends Record<string, unknown>>(kind: Kind, key: string): T | null {
     return (this.store().get(`${kind}:${key}`)?.payload as T) ?? null;
   }
 
-  /** True si hay un edit pendiente (no sync) para (kind, key). Útil para
-   *  pills "Pendiente"/"Guardado" en match cards. */
+  /** True solo si hay un edit no-sincronizado todavía. Synced retorna false. */
   isPending(kind: Kind, key: string): boolean {
-    return this.store().has(`${kind}:${key}`);
+    const entry = this.store().get(`${kind}:${key}`);
+    return entry !== undefined && entry.status !== 'synced';
   }
 
   /** Trigger manual de sync (botón "Sincronizar pendientes" en topnav). */
@@ -166,42 +175,67 @@ export class PicksSyncService {
 
   private async flush() {
     if (this.syncing()) return;
-    const entries = [...this.store().values()];
-    if (entries.length === 0) return;
+    const toSync = [...this.store().values()].filter((e) => e.status !== 'synced');
+    if (toSync.length === 0) return;
+
+    // eslint-disable-next-line no-console
+    console.log('[sync] flush start', toSync.length, 'entries');
 
     this.syncing.set(true);
     this.lastError.set(null);
 
+    // Marcar las entries como 'syncing' antes del await.
+    this.store.update((prev) => {
+      const next = new Map(prev);
+      for (const e of toSync) {
+        const fullKey = `${e.kind}:${e.key}`;
+        const cur = next.get(fullKey);
+        if (cur && cur.status === 'pending') {
+          next.set(fullKey, { ...cur, status: 'syncing' });
+        }
+      }
+      return next;
+    });
+
     // Snapshot de enqueuedAt para detectar re-edits durante el await.
-    const snapshots = entries.map((e) => ({ entry: e, ts: e.enqueuedAt }));
+    const snapshots = toSync.map((e) => ({ entry: e, ts: e.enqueuedAt }));
 
     const results = await Promise.allSettled(
-      entries.map((e) => this.dispatch(e)),
+      toSync.map((e) => this.dispatch(e)),
     );
 
     let errorCount = 0;
+    let syncedCount = 0;
     this.store.update((prev) => {
       const next = new Map(prev);
       results.forEach((r, i) => {
         const { entry, ts } = snapshots[i]!;
         const fullKey = `${entry.kind}:${entry.key}`;
         const current = next.get(fullKey);
+        if (!current) return;
         if (r.status === 'fulfilled') {
-          // Solo borramos si el user no re-editó durante el await
-          // (enqueuedAt sigue siendo el mismo). Si re-editó, dejamos
-          // el nuevo valor para que se sincronice en el próximo flush.
-          if (current && current.enqueuedAt === ts) {
-            next.delete(fullKey);
+          if (current.enqueuedAt === ts) {
+            // El user no re-editó durante el await → marcar como synced.
+            // Mantenemos la entry para que getPending siga devolviendo el
+            // valor correcto a inputs/displays (sin "vuelta a cero").
+            next.set(fullKey, { ...current, status: 'synced' });
+            syncedCount++;
+          } else {
+            // El user re-editó: dejamos el nuevo valor 'pending' para
+            // que el próximo flush lo mande con el valor latest.
+            next.set(fullKey, { ...current, status: 'pending' });
           }
         } else {
           errorCount++;
-          if (current) {
-            next.set(fullKey, {
-              ...current,
-              attempts: current.attempts + 1,
-              lastAttemptAt: Date.now(),
-            });
-          }
+          // eslint-disable-next-line no-console
+          console.warn('[sync] dispatch failed for', fullKey,
+            r.status === 'rejected' ? r.reason : null);
+          next.set(fullKey, {
+            ...current,
+            status: 'pending',
+            attempts: current.attempts + 1,
+            lastAttemptAt: Date.now(),
+          });
         }
       });
       return next;
@@ -213,9 +247,18 @@ export class PicksSyncService {
     }
     this.syncing.set(false);
 
-    // Si hay pendientes (errores o nuevos edits durante sync), reintentar.
-    if (this.store().size > 0) {
-      const maxAttempts = Math.max(...[...this.store().values()].map((e) => e.attempts));
+    // eslint-disable-next-line no-console
+    console.log('[sync] flush done · synced:', syncedCount, '· errors:', errorCount);
+
+    // Si quedan entries no-synced (errors o re-edits durante sync), retry.
+    const stillPending = [...this.store().values()].filter((e) => e.status !== 'synced').length;
+    if (stillPending > 0) {
+      const maxAttempts = Math.max(
+        ...[...this.store().values()]
+          .filter((e) => e.status !== 'synced')
+          .map((e) => e.attempts),
+        0,
+      );
       const backoffMs = errorCount > 0
         ? Math.min(MAX_BACKOFF_MS, 2000 * Math.pow(2, Math.min(maxAttempts, 5)))
         : SYNC_DEBOUNCE_MS;

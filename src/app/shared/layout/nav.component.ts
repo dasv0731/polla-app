@@ -17,8 +17,7 @@ type DropdownKey = 'user' | 'ranking' | null;
     <header class="app-topnav">
       <div class="app-topnav__left">
         <a routerLink="/home" class="app-topnav__brand" aria-label="Golgana" (click)="closeAll()">
-          <img src="assets/logo-golgana.png" alt="" class="app-topnav__logo-img">
-          <span class="app-topnav__title">GOLGANA</span>
+          <img src="assets/logo-golgana.png" alt="Golgana" class="app-topnav__logo-img">
         </a>
         <nav class="app-topnav__menu" aria-label="Principal">
           @if (isAdmin()) {
@@ -142,8 +141,7 @@ type DropdownKey = 'user' | 'ranking' | null;
     <!-- ============ MOBILE TOPBAR (<992px) ============ -->
     <header class="app-topbar">
       <a routerLink="/home" class="app-topbar__brand" aria-label="Golgana" (click)="closeAll()">
-        <img src="assets/logo-golgana.png" alt="" class="app-topbar__logo-img">
-        <span class="app-topbar__title">GOLGANA</span>
+        <img src="assets/logo-golgana.png" alt="Golgana" class="app-topbar__logo-img">
       </a>
       <div class="app-topbar__actions">
         @if (sync.status() !== 'idle') {

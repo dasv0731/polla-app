@@ -3624,14 +3624,14 @@ a.btn-wf { text-decoration: none; }
     border-radius: 6px;
     font-size: 13px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.78);
+    color: white;
     text-decoration: none;
     cursor: pointer;
     background: transparent;
     border: 0;
     font-family: inherit;
   }
-  .app-topnav__item:hover { background: rgba(255, 255, 255, 0.08); color: white; }
+  .app-topnav__item:hover { background: rgba(255, 255, 255, 0.10); }
   .app-topnav__item.is-active {
     background: rgba(2, 204, 116, 0.20);
     color: #4dffa0;
@@ -3651,7 +3651,7 @@ a.btn-wf { text-decoration: none; }
   .app-topnav__bell {
     position: relative;
     font-size: 16px;
-    color: rgba(255, 255, 255, 0.78);
+    color: white;
     text-decoration: none;
     background: transparent;
     border: 0;
