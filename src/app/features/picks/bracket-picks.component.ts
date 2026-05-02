@@ -284,14 +284,17 @@ const SAVE_DEBOUNCE_MS = 1200;
       </ng-template>
 
       <ng-template #slotTpl let-match="match" let-side="side">
-        @let teamId = side === 'home' ? match.homeTeamId : match.awayTeamId;
+        @let teamId = displayedTeam(match, side);
         @let team = teamMap().get(teamId);
         @let isMine = winners().get(match.id) === teamId;
         @let isWinner = realWinner(match) === teamId;
+        @let userPicked = winners().has(match.id);
+        @let isDiscarded = userPicked && !isMine && !isWinner;
         @let score = side === 'home' ? match.homeScore : match.awayScore;
         <button type="button" class="bracket-slot"
                 [class.bracket-slot--win]="isWinner"
                 [class.bracket-slot--mine]="isMine"
+                [class.bracket-slot--discarded]="isDiscarded"
                 [class.bracket-slot--locked]="bracketLocked()"
                 [disabled]="bracketLocked()"
                 (click)="pickWinner(match.id, teamId)">
@@ -460,6 +463,68 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
     return null;
   }
 
+  /** Match de la fase anterior cuyo ganador alimenta el slot indicado.
+   *  Convención del bracket Mundial 2026: R{N} pos K es alimentado por
+   *  R{N-1} pos 2K-1 (home) y 2K (away). R32 (phaseOrder=2) no tiene
+   *  padre dentro del knockout. */
+  private parentOf(match: KnockoutMatch, side: 'home' | 'away'): KnockoutMatch | null {
+    if (match.phaseOrder <= 2) return null;
+    if (match.bracketPosition == null) return null;
+    const parentPhase = match.phaseOrder - 1;
+    const parentPos = side === 'home'
+      ? match.bracketPosition * 2 - 1
+      : match.bracketPosition * 2;
+    return this.matches().find((m) =>
+      m.phaseOrder === parentPhase && m.bracketPosition === parentPos,
+    ) ?? null;
+  }
+
+  /** Equipo a renderizar en el slot. Si el padre tiene un winner picked
+   *  por el user (o un realWinner si ya jugó), lo propagamos hacia
+   *  adelante — así una elección en 16avos aparece automáticamente
+   *  en octavos sin que el user tenga que tocar nada. */
+  displayedTeam(match: KnockoutMatch, side: 'home' | 'away'): string {
+    return this.computeDisplayed(match, side, this.winners());
+  }
+
+  private computeDisplayed(
+    match: KnockoutMatch,
+    side: 'home' | 'away',
+    winners: Map<string, string>,
+  ): string {
+    const parent = this.parentOf(match, side);
+    if (parent) {
+      // Si el padre ya jugó, el resultado real prevalece.
+      if (parent.status === 'FINAL') {
+        const real = this.realWinner(parent);
+        if (real) return real;
+      }
+      const w = winners.get(parent.id);
+      if (w) return w;
+    }
+    return side === 'home' ? match.homeTeamId : match.awayTeamId;
+  }
+
+  /** Tras cambiar un winner upstream, las picks downstream pueden quedar
+   *  apuntando a un team que ya no aparece en el slot. Las limpia. Recorre
+   *  por fase ascendente para que los efectos en cascada se propaguen. */
+  private revalidateDownstream(base: Map<string, string>): Map<string, string> {
+    const out = new Map(base);
+    const sorted = [...this.matches()].sort((a, b) => {
+      if (a.phaseOrder !== b.phaseOrder) return a.phaseOrder - b.phaseOrder;
+      return (a.bracketPosition ?? 999) - (b.bracketPosition ?? 999);
+    });
+    for (const m of sorted) {
+      const homeId = this.computeDisplayed(m, 'home', out);
+      const awayId = this.computeDisplayed(m, 'away', out);
+      const w = out.get(m.id);
+      if (w && w !== homeId && w !== awayId) {
+        out.delete(m.id);
+      }
+    }
+    return out;
+  }
+
   async ngOnInit() {
     this.currentUserId = this.auth.user()?.sub ?? '';
     if (!this.currentUserId) {
@@ -601,7 +666,9 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
       } else {
         next.set(matchId, teamSlug);
       }
-      return next;
+      // Limpia picks downstream que referían al equipo "viejo" del slot
+      // (el user cambió el padre y ahora el slot muestra a otro team).
+      return this.revalidateDownstream(next);
     });
     this.persistLocal();
     this.scheduleSave();

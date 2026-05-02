@@ -156,7 +156,7 @@ interface ServerIdMap {
 
           <button class="btn btn--primary" type="button"
                   style="width: 100%; margin-top: var(--space-md);"
-                  [disabled]="saving() || !!lockedAt() || staged().advancing.length !== 8"
+                  [disabled]="saving() || !!lockedAt()"
                   (click)="saveAll()">
             {{ saving() ? 'Guardando…' : 'Guardar en la base' }}
           </button>
@@ -630,10 +630,34 @@ export class GroupStagePicksComponent implements OnInit {
     if (this.lockedAt()) return;
     const currentMode = this.mode();
     if (!currentMode) return;
-    if (this.staged().advancing.length !== 8) {
-      this.saveError.set('Debes marcar exactamente 8 terceros que avanzan');
+
+    // Validación completa antes de pegarle a la API: detectamos terceros
+    // incompletos y grupos con < 4 equipos rankeados, y devolvemos un
+    // mensaje único con todo lo que falta.
+    const issues: string[] = [];
+    const advancingCount = this.staged().advancing.length;
+    if (advancingCount !== 8) {
+      issues.push(
+        `Marca ${advancingCount > 8 ? 'solo ' : ''}${8 - advancingCount > 0 ? (8 - advancingCount) + ' más de los ' : ''}mejores 3eros (tienes ${advancingCount}/8).`,
+      );
+    }
+    const incompleteGroups: string[] = [];
+    for (const g of GROUP_LETTERS) {
+      const arr = this.staged().groups[g] ?? [];
+      if (arr.length !== 4) incompleteGroups.push(g);
+    }
+    if (incompleteGroups.length > 0) {
+      issues.push(
+        `Grupo${incompleteGroups.length === 1 ? '' : 's'} sin completar: ${incompleteGroups.join(', ')}.`,
+      );
+    }
+    if (issues.length > 0) {
+      const msg = `Te faltan selecciones · ${issues.join(' ')}`;
+      this.saveError.set(msg);
+      this.toast.error(msg);
       return;
     }
+
     this.saveError.set(null);
     this.saving.set(true);
     let errored = 0;

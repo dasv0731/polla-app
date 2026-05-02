@@ -269,18 +269,21 @@ export class SpecialPicksComponent implements OnInit {
     const m = this.mode();
     if (!userId || !m) return;
 
-    // Validación: el mismo equipo no puede ser campeón Y subcampeón
-    // (lógicamente uno gana al otro). Ni mismo team en cualquier
-    // combinación de los 3 slots.
-    const others = this.picksByType();
-    for (const k of Object.keys(others) as SpecialKey[]) {
-      if (k === type) continue;
-      if (others[k] === teamId) {
-        const otherLabel = TYPES.find((t) => t.key === k)?.label ?? k;
-        this.toast.error(
-          `Ese equipo ya está elegido como ${otherLabel}. Cámbialo primero o elige otro.`,
-        );
-        return;
+    // Validación: el mismo equipo NO puede ser campeón Y subcampeón
+    // (lógicamente uno gana al otro). La revelación SÍ puede coincidir
+    // con campeón o subcampeón — saltamos validación si cualquiera
+    // de los lados involucrados es DARK_HORSE.
+    if (type !== 'DARK_HORSE') {
+      const others = this.picksByType();
+      for (const k of ['CHAMPION', 'RUNNER_UP'] as const) {
+        if (k === type) continue;
+        if (others[k] === teamId) {
+          const otherLabel = TYPES.find((t) => t.key === k)?.label ?? k;
+          this.toast.error(
+            `Ese equipo ya está elegido como ${otherLabel}. Cámbialo primero o elige otro.`,
+          );
+          return;
+        }
       }
     }
 

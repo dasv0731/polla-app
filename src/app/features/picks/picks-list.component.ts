@@ -239,14 +239,14 @@ interface TriviaInfo {
                   <div class="score" (click)="$event.stopPropagation()">
                     @if (upcoming) {
                       <input type="number" class="score__input" min="0" max="9"
-                             [value]="m.pick?.homeScorePred ?? ''"
+                             [value]="scoreInputValue(m, 'home')"
                              placeholder="0"
                              [attr.aria-label]="'Goles ' + m.homeTeamName"
                              (click)="$event.stopPropagation()"
                              (input)="onScoreInput(m.id, 'home', $event)">
                       <span>—</span>
                       <input type="number" class="score__input" min="0" max="9"
-                             [value]="m.pick?.awayScorePred ?? ''"
+                             [value]="scoreInputValue(m, 'away')"
                              placeholder="0"
                              [attr.aria-label]="'Goles ' + m.awayTeamName"
                              (click)="$event.stopPropagation()"
@@ -581,6 +581,18 @@ export class PicksListComponent implements OnInit, OnDestroy {
     const m = this.matches().find((x) => x.id === matchId);
     const p = m?.pick;
     return { home: p?.homeScorePred ?? 0, away: p?.awayScorePred ?? 0 };
+  }
+
+  /** Para [value] del input. Prefiere pendingEdits para evitar flicker
+   *  cuando cambia detection se dispara durante el await del save: el
+   *  binding lee desde m.pick (stale) y el input se "rebota" a 0/old
+   *  antes de que matches.update aplique. Devolviendo desde pendingEdits
+   *  el input siempre refleja el último valor tipeado por el user. */
+  scoreInputValue(m: MatchWithMeta, side: 'home' | 'away'): number | string {
+    const pe = this.pendingEdits.get(m.id);
+    if (pe) return side === 'home' ? pe.home : pe.away;
+    const v = side === 'home' ? m.pick?.homeScorePred : m.pick?.awayScorePred;
+    return v ?? '';
   }
 
   private async flushSave(matchId: string) {
