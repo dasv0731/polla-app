@@ -1,10 +1,8 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService } from '../../core/user/user-modes.service';
-import { GroupActionsService } from '../../core/groups/group-actions.service';
 import { compareRankable } from '../../shared/util/tiebreakers';
 
 type GameMode = 'SIMPLE' | 'COMPLETE';
@@ -23,96 +21,141 @@ interface GroupRow {
 @Component({
   standalone: true,
   selector: 'app-groups-list',
-  imports: [RouterLink, FormsModule],
+  imports: [RouterLink],
   template: `
-    <header class="page-header">
-      <div class="page-header__top">
-        <div class="page-header__title">
-          <small>{{ countLabel() }} · Mundial 2026</small>
-          <h1>Mis grupos</h1>
+    <section class="page">
+      <header class="page__header" style="margin-bottom:18px;">
+        <div>
+          <div class="kicker">{{ countLabel() }} · MUNDIAL 2026</div>
+          <h1 class="page__title">Mis grupos</h1>
         </div>
-        <div class="page-header__actions">
-          <button type="button" class="btn btn--primary" (click)="groupActions.openCreate()">
-            + Crear grupo
-          </button>
-          <button type="button" class="btn btn--ghost" (click)="groupActions.openJoin()">
-            Unirme con código
-          </button>
-        </div>
-      </div>
-    </header>
+      </header>
 
-    <div class="container-app">
       @if (loading()) {
-        <p>Cargando…</p>
+        <p style="padding:32px;text-align:center;color:var(--wf-ink-3);">Cargando…</p>
+      } @else if (groups().length === 0) {
+        <div style="padding:32px;text-align:center;background:var(--wf-paper);border:1px dashed var(--wf-line);border-radius:10px;">
+          <h3 style="font-family:var(--wf-display);font-size:18px;letter-spacing:.04em;margin:0 0 8px;font-weight:normal;">
+            Aún no estás en ningún grupo
+          </h3>
+          <p style="color:var(--wf-ink-3);font-size:13px;margin:0 0 12px;line-height:1.5;">
+            Usa los botones de la barra lateral para crear un grupo o unirte con un código.
+          </p>
+        </div>
       } @else {
-        @for (g of groups(); track g.id) {
-          <a class="group-row" [routerLink]="['/groups', g.id]">
-            <span class="group-row__icon" [class.group-row__icon--admin]="g.isAdmin"
-                  [attr.aria-label]="g.isAdmin ? 'Admin del grupo' : 'Miembro'">
-              {{ icon(g) }}
-            </span>
-            <div class="group-row__body">
-              <p class="group-row__name">
-                {{ g.name }}
-                <span style="display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.06em; margin-left: 8px; vertical-align: middle;"
-                      [style.background]="g.mode === 'COMPLETE' ? 'var(--color-primary-green)' : 'rgba(255,200,0,0.4)'"
-                      [style.color]="g.mode === 'COMPLETE' ? 'var(--color-primary-white)' : 'var(--color-primary-black)'">
-                  {{ g.mode === 'COMPLETE' ? 'Completo' : 'Simple' }}
-                </span>
-              </p>
-              <p class="group-row__meta">
-                {{ g.members }} miembros
-                @if (g.isAdmin) {
-                   · Eres <strong>admin</strong>
-                } @else if (g.adminHandle) {
-                   · creado por <strong>{{ '@' + g.adminHandle }}</strong>
-                }
-                @if (g.createdAt) {
-                   · creado el {{ formatDate(g.createdAt) }}
-                }
-              </p>
-            </div>
-            <div class="group-row__pos">
-              <p class="group-row__pos-num">#{{ g.myRank ?? '?' }}</p>
-              <p class="group-row__pos-label">de {{ g.members }}</p>
-            </div>
-          </a>
-        }
+        <div class="groups-list">
+          @for (g of groups(); track g.id) {
+            <a class="group-card" [routerLink]="['/groups', g.id]">
+              <span class="group-card__icon" [class.group-card__icon--admin]="g.isAdmin"
+                    [attr.aria-label]="g.isAdmin ? 'Admin del grupo' : 'Miembro'">
+                {{ icon(g) }}
+              </span>
+              <div class="group-card__body">
+                <div class="group-card__name-row">
+                  <span class="group-card__name">{{ g.name }}</span>
+                  <span class="pill"
+                        [class.pill--green]="g.mode === 'COMPLETE'"
+                        [class.pill--warn]="g.mode !== 'COMPLETE'">
+                    {{ g.mode === 'COMPLETE' ? 'Completo' : 'Simple' }}
+                  </span>
+                </div>
+                <div class="group-card__meta">
+                  {{ g.members }} {{ g.members === 1 ? 'miembro' : 'miembros' }}
+                  @if (g.isAdmin) { · Eres <strong>admin</strong> }
+                  @else if (g.adminHandle) { · creado por <strong>{{ '@' + g.adminHandle }}</strong> }
+                  @if (g.createdAt) { · creado el {{ formatDate(g.createdAt) }} }
+                </div>
+              </div>
+              <div class="group-card__pos">
+                <div class="num">#{{ g.myRank ?? '?' }}</div>
+                <div class="lbl">de {{ g.members }}</div>
+              </div>
+            </a>
+          }
+        </div>
       }
-
-      <section class="empty-cta" id="unirme" style="margin-top: var(--space-2xl);">
-        <article class="empty-cta__card">
-          <h3>Crear un nuevo grupo</h3>
-          <p>Arma un grupo privado con tus amigos. Recibes un código de 6 caracteres para invitar a quien quieras.</p>
-          <button type="button" class="btn btn--primary" (click)="groupActions.openCreate()">
-            + Crear grupo
-          </button>
-        </article>
-
-        <article class="empty-cta__card">
-          <h3>Unirme con código</h3>
-          <p>¿Te invitaron? Abrí el modal y pega el código de 6 caracteres.</p>
-          <button type="button" class="btn btn--primary" (click)="groupActions.openJoin()">
-            Unirme con código →
-          </button>
-        </article>
-      </section>
-    </div>
+    </section>
   `,
+  styles: [`
+    :host { display: block; }
+
+    .groups-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .group-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      background: var(--wf-paper);
+      border: 1px solid var(--wf-line);
+      border-radius: 10px;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .group-card:hover {
+      border-color: var(--wf-green);
+      box-shadow: 0 4px 14px rgba(0, 200, 100, .08);
+    }
+    .group-card__icon {
+      width: 40px; height: 40px;
+      border-radius: 8px;
+      background: var(--wf-fill);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--wf-display);
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .group-card__icon--admin {
+      background: var(--wf-green-soft);
+      color: var(--wf-green-ink);
+    }
+    .group-card__body { flex: 1; min-width: 0; }
+    .group-card__name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .group-card__name {
+      font-family: var(--wf-display);
+      font-size: 18px;
+      letter-spacing: .03em;
+    }
+    .group-card__meta {
+      font-size: 12px;
+      color: var(--wf-ink-3);
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+    .group-card__pos {
+      text-align: center;
+      flex-shrink: 0;
+      min-width: 60px;
+    }
+    .group-card__pos .num {
+      font-family: var(--wf-display);
+      font-size: 22px;
+      line-height: 1;
+    }
+    .group-card__pos .lbl {
+      font-size: 10px;
+      color: var(--wf-ink-3);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-top: 2px;
+    }
+  `],
 })
 export class GroupsListComponent implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
-  private router = inject(Router);
-  private userModes = inject(UserModesService);
-  groupActions = inject(GroupActionsService);
 
   groups = signal<GroupRow[]>([]);
   loading = signal(true);
-  codeInput = '';
-  joinError = signal<string | null>(null);
-  joining = signal(false);
 
   countLabel = computed(() => {
     const n = this.groups().length;
@@ -187,33 +230,4 @@ export class GroupsListComponent implements OnInit {
     }
   }
 
-  async join() {
-    const code = this.codeInput.trim().toUpperCase();
-    if (code.length !== 6) {
-      this.joinError.set('El código debe tener 6 caracteres');
-      return;
-    }
-    this.joinError.set(null);
-    this.joining.set(true);
-    try {
-      const res = await this.api.joinGroup(code);
-      if (res.errors && res.errors.length > 0) {
-        this.joinError.set(res.errors[0]!.message ?? 'Código inválido');
-        return;
-      }
-      if (res.data?.groupId) {
-        // Re-cargar grupos del user en la cache global para que el dropdown
-        // de mis-grupos los vea sin necesidad de full reload.
-        const userId = this.auth.user()?.sub;
-        if (userId) await this.userModes.load(userId);
-        void this.router.navigate(['/groups', res.data.groupId]);
-      } else {
-        this.joinError.set('No pudimos unirte. Intenta de nuevo.');
-      }
-    } catch (e) {
-      this.joinError.set((e as Error).message ?? 'Código inválido');
-    } finally {
-      this.joining.set(false);
-    }
-  }
 }

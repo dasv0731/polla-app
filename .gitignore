@@ -48,3 +48,4 @@ Thumbs.db
 # key). These are visible in any browser DevTools — they're not secrets. The
 # server-side polla-backend repo's amplify_outputs.json stays gitignored.
 src/amplify_outputs.json
+.claude/

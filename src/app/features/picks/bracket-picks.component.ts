@@ -659,6 +659,7 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
       }
       if (res?.data?.id) this.serverId = res.data.id;
       this.saveStatus.set('saved');
+      this.toast.success('Bracket guardado en la base ✓');
     } catch (e) {
       this.toast.error(humanizeError(e));
       this.saveStatus.set('error');

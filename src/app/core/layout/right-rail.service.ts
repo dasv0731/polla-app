@@ -21,6 +21,9 @@ export class RightRailService {
 
   routeAllowsRail = computed(() => {
     const url = this.currentUrl();
+    // /picks/group-stage/predict (drag-and-drop): NO rail — el editor
+    // necesita todo el ancho disponible.
+    if (url.startsWith('/picks/group-stage/predict')) return false;
     return (
       url === '/picks' ||
       url.startsWith('/picks/group-stage') ||

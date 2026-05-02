@@ -2,9 +2,11 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
+import { AuthService } from '../../core/auth/auth.service';
 import { GroupActionsService } from '../../core/groups/group-actions.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
+import { UserModesService } from '../../core/user/user-modes.service';
 
 const TOURNAMENT_ID = 'mundial-2026';
 type GameMode = 'SIMPLE' | 'COMPLETE';
@@ -190,8 +192,10 @@ type GameMode = 'SIMPLE' | 'COMPLETE';
 export class GroupActionsModalsComponent {
   svc = inject(GroupActionsService);
   private api = inject(ApiService);
+  private auth = inject(AuthService);
   private router = inject(Router);
   private toast = inject(ToastService);
+  private userModes = inject(UserModesService);
 
   // Crear
   name = '';
@@ -237,6 +241,10 @@ export class GroupActionsModalsComponent {
       this.toast.success(`Grupo "${name}" creado`);
       this.svc.closeAll();
       this.resetCreate();
+      // Refrescar el caché global de modos/grupos para que el sidebar,
+      // el dropdown de Ranking y los gates de hasComplete/hasSimple
+      // vean el grupo nuevo sin esperar al próximo reload.
+      await this.refreshUserModes();
       void this.router.navigate(['/groups', data.id]);
     } catch (e) {
       this.error.set(humanizeError(e));
@@ -255,6 +263,7 @@ export class GroupActionsModalsComponent {
       this.toast.success('¡Te uniste al grupo!');
       this.svc.closeAll();
       this.resetJoin();
+      await this.refreshUserModes();
       if (data?.id) {
         void this.router.navigate(['/groups', data.id]);
       } else {
@@ -264,6 +273,17 @@ export class GroupActionsModalsComponent {
       this.error.set(humanizeError(e));
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  private async refreshUserModes() {
+    const userId = this.auth.user()?.sub;
+    if (!userId) return;
+    try {
+      await this.userModes.load(userId);
+    } catch {
+      /* ignore — el reload puede fallar; en peor caso el user
+         hace F5 y todo sale bien. */
     }
   }
 }

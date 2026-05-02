@@ -1,17 +1,14 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
-import { ApiService } from '../../core/api/api.service';
-import { ToastService } from '../../core/notifications/toast.service';
-import { humanizeError } from '../../core/notifications/domain-errors';
+import { GroupActionsService } from '../../core/groups/group-actions.service';
 
 type Step = 1 | 2 | 3 | 4 | 5;
 
 @Component({
   selector: 'app-onboarding',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [RouterLink],
   template: `
     <div class="onb-shell">
       <div class="onb-card">
@@ -113,53 +110,26 @@ type Step = 1 | 2 | 3 | 4 | 5;
             (simple o completo), ranking, premios y comodines.
           </p>
 
-          @if (showJoinInput()) {
-            <div class="onb-actions" style="gap:8px;">
-              <label class="auth-label" style="margin-top:6px;">Código de invitación</label>
-              <input class="auth-input" type="text"
-                     [(ngModel)]="codeInput" name="code"
-                     maxlength="6" placeholder="ABCD23"
-                     (input)="codeInput = codeInput.toUpperCase()"
-                     autocomplete="off"
-                     style="font-family: var(--wf-display); font-size: 22px; letter-spacing: 6px; text-align: center; text-transform: uppercase;">
-              @if (joinError()) {
-                <p class="auth-error">{{ joinError() }}</p>
-              }
-              <button class="btn-wf btn-wf--block btn-wf--primary" type="button"
-                      [disabled]="joining() || codeInput.length !== 6"
-                      (click)="joinByCode()">
-                {{ joining() ? 'Validando…' : 'Unirme con este código' }}
-              </button>
-              <button class="btn-wf btn-wf--block" type="button"
-                      style="border:none;background:transparent;color:var(--wf-ink-3);"
-                      (click)="showJoinInput.set(false)">
-                ← Cancelar
-              </button>
-            </div>
-          } @else {
-            <div class="onb-actions">
-              <button class="btn-wf btn-wf--block btn-wf--primary" type="button"
-                      (click)="showJoinInput.set(true)">
-                <span>👥</span> Tengo un código de invitación
-              </button>
-              <button class="btn-wf btn-wf--block" type="button"
-                      (click)="goCreateGroup()">
-                <span>＋</span> Crear mi grupo
-              </button>
-              <button class="btn-wf btn-wf--block" type="button"
-                      style="border-style:dashed;color:var(--wf-ink-3);"
-                      (click)="next()">
-                Más tarde
-              </button>
-            </div>
-          }
+          <div class="onb-actions">
+            <button class="btn-wf btn-wf--block btn-wf--primary" type="button"
+                    (click)="openJoinModal()">
+              <span>👥</span> Tengo un código de invitación
+            </button>
+            <button class="btn-wf btn-wf--block" type="button"
+                    (click)="openCreateModal()">
+              <span>＋</span> Crear mi grupo
+            </button>
+            <button class="btn-wf btn-wf--block" type="button"
+                    style="border-style:dashed;color:var(--wf-ink-3);"
+                    (click)="next()">
+              Más tarde
+            </button>
+          </div>
 
-          @if (!showJoinInput()) {
-            <div class="onb-footer">
-              <button class="btn-wf btn-wf--sm" type="button" (click)="back()">‹ Atrás</button>
-              <button class="btn-wf btn-wf--sm btn-wf--ink" type="button" (click)="next()">Siguiente →</button>
-            </div>
-          }
+          <div class="onb-footer">
+            <button class="btn-wf btn-wf--sm" type="button" (click)="back()">‹ Atrás</button>
+            <button class="btn-wf btn-wf--sm btn-wf--ink" type="button" (click)="next()">Siguiente →</button>
+          </div>
         }
 
         <!-- ===== PASO 5: LISTO ===== -->
@@ -288,17 +258,11 @@ type Step = 1 | 2 | 3 | 4 | 5;
 })
 export class OnboardingComponent {
   private auth = inject(AuthService);
-  private api = inject(ApiService);
   private router = inject(Router);
-  private toast = inject(ToastService);
+  private groupActions = inject(GroupActionsService);
 
   step = signal<Step>(1);
   readonly stepIndices: Step[] = [1, 2, 3, 4, 5];
-
-  showJoinInput = signal(false);
-  codeInput = '';
-  joining = signal(false);
-  joinError = signal<string | null>(null);
 
   handle = computed(() => this.auth.user()?.handle ?? null);
 
@@ -317,29 +281,12 @@ export class OnboardingComponent {
     void this.router.navigate(['/home']);
   }
 
-  goCreateGroup() {
-    void this.router.navigate(['/groups/new']);
+  openCreateModal() {
+    this.groupActions.openCreate();
   }
 
-  async joinByCode() {
-    if (!this.codeInput || this.codeInput.length !== 6) return;
-    this.joinError.set(null);
-    this.joining.set(true);
-    try {
-      const code = this.codeInput.toUpperCase();
-      const res = await this.api.joinGroup(code);
-      const groupId = (res as { data?: { id?: string } })?.data?.id;
-      this.toast.success('¡Te uniste al grupo!');
-      if (groupId) {
-        void this.router.navigate(['/groups', groupId]);
-      } else {
-        void this.router.navigate(['/groups']);
-      }
-    } catch (e) {
-      this.joinError.set(humanizeError(e));
-    } finally {
-      this.joining.set(false);
-    }
+  openJoinModal() {
+    this.groupActions.openJoin();
   }
 
   finish() {

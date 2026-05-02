@@ -167,39 +167,35 @@ type DropdownKey = 'user' | 'ranking' | null;
         <div class="app-sidebar__section">
           <div class="app-sidebar__kicker">Admin</div>
           <a class="sidebar-row" routerLink="/admin" routerLinkActive="is-active" [routerLinkActiveOptions]="{exact: true}">
-            <span><span class="sidebar-row__icon">🏠</span>Dashboard</span>
-          </a>
-          <a class="sidebar-row" routerLink="/admin/groups-overview" routerLinkActive="is-active">
-            <span><span class="sidebar-row__icon">👥</span>Grupos</span>
-          </a>
-          <a class="sidebar-row" routerLink="/admin/rankings-overview" routerLinkActive="is-active">
-            <span><span class="sidebar-row__icon">🏆</span>Rankings</span>
+            <span><span class="sidebar-row__icon">📊</span>Dashboard</span>
           </a>
           <a class="sidebar-row" routerLink="/admin/fixtures" routerLinkActive="is-active">
-            <span><span class="sidebar-row__icon">⚽</span>Partidos</span>
+            <span><span class="sidebar-row__icon">⚽</span>Partidos (grupos)</span>
+          </a>
+          <a class="sidebar-row" routerLink="/admin/bracket" routerLinkActive="is-active">
+            <span><span class="sidebar-row__icon">🌳</span>Llaves</span>
           </a>
           <a class="sidebar-row" routerLink="/admin/results" routerLinkActive="is-active">
-            <span><span class="sidebar-row__icon">📋</span>Resultados</span>
+            <span><span class="sidebar-row__icon">🏆</span>Resultados</span>
           </a>
           <a class="sidebar-row" routerLink="/admin/teams" routerLinkActive="is-active">
-            <span><span class="sidebar-row__icon">🏳</span>Equipos</span>
+            <span><span class="sidebar-row__icon">🏳️</span>Equipos</span>
+          </a>
+          <a class="sidebar-row" routerLink="/admin/special-results" routerLinkActive="is-active">
+            <span><span class="sidebar-row__icon">⭐</span>Especiales</span>
           </a>
           <a class="sidebar-row" routerLink="/admin/sponsors" routerLinkActive="is-active">
             <span><span class="sidebar-row__icon">🎁</span>Sponsors</span>
           </a>
+          <a class="sidebar-row" routerLink="/admin/groups-overview" routerLinkActive="is-active">
+            <span><span class="sidebar-row__icon">📋</span>Grupos overview</span>
+          </a>
+          <a class="sidebar-row" routerLink="/admin/rankings-overview" routerLinkActive="is-active">
+            <span><span class="sidebar-row__icon">🥇</span>Rankings</span>
+          </a>
           <a class="sidebar-row" routerLink="/admin/users" routerLinkActive="is-active">
-            <span><span class="sidebar-row__icon">👤</span>Usuarios</span>
+            <span><span class="sidebar-row__icon">👥</span>Users</span>
           </a>
-        </div>
-
-        <div class="app-sidebar__section">
-          <div class="app-sidebar__kicker">Mi cuenta</div>
-          <a class="sidebar-row" routerLink="/profile" routerLinkActive="is-active">
-            <span><span class="sidebar-row__icon">⚙</span>Mi perfil</span>
-          </a>
-          <button class="sidebar-row sidebar-row--logout" type="button" (click)="logout()">
-            <span><span class="sidebar-row__icon">⏻</span>Cerrar sesión</span>
-          </button>
         </div>
       } @else {
         <div class="app-sidebar__section">

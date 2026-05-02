@@ -1664,6 +1664,57 @@ a.btn-wf { text-decoration: none; }
 
 .text-sm { font-size: 12px; }
 
+/* ---------- Toast (notificaciones flotantes) ---------- */
+.toast-host {
+  position: fixed;
+  bottom: 90px;     /* sobre la tabbar mobile (60px) + margen */
+  right: 16px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+  max-width: calc(100vw - 32px);
+}
+@media (min-width: 992px) {
+  .toast-host { bottom: 24px; right: 24px; max-width: 420px; }
+}
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--wf-ink);
+  color: white;
+  padding: 12px 14px;
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+  font-size: 13px;
+  font-weight: 600;
+  animation: toast-slide-in .25s cubic-bezier(.2,.9,.3,1.4);
+  border-left: 3px solid var(--wf-ink-3);
+}
+.toast[data-level="success"] { border-left-color: var(--wf-green); }
+.toast[data-level="error"]   { border-left-color: var(--wf-danger); }
+.toast[data-level="warn"]    { border-left-color: var(--wf-warn); }
+.toast[data-level="info"]    { border-left-color: var(--wf-ink-3); }
+.toast__msg { flex: 1; min-width: 0; line-height: 1.4; }
+.toast__close {
+  background: transparent;
+  border: 0;
+  color: rgba(255,255,255,0.6);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0;
+  flex-shrink: 0;
+}
+.toast__close:hover { color: white; }
+@keyframes toast-slide-in {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
 /* ---------- Comodines ---------- */
 .com-header {
   display: flex;
@@ -2997,12 +3048,20 @@ a.btn-wf { text-decoration: none; }
   cursor: pointer;
 }
 .auth-check input[type="checkbox"] {
+  /* appearance: auto fuerza el render nativo del checkbox por si algún
+     reset global (page-shell.css, tailwind base, etc.) lo neutraliza. */
+  appearance: auto;
+  -webkit-appearance: auto;
   width: 18px;
   height: 18px;
   margin: 1px 0 0;
   accent-color: var(--wf-green);
   flex-shrink: 0;
   cursor: pointer;
+  /* Border explícito como red de seguridad si appearance no funciona. */
+  border: 1.5px solid var(--wf-line);
+  border-radius: 3px;
+  background: var(--wf-paper);
 }
 .auth-check a {
   color: var(--wf-green-ink);
