@@ -4,6 +4,7 @@ import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService, type UserGroup } from '../../core/user/user-modes.service';
 import { GroupActionsService } from '../../core/groups/group-actions.service';
+import { PicksSyncService } from '../../core/sync/picks-sync.service';
 
 type DropdownKey = 'user' | 'ranking' | null;
 
@@ -78,6 +79,24 @@ type DropdownKey = 'user' | 'ranking' | null;
       </div>
 
       <div class="app-topnav__right">
+        <!-- Indicador global de sync (solo cuando hay actividad) -->
+        @if (sync.status() !== 'idle') {
+          <button type="button" class="sync-pill"
+                  [class.sync-pill--syncing]="sync.status() === 'syncing'"
+                  [class.sync-pill--pending]="sync.status() === 'pending'"
+                  [class.sync-pill--error]="sync.status() === 'error'"
+                  [title]="sync.status() === 'error' ? (sync.errorMessage() ?? 'Error de sincronización') : 'Click para sincronizar ya'"
+                  (click)="sync.syncNow()">
+            @if (sync.status() === 'syncing') {
+              ⏳ Sincronizando…
+            } @else if (sync.status() === 'pending') {
+              ● {{ sync.pending() }} pendiente{{ sync.pending() === 1 ? '' : 's' }}
+            } @else if (sync.status() === 'error') {
+              ⚠ Reintentando
+            }
+          </button>
+        }
+
         <a routerLink="/notificaciones" class="app-topnav__bell" aria-label="Notificaciones" (click)="closeAll()">
           🔔
           @if (unreadCount() > 0) { <span class="badge">{{ unreadCount() }}</span> }
@@ -127,6 +146,18 @@ type DropdownKey = 'user' | 'ranking' | null;
         <span class="app-topbar__title">GOLGANA</span>
       </a>
       <div class="app-topbar__actions">
+        @if (sync.status() !== 'idle') {
+          <button type="button" class="sync-pill sync-pill--mobile"
+                  [class.sync-pill--syncing]="sync.status() === 'syncing'"
+                  [class.sync-pill--pending]="sync.status() === 'pending'"
+                  [class.sync-pill--error]="sync.status() === 'error'"
+                  (click)="sync.syncNow()"
+                  [attr.aria-label]="'Sync: ' + sync.status()">
+            @if (sync.status() === 'syncing') { ⏳ }
+            @else if (sync.status() === 'pending') { ● {{ sync.pending() }} }
+            @else if (sync.status() === 'error') { ⚠ }
+          </button>
+        }
         <a routerLink="/notificaciones" class="app-topbar__bell" aria-label="Notificaciones" (click)="closeAll()">
           🔔
           @if (unreadCount() > 0) { <span class="badge">{{ unreadCount() }}</span> }
@@ -443,6 +474,7 @@ export class NavComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private userModes = inject(UserModesService);
   private groupActions = inject(GroupActionsService);
+  sync = inject(PicksSyncService);
 
   open = signal<DropdownKey>(null);
 

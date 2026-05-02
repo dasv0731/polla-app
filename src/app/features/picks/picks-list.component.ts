@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { getUrl } from 'aws-amplify/storage';
@@ -6,13 +6,10 @@ import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService } from '../../core/user/user-modes.service';
 import { TimeService } from '../../core/time/time.service';
-import { ToastService } from '../../core/notifications/toast.service';
-import { humanizeError } from '../../core/notifications/domain-errors';
 import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
 import { TriviaModalService } from '../../core/trivia/trivia-modal.service';
 import { RailModalsService } from '../../core/layout/rail-modals.service';
-
-const SAVE_DEBOUNCE_MS = 600;
+import { PicksSyncService } from '../../core/sync/picks-sync.service';
 
 type BannerSlot = 'banner1' | 'banner2' | 'banner3';
 interface SponsorBanner {
@@ -225,7 +222,7 @@ interface TriviaInfo {
           <ng-template #cardTpl let-m>
             @let trivia = triviaInfo(m.id);
             @let upcoming = m.status !== 'FINAL' && !isLive(m);
-            @let saving = savingMatch() === m.id;
+            @let pickPending = sync.isPending('pick', m.id);
             <article class="match-card"
                      [class.match-card--accent]="!!trivia"
                      [class.match-card--dim]="m.pick === null && isPlayed(m)">
@@ -294,8 +291,12 @@ interface TriviaInfo {
                     <span class="pill pill--green">✓ Resultado · +{{ m.pick.pointsEarned ?? 0 }}</span>
                   } @else if (m.pick && isPlayed(m)) {
                     <span class="pill">Sin pts</span>
-                  } @else if (m.pick && upcoming) {
-                    <span class="pill pill--green">{{ saving ? 'Guardando…' : '✓ Guardado' }}</span>
+                  } @else if (upcoming && (m.pick || pickPending)) {
+                    @if (pickPending) {
+                      <span class="pill" style="background:rgba(212,165,0,0.15);color:#7a5d00;border-color:rgba(212,165,0,0.3);">● Pendiente</span>
+                    } @else {
+                      <span class="pill pill--green">✓ Guardado</span>
+                    }
                   } @else if (upcoming) {
                     <span class="pill">Sin pick</span>
                   }
@@ -449,15 +450,15 @@ interface TriviaInfo {
     }
   `],
 })
-export class PicksListComponent implements OnInit, OnDestroy {
+export class PicksListComponent implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private userModes = inject(UserModesService);
   private time = inject(TimeService);
-  private toast = inject(ToastService);
   private router = inject(Router);
   private triviaModal = inject(TriviaModalService);
   rail = inject(RailModalsService);
+  sync = inject(PicksSyncService);
 
   /** Abre el modal de trivia scoped al match dado (evita el routerLink
    *  al /picks/trivia/:id legacy — la trivia ahora siempre es modal). */
@@ -466,12 +467,10 @@ export class PicksListComponent implements OnInit, OnDestroy {
     this.triviaModal.openForMatch(matchId);
   }
 
-  /** matchId actualmente guardando (para mostrar "Guardando…"). */
-  savingMatch = signal<string | null>(null);
-  private debounceTimer = new Map<string, ReturnType<typeof setTimeout>>();
-  /** Edits pendientes per match: lo último que el user tipeó pero aún no
-   *  llegó a upsertPick. */
-  private pendingEdits = new Map<string, { home: number; away: number }>();
+  // Sync de marcadores ahora vive en PicksSyncService (local-first +
+  // batch sync). Acá solo llamamos sync.enqueue / sync.getPending /
+  // sync.isPending. No más pendingEdits, debounceTimer, ni savingMatch
+  // por componente.
 
   tab = signal<'upcoming' | 'played'>('upcoming');
   matches = signal<MatchWithMeta[]>([]);
@@ -583,97 +582,39 @@ export class PicksListComponent implements OnInit, OnDestroy {
     void this.router.navigate(['/picks/match', id]);
   }
 
-  /** Auto-save del marcador con debounce. Llamado desde input event.
-   *  Mantiene `latestState` SIEMPRE poblado (no se vacía durante el
-   *  save), así si el user escribe en el otro input mientras el primer
-   *  save está en vuelo, no se pierde el valor de éste. */
+  /** Edit del marcador → enqueue al sync service (local-first).
+   *  El service escribe a localStorage al instante + dispara batch sync
+   *  con debounce 1500ms. La UI lee desde sync.getPending vía
+   *  scoreInputValue, así el render siempre refleja el último tipeo. */
   onScoreInput(matchId: string, side: 'home' | 'away', event: Event) {
     const input = event.target as HTMLInputElement;
     const raw = input.value.replace(/[^0-9]/g, '').slice(0, 1);
     const v = raw === '' ? 0 : Math.max(0, Math.min(9, parseInt(raw, 10)));
     if (raw !== '' && raw !== input.value) input.value = raw;
 
-    const cur = this.pendingEdits.get(matchId) ?? this.scoresFor(matchId);
-    const next = side === 'home' ? { home: v, away: cur.away } : { home: cur.home, away: v };
-    this.pendingEdits.set(matchId, next);
-
-    const existing = this.debounceTimer.get(matchId);
-    if (existing) clearTimeout(existing);
-    this.debounceTimer.set(
-      matchId,
-      setTimeout(() => void this.flushSave(matchId), SAVE_DEBOUNCE_MS),
-    );
+    const cur = this.currentScores(matchId);
+    const next = side === 'home'
+      ? { home: v, away: cur.away }
+      : { home: cur.home, away: v };
+    this.sync.enqueue('pick', matchId, next);
   }
 
-  private scoresFor(matchId: string): { home: number; away: number } {
-    // Prefiere pendingEdits (estado optimista latest) sobre la fila DB
-    // (que puede estar desactualizada durante un save en vuelo).
-    const pe = this.pendingEdits.get(matchId);
-    if (pe) return pe;
+  private currentScores(matchId: string): { home: number; away: number } {
+    const pending = this.sync.getPending<{ home: number; away: number }>('pick', matchId);
+    if (pending) return pending;
     const m = this.matches().find((x) => x.id === matchId);
     const p = m?.pick;
     return { home: p?.homeScorePred ?? 0, away: p?.awayScorePred ?? 0 };
   }
 
-  /** Para [value] del input. Prefiere pendingEdits para evitar flicker
-   *  cuando cambia detection se dispara durante el await del save: el
-   *  binding lee desde m.pick (stale) y el input se "rebota" a 0/old
-   *  antes de que matches.update aplique. Devolviendo desde pendingEdits
-   *  el input siempre refleja el último valor tipeado por el user. */
+  /** Para [value] del input. Lee de sync (pending) o de m.pick (synced).
+   *  Como sync.getPending lee de un signal, el binding re-evalúa
+   *  reactivamente cuando el sync borra la entry tras success. */
   scoreInputValue(m: MatchWithMeta, side: 'home' | 'away'): number | string {
-    const pe = this.pendingEdits.get(m.id);
-    if (pe) return side === 'home' ? pe.home : pe.away;
+    const pending = this.sync.getPending<{ home: number; away: number }>('pick', m.id);
+    if (pending) return side === 'home' ? pending.home : pending.away;
     const v = side === 'home' ? m.pick?.homeScorePred : m.pick?.awayScorePred;
     return v ?? '';
-  }
-
-  private async flushSave(matchId: string) {
-    const edit = this.pendingEdits.get(matchId);
-    if (!edit) return;
-    // NO borramos pendingEdits acá — sigue siendo el "latest known".
-    // Si el user edita el otro lado mientras el await corre, scoresFor
-    // sigue leyendo el latest desde pendingEdits, no la fila DB stale.
-    this.debounceTimer.delete(matchId);
-    this.savingMatch.set(matchId);
-    try {
-      await this.api.upsertPick(matchId, edit.home, edit.away);
-      // Update local match list para que el pill "Guardado" aparezca
-      // y la próxima edición (después del save) lea desde matches.
-      this.matches.update((arr) =>
-        arr.map((m) =>
-          m.id !== matchId ? m : ({
-            ...m,
-            pick: {
-              homeScorePred: edit.home,
-              awayScorePred: edit.away,
-              pointsEarned: m.pick?.pointsEarned ?? null,
-              exactScore: m.pick?.exactScore ?? null,
-              correctResult: m.pick?.correctResult ?? null,
-            },
-          }),
-        ),
-      );
-      // Si pendingEdits sigue exactamente igual al edit que acabamos de
-      // persistir (no hubo edits durante el await), lo limpiamos para
-      // que la próxima edición lea desde matches.
-      const cur = this.pendingEdits.get(matchId);
-      if (cur && cur.home === edit.home && cur.away === edit.away) {
-        this.pendingEdits.delete(matchId);
-      }
-    } catch (e) {
-      this.toast.error(humanizeError(e));
-    } finally {
-      this.savingMatch.set(null);
-    }
-  }
-
-  ngOnDestroy() {
-    // Flush en unmount: si hay edits pendientes, persistirlos antes de salir.
-    for (const [matchId, t] of this.debounceTimer.entries()) {
-      clearTimeout(t);
-      void this.flushSave(matchId);
-    }
-    this.debounceTimer.clear();
   }
 
   /** Devuelve info de trivia para el row inline si hay preguntas para el match. */

@@ -4,8 +4,8 @@ import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService } from '../../core/user/user-modes.service';
 import { ToastService } from '../../core/notifications/toast.service';
-import { humanizeError } from '../../core/notifications/domain-errors';
 import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
+import { PicksSyncService } from '../../core/sync/picks-sync.service';
 
 type GameMode = 'SIMPLE' | 'COMPLETE';
 
@@ -146,6 +146,7 @@ export class SpecialPicksComponent implements OnInit, OnDestroy {
   private auth = inject(AuthService);
   private userModes = inject(UserModesService);
   private toast = inject(ToastService);
+  private sync = inject(PicksSyncService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
@@ -284,7 +285,7 @@ export class SpecialPicksComponent implements OnInit, OnDestroy {
     return `flag--${code.toLowerCase()}`;
   }
 
-  async setPick(type: SpecialKey, teamId: string) {
+  setPick(type: SpecialKey, teamId: string) {
     if (!teamId || this.locked()) return;
     const userId = this.auth.user()?.sub;
     const m = this.mode();
@@ -292,8 +293,7 @@ export class SpecialPicksComponent implements OnInit, OnDestroy {
 
     // Validación: el mismo equipo NO puede ser campeón Y subcampeón
     // (lógicamente uno gana al otro). La revelación SÍ puede coincidir
-    // con campeón o subcampeón — saltamos validación si cualquiera
-    // de los lados involucrados es DARK_HORSE.
+    // con campeón o subcampeón.
     if (type !== 'DARK_HORSE') {
       const others = this.picksByType();
       for (const k of ['CHAMPION', 'RUNNER_UP'] as const) {
@@ -308,16 +308,14 @@ export class SpecialPicksComponent implements OnInit, OnDestroy {
       }
     }
 
-    this.saving.update((s) => ({ ...s, [type]: true }));
-    try {
-      await this.api.upsertSpecialPick(userId, type, teamId, TOURNAMENT_ID, m);
-      this.picksByType.update((p) => ({ ...p, [type]: teamId }));
-      this.lastSavedAt.set(`hace unos segundos`);
-      this.toast.success(`${TYPES.find((t) => t.key === type)?.label} actualizado`);
-    } catch (e) {
-      this.toast.error(humanizeError(e));
-    } finally {
-      this.saving.update((s) => ({ ...s, [type]: false }));
-    }
+    // Optimistic UI: el signal local se actualiza al instante. El sync
+    // service escribe a localStorage + manda al backend con su debounce
+    // global (1500ms). Si falla, retry expo automático.
+    this.picksByType.update((p) => ({ ...p, [type]: teamId }));
+    this.lastSavedAt.set('justo ahora');
+    this.sync.enqueue('special', `${userId}:${type}:${m}`, {
+      userId, type, teamId, tournamentId: TOURNAMENT_ID, mode: m,
+    });
+    this.toast.success(`${TYPES.find((t) => t.key === type)?.label} actualizado`);
   }
 }
