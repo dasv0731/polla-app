@@ -31,8 +31,8 @@ const CONFIRM = process.argv.includes('--confirm');
 // ---- config de horario ----
 const DATE_LOCAL = '2026-05-02';   // hoy (zona Guayaquil)
 const TZ_OFFSET_HOURS = 5;          // Guayaquil = UTC-5 (sin DST)
-const START_LOCAL_HOUR = 18;        // 6:15 PM
-const START_LOCAL_MIN = 15;
+const START_LOCAL_HOUR = 19;        // 7:25 PM
+const START_LOCAL_MIN = 25;
 const GROUP_SIZE = 10;
 const MIN_PER_GROUP = 5;
 
@@ -69,21 +69,26 @@ async function scanAll(table, fields) {
   return items;
 }
 
-/** Calcula el ISO UTC para el group index dado. */
+/** Calcula el ISO UTC para el group index dado. Maneja rollover de
+ *  día cuando baseUtcHour + offset >= 24 (e.g., 19:25 local Guayaquil
+ *  → 00:25 UTC del día siguiente). */
 function isoForGroup(groupIdx) {
   const totalMin = baseUtcMin + groupIdx * MIN_PER_GROUP;
-  const hour = baseUtcHour + Math.floor(totalMin / 60);
-  const min = totalMin % 60;
-  const hh = String(hour).padStart(2, '0');
-  const mm = String(min).padStart(2, '0');
-  return `${DATE_LOCAL}T${hh}:${mm}:00.000Z`;
+  const totalHours = baseUtcHour + Math.floor(totalMin / 60);
+  const minOnly = totalMin % 60;
+  const dayOffset = Math.floor(totalHours / 24);
+  const hourOnly = totalHours % 24;
+  const base = new Date(`${DATE_LOCAL}T00:00:00.000Z`);
+  base.setUTCDate(base.getUTCDate() + dayOffset);
+  base.setUTCHours(hourOnly, minOnly, 0, 0);
+  return base.toISOString();
 }
 
 async function main() {
   console.log(`Region:        ${REGION}`);
   console.log(`Table prefix:  ${TABLE_PREFIX}`);
   console.log(`Fecha local:   ${DATE_LOCAL} (Guayaquil UTC-${TZ_OFFSET_HOURS})`);
-  console.log(`Inicio:        ${START_LOCAL_HOUR}:${String(START_LOCAL_MIN).padStart(2, '0')} local = ${baseUtcHour}:${String(baseUtcMin).padStart(2, '0')} UTC`);
+  console.log(`Inicio:        ${START_LOCAL_HOUR}:${String(START_LOCAL_MIN).padStart(2, '0')} local → ${isoForGroup(0)} UTC (con rollover de día si aplica)`);
   console.log(`Grupos:        cada ${GROUP_SIZE} partidos (+${MIN_PER_GROUP} min cada grupo)`);
   console.log(`Mode:          ${CONFIRM ? 'CONFIRM' : 'DRY-RUN'}`);
   console.log('---');
