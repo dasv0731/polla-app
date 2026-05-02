@@ -156,6 +156,9 @@ interface Totals {
                       <th class="center">PJ</th>
                       <th class="center">DG</th>
                       <th class="center">PTS</th>
+                    } @else {
+                      <th class="center">PJ</th>
+                      <th class="center">PTS</th>
                     }
                   </tr>
                 </thead>
@@ -180,6 +183,7 @@ interface Totals {
                     @let predRows = predRowsFor(g.letter);
                     @if (predRows.length > 0) {
                       @for (t of predRows; track t.slug; let i = $index) {
+                        @let stats = statsFor(g, t.slug);
                         <tr [class.qualify]="i < 2">
                           <td class="pos">{{ i + 1 }}</td>
                           <td>
@@ -189,11 +193,13 @@ interface Totals {
                               [size]="18" />
                             <span class="text-bold" style="margin-left:6px;">{{ t.name }}</span>
                           </td>
+                          <td class="num-cell">{{ stats.played }}</td>
+                          <td class="pts-cell">{{ stats.pts }}</td>
                         </tr>
                       }
                     } @else {
                       <tr>
-                        <td colspan="2" style="text-align:center;color:var(--wf-ink-3);font-size:11px;padding:14px 8px;">
+                        <td colspan="4" style="text-align:center;color:var(--wf-ink-3);font-size:11px;padding:14px 8px;">
                           Sin predicción para este grupo
                         </td>
                       </tr>
@@ -404,6 +410,14 @@ export class PicksTablaGruposComponent implements OnInit {
   private predByGroup = signal<Map<string, string[]>>(new Map());
 
   hasAnyPrediction = computed(() => this.predByGroup().size > 0);
+
+  /** Stats reales (PJ, PTS) del team en su grupo — para mostrar al lado
+   *  de la predicción del user en el view 'pred', así puede ver cómo va
+   *  contra la realidad. */
+  statsFor(g: GroupBlock, slug: string): { played: number; pts: number } {
+    const r = g.rows.find((x) => x.team.slug === slug);
+    return r ? { played: r.played, pts: r.pts } : { played: 0, pts: 0 };
+  }
 
   /** Para el view 'pred': ordena teams del grupo según pos1..pos4
    *  guardados, resolviendo el slug a TeamLite. */

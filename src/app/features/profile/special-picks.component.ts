@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -141,7 +141,7 @@ interface TeamItem {
     </main>
   `,
 })
-export class SpecialPicksComponent implements OnInit {
+export class SpecialPicksComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private userModes = inject(UserModesService);
@@ -162,15 +162,21 @@ export class SpecialPicksComponent implements OnInit {
 
   totalPotential = TYPES.reduce((s, t) => s + t.points, 0);
 
+  /** Tick reactivo cada 5s para que `locked` re-evalúe sin necesidad
+   *  de refresh cuando llega la hora del primer kickoff con la pantalla
+   *  abierta. */
+  private nowTick = signal(Date.now());
+  private tickTimer: ReturnType<typeof setInterval> | undefined;
+
   locked = computed(() => {
     const lock = this.tournamentLockAt();
-    return lock ? Date.now() >= Date.parse(lock) : false;
+    return lock ? this.nowTick() >= Date.parse(lock) : false;
   });
 
   daysUntilLock = computed(() => {
     const lock = this.tournamentLockAt();
     if (!lock) return 0;
-    return Math.max(0, Math.ceil((Date.parse(lock) - Date.now()) / 86_400_000));
+    return Math.max(0, Math.ceil((Date.parse(lock) - this.nowTick()) / 86_400_000));
   });
 
   lockDate = computed(() => {
@@ -183,6 +189,8 @@ export class SpecialPicksComponent implements OnInit {
   });
 
   async ngOnInit() {
+    this.tickTimer = setInterval(() => this.nowTick.set(Date.now()), 5000);
+
     const userId = this.auth.user()?.sub;
     if (!userId) {
       this.loading.set(false);
@@ -201,6 +209,10 @@ export class SpecialPicksComponent implements OnInit {
     await this.loadForMode();
   }
 
+  ngOnDestroy() {
+    if (this.tickTimer) clearInterval(this.tickTimer);
+  }
+
   async switchMode(m: GameMode) {
     if (this.mode() === m) return;
     this.mode.set(m);
@@ -217,9 +229,9 @@ export class SpecialPicksComponent implements OnInit {
     if (!m) return;
     this.loading.set(true);
     try {
-      const [teamsRes, tour, picks] = await Promise.all([
+      const [teamsRes, matchesRes, picks] = await Promise.all([
         this.api.listTeams(TOURNAMENT_ID),
-        this.api.getTournament(TOURNAMENT_ID),
+        this.api.listMatches(TOURNAMENT_ID),
         this.api.mySpecialPicks(TOURNAMENT_ID, m),
       ]);
 
@@ -231,7 +243,16 @@ export class SpecialPicksComponent implements OnInit {
       for (const t of list) map.set(t.slug, t);
       this.teamMap.set(map);
 
-      this.tournamentLockAt.set(tour.data?.specialsLockAt ?? null);
+      // Lock al kickoff del primer partido programado del torneo. Antes
+      // se usaba tour.data?.specialsLockAt (campo manual), pero ahora
+      // se deriva automáticamente de los matches: el lock = min kickoffAt
+      // de partidos no FINAL. Si no hay matches scheduled, lock = null
+      // (los selectors siguen abiertos).
+      const upcoming = (matchesRes.data ?? [])
+        .filter((mm) => mm && mm.kickoffAt && mm.status !== 'FINAL')
+        .map((mm) => mm!.kickoffAt)
+        .sort((a, b) => a.localeCompare(b));
+      this.tournamentLockAt.set(upcoming[0] ?? null);
 
       const pmap: Partial<Record<SpecialKey, string>> = {};
       for (const p of picks.data ?? []) {

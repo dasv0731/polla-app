@@ -34,8 +34,8 @@ interface StagedScore { home: number; away: number; }
       <button class="btn btn--primary" type="button"
               [disabled]="calculating() || toCommit().length === 0"
               (click)="calculatePointsAll()"
-              [title]="toCommit().length === 0 ? 'No hay partidos guardados pendientes' : 'Guarda en DB y corre scoring para los ' + toCommit().length + ' partidos'">
-        {{ calculating() ? 'Procesando…' : 'Calcular puntos (' + toCommit().length + ')' }}
+              [title]="toCommit().length === 0 ? 'No hay partidos guardados pendientes' : 'Publica el marcador y corre scoring para los ' + toCommit().length + ' partidos'">
+        {{ calculating() ? 'Procesando…' : 'Publicar (' + toCommit().length + ')' }}
       </button>
     </header>
 

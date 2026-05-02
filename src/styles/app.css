@@ -433,7 +433,10 @@ a.btn-wf { text-decoration: none; }
 
 /* Trivia inline debajo del partido */
 .match-trivia {
+  /* Funciona tanto cuando es <a> como <button>: reset de defaults
+     del button (border, font, width) para que el row se vea como antes. */
   background: linear-gradient(135deg, #fff3a0 0%, #ffe066 100%);
+  border: none;
   border-top: 1px solid rgba(212,165,0,0.3);
   padding: 10px 12px;
   display: flex;
@@ -441,7 +444,12 @@ a.btn-wf { text-decoration: none; }
   gap: 10px;
   text-decoration: none;
   color: inherit;
+  font: inherit;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
 }
+.match-trivia:hover { filter: brightness(0.97); }
 .match-trivia__icon { font-size: 18px; flex-shrink: 0; }
 .match-trivia__body { flex: 1; min-width: 0; }
 .match-trivia__title {
