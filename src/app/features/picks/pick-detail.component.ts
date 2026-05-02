@@ -80,6 +80,36 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
                   {{ kickoffTime() }}
                   <small>{{ kickoffDay() }}</small>
                 </div>
+
+                <!-- Pick inline en el banner. Auto-save con debounce.
+                     Si el partido está past (kickoff alcanzado), readonly. -->
+                <div class="mh__pick">
+                  <span class="mh__pick-label">Tu pick</span>
+                  <div class="mh__pick-inputs">
+                    <input type="number" min="0" max="9"
+                           class="mh__pick-input"
+                           [value]="home() ?? ''"
+                           [disabled]="isPast()"
+                           [attr.aria-label]="'Goles ' + teamName(m.homeTeamId)"
+                           (input)="onBannerInput('home', $event)">
+                    <span class="mh__pick-sep">—</span>
+                    <input type="number" min="0" max="9"
+                           class="mh__pick-input"
+                           [value]="away() ?? ''"
+                           [disabled]="isPast()"
+                           [attr.aria-label]="'Goles ' + teamName(m.awayTeamId)"
+                           (input)="onBannerInput('away', $event)">
+                  </div>
+                  @if (isPast()) {
+                    <span class="mh__pick-state mh__pick-state--locked">Cerrado · kickoff alcanzado</span>
+                  } @else if (saving()) {
+                    <span class="mh__pick-state">Guardando…</span>
+                  } @else if (pick()) {
+                    <span class="mh__pick-state mh__pick-state--ok">✓ Guardado</span>
+                  } @else {
+                    <span class="mh__pick-state mh__pick-state--muted">Sin pick · escribí un marcador</span>
+                  }
+                </div>
               </div>
               <div class="mh__side">
                 <app-team-flag [flagCode]="teamFlag(m.awayTeamId)" [crestUrl]="teamCrest(m.awayTeamId)" [name]="teamName(m.awayTeamId)" [size]="80" />
@@ -299,6 +329,68 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
       <p style="padding: var(--space-2xl); text-align: center;">Partido no encontrado.</p>
     }
   `,
+  styles: [`
+    .mh__pick {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.18);
+    }
+    .mh__pick-label {
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      opacity: 0.85;
+    }
+    .mh__pick-inputs {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .mh__pick-input {
+      width: 50px;
+      height: 54px;
+      padding: 0;
+      border-radius: 8px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      font-family: var(--wf-display);
+      font-size: 28px;
+      text-align: center;
+      -moz-appearance: textfield;
+    }
+    .mh__pick-input::-webkit-outer-spin-button,
+    .mh__pick-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .mh__pick-input:focus {
+      outline: none;
+      border-color: white;
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .mh__pick-input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .mh__pick-sep {
+      font-family: var(--wf-display);
+      font-size: 24px;
+      opacity: 0.7;
+    }
+    .mh__pick-state {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .04em;
+    }
+    .mh__pick-state--ok     { color: #9eff9e; }
+    .mh__pick-state--muted  { opacity: 0.7; }
+    .mh__pick-state--locked { color: #ffb3b3; }
+  `],
 })
 export class PickDetailComponent implements OnInit, OnDestroy {
   @Input() id!: string;
@@ -431,6 +523,22 @@ export class PickDetailComponent implements OnInit, OnDestroy {
     const sig = side === 'home' ? this.home : this.away;
     const v = sig() ?? 0;
     if (v > 0) sig.set(v - 1);
+  }
+
+  /** Input handler del picker en el banner. Auto-save con debounce
+   *  600ms después del último cambio. */
+  private bannerSaveTimer: ReturnType<typeof setTimeout> | undefined;
+  onBannerInput(side: 'home' | 'away', event: Event) {
+    if (this.isPast()) return;
+    const input = event.target as HTMLInputElement;
+    const raw = input.value.replace(/[^0-9]/g, '').slice(0, 1);
+    const v = raw === '' ? 0 : Math.max(0, Math.min(9, parseInt(raw, 10)));
+    if (raw !== '' && raw !== input.value) input.value = raw;
+    const sig = side === 'home' ? this.home : this.away;
+    sig.set(v);
+
+    if (this.bannerSaveTimer) clearTimeout(this.bannerSaveTimer);
+    this.bannerSaveTimer = setTimeout(() => void this.save(), 600);
   }
 
   private async load() {
