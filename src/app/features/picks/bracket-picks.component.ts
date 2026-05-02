@@ -286,25 +286,33 @@ const SAVE_DEBOUNCE_MS = 1200;
       <ng-template #slotTpl let-match="match" let-side="side">
         @let teamId = displayedTeam(match, side);
         @let team = teamMap().get(teamId);
-        @let isMine = winners().get(match.id) === teamId;
-        @let isWinner = realWinner(match) === teamId;
+        @let isEmpty = !teamId;
+        @let isMine = !isEmpty && winners().get(match.id) === teamId;
+        @let isWinner = !isEmpty && realWinner(match) === teamId;
         @let userPicked = winners().has(match.id);
-        @let isDiscarded = userPicked && !isMine && !isWinner;
+        @let isDiscarded = userPicked && !isEmpty && !isMine && !isWinner;
         @let score = side === 'home' ? match.homeScore : match.awayScore;
         <button type="button" class="bracket-slot"
                 [class.bracket-slot--win]="isWinner"
                 [class.bracket-slot--mine]="isMine"
                 [class.bracket-slot--discarded]="isDiscarded"
                 [class.bracket-slot--locked]="bracketLocked()"
-                [disabled]="bracketLocked()"
+                [class.bracket-slot--empty]="isEmpty"
+                [disabled]="bracketLocked() || isEmpty"
                 (click)="pickWinner(match.id, teamId)">
-          <span class="bracket-slot__team">
-            <app-team-flag
-              [flagCode]="team?.flagCode ?? ''"
-              [name]="team?.name ?? null"
-              [size]="14" />
-            {{ team?.name || teamId }}
-          </span>
+          @if (isEmpty) {
+            <span class="bracket-slot__team bracket-slot__placeholder">
+              Pick fase anterior
+            </span>
+          } @else {
+            <span class="bracket-slot__team">
+              <app-team-flag
+                [flagCode]="team?.flagCode ?? ''"
+                [name]="team?.name ?? null"
+                [size]="14" />
+              {{ team?.name || teamId }}
+            </span>
+          }
           <span class="bracket-slot__score">{{ score != null ? score : '' }}</span>
         </button>
       </ng-template>
@@ -479,10 +487,13 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
     ) ?? null;
   }
 
-  /** Equipo a renderizar en el slot. Si el padre tiene un winner picked
-   *  por el user (o un realWinner si ya jugó), lo propagamos hacia
-   *  adelante — así una elección en 16avos aparece automáticamente
-   *  en octavos sin que el user tenga que tocar nada. */
+  /** Equipo a renderizar en el slot. STRICT: si el padre no tiene
+   *  winner picked (y no jugó realmente), el slot está vacío.
+   *
+   *  Esto garantiza que al des-elegir en una fase aguas arriba, todas
+   *  las fases siguientes queden en blanco — sin caer al pre-set del
+   *  admin que coincidentemente podría mostrar el mismo equipo y dar
+   *  la sensación de que el cascade no funcionó. */
   displayedTeam(match: KnockoutMatch, side: 'home' | 'away'): string {
     return this.computeDisplayed(match, side, this.winners());
   }
@@ -494,14 +505,15 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
   ): string {
     const parent = this.parentOf(match, side);
     if (parent) {
-      // Si el padre ya jugó, el resultado real prevalece.
+      // Padre ya jugó → resultado real prevalece sobre cualquier predicción.
       if (parent.status === 'FINAL') {
         const real = this.realWinner(parent);
         if (real) return real;
       }
       const w = winners.get(parent.id);
-      if (w) return w;
+      return w ?? '';   // strict: vacío cuando no hay winner upstream
     }
+    // R32 (sin padre en knockout) usa el setup del admin.
     return side === 'home' ? match.homeTeamId : match.awayTeamId;
   }
 
@@ -640,6 +652,7 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
 
   pickWinner(matchId: string, teamSlug: string) {
     if (this.bracketLocked()) return;
+    if (!teamSlug) return;   // slot vacío (chain upstream no determinada)
     this.winners.update((prev) => {
       const next = new Map(prev);
       if (next.get(matchId) === teamSlug) {
@@ -661,13 +674,9 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
   }
 
   /** Recorre la rama descendiente del match (child → grand-child → …)
-   *  y borra cada pick que ya no encaje con su nuevo home/away strict.
-   *
-   *  Strict mode: a diferencia del display lenient (que cae al
-   *  match.homeTeamId del admin si el padre no tiene winner), acá
-   *  consideramos que el slot está "indeterminado" cuando el padre no
-   *  tiene winner picked. Eso garantiza que el cascade limpie incluso
-   *  cuando la admin pre-set del Match coincida con el team viejo. */
+   *  y borra cada pick stale. Como computeDisplayed ya es strict (vacío
+   *  cuando upstream no tiene winner), comparamos directamente w vs
+   *  el nuevo home/away. */
   private cascadeClear(matchId: string, winners: Map<string, string>) {
     const m = this.matches().find((x) => x.id === matchId);
     if (!m || m.bracketPosition == null) return;
@@ -678,38 +687,15 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
       (x) => x.phaseOrder === childPhase && x.bracketPosition === childPos,
     );
     if (!child) return;
-    const homeId = this.strictDisplayedTeam(child, 'home', winners);
-    const awayId = this.strictDisplayedTeam(child, 'away', winners);
+    const homeId = this.computeDisplayed(child, 'home', winners);
+    const awayId = this.computeDisplayed(child, 'away', winners);
     const w = winners.get(child.id);
     if (w && w !== homeId && w !== awayId) {
       winners.delete(child.id);
     }
-    // Recurse SIEMPRE: aunque el child quede válido (porque su away
-    // viene de otra rama no afectada), el grand-child puede tener una
-    // pick stale referida a un winner que sí cambió aguas arriba.
+    // Recurse SIEMPRE: aunque el child quede válido (su away viene de
+    // otra rama no afectada), el grand-child puede tener pick stale.
     this.cascadeClear(child.id, winners);
-  }
-
-  /** Como displayedTeam pero SIN fallback al admin.homeTeamId cuando
-   *  el padre no tiene winner: si la chain está rota, devuelve null.
-   *  Solo se usa para el cascade — el display sigue siendo lenient
-   *  para que el user vea las matchups proyectadas por el admin antes
-   *  de elegir cualquier ronda. */
-  private strictDisplayedTeam(
-    match: KnockoutMatch,
-    side: 'home' | 'away',
-    winners: Map<string, string>,
-  ): string | null {
-    const parent = this.parentOf(match, side);
-    if (parent) {
-      if (parent.status === 'FINAL') {
-        const real = this.realWinner(parent);
-        if (real) return real;
-      }
-      const w = winners.get(parent.id);
-      return w ?? null;
-    }
-    return side === 'home' ? match.homeTeamId : match.awayTeamId;
   }
 
   private persistLocal() {
