@@ -729,10 +729,14 @@ export class PicksListComponent implements OnInit, OnDestroy {
       ]);
 
       // Map matchId → preguntas de trivia para el row inline
+      // (filtramos null/undefined defensivamente — Amplify a veces devuelve
+      // huecos en data[] cuando un row referenciado está roto.)
       const triviaMap = new Map<string, Array<{ id: string; explanation: string | null }>>();
-      for (const q of (triviaRes.data ?? []) as Array<{
-        id: string; matchId: string; explanation: string | null;
-      }>) {
+      const triviaList = (triviaRes.data ?? []).filter(
+        (q): q is { id: string; matchId: string; explanation: string | null } =>
+          !!q && !!q.matchId,
+      );
+      for (const q of triviaList) {
         const arr = triviaMap.get(q.matchId) ?? [];
         arr.push({ id: q.id, explanation: q.explanation ?? null });
         triviaMap.set(q.matchId, arr);
@@ -740,29 +744,36 @@ export class PicksListComponent implements OnInit, OnDestroy {
       this.triviaByMatch.set(triviaMap);
 
       const phaseLabels = new Map<string, string>(
-        (phasesRes.data ?? []).map((p) => [p.id, p.name]),
+        (phasesRes.data ?? [])
+          .filter((p): p is { id: string; name: string } => !!p && !!p.id)
+          .map((p) => [p.id, p.name]),
       );
       const teamMap = new Map<string, { name: string; flagCode: string; crestUrl: string | null }>(
-        (teamsRes.data ?? []).map((t) => [t.slug, {
-          name: t.name,
-          flagCode: t.flagCode,
-          crestUrl: t.crestUrl ?? null,
-        }]),
+        (teamsRes.data ?? [])
+          .filter((t): t is NonNullable<typeof t> => !!t && !!t.slug)
+          .map((t) => [t.slug, {
+            name: t.name,
+            flagCode: t.flagCode,
+            crestUrl: t.crestUrl ?? null,
+          }]),
       );
       const pickByMatch = new Map(
-        (picksRes.data ?? []).map((p) => [
-          p.matchId,
-          {
-            homeScorePred: p.homeScorePred,
-            awayScorePred: p.awayScorePred,
-            pointsEarned: p.pointsEarned,
-            exactScore: p.exactScore,
-            correctResult: p.correctResult,
-          },
-        ]),
+        (picksRes.data ?? [])
+          .filter((p): p is NonNullable<typeof p> => !!p && !!p.matchId)
+          .map((p) => [
+            p.matchId,
+            {
+              homeScorePred: p.homeScorePred,
+              awayScorePred: p.awayScorePred,
+              pointsEarned: p.pointsEarned,
+              exactScore: p.exactScore,
+              correctResult: p.correctResult,
+            },
+          ]),
       );
 
       const enriched: MatchWithMeta[] = (matchesRes.data ?? [])
+        .filter((m): m is NonNullable<typeof m> => !!m && !!m.id && !!m.kickoffAt)
         .map((m) => {
           const home = teamMap.get(m.homeTeamId);
           const away = teamMap.get(m.awayTeamId);

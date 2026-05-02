@@ -516,6 +516,7 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
       ]);
 
       const list = (teamsRes.data ?? [])
+        .filter((t): t is NonNullable<typeof t> => !!t && !!t.slug)
         .map((t) => ({ slug: t.slug, name: t.name, flagCode: t.flagCode }))
         .sort((a, b) => a.name.localeCompare(b.name));
       this.teams.set(list);
@@ -524,9 +525,13 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
       this.teamMap.set(tmap);
 
       const phaseOrderById = new Map<string, number>();
-      for (const p of phasesRes.data ?? []) phaseOrderById.set(p.id, p.order);
+      for (const p of (phasesRes.data ?? [])) {
+        if (!p || !p.id) continue;
+        phaseOrderById.set(p.id, p.order);
+      }
 
       const knockouts: KnockoutMatch[] = (matchesRes.data ?? [])
+        .filter((mm): mm is NonNullable<typeof mm> => !!mm && !!mm.id)
         .map((mm) => ({
           id: mm.id,
           phaseOrder: phaseOrderById.get(mm.phaseId) ?? 0,

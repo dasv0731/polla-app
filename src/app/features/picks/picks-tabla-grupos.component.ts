@@ -474,7 +474,8 @@ export class PicksTablaGruposComponent implements OnInit {
 
       // Build team map + group teams by letter
       const byLetter = new Map<string, TeamLite[]>();
-      for (const t of teamsRes.data ?? []) {
+      for (const t of (teamsRes.data ?? [])) {
+        if (!t || !t.slug) continue;
         const team: TeamLite = {
           slug: t.slug,
           name: t.name ?? t.slug,
@@ -491,7 +492,8 @@ export class PicksTablaGruposComponent implements OnInit {
 
       // Picks map (para mostrar mi pick en cada partido)
       const pickMap = new Map<string, PickLite>();
-      for (const p of picksRes.data ?? []) {
+      for (const p of (picksRes.data ?? [])) {
+        if (!p || !p.matchId) continue;
         pickMap.set(p.matchId, {
           matchId: p.matchId,
           homeScorePred: p.homeScorePred,
@@ -508,7 +510,8 @@ export class PicksTablaGruposComponent implements OnInit {
       for (const [letter, teams] of [...byLetter.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
         const teamSlugs = new Set(teams.map((t) => t.slug));
         const matches: MatchLite[] = (matchesRes.data ?? [])
-          .filter((m) => teamSlugs.has(m.homeTeamId) && teamSlugs.has(m.awayTeamId))
+          .filter((m): m is NonNullable<typeof m> =>
+            !!m && !!m.id && teamSlugs.has(m.homeTeamId) && teamSlugs.has(m.awayTeamId))
           .map((m) => ({
             id: m.id,
             kickoffAt: m.kickoffAt,

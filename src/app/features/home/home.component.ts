@@ -225,16 +225,20 @@ export class HomeComponent implements OnInit {
         this.api.listTeams(TOURNAMENT_ID),
       ]);
       const teamMap = new Map<string, { name: string; flag: string }>(
-        (teamsRes.data ?? []).map((t) => [
-          t.slug,
-          { name: t.name ?? t.slug, flag: t.flagCode ?? '' },
-        ]),
+        (teamsRes.data ?? [])
+          .filter((t): t is NonNullable<typeof t> => !!t && !!t.slug)
+          .map((t) => [
+            t.slug,
+            { name: t.name ?? t.slug, flag: t.flagCode ?? '' },
+          ]),
       );
 
       const now = Date.now();
       const todayKey = new Date().toDateString();
 
-      const all = (matchesRes.data ?? []).filter((m) => !!m.kickoffAt);
+      const all = (matchesRes.data ?? []).filter(
+        (m): m is NonNullable<typeof m> => !!m && !!m.kickoffAt && !!m.id,
+      );
       const todayCount = all.filter((m) => {
         const ko = new Date(m.kickoffAt!);
         return ko.toDateString() === todayKey && ko.getTime() >= now - 2 * 3600 * 1000;
