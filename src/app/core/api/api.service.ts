@@ -373,6 +373,18 @@ export class ApiService {
     return apiClient.models.Match.update(payload);
   }
 
+  /** Admin marca un partido como "terminó de jugarse" — sin score aún.
+   *  Status pasa a FINAL para que aparezca en /admin/results para
+   *  publicar el marcador. NO toca homeScore/awayScore: se entran
+   *  manualmente en results. */
+  markMatchFinished(matchId: string, version: number) {
+    return apiClient.models.Match.update({
+      id: matchId,
+      status: 'FINAL',
+      version: version + 1,
+    });
+  }
+
   // ----- Group-stage prediction picks -----
   // Cada user puede tener dos predicciones por torneo (mode SIMPLE y mode
   // COMPLETE) — el filtro siempre lleva mode para no mezclar.

@@ -211,7 +211,7 @@ interface TriviaInfo {
                (auto-save con debounce); click en area no-input → detalle. -->
           <ng-template #cardTpl let-m>
             @let trivia = triviaInfo(m.id);
-            @let upcoming = !isPlayed(m) && !isLive(m);
+            @let upcoming = m.status !== 'FINAL' && !isLive(m);
             @let saving = savingMatch() === m.id;
             <article class="match-card"
                      [class.match-card--accent]="!!trivia"
@@ -221,6 +221,8 @@ interface TriviaInfo {
                   <span>{{ formatKickoff(m.kickoffAt) }}@if (m.phaseLabel) { · {{ m.phaseLabel }} }</span>
                   @if (isLive(m)) {
                     <span class="live">EN VIVO</span>
+                  } @else if (isAwaitingResult(m)) {
+                    <span class="pill" style="background:rgba(212,165,0,0.15);color:#7a5d00;border-color:rgba(212,165,0,0.3);">Esperando resultado</span>
                   } @else if (isPlayed(m)) {
                     <span class="text-mute">Final</span>
                   } @else {
@@ -498,11 +500,20 @@ export class PicksListComponent implements OnInit, OnDestroy {
   }
 
   // ---------- Helpers para el match-card inline ----------
+  /** EN VIVO: kickoff ya pasó y status DB no es FINAL. Cubre tanto los
+   *  SCHEDULED-pasados (admin no marcó nada) como los LIVE (admin manual). */
   isLive(m: MatchWithMeta): boolean {
-    return m.status === 'IN_PROGRESS' || m.status === 'LIVE';
+    if (m.status === 'FINAL') return false;
+    return Date.parse(m.kickoffAt) <= Date.now();
   }
   isPlayed(m: MatchWithMeta): boolean {
-    return m.status === 'FINAL';
+    // Solo consideramos "jugado" cuando hay marcador publicado. FINAL
+    // sin score = "esperando resultado", aún no es jugado en UI sense.
+    return m.status === 'FINAL' && m.homeScore != null && m.awayScore != null;
+  }
+  /** Admin marcó "Finalizar" pero todavía no ingresó el marcador. */
+  isAwaitingResult(m: MatchWithMeta): boolean {
+    return m.status === 'FINAL' && (m.homeScore == null || m.awayScore == null);
   }
   hasFilledScore(m: MatchWithMeta, side: 'home' | 'away'): boolean {
     if (this.isPlayed(m) || this.isLive(m)) {
@@ -530,7 +541,7 @@ export class PicksListComponent implements OnInit, OnDestroy {
   }
   countdown(iso: string): string {
     const ms = new Date(iso).getTime() - Date.now();
-    if (ms < 0) return 'jugando';
+    if (ms < 0) return '—';   // unreachable bajo la lógica actual: si kickoff pasó, isLive() catchéa
     const h = Math.round(ms / 3_600_000);
     if (h < 1) return 'pronto';
     if (h < 24) return `en ${h}h`;

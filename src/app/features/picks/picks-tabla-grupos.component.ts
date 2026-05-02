@@ -249,9 +249,11 @@ interface Totals {
             <div class="picks-modal__body">
               @for (m of modalGroup.matches; track m.id) {
                 @let pick = pickByMatch().get(m.id);
-                @let isPlayed = m.status === 'FINAL';
-                @let isLive = m.status === 'IN_PROGRESS' || m.status === 'LIVE';
-                @let isUpcoming = !isPlayed && !isLive;
+                @let kickoffPast = isKickoffPast(m.kickoffAt);
+                @let isLive = m.status !== 'FINAL' && kickoffPast;
+                @let isAwaiting = m.status === 'FINAL' && (m.homeScore == null || m.awayScore == null);
+                @let isPlayed = m.status === 'FINAL' && m.homeScore != null && m.awayScore != null;
+                @let isUpcoming = m.status !== 'FINAL' && !kickoffPast;
                 @let saving = savingMatch() === m.id;
 
                 <article class="match-card" [class.match-card--accent]="isLive">
@@ -270,6 +272,8 @@ interface Totals {
                         }
                       } @else if (isLive) {
                         <span class="pill pill--live">EN VIVO</span>
+                      } @else if (isAwaiting) {
+                        <span class="pill" style="background:rgba(212,165,0,0.15);color:#7a5d00;border-color:rgba(212,165,0,0.3);">Esperando resultado</span>
                       } @else {
                         <span class="pill">PRÓX · {{ countdown(m.kickoffAt) }}</span>
                       }
@@ -296,10 +300,10 @@ interface Totals {
                                  placeholder="0"
                                  (input)="onScoreInput(m.id, 'away', $event)"
                                  [attr.aria-label]="'Goles ' + teamName(m.awayTeamId)">
-                        } @else if (isLive) {
-                          <div class="score__num score__num--filled">{{ m.homeScore ?? 0 }}</div>
+                        } @else if (isLive || isAwaiting) {
+                          <div class="score__num">{{ m.homeScore ?? '—' }}</div>
                           <span>—</span>
-                          <div class="score__num score__num--filled">{{ m.awayScore ?? 0 }}</div>
+                          <div class="score__num">{{ m.awayScore ?? '—' }}</div>
                         } @else {
                           <div class="score__num score__num--filled">{{ m.homeScore }}</div>
                           <span>—</span>
@@ -439,9 +443,13 @@ export class PicksTablaGruposComponent implements OnInit {
     return this.time.formatKickoff(iso);
   }
 
+  isKickoffPast(iso: string): boolean {
+    return Date.parse(iso) <= Date.now();
+  }
+
   countdown(iso: string): string {
     const ms = new Date(iso).getTime() - Date.now();
-    if (ms < 0) return 'jugando';
+    if (ms < 0) return '—';
     const h = Math.round(ms / 3600_000);
     if (h < 1) return 'pronto';
     if (h < 24) return `en ${h}h`;

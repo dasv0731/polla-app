@@ -2209,6 +2209,24 @@
 }
 .fix-action--edit { color: var(--color-primary-black); }
 .fix-action--danger { color: var(--color-lost); }
+/* Botón "Finalizar" — naranja warn para distinguir de las acciones
+   navegacionales (edit, trivia, stats). Es la acción que cambia DB
+   status a FINAL. */
+.fix-action--finalize {
+  color: #b07700;
+  background: rgba(212, 165, 0, 0.12);
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(212, 165, 0, 0.35);
+  font-family: inherit;
+}
+.fix-action--finalize:hover:not(:disabled) {
+  background: rgba(212, 165, 0, 0.22);
+}
+.fix-action--finalize:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 /* ============================================================
    Admin · Results / Publicar resultado

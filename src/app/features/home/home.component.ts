@@ -291,7 +291,7 @@ export class HomeComponent implements OnInit {
 
   private formatCountdown(target: Date, nowMs: number): string {
     const diff = target.getTime() - nowMs;
-    if (diff < 0) return 'jugando';
+    if (diff < 0) return 'EN VIVO';
     const h = Math.round(diff / 3600_000);
     if (h < 1) return 'pronto';
     if (h < 24) return `en ${h}h`;

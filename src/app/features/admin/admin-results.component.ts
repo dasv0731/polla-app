@@ -44,9 +44,9 @@ interface StagedScore { home: number; away: number; }
     } @else if (pending().length === 0) {
       <p class="empty-state">
         No hay partidos pendientes.
-        <br>Marca un partido como <strong>FINAL</strong> en
+        <br>Cuando un partido en vivo termine, marca <strong>"Finalizar"</strong> en
         <a class="link-green" routerLink="/admin/fixtures">/admin/fixtures</a>
-        para verlo aquí.
+        para que aparezca aquí, ingresar el marcador y publicar los puntos.
       </p>
     } @else {
       <div class="pending-list">
@@ -158,29 +158,20 @@ export class AdminResultsComponent implements OnInit {
   awayScore = signal(0);
   calculating = signal(false);
 
-  // Pending = un partido necesita atención del admin para publicar.
-  // Dos casos:
-  //   1. Status FINAL pero pointsCalculated=false (ya pusiste el score,
-  //      falta correr scoreMatch).
-  //   2. Status != FINAL pero ya pasaron 2h del kickoff ("Esperando
-  //      resultado" — el partido en realidad terminó pero todavía no
-  //      ingresaste score). El user lo ve "EN VIVO" en su feed.
-  pending = computed(() => {
-    const now = Date.now();
-    const matchEndMs = (iso: string) => Date.parse(iso) + 2 * 60 * 60_000;
-    return this.matches()
-      .filter((m) => {
-        if (m.status === 'FINAL' && !m.pointsCalculated) return true;
-        if (m.status !== 'FINAL' && now >= matchEndMs(m.kickoffAt)) return true;
-        return false;
-      })
-      .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt));
-  });
+  // Pending = partidos finalizados (admin clickeó "Finalizar" en /admin/fixtures)
+  // pero sin pointsCalculated = true. La 2h-auto-pending se eliminó: el
+  // admin debe marcar explícitamente "Finalizar" para que un partido
+  // entre en esta cola.
+  pending = computed(() =>
+    this.matches()
+      .filter((m) => m.status === 'FINAL' && !m.pointsCalculated)
+      .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt)),
+  );
 
-  /** True si el partido ya terminó (kickoff+2h) pero status no es FINAL */
+  /** True si el partido fue finalizado por admin pero todavía no se
+   *  ingresó el marcador. */
   isAwaitingResult(m: ResultMatch): boolean {
-    if (m.status === 'FINAL') return false;
-    return Date.now() >= Date.parse(m.kickoffAt) + 2 * 60 * 60_000;
+    return m.status === 'FINAL' && (m.homeScore == null || m.awayScore == null);
   }
 
   // Partidos a comitear cuando se dispare "Calcular puntos":

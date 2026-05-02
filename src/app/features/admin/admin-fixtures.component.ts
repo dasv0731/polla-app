@@ -127,6 +127,14 @@ interface MatchRow {
                       <a class="fix-action" [routerLink]="['/admin/fixtures', m.id, 'trivia']">Trivia</a>
                       ·
                       <a class="fix-action" [routerLink]="['/admin/fixtures', m.id, 'stats']">Stats</a>
+                      @if (canFinalize(m)) {
+                        ·
+                        <button type="button" class="fix-action fix-action--finalize"
+                                [disabled]="finalizingId() === m.id"
+                                (click)="finalize(m)">
+                          {{ finalizingId() === m.id ? 'Finalizando…' : 'Finalizar' }}
+                        </button>
+                      }
                     </td>
                   </tr>
                 }
@@ -149,6 +157,7 @@ export class AdminFixturesComponent implements OnInit {
   private toast = inject(ToastService);
 
   loading = signal(true);
+  finalizingId = signal<string | null>(null);
   matches = signal<MatchRow[]>([]);
   phases = signal<{ id: string; name: string; multiplier: number; order: number }[]>([]);
   teams = signal<Map<string, string>>(new Map());
@@ -275,6 +284,37 @@ export class AdminFixturesComponent implements OnInit {
     if (m.version <= 1) return false;
     if (!m.updatedAt) return false;
     return Date.now() - Date.parse(m.updatedAt) < DAY_MS;
+  }
+
+  /** Solo se muestra el botón "Finalizar" para partidos LIVE — kickoff ya
+   *  pasó y status DB no es FINAL todavía. SCHEDULED-future no aplica
+   *  (el partido ni siquiera empezó); FINAL ya está finalizado. */
+  canFinalize(m: MatchRow): boolean {
+    return this.liveStatus(m) === 'LIVE' && m.status !== 'FINAL';
+  }
+
+  async finalize(m: MatchRow) {
+    if (!this.canFinalize(m)) return;
+    if (!confirm(
+      `¿Marcar como finalizado?\n\n${this.teamName(m.homeTeamId)} vs ${this.teamName(m.awayTeamId)}\n\n` +
+      `El partido pasará a /admin/results para que ingreses el marcador y publiques los puntos.`,
+    )) return;
+    this.finalizingId.set(m.id);
+    try {
+      const res = await this.api.markMatchFinished(m.id, m.version);
+      if (res?.errors && res.errors.length > 0) {
+        // eslint-disable-next-line no-console
+        console.error(`[markMatchFinished ${m.id}] errors:`, res.errors);
+        this.toast.error(res.errors[0]?.message ?? 'No se pudo finalizar');
+        return;
+      }
+      this.toast.success('Partido finalizado · entra en /admin/results');
+      void this.load();
+    } catch (e) {
+      this.toast.error(humanizeError(e));
+    } finally {
+      this.finalizingId.set(null);
+    }
   }
 
   async del(m: MatchRow, event: Event) {
