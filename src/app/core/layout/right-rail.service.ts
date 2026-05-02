@@ -3,26 +3,21 @@ import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs/operators';
 
 /**
- * Decide cuándo mostrar el right rail (premios + comodines + canjear).
- *
- * Reglas:
- *   - /picks (cronológico) y /picks/group-stage* → rail visible siempre.
- *   - /groups y /groups/:id → rail visible siempre.
- *   - /picks/bracket → rail colapsado por default; el user lo expande
- *     con un botón (collapsible).
- *   - cualquier otra ruta → rail oculto.
+ * Decide cuándo mostrar los FABs flotantes (Premios + Comodines), que
+ * reemplazan al aside lateral derecho. La lógica de visibilidad por ruta
+ * se conserva, pero ya no hay estado de "colapsado/expandido" — los FABs
+ * son siempre pequeños y no compiten por espacio con el contenido.
  */
 @Injectable({ providedIn: 'root' })
 export class RightRailService {
   private router = inject(Router);
 
   private currentUrl = signal(this.router.url);
-  bracketExpanded = signal(false);
 
-  routeAllowsRail = computed(() => {
+  visible = computed(() => {
     const url = this.currentUrl();
-    // /picks/group-stage/predict (drag-and-drop): NO rail — el editor
-    // necesita todo el ancho disponible.
+    // /picks/group-stage/predict (drag-and-drop): NO FABs — el editor
+    // necesita todo el espacio sin distracciones flotantes.
     if (url.startsWith('/picks/group-stage/predict')) return false;
     return (
       url === '/picks' ||
@@ -33,32 +28,11 @@ export class RightRailService {
     );
   });
 
-  isCollapsibleRoute = computed(() => this.currentUrl() === '/picks/bracket');
-
-  visible = computed(() => {
-    if (!this.routeAllowsRail()) return false;
-    if (this.isCollapsibleRoute()) return this.bracketExpanded();
-    return true;
-  });
-
-  /** Botón "expandir" se muestra solo en bracket cuando el rail está colapsado. */
-  showExpandButton = computed(() =>
-    this.isCollapsibleRoute() && !this.bracketExpanded(),
-  );
-
   constructor() {
     this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe((e) => {
         this.currentUrl.set(e.urlAfterRedirects);
-        // Resetear el toggle del bracket al salir y volver a entrar
-        if (e.urlAfterRedirects !== '/picks/bracket') {
-          this.bracketExpanded.set(false);
-        }
       });
   }
-
-  expand()   { this.bracketExpanded.set(true); }
-  collapse() { this.bracketExpanded.set(false); }
-  toggle()   { this.bracketExpanded.update((v) => !v); }
 }

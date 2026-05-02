@@ -219,9 +219,6 @@ a.btn-wf { text-decoration: none; }
 }
 .sidebar-row__icon { margin-right: 8px; }
 
-/* ---------- Right rail (desktop only) ---------- */
-.app-rail { display: none; }
-
 /* ---------- Main / page ---------- */
 .app-main { min-height: calc(100vh - 60px); }
 
@@ -2065,12 +2062,11 @@ a.btn-wf { text-decoration: none; }
   width: max-content;
   align-items: stretch;
 }
-@media (min-width: 1280px) {
-  .bracket-scroll {
-    overflow-x: visible;
-    margin: 0 0 14px;
-    padding: 0;
-  }
+/* En desktops bien anchos (≥1600px) podemos dejar que el grid se
+   estire para llenar la columna sin scroll, pero seguimos clampeando
+   con overflow-x: auto para que NUNCA se salga del main si igual
+   resulta más ancho que el espacio disponible. */
+@media (min-width: 1600px) {
   .bracket-grid {
     grid-template-columns:
       minmax(140px, 1fr)
@@ -3377,19 +3373,12 @@ a.btn-wf { text-decoration: none; }
   .app-shell {
     padding-bottom: 0;
     display: grid;
-    grid-template-columns: 240px 1fr;
+    grid-template-columns: 240px minmax(0, 1fr);
     grid-template-rows: auto 1fr auto;
     grid-template-areas:
       "topnav  topnav"
       "sidebar main"
       "footer  footer";
-  }
-  .app-shell.has-rail {
-    grid-template-columns: 240px 1fr 300px;
-    grid-template-areas:
-      "topnav  topnav  topnav"
-      "sidebar main    rail"
-      "footer  footer  footer";
   }
 
   /* Mobile bars ocultas en desktop */
@@ -3520,20 +3509,6 @@ a.btn-wf { text-decoration: none; }
     flex-direction: column;
     padding: 20px;
     border-right: 1px solid var(--wf-line-2);
-    background: var(--wf-paper);
-    align-self: start;
-    position: sticky;
-    top: 60px;
-    height: calc(100vh - 60px);
-    overflow-y: auto;
-  }
-
-  /* Right rail · misma lógica */
-  .app-rail {
-    grid-area: rail;
-    display: block;
-    padding: 20px;
-    border-left: 1px solid var(--wf-line-2);
     background: var(--wf-paper);
     align-self: start;
     position: sticky;
