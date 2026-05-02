@@ -505,25 +505,6 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
     return side === 'home' ? match.homeTeamId : match.awayTeamId;
   }
 
-  /** Tras cambiar un winner upstream, las picks downstream pueden quedar
-   *  apuntando a un team que ya no aparece en el slot. Las limpia. Recorre
-   *  por fase ascendente para que los efectos en cascada se propaguen. */
-  private revalidateDownstream(base: Map<string, string>): Map<string, string> {
-    const out = new Map(base);
-    const sorted = [...this.matches()].sort((a, b) => {
-      if (a.phaseOrder !== b.phaseOrder) return a.phaseOrder - b.phaseOrder;
-      return (a.bracketPosition ?? 999) - (b.bracketPosition ?? 999);
-    });
-    for (const m of sorted) {
-      const homeId = this.computeDisplayed(m, 'home', out);
-      const awayId = this.computeDisplayed(m, 'away', out);
-      const w = out.get(m.id);
-      if (w && w !== homeId && w !== awayId) {
-        out.delete(m.id);
-      }
-    }
-    return out;
-  }
 
   async ngOnInit() {
     this.currentUserId = this.auth.user()?.sub ?? '';
@@ -666,12 +647,69 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
       } else {
         next.set(matchId, teamSlug);
       }
-      // Limpia picks downstream que referían al equipo "viejo" del slot
-      // (el user cambió el padre y ahora el slot muestra a otro team).
-      return this.revalidateDownstream(next);
+      // Cascade limpia toda la rama descendiente del match cambiado.
+      // Si el user picked X como ganador en R32, y luego en R16/R8/etc.
+      // tenía picks que dependían de X (vía la chain de winners), esos
+      // picks downstream quedan stale y deben borrarse — incluso si
+      // coincidentemente la admin pre-set del Match next-round usa el
+      // mismo team slug que el viejo winner.
+      this.cascadeClear(matchId, next);
+      return next;
     });
     this.persistLocal();
     this.scheduleSave();
+  }
+
+  /** Recorre la rama descendiente del match (child → grand-child → …)
+   *  y borra cada pick que ya no encaje con su nuevo home/away strict.
+   *
+   *  Strict mode: a diferencia del display lenient (que cae al
+   *  match.homeTeamId del admin si el padre no tiene winner), acá
+   *  consideramos que el slot está "indeterminado" cuando el padre no
+   *  tiene winner picked. Eso garantiza que el cascade limpie incluso
+   *  cuando la admin pre-set del Match coincida con el team viejo. */
+  private cascadeClear(matchId: string, winners: Map<string, string>) {
+    const m = this.matches().find((x) => x.id === matchId);
+    if (!m || m.bracketPosition == null) return;
+    const childPhase = m.phaseOrder + 1;
+    if (childPhase > 6) return;
+    const childPos = Math.ceil(m.bracketPosition / 2);
+    const child = this.matches().find(
+      (x) => x.phaseOrder === childPhase && x.bracketPosition === childPos,
+    );
+    if (!child) return;
+    const homeId = this.strictDisplayedTeam(child, 'home', winners);
+    const awayId = this.strictDisplayedTeam(child, 'away', winners);
+    const w = winners.get(child.id);
+    if (w && w !== homeId && w !== awayId) {
+      winners.delete(child.id);
+    }
+    // Recurse SIEMPRE: aunque el child quede válido (porque su away
+    // viene de otra rama no afectada), el grand-child puede tener una
+    // pick stale referida a un winner que sí cambió aguas arriba.
+    this.cascadeClear(child.id, winners);
+  }
+
+  /** Como displayedTeam pero SIN fallback al admin.homeTeamId cuando
+   *  el padre no tiene winner: si la chain está rota, devuelve null.
+   *  Solo se usa para el cascade — el display sigue siendo lenient
+   *  para que el user vea las matchups proyectadas por el admin antes
+   *  de elegir cualquier ronda. */
+  private strictDisplayedTeam(
+    match: KnockoutMatch,
+    side: 'home' | 'away',
+    winners: Map<string, string>,
+  ): string | null {
+    const parent = this.parentOf(match, side);
+    if (parent) {
+      if (parent.status === 'FINAL') {
+        const real = this.realWinner(parent);
+        if (real) return real;
+      }
+      const w = winners.get(parent.id);
+      return w ?? null;
+    }
+    return side === 'home' ? match.homeTeamId : match.awayTeamId;
   }
 
   private persistLocal() {

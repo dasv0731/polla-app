@@ -3495,22 +3495,25 @@ a.btn-wf { text-decoration: none; }
   }
   .app-topnav__user .name { font-size: 13px; font-weight: 600; }
 
-  /* Sidebar izq sticky · ocupa TODO el alto del viewport bajo el topnav.
-     Combinación clave para que no se solape con el footer:
-       · align-self: start  → la celda del grid no fuerza stretch
-       · height: 100vh - 60 → ocupa todo el alto disponible
-       · main tiene min-height igual → row 2 nunca es más corto que el aside
-       · row 3 (footer) queda debajo del row 2; al scrollear, el aside
-         sticky se mueve hacia arriba con su containing block y libera
-         espacio para el footer. */
-  .app-sidebar {
+  /* Wrapper que ocupa la celda "sidebar" del grid. Su rol crítico es
+     ESTABLECER el containing block del sticky del aside via
+     position:relative — sin esto, el containing block default es
+     .app-shell entero, y el sticky del aside puede extenderse hasta
+     el row del footer y solaparse con él al scrollear hasta el final. */
+  .app-sidebar-wrap {
     grid-area: sidebar;
+    position: relative;
+    /* default align-self: stretch → wrapper llena el row 2 (= max(main_height, sidebar_height)) */
+  }
+
+  /* Sidebar sticky · vive dentro de .app-sidebar-wrap. Bounded a su
+     containing block (= wrapper = row 2 cell) por position:sticky. */
+  .app-sidebar {
     display: flex;
     flex-direction: column;
     padding: 20px;
     border-right: 1px solid var(--wf-line-2);
     background: var(--wf-paper);
-    align-self: start;
     position: sticky;
     top: 60px;
     height: calc(100vh - 60px);

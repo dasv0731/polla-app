@@ -161,7 +161,11 @@ type DropdownKey = 'user' | 'ranking' | null;
       </div>
     }
 
-    <!-- ============ SIDEBAR DESKTOP (≥992px) ============ -->
+    <!-- ============ SIDEBAR DESKTOP (≥992px) ============
+         Wrapper con position:relative establece el containing block
+         para el sticky del aside; sin esto, el containing block default
+         es .app-shell entero y el sticky se extiende sobre el footer. -->
+    <div class="app-sidebar-wrap">
     <aside class="app-sidebar">
       @if (isAdmin()) {
         <div class="app-sidebar__section">
@@ -247,6 +251,7 @@ type DropdownKey = 'user' | 'ranking' | null;
         </div>
       }
     </aside>
+    </div>
 
     <!-- ============ MOBILE TABBAR (<992px) ============ -->
     <nav class="app-tabbar" aria-label="Navegación principal">
