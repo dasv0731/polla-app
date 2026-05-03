@@ -276,11 +276,12 @@ export class PicksSyncService {
     let res: { errors?: ReadonlyArray<unknown> } | undefined;
     switch (entry.kind) {
       case 'pick': {
-        res = await this.api.upsertPick(
-          entry.key,
-          p['home'] as number,
-          p['away'] as number,
-        );
+        // Payload trae homeTouched/awayTouched (para display) — el API
+        // solo necesita los números. Default 0 si por algún motivo
+        // un lado vino undefined.
+        const home = (p['home'] as number) ?? 0;
+        const away = (p['away'] as number) ?? 0;
+        res = await this.api.upsertPick(entry.key, home, away);
         break;
       }
       case 'special': {

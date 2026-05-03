@@ -9,6 +9,15 @@ import { PicksSyncService } from '../../core/sync/picks-sync.service';
 
 const TOURNAMENT_ID = 'mundial-2026';
 
+/** Mismo payload que en picks-list — touched flags por lado para que
+ *  un edit de un solo input no contamine visualmente el otro. */
+interface PickPayload extends Record<string, unknown> {
+  home: number;
+  away: number;
+  homeTouched: boolean;
+  awayTouched: boolean;
+}
+
 interface TeamLite {
   slug: string;
   name: string;
@@ -494,31 +503,45 @@ export class PicksTablaGruposComponent implements OnInit {
     this.openGroup.set(null);
   }
 
-  /** Edit del marcador → enqueue al sync. Mismo patrón que picks-list. */
+  /** Edit del marcador → enqueue al sync con tracking de touched
+   *  por lado. Si user solo edita home, el away input NO se rellena
+   *  con "0" automáticamente — sigue mostrando placeholder. */
   onScoreInput(matchId: string, side: 'home' | 'away', event: Event) {
     const input = event.target as HTMLInputElement;
-    const raw = input.value.replace(/[^0-9]/g, '').slice(0, 1);
+    const raw = input.value.replace(/[^0-9]/g, '').slice(-1);
     const v = raw === '' ? 0 : Math.max(0, Math.min(9, parseInt(raw, 10)));
-    if (raw !== '' && raw !== input.value) input.value = raw;
+    if (raw !== input.value) input.value = raw;
 
     const cur = this.currentScores(matchId);
-    const next = side === 'home'
-      ? { home: v, away: cur.away }
-      : { home: cur.home, away: v };
+    const next: PickPayload = {
+      home: side === 'home' ? v : cur.home,
+      away: side === 'away' ? v : cur.away,
+      homeTouched: side === 'home' ? true : cur.homeTouched,
+      awayTouched: side === 'away' ? true : cur.awayTouched,
+    };
     this.sync.enqueue('pick', matchId, next);
   }
 
-  private currentScores(matchId: string): { home: number; away: number } {
-    const pending = this.sync.getPending<{ home: number; away: number }>('pick', matchId);
+  private currentScores(matchId: string): PickPayload {
+    const pending = this.sync.getPending<PickPayload>('pick', matchId);
     if (pending) return pending;
     const p = this.pickByMatch().get(matchId);
-    return { home: p?.homeScorePred ?? 0, away: p?.awayScorePred ?? 0 };
+    return {
+      home: p?.homeScorePred ?? 0,
+      away: p?.awayScorePred ?? 0,
+      homeTouched: !!p,
+      awayTouched: !!p,
+    };
   }
 
-  /** Para [value] del input. Lee de sync (pending) o DB (synced). */
+  /** Para [value] del input. Si el side NO está tocado, devuelve ''
+   *  (placeholder "0" se mantiene). */
   bannerScore(matchId: string, side: 'home' | 'away'): number | string {
-    const pending = this.sync.getPending<{ home: number; away: number }>('pick', matchId);
-    if (pending) return side === 'home' ? pending.home : pending.away;
+    const pending = this.sync.getPending<PickPayload>('pick', matchId);
+    if (pending) {
+      const touched = side === 'home' ? pending.homeTouched : pending.awayTouched;
+      if (touched) return side === 'home' ? pending.home : pending.away;
+    }
     const p = this.pickByMatch().get(matchId);
     const v = side === 'home' ? p?.homeScorePred : p?.awayScorePred;
     return v ?? '';

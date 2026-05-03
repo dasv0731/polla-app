@@ -11,6 +11,17 @@ import { TriviaModalService } from '../../core/trivia/trivia-modal.service';
 import { RailModalsService } from '../../core/layout/rail-modals.service';
 import { PicksSyncService } from '../../core/sync/picks-sync.service';
 
+/** Payload del sync para picks de marcador. Tracking explícito de
+ *  `homeTouched/awayTouched` separa "valor que el user editó" de
+ *  "valor default 0 que mandamos al API por requerimiento". El input
+ *  visualmente solo muestra valor si su side está tocado. */
+interface PickPayload extends Record<string, unknown> {
+  home: number;
+  away: number;
+  homeTouched: boolean;
+  awayTouched: boolean;
+}
+
 type BannerSlot = 'banner1' | 'banner2' | 'banner3';
 interface SponsorBanner {
   sponsorId: string;
@@ -595,38 +606,57 @@ export class PicksListComponent implements OnInit, OnDestroy {
   }
 
   /** Edit del marcador → enqueue al sync service (local-first).
-   *  El service escribe a localStorage al instante + dispara batch sync
-   *  con debounce 1500ms. La UI lee desde sync.getPending vía
-   *  scoreInputValue, así el render siempre refleja el último tipeo. */
+   *
+   *  Tracking de "touched" por lado: solo el side que el user editó
+   *  se considera tocado. El otro lado conserva su flag previo (o
+   *  false si nunca se tocó). Así, si user edita SOLO home, el input
+   *  away no se rellena con "0" automáticamente — sigue mostrando
+   *  empty/placeholder.
+   *
+   *  Slice(-1) toma el ÚLTIMO dígito tipeado: previene que con un
+   *  "0" existente y typear "1", input.value "01" se reduzca a "0"
+   *  en lugar de "1". */
   onScoreInput(matchId: string, side: 'home' | 'away', event: Event) {
     const input = event.target as HTMLInputElement;
-    const raw = input.value.replace(/[^0-9]/g, '').slice(0, 1);
+    const raw = input.value.replace(/[^0-9]/g, '').slice(-1);
     const v = raw === '' ? 0 : Math.max(0, Math.min(9, parseInt(raw, 10)));
-    if (raw !== '' && raw !== input.value) input.value = raw;
+    if (raw !== input.value) input.value = raw;
 
     const cur = this.currentScores(matchId);
-    const next = side === 'home'
-      ? { home: v, away: cur.away }
-      : { home: cur.home, away: v };
+    const next: PickPayload = {
+      home: side === 'home' ? v : cur.home,
+      away: side === 'away' ? v : cur.away,
+      homeTouched: side === 'home' ? true : cur.homeTouched,
+      awayTouched: side === 'away' ? true : cur.awayTouched,
+    };
     // eslint-disable-next-line no-console
     console.log('[picks-list] onScoreInput', { matchId, side, raw, v, cur, next });
     this.sync.enqueue('pick', matchId, next);
   }
 
-  private currentScores(matchId: string): { home: number; away: number } {
-    const pending = this.sync.getPending<{ home: number; away: number }>('pick', matchId);
+  private currentScores(matchId: string): PickPayload {
+    const pending = this.sync.getPending<PickPayload>('pick', matchId);
     if (pending) return pending;
     const m = this.matches().find((x) => x.id === matchId);
     const p = m?.pick;
-    return { home: p?.homeScorePred ?? 0, away: p?.awayScorePred ?? 0 };
+    // Si la pick viene de DB, ambos lados se consideran "tocados"
+    // (ya fueron guardados conscientemente).
+    return {
+      home: p?.homeScorePred ?? 0,
+      away: p?.awayScorePred ?? 0,
+      homeTouched: !!p,
+      awayTouched: !!p,
+    };
   }
 
-  /** Para [value] del input. Lee de sync (pending) o de m.pick (synced).
-   *  Como sync.getPending lee de un signal, el binding re-evalúa
-   *  reactivamente cuando el sync borra la entry tras success. */
+  /** Para [value] del input. Si el side NO está tocado en sync ni
+   *  hay pick en DB, devuelve '' (placeholder "0" se mantiene). */
   scoreInputValue(m: MatchWithMeta, side: 'home' | 'away'): number | string {
-    const pending = this.sync.getPending<{ home: number; away: number }>('pick', m.id);
-    if (pending) return side === 'home' ? pending.home : pending.away;
+    const pending = this.sync.getPending<PickPayload>('pick', m.id);
+    if (pending) {
+      const touched = side === 'home' ? pending.homeTouched : pending.awayTouched;
+      if (touched) return side === 'home' ? pending.home : pending.away;
+    }
     const v = side === 'home' ? m.pick?.homeScorePred : m.pick?.awayScorePred;
     return v ?? '';
   }
