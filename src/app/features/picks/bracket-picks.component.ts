@@ -9,6 +9,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { TimeService } from '../../core/time/time.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
 import { RailModalsService } from '../../core/layout/rail-modals.service';
+import { PicksSyncService } from '../../core/sync/picks-sync.service';
 
 type GameMode = 'SIMPLE' | 'COMPLETE';
 
@@ -32,7 +33,6 @@ interface TeamLite {
 
 const TOURNAMENT_ID = 'mundial-2026';
 const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-${mode}-${userId}`;
-const SAVE_DEBOUNCE_MS = 1200;
 
 /**
  * Bracket en formato wireframe Mundial 2026: tournament tree con 16avos
@@ -368,6 +368,7 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   rail = inject(RailModalsService);
+  sync = inject(PicksSyncService);
 
   loading = signal(true);
   availableModes = computed(() => this.userModes.modes());
@@ -382,8 +383,19 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
 
   filter = signal<'mine' | 'all'>('all');
 
-  saveStatus = signal<'idle' | 'dirty' | 'saving' | 'saved' | 'error'>('idle');
-  private saveTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Estado del save derivado del sync. Reemplaza el viejo saveStatus
+   *  signal local (idle/dirty/saving/saved/error). Lee del sync para
+   *  esta key específica del bracket del user en el modo actual. */
+  saveStatus = computed<'idle' | 'dirty' | 'saving' | 'saved' | 'error'>(() => {
+    const m = this.mode();
+    if (!m || !this.currentUserId) return 'idle';
+    const key = `${this.currentUserId}:${m}`;
+    if (this.sync.isPending('bracket', key)) {
+      return this.sync.status() === 'syncing' ? 'saving' : 'dirty';
+    }
+    if (this.sync.getPending('bracket', key)) return 'saved';
+    return 'idle';
+  });
   private serverId: string | null = null;
   private currentUserId = '';
 
@@ -552,11 +564,9 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.lockTicker) clearInterval(this.lockTicker);
-    if (this.saveTimer) clearTimeout(this.saveTimer);
-    // Flush en unmount: si hay cambios sin guardar, intentamos persistir
-    if (this.saveStatus() === 'dirty') {
-      void this.saveAll();
-    }
+    // No flush en unmount: el sync service ya tiene en localStorage
+    // cualquier cambio pending y los flushea con su propio debounce
+    // global (sobrevive al unmount).
   }
 
   async switchMode(m: GameMode) {
@@ -645,7 +655,7 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
       }
 
       this.winners.set(winnersState);
-      this.saveStatus.set(dbRow ? 'saved' : 'idle');
+      // saveStatus es ahora computed desde sync state — no se setea acá.
 
       // Totals + global rank
       const myTotal = (totalsRes.data ?? [])[0];
@@ -682,7 +692,7 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
       return next;
     });
     this.persistLocal();
-    this.scheduleSave();
+    this.enqueueBracketSave();
   }
 
   /** Recorre la rama descendiente del match (child → grand-child → …)
@@ -720,58 +730,40 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
     } catch { /* localStorage full or disabled */ }
   }
 
-  private scheduleSave() {
-    this.saveStatus.set('dirty');
-    if (this.saveTimer) clearTimeout(this.saveTimer);
-    this.saveTimer = setTimeout(() => void this.saveAll(), SAVE_DEBOUNCE_MS);
-  }
-
-  async saveAll() {
+  /** Construye el payload completo de BracketPick (toda la fila con
+   *  todos los winners por fase) y lo encola al sync. El sync hace
+   *  debounce, retry y persistencia. Reemplaza el viejo scheduleSave
+   *  + saveAll local. */
+  private enqueueBracketSave() {
     const m = this.mode();
     if (!m) return;
     if (this.bracketLocked()) return;
-    this.saveStatus.set('saving');
-    try {
-      // Iteramos partidos ordenados por (phaseOrder, bracketPosition).
-      const winnersByPhase: Record<number, string[]> = { 2: [], 3: [], 4: [], 5: [], 6: [] };
-      const sortedMatches = [...this.matches()].sort((a, b) => {
-        if (a.phaseOrder !== b.phaseOrder) return a.phaseOrder - b.phaseOrder;
-        return (a.bracketPosition ?? 999) - (b.bracketPosition ?? 999);
-      });
-      for (const km of sortedMatches) {
-        const winner = this.winners().get(km.id);
-        if (!winner) continue;
-        const arr = winnersByPhase[km.phaseOrder];
-        if (arr) arr.push(winner);
-      }
 
-      const payload = {
-        id: this.serverId ?? undefined,
-        userId: this.currentUserId,
-        tournamentId: TOURNAMENT_ID,
-        mode: m,
-        octavos:  winnersByPhase[2] ?? [],
-        cuartos:  winnersByPhase[3] ?? [],
-        semis:    winnersByPhase[4] ?? [],
-        final:    winnersByPhase[5] ?? [],
-        champion: (winnersByPhase[6] ?? [])[0] ?? '',
-      };
-
-      const res = await this.api.upsertBracketPick(payload);
-      if (res?.errors && res.errors.length > 0) {
-        // eslint-disable-next-line no-console
-        console.error('[upsertBracketPick] errors:', res.errors);
-        this.toast.error(res.errors[0]?.message ?? 'No se pudo guardar el bracket');
-        this.saveStatus.set('error');
-        return;
-      }
-      if (res?.data?.id) this.serverId = res.data.id;
-      this.saveStatus.set('saved');
-      this.toast.success('Bracket guardado en la base ✓');
-    } catch (e) {
-      this.toast.error(humanizeError(e));
-      this.saveStatus.set('error');
+    const winnersByPhase: Record<number, string[]> = { 2: [], 3: [], 4: [], 5: [], 6: [] };
+    const sortedMatches = [...this.matches()].sort((a, b) => {
+      if (a.phaseOrder !== b.phaseOrder) return a.phaseOrder - b.phaseOrder;
+      return (a.bracketPosition ?? 999) - (b.bracketPosition ?? 999);
+    });
+    for (const km of sortedMatches) {
+      const winner = this.winners().get(km.id);
+      if (!winner) continue;
+      const arr = winnersByPhase[km.phaseOrder];
+      if (arr) arr.push(winner);
     }
+
+    const payload = {
+      id: this.serverId ?? undefined,
+      userId: this.currentUserId,
+      tournamentId: TOURNAMENT_ID,
+      mode: m,
+      octavos:  winnersByPhase[2] ?? [],
+      cuartos:  winnersByPhase[3] ?? [],
+      semis:    winnersByPhase[4] ?? [],
+      final:    winnersByPhase[5] ?? [],
+      champion: (winnersByPhase[6] ?? [])[0] ?? '',
+    };
+
+    this.sync.enqueue('bracket', `${this.currentUserId}:${m}`, payload);
   }
 
   @HostListener('document:keydown.escape')

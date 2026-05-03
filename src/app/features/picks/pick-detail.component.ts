@@ -4,9 +4,18 @@ import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { TimeService } from '../../core/time/time.service';
 import { ToastService } from '../../core/notifications/toast.service';
-import { humanizeError } from '../../core/notifications/domain-errors';
 import { apiClient } from '../../core/api/client';
 import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
+import { PicksSyncService } from '../../core/sync/picks-sync.service';
+
+/** Mismo payload que en picks-list — touched flags por lado para que
+ *  un edit de un solo input no contamine visualmente el otro. */
+interface PickPayload extends Record<string, unknown> {
+  home: number;
+  away: number;
+  homeTouched: boolean;
+  awayTouched: boolean;
+}
 
 interface MatchData {
   id: string;
@@ -399,6 +408,7 @@ export class PickDetailComponent implements OnInit, OnDestroy {
   private auth = inject(AuthService);
   time = inject(TimeService);
   private toast = inject(ToastService);
+  sync = inject(PicksSyncService);
 
   match = signal<MatchData | null>(null);
   pick = signal<PickData | null>(null);
@@ -525,20 +535,40 @@ export class PickDetailComponent implements OnInit, OnDestroy {
     if (v > 0) sig.set(v - 1);
   }
 
-  /** Input handler del picker en el banner. Auto-save con debounce
-   *  600ms después del último cambio. */
-  private bannerSaveTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Input handler del picker en el banner. Encola al sync service
+   *  con tracking de touched flags por lado. El sync hace debounce
+   *  global 1500ms + retry. UI optimista al instante. */
   onBannerInput(side: 'home' | 'away', event: Event) {
     if (this.isPast()) return;
     const input = event.target as HTMLInputElement;
-    const raw = input.value.replace(/[^0-9]/g, '').slice(0, 1);
+    const raw = input.value.replace(/[^0-9]/g, '').slice(-1);
     const v = raw === '' ? 0 : Math.max(0, Math.min(9, parseInt(raw, 10)));
-    if (raw !== '' && raw !== input.value) input.value = raw;
+    if (raw !== input.value) input.value = raw;
     const sig = side === 'home' ? this.home : this.away;
     sig.set(v);
 
-    if (this.bannerSaveTimer) clearTimeout(this.bannerSaveTimer);
-    this.bannerSaveTimer = setTimeout(() => void this.save(), 600);
+    // Estado actual incluyendo touched flags previos (sync) o flags
+    // implícitos true si la pick venía de DB.
+    const cur = this.currentPickPayload();
+    const next: PickPayload = {
+      home: side === 'home' ? v : cur.home,
+      away: side === 'away' ? v : cur.away,
+      homeTouched: side === 'home' ? true : cur.homeTouched,
+      awayTouched: side === 'away' ? true : cur.awayTouched,
+    };
+    this.sync.enqueue('pick', this.id, next);
+  }
+
+  private currentPickPayload(): PickPayload {
+    const pending = this.sync.getPending<PickPayload>('pick', this.id);
+    if (pending) return pending;
+    const p = this.pick();
+    return {
+      home: p?.homeScorePred ?? 0,
+      away: p?.awayScorePred ?? 0,
+      homeTouched: !!p,
+      awayTouched: !!p,
+    };
   }
 
   private async load() {
@@ -612,27 +642,25 @@ export class PickDetailComponent implements OnInit, OnDestroy {
     }
   }
 
-  async save() {
+  /** Botón explícito "Guardar" — encola al sync (mismo path que el
+   *  banner inline) y dispara syncNow para flush inmediato. */
+  save() {
     const h = this.home();
     const a = this.away();
     if (h === null || a === null) {
       this.toast.error('Ingresa ambos marcadores');
       return;
     }
-    this.saving.set(true);
-    try {
-      await this.api.upsertPick(this.id, h, a);
-      this.savedAt.set(`Guardado a las ${new Date().toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })}`);
-      this.pick.set({
-        homeScorePred: h, awayScorePred: a,
-        pointsEarned: null, exactScore: null, correctResult: null,
-      });
-      this.toast.success('Pick guardado');
-    } catch (e) {
-      this.toast.error(humanizeError(e));
-    } finally {
-      this.saving.set(false);
-    }
+    this.sync.enqueue('pick', this.id, {
+      home: h, away: a, homeTouched: true, awayTouched: true,
+    });
+    this.savedAt.set(`Guardado a las ${new Date().toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })}`);
+    this.pick.set({
+      homeScorePred: h, awayScorePred: a,
+      pointsEarned: null, exactScore: null, correctResult: null,
+    });
+    this.toast.success('Pick guardado');
+    this.sync.syncNow();
   }
 }
 

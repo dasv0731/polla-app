@@ -4,7 +4,7 @@ import { CdkDrag, CdkDragDrop, CdkDropList, CdkDropListGroup, moveItemInArray } 
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
-import { humanizeError } from '../../core/notifications/domain-errors';
+import { PicksSyncService } from '../../core/sync/picks-sync.service';
 
 type GameMode = 'SIMPLE' | 'COMPLETE';
 
@@ -380,6 +380,7 @@ export class GroupStagePicksComponent implements OnInit {
   private toast = inject(ToastService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private sync = inject(PicksSyncService);
 
   GROUP_LETTERS = GROUP_LETTERS;
 
@@ -660,70 +661,35 @@ export class GroupStagePicksComponent implements OnInit {
 
     this.saveError.set(null);
     this.saving.set(true);
-    let errored = 0;
     try {
       const state = this.staged();
-      // Standings: 1 row por grupo
+      // Encolamos al sync service: 1 enqueue por GroupStandingPick (12)
+      // + 1 para BestThirdsPick. El sync deduplica por key y los manda
+      // en paralelo cuando flush corre. Forzamos syncNow() para flush
+      // inmediato (este es el botón "Guardar en la base" — el user
+      // espera ver el resultado ya).
       for (const g of GROUP_LETTERS) {
         const arr = state.groups[g] ?? [];
-        if (arr.length !== 4) {
-          // Skip grupos incompletos (probablemente seed parcial); el user
-          // puede no querer guardar predicciones de un grupo no completo.
-          continue;
-        }
-        try {
-          const res = await this.api.upsertGroupStandingPick({
-            id: this.serverIds.standings[g],
-            userId: this.currentUserId,
-            tournamentId: TOURNAMENT_ID,
-            mode: currentMode,
-            groupLetter: g,
-            pos1: arr[0]!, pos2: arr[1]!, pos3: arr[2]!, pos4: arr[3]!,
-          });
-          if (res?.errors && res.errors.length > 0) {
-            // eslint-disable-next-line no-console
-            console.error(`[upsertGroupStandingPick ${g}] errors:`, res.errors);
-            errored++;
-          } else if (res?.data?.id) {
-            this.serverIds.standings[g] = res.data.id;
-          }
-        } catch (e) {
-          // eslint-disable-next-line no-console
-          console.error(`[upsertGroupStandingPick ${g}] threw:`, e);
-          errored++;
-        }
-      }
-      // Best thirds
-      try {
-        const res = await this.api.upsertBestThirdsPick({
-          id: this.serverIds.thirds ?? undefined,
+        if (arr.length !== 4) continue;   // skip grupos incompletos
+        this.sync.enqueue('group-standing', `${this.currentUserId}:${currentMode}:${g}`, {
+          id: this.serverIds.standings[g],
           userId: this.currentUserId,
           tournamentId: TOURNAMENT_ID,
           mode: currentMode,
-          advancing: state.advancing,
+          groupLetter: g,
+          pos1: arr[0]!, pos2: arr[1]!, pos3: arr[2]!, pos4: arr[3]!,
         });
-        if (res?.errors && res.errors.length > 0) {
-          // eslint-disable-next-line no-console
-          console.error('[upsertBestThirdsPick] errors:', res.errors);
-          errored++;
-        } else if (res?.data?.id) {
-          this.serverIds.thirds = res.data.id;
-        }
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error('[upsertBestThirdsPick] threw:', e);
-        errored++;
       }
-
-      if (errored > 0) {
-        this.saveError.set(`${errored} fila${errored === 1 ? '' : 's'} fallaron — revisa la consola`);
-        this.toast.error(`Algunas predicciones no se guardaron (${errored})`);
-      } else {
-        this.lastSavedAt.set(new Date().toISOString());
-        this.toast.success('Predicciones guardadas');
-      }
-    } catch (e) {
-      this.saveError.set(humanizeError(e));
+      this.sync.enqueue('best-thirds', `${this.currentUserId}:${currentMode}`, {
+        id: this.serverIds.thirds ?? undefined,
+        userId: this.currentUserId,
+        tournamentId: TOURNAMENT_ID,
+        mode: currentMode,
+        advancing: state.advancing,
+      });
+      this.sync.syncNow();
+      this.lastSavedAt.set(new Date().toISOString());
+      this.toast.success('Predicciones encoladas — sincronizando…');
     } finally {
       this.saving.set(false);
     }
