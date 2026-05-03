@@ -2,8 +2,8 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
-import { UserModesService } from '../../core/user/user-modes.service';
 import { compareRankable } from '../../shared/util/tiebreakers';
+import { GroupActionsService } from '../../core/groups/group-actions.service';
 
 type GameMode = 'SIMPLE' | 'COMPLETE';
 
@@ -31,6 +31,20 @@ interface GroupRow {
         </div>
       </header>
 
+      <!-- Acciones (crear / unirme): visibles solo en mobile.
+           Desktop tiene los mismos botones en el sidebar. Ambos disparan
+           los mismos modales globales vía GroupActionsService. -->
+      <div class="groups-list-actions">
+        <button type="button" class="btn-wf btn-wf--primary"
+                (click)="actions.openCreate()">
+          + Crear grupo
+        </button>
+        <button type="button" class="btn-wf"
+                (click)="actions.openJoin()">
+          → Unirme con código
+        </button>
+      </div>
+
       @if (loading()) {
         <p style="padding:32px;text-align:center;color:var(--wf-ink-3);">Cargando…</p>
       } @else if (groups().length === 0) {
@@ -39,7 +53,7 @@ interface GroupRow {
             Aún no estás en ningún grupo
           </h3>
           <p style="color:var(--wf-ink-3);font-size:13px;margin:0 0 12px;line-height:1.5;">
-            Usa los botones de la barra lateral para crear un grupo o unirte con un código.
+            Usa los botones de arriba para crear un grupo o unirte con un código.
           </p>
         </div>
       } @else {
@@ -78,6 +92,19 @@ interface GroupRow {
   `,
   styles: [`
     :host { display: block; }
+
+    /* Acciones para mobile (en desktop quedan ocultas: el sidebar
+       ya tiene los mismos botones en "Mis grupos"). */
+    .groups-list-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+    .groups-list-actions .btn-wf { width: 100%; justify-content: center; }
+    @media (min-width: 992px) {
+      .groups-list-actions { display: none; }
+    }
 
     .groups-list {
       display: flex;
@@ -153,6 +180,7 @@ interface GroupRow {
 export class GroupsListComponent implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  actions = inject(GroupActionsService);
 
   groups = signal<GroupRow[]>([]);
   loading = signal(true);
