@@ -270,6 +270,8 @@ interface Totals {
                 @let isPlayed = m.status === 'FINAL' && m.homeScore != null && m.awayScore != null;
                 @let isUpcoming = m.status !== 'FINAL' && !kickoffPast;
                 @let pickPending = sync.isPending('pick', m.id);
+                @let pickValue = sync.getPending('pick', m.id);
+                @let hasAnyPick = !!pick || !!pickValue;
 
                 <article class="match-card" [class.match-card--accent]="isLive">
                   <div class="match-card__body">
@@ -335,7 +337,7 @@ interface Totals {
                       </div>
                     </div>
 
-                    @if (isUpcoming && (pick || pickPending)) {
+                    @if (isUpcoming && hasAnyPick) {
                       <div class="match-card__pills">
                         @if (pickPending) {
                           <span class="pill" style="background:rgba(212,165,0,0.15);color:#7a5d00;border-color:rgba(212,165,0,0.3);">● Pendiente</span>

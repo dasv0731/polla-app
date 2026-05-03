@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { getUrl } from 'aws-amplify/storage';
@@ -223,6 +223,8 @@ interface TriviaInfo {
             @let trivia = triviaInfo(m.id);
             @let upcoming = m.status !== 'FINAL' && !isLive(m);
             @let pickPending = sync.isPending('pick', m.id);
+            @let pickValue = sync.getPending('pick', m.id);
+            @let hasAnyPick = !!m.pick || !!pickValue;
             <article class="match-card"
                      [class.match-card--accent]="!!trivia"
                      [class.match-card--dim]="m.pick === null && isPlayed(m)">
@@ -291,7 +293,7 @@ interface TriviaInfo {
                     <span class="pill pill--green">✓ Resultado · +{{ m.pick.pointsEarned ?? 0 }}</span>
                   } @else if (m.pick && isPlayed(m)) {
                     <span class="pill">Sin pts</span>
-                  } @else if (upcoming && (m.pick || pickPending)) {
+                  } @else if (upcoming && hasAnyPick) {
                     @if (pickPending) {
                       <span class="pill" style="background:rgba(212,165,0,0.15);color:#7a5d00;border-color:rgba(212,165,0,0.3);">● Pendiente</span>
                     } @else {
@@ -450,7 +452,11 @@ interface TriviaInfo {
     }
   `],
 })
-export class PicksListComponent implements OnInit {
+export class PicksListComponent implements OnInit, OnDestroy {
+
+  ngOnDestroy() {
+    if (this.triviaTickTimer) clearInterval(this.triviaTickTimer);
+  }
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private userModes = inject(UserModesService);
@@ -503,7 +509,13 @@ export class PicksListComponent implements OnInit {
   private triviaByMatch = signal<Map<string, Array<{
     id: string;
     explanation: string | null;
+    publishedAt: string;
   }>>>(new Map());
+
+  /** Tick para re-evaluar `triviaInfo` sin refrescar la página: cada
+   *  30s recheca cuáles preguntas tienen publishedAt <= now. */
+  private nowTick = signal(Date.now());
+  private triviaTickTimer: ReturnType<typeof setInterval> | undefined;
 
   bannerSlotKeys: BannerSlot[] = ['banner1', 'banner2', 'banner3'];
   private banners = signal<Record<BannerSlot, SponsorBanner[]>>({
@@ -619,17 +631,22 @@ export class PicksListComponent implements OnInit {
     return v ?? '';
   }
 
-  /** Devuelve info de trivia para el row inline si hay preguntas para el match. */
+  /** Devuelve info de trivia para el row inline si hay preguntas YA
+   *  PUBLICADAS (publishedAt <= now) para el match. Lee nowTick para
+   *  re-evaluar reactivamente cada 30s. */
   triviaInfo(matchId: string): TriviaInfo | null {
+    const now = this.nowTick();
     const list = this.triviaByMatch().get(matchId);
     if (!list || list.length === 0) return null;
-    const sponsor = parseSponsor(list[0]?.explanation ?? null);
-    const points = list.length * 10;
+    const published = list.filter((q) => Date.parse(q.publishedAt) <= now);
+    if (published.length === 0) return null;
+    const sponsor = parseSponsor(published[0]?.explanation ?? null);
+    const points = published.length * 10;
     return {
-      count: list.length,
-      title: list.length === 1
+      count: published.length,
+      title: published.length === 1
         ? `Trivia · +${points} pts si aciertas`
-        : `Trivia · +${points} pts si aciertas las ${list.length}`,
+        : `Trivia · +${points} pts si aciertas las ${published.length}`,
       sub: sponsor
         ? `Patrocinada por ${sponsor.name}`
         : 'Versión sin publicidad',
@@ -714,6 +731,9 @@ export class PicksListComponent implements OnInit {
   }
 
   async ngOnInit() {
+    // Tick para reactivar `triviaInfo` (publishedAt <= now) sin refresh.
+    this.triviaTickTimer = setInterval(() => this.nowTick.set(Date.now()), 30_000);
+
     const userId = this.auth.user()?.sub;
     if (!userId) {
       this.loading.set(false);
@@ -731,17 +751,17 @@ export class PicksListComponent implements OnInit {
         this.api.listTriviaByTournament(TOURNAMENT_ID),
       ]);
 
-      // Map matchId → preguntas de trivia para el row inline
-      // (filtramos null/undefined defensivamente — Amplify a veces devuelve
-      // huecos en data[] cuando un row referenciado está roto.)
-      const triviaMap = new Map<string, Array<{ id: string; explanation: string | null }>>();
+      // Map matchId → preguntas de trivia para el row inline.
+      // Incluimos publishedAt para que `triviaInfo` filtre lo que ya
+      // está disponible (no aparece "Trivia" antes de tiempo).
+      const triviaMap = new Map<string, Array<{ id: string; explanation: string | null; publishedAt: string }>>();
       const triviaList = (triviaRes.data ?? []).filter(
-        (q): q is { id: string; matchId: string; explanation: string | null } =>
-          !!q && !!q.matchId,
+        (q): q is { id: string; matchId: string; explanation: string | null; publishedAt: string } =>
+          !!q && !!q.matchId && !!q.publishedAt,
       );
       for (const q of triviaList) {
         const arr = triviaMap.get(q.matchId) ?? [];
-        arr.push({ id: q.id, explanation: q.explanation ?? null });
+        arr.push({ id: q.id, explanation: q.explanation ?? null, publishedAt: q.publishedAt });
         triviaMap.set(q.matchId, arr);
       }
       this.triviaByMatch.set(triviaMap);

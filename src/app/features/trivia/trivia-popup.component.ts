@@ -226,12 +226,20 @@ export class TriviaPopupComponent implements OnInit, OnDestroy {
   private scopedQueue = signal<ActiveQuestion[]>([]);
   private dismissed = signal<Set<string>>(new Set());
 
-  /** Cola visible: scoped si hay scope, sino allQueue. Filtra dismissed. */
+  /** Cola visible: scoped si hay scope, sino allQueue.
+   *  Filtra:
+   *    · dismissed (saltadas/respondidas en esta sesión)
+   *    · publishedAt > now (preguntas que aún no salieron). Re-evalúa
+   *      vía nowMs (tick 1s) así una pregunta aparece en cuanto le
+   *      llega el momento sin que el user tenga que refrescar. */
   visibleQueue = computed(() => {
     const dismissed = this.dismissed();
     const scope = this.modal.scopedMatchId();
     const source = scope ? this.scopedQueue() : this.allQueue();
-    return source.filter((q) => !dismissed.has(q.id));
+    const now = this.nowMs();
+    return source.filter((q) =>
+      !dismissed.has(q.id) && Date.parse(q.publishedAt) <= now,
+    );
   });
 
   /** Pregunta actual: la primera no dismisseada de visibleQueue. */
@@ -246,8 +254,15 @@ export class TriviaPopupComponent implements OnInit, OnDestroy {
 
   queueRemaining = computed(() => this.visibleQueue().length);
 
-  /** FAB: visible solo si hay queue normal (no scoped) Y modal cerrado. */
-  showFab = computed(() => !this.modal.isOpen() && this.allQueue().length > 0);
+  /** FAB: visible solo si hay al menos una pregunta YA PUBLICADA
+   *  (publishedAt <= now) en la cola live, Y el modal está cerrado.
+   *  No basta con que la pregunta exista en DB — debe estar liberada
+   *  en el momento. */
+  showFab = computed(() => {
+    if (this.modal.isOpen()) return false;
+    const now = this.nowMs();
+    return this.allQueue().some((q) => Date.parse(q.publishedAt) <= now);
+  });
 
   picked = signal<Opt | null>(null);
   submitting = signal(false);
