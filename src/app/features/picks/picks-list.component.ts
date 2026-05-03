@@ -653,29 +653,12 @@ export class PicksListComponent implements OnInit, OnDestroy {
    *  hay pick en DB, devuelve '' (placeholder "0" se mantiene). */
   scoreInputValue(m: MatchWithMeta, side: 'home' | 'away'): number | string {
     const pending = this.sync.getPending<PickPayload>('pick', m.id);
-    let result: number | string;
-    let source: string;
     if (pending) {
       const touched = side === 'home' ? pending.homeTouched : pending.awayTouched;
-      if (touched) {
-        result = side === 'home' ? pending.home : pending.away;
-        source = 'sync(touched)';
-      } else {
-        const v = side === 'home' ? m.pick?.homeScorePred : m.pick?.awayScorePred;
-        result = v ?? '';
-        source = 'sync(untouched)→m.pick';
-      }
-    } else {
-      const v = side === 'home' ? m.pick?.homeScorePred : m.pick?.awayScorePred;
-      result = v ?? '';
-      source = 'm.pick';
+      if (touched) return side === 'home' ? pending.home : pending.away;
     }
-    // DEBUG: solo loguea cuando hay pending (para no spamear).
-    if (pending) {
-      // eslint-disable-next-line no-console
-      console.log('[picks-list] scoreInputValue', { matchId: m.id, side, result, source, pending: { ...pending }, mPick: m.pick });
-    }
-    return result;
+    const v = side === 'home' ? m.pick?.homeScorePred : m.pick?.awayScorePred;
+    return v ?? '';
   }
 
   /** Devuelve info de trivia para el row inline si hay preguntas YA
