@@ -315,13 +315,15 @@ interface Totals {
 
                       <div class="score">
                         @if (isUpcoming) {
-                          <input type="number" class="score__input" min="0" max="9"
+                          <input type="text" inputmode="numeric" maxlength="1"
+                                 class="score__input"
                                  [value]="bannerScore(m.id, 'home')"
                                  placeholder="0"
                                  (input)="onScoreInput(m.id, 'home', $event)"
                                  [attr.aria-label]="'Goles ' + teamName(m.homeTeamId)">
                           <span>—</span>
-                          <input type="number" class="score__input" min="0" max="9"
+                          <input type="text" inputmode="numeric" maxlength="1"
+                                 class="score__input"
                                  [value]="bannerScore(m.id, 'away')"
                                  placeholder="0"
                                  (input)="onScoreInput(m.id, 'away', $event)"

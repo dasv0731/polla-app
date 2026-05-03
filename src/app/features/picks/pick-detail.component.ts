@@ -86,14 +86,14 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
                 <div class="mh__pick">
                   <span class="mh__pick-label">Tu pick</span>
                   <div class="mh__pick-inputs">
-                    <input type="number" min="0" max="9"
+                    <input type="text" inputmode="numeric" maxlength="1"
                            class="mh__pick-input"
                            [value]="home() ?? ''"
                            [disabled]="isPast()"
                            [attr.aria-label]="'Goles ' + teamName(m.homeTeamId)"
                            (input)="onBannerInput('home', $event)">
                     <span class="mh__pick-sep">—</span>
-                    <input type="number" min="0" max="9"
+                    <input type="text" inputmode="numeric" maxlength="1"
                            class="mh__pick-input"
                            [value]="away() ?? ''"
                            [disabled]="isPast()"

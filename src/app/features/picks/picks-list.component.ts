@@ -263,14 +263,16 @@ interface TriviaInfo {
                   </div>
                   <div class="score" (click)="$event.stopPropagation()">
                     @if (upcoming) {
-                      <input type="number" class="score__input" min="0" max="9"
+                      <input type="text" inputmode="numeric" maxlength="1"
+                             class="score__input"
                              [value]="scoreInputValue(m, 'home')"
                              placeholder="0"
                              [attr.aria-label]="'Goles ' + m.homeTeamName"
                              (click)="$event.stopPropagation()"
                              (input)="onScoreInput(m.id, 'home', $event)">
                       <span>—</span>
-                      <input type="number" class="score__input" min="0" max="9"
+                      <input type="text" inputmode="numeric" maxlength="1"
+                             class="score__input"
                              [value]="scoreInputValue(m, 'away')"
                              placeholder="0"
                              [attr.aria-label]="'Goles ' + m.awayTeamName"
