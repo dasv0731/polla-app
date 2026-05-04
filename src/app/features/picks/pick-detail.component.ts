@@ -38,7 +38,7 @@ interface PickData {
 }
 
 interface TeamInfo { name: string; flagCode: string; crestUrl: string | null; }
-interface PhaseInfo { name: string; multiplier: number; }
+interface PhaseInfo { name: string; multiplier: number; order: number; }
 interface AggregateStats { exactPct: number; resultPct: number; total: number; }
 
 @Component({
@@ -179,15 +179,9 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
               @if (p) {
                 <div class="breakdown">
                   <h3>Cómo se calculan tus puntos</h3>
-                  <div class="breakdown-row">
-                    <span class="breakdown-row__label">Resultado correcto (1·X·2)</span>
-                    <span class="breakdown-row__check"
-                          [class.breakdown-row__check--ok]="p.correctResult"
-                          [class.breakdown-row__check--ko]="!p.correctResult">
-                      {{ p.correctResult ? '✓' : '✗' }}
-                    </span>
-                    <span class="breakdown-row__pts">{{ p.correctResult ? '+3 pts' : '+0 pts' }}</span>
-                  </div>
+                  <p style="font-size:11px;color:var(--wf-ink-3);margin:0 0 8px;">
+                    Tier de acierto (excluyente — solo el más alto cuenta) × multiplicador de fase.
+                  </p>
                   <div class="breakdown-row">
                     <span class="breakdown-row__label">Marcador exacto</span>
                     <span class="breakdown-row__check"
@@ -195,12 +189,28 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
                           [class.breakdown-row__check--ko]="!p.exactScore">
                       {{ p.exactScore ? '✓' : '✗' }}
                     </span>
-                    <span class="breakdown-row__pts">{{ p.exactScore ? '+2 pts' : '+0 pts' }}</span>
+                    <span class="breakdown-row__pts">{{ p.exactScore ? '5 pts base' : '—' }}</span>
+                  </div>
+                  <div class="breakdown-row">
+                    <span class="breakdown-row__label">Diferencia + resultado</span>
+                    <span class="breakdown-row__check"
+                          [class.breakdown-row__check--ok]="isDiffTier(p)">
+                      {{ isDiffTier(p) ? '✓' : '—' }}
+                    </span>
+                    <span class="breakdown-row__pts">3 pts base</span>
+                  </div>
+                  <div class="breakdown-row">
+                    <span class="breakdown-row__label">Solo resultado (V/E/D)</span>
+                    <span class="breakdown-row__check"
+                          [class.breakdown-row__check--ok]="isResultOnlyTier(p)">
+                      {{ isResultOnlyTier(p) ? '✓' : '—' }}
+                    </span>
+                    <span class="breakdown-row__pts">1 pt base</span>
                   </div>
                   <div class="breakdown-row">
                     <span class="breakdown-row__label">Multiplicador ({{ phaseName() ?? '—' }})</span>
                     <span></span>
-                    <span class="breakdown-row__pts">x{{ phaseMultiplier() ?? 1 }}</span>
+                    <span class="breakdown-row__pts">×{{ phaseMultiplier() }}</span>
                   </div>
                   <div class="breakdown-total">
                     <span>Total</span>
@@ -254,7 +264,7 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
             </header>
             <div class="match-info">
               <div class="match-info__item"><small>Fase</small><strong>{{ phaseName() ?? '—' }}</strong></div>
-              <div class="match-info__item"><small>Multiplicador</small><strong>x{{ phaseMultiplier() ?? 1 }} · max {{ (phaseMultiplier() ?? 1) * 5 }} pts</strong></div>
+              <div class="match-info__item"><small>Multiplicador</small><strong>x{{ phaseMultiplier() }} · max {{ (phaseMultiplier()) * 5 }} pts</strong></div>
               <div class="match-info__item"><small>Kickoff</small><strong>{{ time.formatKickoff(m.kickoffAt) }}</strong></div>
               <div class="match-info__item"><small>Estadio</small><strong>Por confirmar</strong></div>
               <div class="match-info__item"><small>Sede</small><strong>—</strong></div>
@@ -430,7 +440,7 @@ export class PickDetailComponent implements OnInit, OnDestroy {
     }
   });
   verdictSub = computed(() => {
-    const mult = this.phaseMultiplier() ?? 1;
+    const mult = this.phaseMultiplier();
     const phase = this.phaseName() ?? 'la fase';
     switch (this.verdictKind()) {
       case 'exact': return `Acertaste el resultado y el marcador exacto. Multiplicador de ${phase} x${mult}.`;
@@ -440,8 +450,38 @@ export class PickDetailComponent implements OnInit, OnDestroy {
     }
   });
 
+  /** Determina qué tier de acierto matchea el pointsEarned actual.
+   *  Permite checkear cuál de los 3 tiers (exacto/diff/solo-resultado)
+   *  fue el que aplicó al pick. */
+  isDiffTier(p: PickData): boolean {
+    if (p.exactScore) return false;
+    if (!p.correctResult) return false;
+    const expected = 3 * this.phaseMultiplier();
+    return Math.abs((p.pointsEarned ?? 0) - expected) < 0.01;
+  }
+  isResultOnlyTier(p: PickData): boolean {
+    if (p.exactScore) return false;
+    if (!p.correctResult) return false;
+    const expected = 1 * this.phaseMultiplier();
+    return Math.abs((p.pointsEarned ?? 0) - expected) < 0.01;
+  }
+
   phaseName = computed(() => this.phase()?.name);
-  phaseMultiplier = computed(() => this.phase()?.multiplier);
+  /** Multiplicador real usado en scoring (mapeado por phase.order, no
+   *  el legacy phase.multiplier de DB). Reglamento §5 v2:
+   *    grupos x1 · R32 x1.5 · octavos x2 · cuartos x2.5 · semis x3 · final x4 */
+  phaseMultiplier = computed(() => {
+    const ord = this.phase()?.order ?? 0;
+    switch (ord) {
+      case 1: return 1;
+      case 2: return 1.5;
+      case 3: return 2;
+      case 4: return 2.5;
+      case 5: return 3;
+      case 6: return 4;
+      default: return 1;
+    }
+  });
 
   teamName(slug: string): string { return this.teams().get(slug)?.name ?? slug; }
   teamFlag(slug: string): string { return this.teams().get(slug)?.flagCode ?? ''; }
@@ -541,7 +581,7 @@ export class PickDetailComponent implements OnInit, OnDestroy {
       this.teams.set(tm);
 
       const phase = (phasesRes.data ?? []).find((p) => p.id === matchItem.phaseId);
-      if (phase) this.phase.set({ name: phase.name, multiplier: phase.multiplier });
+      if (phase) this.phase.set({ name: phase.name, multiplier: phase.multiplier, order: phase.order });
 
       // My pick — primero leemos del sync (pending/synced en localStorage)
       // y caemos a la API si no hay nada local. Esto cubre el caso típico:

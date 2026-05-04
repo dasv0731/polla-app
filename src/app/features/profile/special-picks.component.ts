@@ -12,9 +12,9 @@ type GameMode = 'SIMPLE' | 'COMPLETE';
 const TOURNAMENT_ID = 'mundial-2026';
 
 const TYPES = [
-  { key: 'CHAMPION', label: 'Campeón', points: 30 },
-  { key: 'RUNNER_UP', label: 'Subcampeón', points: 15 },
-  { key: 'DARK_HORSE', label: 'Revelación', points: 10 },
+  { key: 'CHAMPION', label: 'Campeón', points: 20 },
+  { key: 'RUNNER_UP', label: 'Subcampeón', points: 12 },
+  { key: 'DARK_HORSE', label: 'Revelación', points: 8 },
 ] as const;
 
 type SpecialKey = (typeof TYPES)[number]['key'];

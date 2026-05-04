@@ -107,7 +107,7 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
       <div class="bracket-intro">
         <p>
           Tu predicción de la fase eliminatoria.
-          <b>+15 pts</b> por cada llave acertada · <b>+30 pts</b> por el campeón.
+          <b>+2 a +16 pts</b> por equipo correcto según fase (R32 → final) · <b>+25 pts</b> por el campeón.
           @if (bracketLocked()) {
             <br><span class="text-mute">Bracket cerrado · {{ bracketLockFormatted() }}.</span>
           } @else if (bracketLockFormatted()) {
