@@ -311,11 +311,15 @@ export class SpecialPicksComponent implements OnInit, OnDestroy {
     // Optimistic UI: el signal local se actualiza al instante. El sync
     // service escribe a localStorage + manda al backend con su debounce
     // global (1500ms). Si falla, retry expo automático.
+    //
+    // No mostramos toast de "actualizado" — el cambio visual es feedback
+    // suficiente y los users reportaron que el toast spam (uno por cada
+    // cambio rápido) era molesto. Solo mantenemos el toast de error de
+    // arriba (conflicto campeón ↔ subcampeón) que sí es accionable.
     this.picksByType.update((p) => ({ ...p, [type]: teamId }));
     this.lastSavedAt.set('justo ahora');
     this.sync.enqueue('special', `${userId}:${type}:${m}`, {
       userId, type, teamId, tournamentId: TOURNAMENT_ID, mode: m,
     });
-    this.toast.success(`${TYPES.find((t) => t.key === type)?.label} actualizado`);
   }
 }

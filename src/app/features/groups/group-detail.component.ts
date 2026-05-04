@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, SimpleChanges, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -236,13 +236,23 @@ interface RankRow {
     }
   `],
 })
-export class GroupDetailComponent implements OnInit {
+export class GroupDetailComponent implements OnInit, OnChanges {
   @Input() id!: string;
 
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private toast = inject(ToastService);
   private router = inject(Router);
+
+  /** Cuando el user navega de /groups/A → /groups/B, Angular reutiliza
+   *  esta misma component instance y solo cambia el @Input id. ngOnInit
+   *  no vuelve a correr — sin un OnChanges nos quedaríamos mostrando los
+   *  datos del grupo A para siempre. */
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['id'] && !changes['id'].firstChange) {
+      void this.load();
+    }
+  }
 
   group = signal<GroupHeader | null>(null);
   rows = signal<RankRow[]>([]);
@@ -291,6 +301,16 @@ export class GroupDetailComponent implements OnInit {
 
   async ngOnInit() {
     this.currentUserId = this.auth.user()?.sub ?? '';
+    await this.load();
+  }
+
+  /** Carga datos del grupo. Extraído de ngOnInit para que ngOnChanges
+   *  pueda re-llamarlo cuando el @Input id cambia (navegación de
+   *  /groups/A → /groups/B reusa el mismo component instance). */
+  private async load() {
+    this.loading.set(true);
+    this.group.set(null);
+    this.rows.set([]);
     try {
       const [grp, totals, members] = await Promise.all([
         this.api.getGroup(this.id),

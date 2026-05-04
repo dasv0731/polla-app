@@ -73,7 +73,7 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
               </div>
 
               <div class="auth-field">
-                <label for="reg-handle" class="auth-label">Handle (&#64;usuario)</label>
+                <label for="reg-handle" class="auth-label">Usuario</label>
                 <div class="auth-input-wrap">
                   <input
                     type="text"
@@ -81,7 +81,7 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
                     name="handle"
                     class="auth-input"
                     [class.auth-input--has-pill]="handleStatus() !== 'idle'"
-                    placeholder="@tu_usuario"
+                    placeholder="tu_usuario"
                     autocomplete="username"
                     required
                     pattern="[a-zA-Z0-9_]{3,20}"
@@ -95,7 +95,7 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
                     <span class="auth-input-pill pill-checking">verificando…</span>
                   }
                 </div>
-                <div class="auth-helper">Así te verán tus panas en el ranking.</div>
+                <div class="auth-helper">Sin &#64; — solo letras, números y guión bajo. Así te verán tus panas en el ranking.</div>
               </div>
 
               <div class="auth-field">
@@ -113,17 +113,24 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
 
               <div class="auth-field">
                 <label for="reg-pwd" class="auth-label">Contraseña</label>
-                <input
-                  type="password"
-                  id="reg-pwd"
-                  name="password"
-                  class="auth-input"
-                  placeholder="••••••••"
-                  autocomplete="new-password"
-                  required
-                  minlength="8"
-                  [(ngModel)]="password"
-                  (ngModelChange)="onPasswordChange($event)">
+                <div class="auth-input-wrap">
+                  <input
+                    [type]="showPwd() ? 'text' : 'password'"
+                    id="reg-pwd"
+                    name="password"
+                    class="auth-input"
+                    placeholder="••••••••"
+                    autocomplete="new-password"
+                    required
+                    minlength="8"
+                    [(ngModel)]="password"
+                    (ngModelChange)="onPasswordChange($event)">
+                  <button type="button" class="auth-input-toggle"
+                          (click)="showPwd.set(!showPwd())"
+                          [attr.aria-label]="showPwd() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+                    {{ showPwd() ? '👁️‍🗨️' : '👁' }}
+                  </button>
+                </div>
                 <div class="auth-strength">
                   <div class="bar bar--sm flex-1" [style.background]="strengthColor(0)"></div>
                   <div class="bar bar--sm flex-1" [style.background]="strengthColor(1)"></div>
@@ -255,6 +262,21 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
       border-radius: 6px;
       border: 1px solid rgba(0, 200, 100, 0.2);
     }
+    .auth-input-wrap .auth-input { padding-right: 42px; }
+    .auth-input-toggle {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: 0;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 6px 8px;
+      line-height: 1;
+      color: var(--wf-ink-3);
+    }
+    .auth-input-toggle:hover { color: var(--wf-ink); }
   `],
 })
 export class RegisterComponent {
@@ -272,6 +294,7 @@ export class RegisterComponent {
   loading = signal(false);
   error = signal<string | null>(null);
   resendInfo = signal<string | null>(null);
+  showPwd = signal(false);
 
   handleStatus = signal<HandleStatus>('idle');
   passwordStrength = signal(0);

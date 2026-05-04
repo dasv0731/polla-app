@@ -84,15 +84,22 @@ import { AuthService } from '../../core/auth/auth.service';
                 <label for="login-pwd" class="auth-label">Contraseña</label>
                 <a routerLink="/forgot-password" class="auth-forgot">¿Olvidaste?</a>
               </div>
-              <input
-                type="password"
-                id="login-pwd"
-                name="password"
-                class="auth-input"
-                placeholder="••••••••"
-                autocomplete="current-password"
-                required
-                [(ngModel)]="password">
+              <div class="auth-input-wrap">
+                <input
+                  [type]="showPwd() ? 'text' : 'password'"
+                  id="login-pwd"
+                  name="password"
+                  class="auth-input"
+                  placeholder="••••••••"
+                  autocomplete="current-password"
+                  required
+                  [(ngModel)]="password">
+                <button type="button" class="auth-input-toggle"
+                        (click)="showPwd.set(!showPwd())"
+                        [attr.aria-label]="showPwd() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+                  {{ showPwd() ? '👁️‍🗨️' : '👁' }}
+                </button>
+              </div>
             </div>
 
             @if (error()) {
@@ -107,21 +114,6 @@ import { AuthService } from '../../core/auth/auth.service';
               {{ loading() ? 'Entrando…' : 'Entrar' }}
             </button>
           </form>
-
-          <div class="auth-or">
-            <span></span>
-            <span>o</span>
-            <span></span>
-          </div>
-
-          <div class="auth-socials">
-            <button type="button" class="btn-wf btn-wf--block" disabled title="Próximamente">
-              <span style="font-weight:700;">G</span>&nbsp;&nbsp;Continuar con Google
-            </button>
-            <button type="button" class="btn-wf btn-wf--block" disabled title="Próximamente">
-              <span></span>&nbsp;&nbsp;Continuar con Apple
-            </button>
-          </div>
 
           <div class="auth-bottom">
             <span class="text-mute">¿Primera vez? </span>
@@ -144,6 +136,25 @@ import { AuthService } from '../../core/auth/auth.service';
       border-radius: 6px;
       border: 1px solid rgba(195, 51, 51, 0.2);
     }
+
+    .auth-input-wrap {
+      position: relative;
+    }
+    .auth-input-wrap .auth-input { padding-right: 42px; }
+    .auth-input-toggle {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: 0;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 6px 8px;
+      line-height: 1;
+      color: var(--wf-ink-3);
+    }
+    .auth-input-toggle:hover { color: var(--wf-ink); }
   `],
 })
 export class LoginComponent {
@@ -154,6 +165,7 @@ export class LoginComponent {
   password = '';
   loading = signal(false);
   error = signal<string | null>(null);
+  showPwd = signal(false);
 
   async submit() {
     this.error.set(null);

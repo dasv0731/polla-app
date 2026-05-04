@@ -585,10 +585,20 @@ export class PicksListComponent implements OnInit, OnDestroy {
     return this.time.formatKickoff(iso);
   }
   countdown(iso: string): string {
-    const ms = new Date(iso).getTime() - Date.now();
-    if (ms < 0) return '—';   // unreachable bajo la lógica actual: si kickoff pasó, isLive() catchéa
+    // Lee nowTick para que el countdown re-evalúe cada 30s (lo cambio
+    // a 1s abajo si la pregunta tarda < 1h). Sin nowTick, el binding
+    // solo se actualiza cuando otra cosa dispara CD.
+    const tick = this.nowTick();
+    const ms = new Date(iso).getTime() - tick;
+    if (ms < 0) return '—';   // si kickoff pasó, isLive() catchéa este caso primero
+    if (ms < 3_600_000) {
+      // Menos de 1h → contador regresivo MM:SS para precisión visual
+      const totalSec = Math.floor(ms / 1000);
+      const mm = Math.floor(totalSec / 60);
+      const ss = totalSec % 60;
+      return `en ${mm}:${String(ss).padStart(2, '0')}`;
+    }
     const h = Math.round(ms / 3_600_000);
-    if (h < 1) return 'pronto';
     if (h < 24) return `en ${h}h`;
     const d = Math.round(h / 24);
     return d === 1 ? 'mañana' : `en ${d}d`;
@@ -763,8 +773,11 @@ export class PicksListComponent implements OnInit, OnDestroy {
   }
 
   async ngOnInit() {
-    // Tick para reactivar `triviaInfo` (publishedAt <= now) sin refresh.
-    this.triviaTickTimer = setInterval(() => this.nowTick.set(Date.now()), 30_000);
+    // Tick cada 1s para que: (a) `triviaInfo` re-evalúe publishedAt
+    // sin refresh y (b) el countdown MM:SS de matches < 1h al kickoff
+    // se actualice en tiempo real. CPU cost: trivial — re-eval de un
+    // par de filters sobre arrays chicos.
+    this.triviaTickTimer = setInterval(() => this.nowTick.set(Date.now()), 1000);
 
     const userId = this.auth.user()?.sub;
     if (!userId) {

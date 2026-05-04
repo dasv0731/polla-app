@@ -29,7 +29,7 @@ const TABLE_PREFIX = '5acqcywhfballl4qcn7753ofme-NONE';
 const CONFIRM = process.argv.includes('--confirm');
 
 // ---- config de horario ----
-const DATE_LOCAL = '2026-05-03';   // hoy (zona Guayaquil)
+const DATE_LOCAL = '2026-05-04';   // hoy (zona Guayaquil)
 const TZ_OFFSET_HOURS = 5;          // Guayaquil = UTC-5 (sin DST)
 const START_LOCAL_HOUR = 9;         // 9:00 AM
 const START_LOCAL_MIN = 0;

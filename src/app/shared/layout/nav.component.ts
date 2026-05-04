@@ -327,29 +327,31 @@ type DropdownKey = 'user' | 'ranking' | null;
       cursor: pointer;
       font-family: inherit;
     }
+    /* Hereda color/font de .app-topnav__item (white sobre topnav negro).
+       Solo overrideamos los specifics del dropdown (display flex + caret). */
     .app-topnav__item--has-dropdown {
       background: transparent;
       border: 0;
       font-size: 13px;
       font-weight: 600;
-      color: var(--wf-ink);
+      color: white;
       padding: 8px 14px;
       border-radius: 6px;
       display: inline-flex;
       align-items: center;
       gap: 4px;
     }
-    .app-topnav__item--has-dropdown:hover { background: var(--wf-fill); }
+    .app-topnav__item--has-dropdown:hover { background: rgba(255, 255, 255, 0.10); }
     .app-topnav__item--has-dropdown.is-active {
-      background: var(--wf-green-soft);
-      color: var(--wf-green-ink);
+      background: rgba(2, 204, 116, 0.20);
+      color: #4dffa0;
     }
     .app-topnav__user--has-dropdown {
       border: 0;
       background: transparent;
       gap: 8px;
     }
-    .app-topnav__user--has-dropdown.is-active { background: var(--wf-fill); }
+    .app-topnav__user--has-dropdown.is-active { background: rgba(255, 255, 255, 0.10); }
 
     /* Panel de dropdown (común a Ranking y User) */
     .app-topnav__panel {

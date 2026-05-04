@@ -16,8 +16,7 @@ type Step = 1 | 2 | 3 | 4 | 5;
         <!-- Top: brand + skip -->
         <div class="onb-top">
           <a routerLink="/picks" class="topbar__brand" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:8px;">
-            <img src="assets/logo-golgana.png" alt="" style="height:24px;width:auto;">
-            <span class="topbar__title">GOLGANA</span>
+            <img src="assets/logo-golgana.png" alt="Golgana" style="height:28px;width:auto;">
           </a>
           @if (step() < 5) {
             <a href="#" (click)="onSkip($event)" class="onb-skip">Saltar</a>
@@ -112,23 +111,17 @@ type Step = 1 | 2 | 3 | 4 | 5;
 
           <div class="onb-actions">
             <button class="btn-wf btn-wf--block btn-wf--primary" type="button"
-                    (click)="openJoinModal()">
+                    (click)="goJoin()">
               <span>👥</span> Tengo un código de invitación
             </button>
             <button class="btn-wf btn-wf--block" type="button"
-                    (click)="openCreateModal()">
+                    (click)="goCreate()">
               <span>＋</span> Crear mi grupo
-            </button>
-            <button class="btn-wf btn-wf--block" type="button"
-                    style="border-style:dashed;color:var(--wf-ink-3);"
-                    (click)="next()">
-              Más tarde
             </button>
           </div>
 
           <div class="onb-footer">
             <button class="btn-wf btn-wf--sm" type="button" (click)="back()">‹ Atrás</button>
-            <button class="btn-wf btn-wf--sm btn-wf--ink" type="button" (click)="next()">Siguiente →</button>
           </div>
         }
 
@@ -281,12 +274,19 @@ export class OnboardingComponent {
     void this.router.navigate(['/home']);
   }
 
-  openCreateModal() {
+  /** Paso 4: el modal de crear/unir grupo vive en `<app-group-actions-modals>`
+   *  que se monta en el shell post-auth (NO en /onboarding). Por eso solo
+   *  abrir el signal acá no muestra nada. La fix: navegar a /home y abrir
+   *  el modal — `GroupActionsService` es providedIn:'root', así que el
+   *  signal sobrevive a la navegación y el modal aparece al montar el shell. */
+  goCreate() {
     this.groupActions.openCreate();
+    void this.router.navigate(['/home']);
   }
 
-  openJoinModal() {
+  goJoin() {
     this.groupActions.openJoin();
+    void this.router.navigate(['/home']);
   }
 
   finish() {
