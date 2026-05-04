@@ -104,15 +104,6 @@ interface Totals {
         </div>
       </header>
 
-      <div class="page__rail-actions">
-        <button type="button" class="page__rail-action" (click)="rail.openPremios()">
-          🏆 <span>Premios</span>
-        </button>
-        <button type="button" class="page__rail-action page__rail-action--alt"
-                (click)="rail.openComodines()">
-          🎁 <span>Comodines</span>
-        </button>
-      </div>
 
       <nav class="page-tabs" aria-label="Vistas de picks">
         <a class="page-tabs__item" routerLink="/picks"

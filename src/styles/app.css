@@ -310,6 +310,19 @@ a.btn-wf { text-decoration: none; }
   letter-spacing: .06em;
 }
 
+/* Botón Aleatorio + futuros botones de acción rápida en /picks header */
+.picks-actions {
+  display: flex;
+  gap: 8px;
+  margin: 6px 0 14px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.picks-actions .btn-wf--ink {
+  background: var(--wf-ink);
+  color: white;
+}
+
 /* ---------- Acciones inline Premios / Comodines (debajo de page__stats) ---------- */
 .page__rail-actions {
   display: flex;
@@ -336,6 +349,93 @@ a.btn-wf { text-decoration: none; }
 .page__rail-action--alt {
   background: var(--wf-warn, #d4a500);
   color: #1f1500;
+}
+
+/* ---------- Right rail content (Premios / Comodines aside derecho) ---------- */
+.app-rail__section { display: flex; flex-direction: column; }
+.app-rail__title {
+  font-family: var(--wf-display);
+  font-size: 13px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+  margin: 0 0 10px;
+  font-weight: 700;
+}
+.app-rail__empty {
+  font-size: 12px;
+  color: var(--wf-ink-3);
+  line-height: 1.5;
+  margin: 0 0 10px;
+}
+.app-rail__more {
+  font-size: 11px;
+  color: var(--wf-ink-3);
+  margin: 8px 0 0;
+  font-style: italic;
+}
+
+.rail-prize-card {
+  background: var(--wf-fill);
+  border: 1px solid var(--wf-line);
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+.rail-prize-card__head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--wf-line);
+}
+.rail-prize-card__group {
+  font-family: var(--wf-display);
+  font-size: 12px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.rail-prize-card__total {
+  font-size: 11px;
+  color: #7a5d00;
+  font-weight: 700;
+}
+.rail-prize-card__row {
+  display: grid;
+  grid-template-columns: 18px 30px 1fr;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  padding: 3px 0;
+}
+.rail-prize-card__row .lbl {
+  color: var(--wf-ink-3);
+  font-size: 10px;
+  font-weight: 700;
+}
+.rail-prize-card__row .amount {
+  text-align: right;
+  font-weight: 700;
+  color: var(--wf-ink);
+}
+
+.rail-comodin {
+  background: var(--wf-fill);
+  border: 1px solid var(--wf-line);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+}
+.rail-comodin__type {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--wf-ink);
+}
+.rail-comodin__status {
+  font-size: 10px;
+  color: var(--wf-ink-3);
+  margin-top: 2px;
 }
 
 /* Indicador global de sync (topnav) — pill chiquito que cambia color
@@ -2142,6 +2242,83 @@ a.btn-wf { text-decoration: none; }
   background: var(--wf-paper);
 }
 
+/* Catálogo de tipos de comodines (todos los disponibles) */
+.com-catalog {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid var(--wf-line);
+}
+.com-catalog__head { margin-bottom: 14px; }
+.com-catalog__title {
+  font-family: var(--wf-display);
+  font-size: 20px;
+  letter-spacing: .04em;
+  margin: 0 0 4px;
+}
+.com-catalog__sub {
+  font-size: 13px;
+  color: var(--wf-ink-3);
+  margin: 0;
+  line-height: 1.5;
+}
+.com-catalog__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+@media (min-width: 720px) {
+  .com-catalog__grid { grid-template-columns: 1fr 1fr; }
+}
+@media (min-width: 1100px) {
+  .com-catalog__grid { grid-template-columns: 1fr 1fr 1fr; }
+}
+.com-catalog__card {
+  background: var(--wf-paper);
+  border: 1px solid var(--wf-line);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.com-catalog__card.is-owned {
+  border-color: var(--wf-green);
+  background: var(--wf-green-soft);
+}
+.com-catalog__card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.com-catalog__card-title {
+  font-family: var(--wf-display);
+  font-size: 14px;
+  letter-spacing: .04em;
+  margin: 0;
+  flex: 1;
+}
+.com-catalog__owned {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--wf-green-ink);
+  background: var(--wf-paper);
+  padding: 3px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.com-catalog__impact {
+  font-size: 12px;
+  color: var(--wf-ink);
+  line-height: 1.5;
+  margin: 0 0 6px;
+}
+.com-catalog__window {
+  font-size: 11px;
+  color: var(--wf-ink-3);
+  font-style: italic;
+  margin: 0;
+  line-height: 1.4;
+}
+
 /* Cómo funcionan */
 .com-howto {
   background: var(--wf-paper);
@@ -3607,6 +3784,31 @@ a.btn-wf { text-decoration: none; }
       "sidebar main"
       "footer  footer";
   }
+  /* Cuando RightRailService.visible() es true (en /picks · group-stage ·
+     bracket · groups), el shell pasa a 3 columnas con el aside derecho
+     fijo a 280px. */
+  .app-shell.has-rail {
+    grid-template-columns: 240px minmax(0, 1fr) 280px;
+    grid-template-areas:
+      "topnav  topnav  topnav"
+      "sidebar main    rail"
+      "footer  footer  footer";
+  }
+  .app-shell.has-rail .app-rail {
+    grid-area: rail;
+    align-self: start;
+    position: sticky;
+    top: 60px;
+    height: calc(100vh - 60px);
+    overflow-y: auto;
+    padding: 18px 16px;
+    border-left: 1px solid var(--wf-line-2);
+    background: var(--wf-paper);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .app-shell:not(.has-rail) .app-rail { display: none; }
 
   /* Mobile bars ocultas en desktop */
   .app-shell .app-topbar { display: none; }

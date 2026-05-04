@@ -349,6 +349,32 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
         }
       }
 
+      <!-- Catálogo de los 9 tipos de comodines (referencia) -->
+      <section class="com-catalog">
+        <header class="com-catalog__head">
+          <h2 class="com-catalog__title">Tipos disponibles</h2>
+          <p class="com-catalog__sub">
+            Los 9 tipos de comodines que existen y qué hace cada uno. Los que ya tenés
+            se marcan con un check.
+          </p>
+        </header>
+        <div class="com-catalog__grid">
+          @for (t of ALL_TYPES; track t) {
+            @let owned = ownedTypes().has(t);
+            <article class="com-catalog__card" [class.is-owned]="owned">
+              <header class="com-catalog__card-head">
+                <h3 class="com-catalog__card-title">{{ typeInfo(t).name }}</h3>
+                @if (owned) {
+                  <span class="com-catalog__owned">✓ tienes</span>
+                }
+              </header>
+              <p class="com-catalog__impact">{{ typeInfo(t).impact }}</p>
+              <p class="com-catalog__window">⏱ {{ typeInfo(t).window }}</p>
+            </article>
+          }
+        </div>
+      </section>
+
       <!-- Cómo funcionan -->
       <section class="com-howto">
         <h2 class="com-howto__title">¿Cómo funcionan los comodines?</h2>

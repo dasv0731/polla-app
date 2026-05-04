@@ -253,14 +253,21 @@ type DropdownKey = 'user' | 'ranking' | null;
                   (click)="goToGroupsJoin()" style="margin-top:6px;">→ Unirme con código</button>
         </div>
 
+        <!-- Polla Mundialista: campeón / subcampeón / revelación
+             (los picks especiales del torneo). Con icono de trofeo. -->
         <div class="app-sidebar__section">
-          <div class="app-sidebar__kicker">Predicciones</div>
+          <div class="app-sidebar__kicker">Polla Mundialista</div>
           <a class="sidebar-row" routerLink="/profile/special-picks" routerLinkActive="is-active">
-            <span><span class="sidebar-row__icon">⭐</span>Picks especiales</span>
+            <span><span class="sidebar-row__icon">🏆</span>Campeón / Subcampeón / Revelación</span>
           </a>
+        </div>
+
+        <!-- Mis predicciones: clasificados (fase de grupos) + bracket -->
+        <div class="app-sidebar__section">
+          <div class="app-sidebar__kicker">Mis predicciones</div>
           <a class="sidebar-row" routerLink="/picks/group-stage/predict"
              routerLinkActive="is-active">
-            <span><span class="sidebar-row__icon">📋</span>Tabla de grupos</span>
+            <span><span class="sidebar-row__icon">📋</span>Clasificados</span>
           </a>
           @if (bracketReady()) {
             <a class="sidebar-row" routerLink="/picks/bracket"

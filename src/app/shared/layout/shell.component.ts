@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { NavComponent } from './nav.component';
 import { FooterComponent } from './footer.component';
@@ -8,6 +8,7 @@ import { TriviaPopupComponent } from '../../features/trivia/trivia-popup.compone
 import { GroupActionsModalsComponent } from './group-actions-modals.component';
 import { RedeemModalComponent } from './redeem-modal.component';
 import { RightRailComponent } from './right-rail.component';
+import { RightRailService } from '../../core/layout/right-rail.service';
 
 @Component({
   standalone: true,
@@ -18,16 +19,15 @@ import { RightRailComponent } from './right-rail.component';
     GroupActionsModalsComponent, RedeemModalComponent, RightRailComponent,
   ],
   template: `
-    <div class="app-shell">
+    <div class="app-shell" [class.has-rail]="rail.visible()">
       <app-nav />
       <main class="app-main">
         <app-picks-pending-banner />
         <router-outlet />
       </main>
+      <app-right-rail />
       <app-footer />
     </div>
-    <!-- FABs flotantes (Premios / Comodines) montados fuera del grid -->
-    <app-right-rail />
     <app-toast-host />
     <!-- Popup global de trivia: visible en toda la app cuando hay
          preguntas activas no contestadas (modo COMPLETE). -->
@@ -41,4 +41,6 @@ import { RightRailComponent } from './right-rail.component';
     :host { display: block; }
   `],
 })
-export class ShellComponent {}
+export class ShellComponent {
+  rail = inject(RightRailService);
+}

@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { getUrl } from 'aws-amplify/storage';
@@ -10,6 +10,7 @@ import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
 import { TriviaModalService } from '../../core/trivia/trivia-modal.service';
 import { RailModalsService } from '../../core/layout/rail-modals.service';
 import { PicksSyncService } from '../../core/sync/picks-sync.service';
+import { RandomizerModalComponent } from './randomizer-modal.component';
 
 /** Payload del sync para picks de marcador. Tracking explícito de
  *  `homeTouched/awayTouched` separa "valor que el user editó" de
@@ -79,7 +80,7 @@ interface TriviaInfo {
 @Component({
   standalone: true,
   selector: 'app-picks-list',
-  imports: [NgTemplateOutlet, RouterLink, RouterLinkActive, TeamFlagComponent],
+  imports: [NgTemplateOutlet, RouterLink, RouterLinkActive, TeamFlagComponent, RandomizerModalComponent],
   template: `
     <section class="page">
 
@@ -109,14 +110,12 @@ interface TriviaInfo {
         </div>
       </header>
 
-      <!-- Acciones inline: abren modales globales (Premios / Comodines) -->
-      <div class="page__rail-actions">
-        <button type="button" class="page__rail-action" (click)="rail.openPremios()">
-          🏆 <span>Premios</span>
-        </button>
-        <button type="button" class="page__rail-action page__rail-action--alt"
-                (click)="rail.openComodines()">
-          🎁 <span>Comodines</span>
+      <!-- Botón Aleatorio: abre modal con selector de partidos + sliders
+           para asignar marcadores random masivamente. -->
+      <div class="picks-actions">
+        <button type="button" class="btn-wf btn-wf--ink"
+                (click)="openRandomizer()">
+          🎲 Aleatorio
         </button>
       </div>
 
@@ -376,6 +375,9 @@ interface TriviaInfo {
             title="Canjear código de sponsor">
       🎁 <span>Canjear código</span>
     </button>
+
+    <!-- Modal de "Picks aleatorios" (oculto hasta que openRandomizer fire) -->
+    <app-randomizer-modal #rnd [matches]="randomizableMatches()" />
   `,
   styles: [`
     :host { display: block; }
@@ -495,6 +497,24 @@ export class PicksListComponent implements OnInit, OnDestroy {
   private triviaModal = inject(TriviaModalService);
   rail = inject(RailModalsService);
   sync = inject(PicksSyncService);
+
+  @ViewChild('rnd') randomizer?: RandomizerModalComponent;
+
+  /** Lista de partidos que el modal Aleatorio puede randomizar (form
+   *  esperado: solo metadata mínima, no el match-meta enriquecido). */
+  randomizableMatches = computed(() =>
+    this.matches().map((m) => ({
+      id: m.id,
+      kickoffAt: m.kickoffAt,
+      status: m.status ?? null,
+      homeTeamId: m.homeTeamId,
+      awayTeamId: m.awayTeamId,
+    })),
+  );
+
+  openRandomizer() {
+    this.randomizer?.show();
+  }
 
   /** Abre el modal de trivia scoped al match dado (evita el routerLink
    *  al /picks/trivia/:id legacy — la trivia ahora siempre es modal). */
