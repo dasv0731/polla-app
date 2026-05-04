@@ -6,6 +6,7 @@ import { TimeService } from '../../core/time/time.service';
 import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
 import { RailModalsService } from '../../core/layout/rail-modals.service';
 import { PicksSyncService } from '../../core/sync/picks-sync.service';
+import { GroupStagePicksComponent } from './group-stage-picks.component';
 
 const TOURNAMENT_ID = 'mundial-2026';
 
@@ -74,7 +75,7 @@ interface Totals {
 @Component({
   standalone: true,
   selector: 'app-picks-tabla-grupos',
-  imports: [RouterLink, RouterLinkActive, TeamFlagComponent],
+  imports: [RouterLink, RouterLinkActive, TeamFlagComponent, GroupStagePicksComponent],
   template: `
     <section class="page">
 
@@ -122,25 +123,18 @@ interface Totals {
           <button type="button" class="seg__item"
                   [class.is-active]="view() === 'real'"
                   (click)="view.set('real')">Tabla real</button>
-          <a class="seg__item"
-             [class.is-active]="view() === 'pred'"
-             routerLink="/picks/group-stage/predict">Mi predicción</a>
+          <button type="button" class="seg__item"
+                  [class.is-active]="view() === 'pred'"
+                  (click)="view.set('pred')">Mi predicción</button>
         </div>
       </div>
 
-      @if (loading()) {
+      @if (view() === 'pred') {
+        <!-- Mi predicción · embebido inline (no nueva página).
+             El componente maneja su propio loading/save/lock. -->
+        <app-group-stage-picks />
+      } @else if (loading()) {
         <p class="loading-msg">Cargando tabla…</p>
-      } @else if (view() === 'pred' && !hasAnyPrediction()) {
-        <div class="empty-block">
-          <h3>Aún no tienes predicción de tabla</h3>
-          <p>
-            Arrastra equipos en el editor para predecir cómo terminará cada grupo.
-            La predicción cierra al kickoff inaugural.
-          </p>
-          <a class="btn-wf btn-wf--primary" routerLink="/picks/group-stage/predict">
-            ✏ Hacer mi predicción →
-          </a>
-        </div>
       } @else {
         @if (view() === 'pred') {
           <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">

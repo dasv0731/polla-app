@@ -66,27 +66,40 @@ interface DateGroup {
               </div>
             </div>
 
-            <!-- Rango de números -->
+            <!-- Rango de números: steppers +/- (mismo estilo que pick-detail). -->
             <div class="rnd-section">
               <h4 class="rnd-section__title">Rango de marcadores</h4>
               <p class="rnd-section__hint">
-                El sistema asigna 2 números aleatorios entre los valores que elijas.
+                Sistema asigna 2 números aleatorios entre min y max.
               </p>
-              <div class="rnd-slider">
-                <label>Mínimo: <strong>{{ minVal() }}</strong></label>
-                <input type="range" min="0" max="9" step="1"
-                       [value]="minVal()"
-                       (input)="onMinChange($event)">
-              </div>
-              <div class="rnd-slider">
-                <label>Máximo: <strong>{{ maxVal() }}</strong></label>
-                <input type="range" min="0" max="9" step="1"
-                       [value]="maxVal()"
-                       (input)="onMaxChange($event)">
+              <div class="rnd-stepper-row">
+                <div class="rnd-stepper">
+                  <span class="rnd-stepper__label">Mínimo</span>
+                  <div class="rnd-stepper__control">
+                    <button type="button" class="rnd-stepper__btn"
+                            [disabled]="minVal() <= 0"
+                            (click)="bumpMin(-1)">−</button>
+                    <span class="rnd-stepper__val">{{ minVal() }}</span>
+                    <button type="button" class="rnd-stepper__btn"
+                            [disabled]="minVal() >= 9"
+                            (click)="bumpMin(1)">+</button>
+                  </div>
+                </div>
+                <div class="rnd-stepper">
+                  <span class="rnd-stepper__label">Máximo</span>
+                  <div class="rnd-stepper__control">
+                    <button type="button" class="rnd-stepper__btn"
+                            [disabled]="maxVal() <= 0"
+                            (click)="bumpMax(-1)">−</button>
+                    <span class="rnd-stepper__val">{{ maxVal() }}</span>
+                    <button type="button" class="rnd-stepper__btn"
+                            [disabled]="maxVal() >= 9"
+                            (click)="bumpMax(1)">+</button>
+                  </div>
+                </div>
               </div>
               <p class="rnd-section__hint">
-                Ejemplo de pick aleatorio en este rango:
-                <strong>{{ samplePreview() }}</strong>
+                Ejemplo: <strong>{{ samplePreview() }}</strong>
               </p>
             </div>
           </div>
@@ -157,18 +170,52 @@ interface DateGroup {
       color: var(--wf-ink-3);
     }
 
-    .rnd-slider {
+    .rnd-stepper-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 8px 0 10px;
+    }
+    .rnd-stepper {
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      margin-bottom: 12px;
+      gap: 6px;
+      align-items: center;
     }
-    .rnd-slider label {
-      font-size: 12px;
-      color: var(--wf-ink-2);
+    .rnd-stepper__label {
+      font-size: 11px;
+      color: var(--wf-ink-3);
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      font-weight: 700;
     }
-    .rnd-slider input[type="range"] {
-      width: 100%;
+    .rnd-stepper__control {
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      border: 1.5px solid var(--wf-line-2);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--wf-paper);
+    }
+    .rnd-stepper__btn {
+      width: 36px;
+      height: 36px;
+      background: var(--wf-fill);
+      border: 0;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .rnd-stepper__btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .rnd-stepper__btn:hover:not(:disabled) { background: var(--wf-fill-2, var(--wf-line-2)); }
+    .rnd-stepper__val {
+      width: 44px;
+      text-align: center;
+      font-family: var(--wf-display);
+      font-size: 18px;
+      font-weight: 700;
     }
   `],
 })
@@ -264,15 +311,15 @@ export class RandomizerModalComponent {
     this.closed.emit();
   }
 
-  onMinChange(event: Event) {
-    const v = parseInt((event.target as HTMLInputElement).value, 10);
-    this.minVal.set(v);
-    if (v > this.maxVal()) this.maxVal.set(v);
+  bumpMin(delta: number) {
+    const next = Math.max(0, Math.min(9, this.minVal() + delta));
+    this.minVal.set(next);
+    if (next > this.maxVal()) this.maxVal.set(next);
   }
-  onMaxChange(event: Event) {
-    const v = parseInt((event.target as HTMLInputElement).value, 10);
-    this.maxVal.set(v);
-    if (v < this.minVal()) this.minVal.set(v);
+  bumpMax(delta: number) {
+    const next = Math.max(0, Math.min(9, this.maxVal() + delta));
+    this.maxVal.set(next);
+    if (next < this.minVal()) this.minVal.set(next);
   }
 
   generate() {

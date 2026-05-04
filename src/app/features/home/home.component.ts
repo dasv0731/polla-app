@@ -23,12 +23,17 @@ interface UpcomingMatch {
   standalone: true,
   imports: [RouterLink, TourOverlayComponent],
   template: `
-    <app-tour-overlay />
+    <app-tour-overlay #tour />
     <section class="page">
 
       <header class="home-greet">
         <div class="kicker">Hola, {{ '@' + (handle() ?? 'jugador') }}</div>
         <h1>¿Qué hacemos hoy?</h1>
+        <button type="button" class="btn-wf btn-wf--sm"
+                style="margin-top:10px;"
+                (click)="tour.start()">
+          ▶ Tour rápido
+        </button>
       </header>
 
       <!-- Hub: 4 accesos directos -->

@@ -20,8 +20,7 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
       <!-- Panel de marca (solo desktop) -->
       <aside class="auth-brand">
         <div class="auth-brand__top">
-          <img src="assets/logo-golgana.png" alt="" class="auth-brand__logo-img" style="height:32px;width:auto;">
-          <span class="auth-brand__title">GOLGANA · MUNDIAL 2026</span>
+          <img src="assets/logo-golgana.png" alt="Golgana" class="auth-brand__logo-img" style="height:40px;width:auto;">
         </div>
         <div>
           <h1 class="auth-brand__h1">

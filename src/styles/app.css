@@ -649,6 +649,27 @@ a.btn-wf { text-decoration: none; }
   cursor: pointer;
 }
 .match-trivia:hover { filter: brightness(0.97); }
+/* Chips por pregunta — antes era un solo botón "Jugar" para todas;
+   ahora cada pregunta publicada tiene su chip. */
+.match-trivia__chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.match-trivia__chip {
+  background: var(--wf-ink);
+  color: white;
+  border: 0;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  letter-spacing: .03em;
+}
+.match-trivia__chip:hover { transform: translateY(-1px); }
 .match-trivia__icon { font-size: 18px; flex-shrink: 0; }
 .match-trivia__body { flex: 1; min-width: 0; }
 .match-trivia__title {
@@ -3791,9 +3812,17 @@ a.btn-wf { text-decoration: none; }
       "sidebar main    rail"
       "footer  footer  footer";
   }
-  .app-shell.has-rail .app-rail {
+  /* Wrapper que ocupa el grid-area "rail" — su rol crítico es
+     ESTABLECER el containing block del sticky vía position:relative.
+     Sin esto, el sticky se extiende sobre el row del footer al hacer
+     scroll hasta el final (mismo bug que solucionamos en el sidebar
+     izquierdo). */
+  .app-shell.has-rail .app-rail-wrap {
     grid-area: rail;
-    align-self: start;
+    position: relative;
+  }
+  .app-shell:not(.has-rail) .app-rail-wrap { display: none; }
+  .app-shell.has-rail .app-rail {
     position: sticky;
     top: 60px;
     height: calc(100vh - 60px);

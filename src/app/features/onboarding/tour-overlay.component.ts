@@ -1,7 +1,5 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
-import { GroupActionsService } from '../../core/groups/group-actions.service';
-import { UserModesService } from '../../core/user/user-modes.service';
+import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 
 const STORAGE_KEY = 'polla-tour-completed-v1';
 
@@ -9,30 +7,46 @@ interface TourStep {
   num: number;
   title: string;
   body: string;
-  ctas: { label: string; action: 'create-group' | 'join-group' | 'goto-clasificados' | 'goto-picks' | 'next' | 'finish' }[];
+  /** Selector CSS del elemento a resaltar en la página. El overlay
+   *  pone un "agujero" sobre ese elemento. null = no spotlight. */
+  spotlight?: string | null;
 }
 
 /**
- * Tour de bienvenida — overlay que aparece la primera vez que el user
- * llega al home (post-onboarding). Guía 3 pasos:
- *   1) Crear o unirse a un grupo
- *   2) Hacer predicción de clasificados (fase de grupos)
- *   3) Hacer picks de marcadores en el cronológico
+ * Tour overlay con spotlight: oscurece toda la pantalla excepto el
+ * elemento del paso actual. Solo botón "Siguiente" para avanzar (no
+ * hace acciones — solo guía). El user navega manualmente luego.
  *
- * Si el user ya completó el tour (flag en localStorage), no aparece.
- * Skippeable en cualquier paso. Auto-skip si el user ya tiene grupo
- * (asumimos que no necesita el tour).
+ * Aparece auto la primera vez que el user llega al home (sin grupos
+ * creados todavía Y flag de localStorage no seteado), o cuando se
+ * llama a `start()` desde un botón externo (ej. botón "Empezar tour"
+ * en el home para users que ya cerraron el tour pero quieren reverlo).
  */
 @Component({
   standalone: true,
   selector: 'app-tour-overlay',
-  imports: [RouterLink],
   template: `
     @if (visible()) {
       <div class="tour-overlay" role="dialog" aria-modal="true">
-        <button type="button" class="tour-overlay__backdrop"
-                (click)="dismiss()" aria-label="Cerrar tour"></button>
-        <div class="tour-card">
+        <!-- Backdrop oscuro con clip-path para crear el spotlight.
+             Si no hay spotlight, es un backdrop opaco normal. -->
+        <div class="tour-overlay__backdrop"
+             [style.clip-path]="spotlightClipPath()"
+             (click)="dismiss()"></div>
+
+        <!-- Anillo de highlight sobre el elemento target -->
+        @if (spotlightRect(); as r) {
+          <div class="tour-overlay__ring"
+               [style.top.px]="r.top - 6"
+               [style.left.px]="r.left - 6"
+               [style.width.px]="r.width + 12"
+               [style.height.px]="r.height + 12"></div>
+        }
+
+        <!-- Card de explicación, posicionada al lado del spotlight -->
+        <div class="tour-card"
+             [style.top.px]="cardPos().top"
+             [style.left.px]="cardPos().left">
           <header class="tour-card__head">
             <span class="tour-card__step">PASO {{ currentStep().num }} DE {{ totalSteps }}</span>
             <button type="button" class="tour-card__skip"
@@ -53,17 +67,12 @@ interface TourStep {
           <div class="tour-card__actions">
             @if (current() > 1) {
               <button type="button" class="btn-wf" (click)="back()">‹ Atrás</button>
+            } @else {
+              <span></span>
             }
-            <div class="tour-card__ctas">
-              @for (cta of currentStep().ctas; track cta.label) {
-                <button type="button"
-                        class="btn-wf"
-                        [class.btn-wf--primary]="cta === currentStep().ctas[currentStep().ctas.length - 1]"
-                        (click)="run(cta.action)">
-                  {{ cta.label }}
-                </button>
-              }
-            </div>
+            <button type="button" class="btn-wf btn-wf--primary" (click)="next()">
+              {{ current() === totalSteps ? 'Listo, terminar' : 'Siguiente →' }}
+            </button>
           </div>
         </div>
       </div>
@@ -76,36 +85,47 @@ interface TourStep {
       position: fixed;
       inset: 0;
       z-index: 100;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      padding: 16px;
-    }
-    @media (min-width: 720px) {
-      .tour-overlay { align-items: center; }
+      pointer-events: none;
     }
     .tour-overlay__backdrop {
       position: absolute;
       inset: 0;
-      background: rgba(0, 0, 0, 0.55);
-      border: 0;
+      background: rgba(0, 0, 0, 0.62);
       cursor: pointer;
+      pointer-events: auto;
+    }
+    .tour-overlay__ring {
+      position: absolute;
+      border: 3px solid var(--wf-green);
+      border-radius: 10px;
+      box-shadow: 0 0 0 4px rgba(0, 200, 100, 0.25);
+      pointer-events: none;
+      transition: top 0.2s, left 0.2s, width 0.2s, height 0.2s;
     }
     .tour-card {
-      position: relative;
+      position: absolute;
       background: var(--wf-paper);
       border-radius: 14px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-      padding: 22px 22px 18px;
-      max-width: 500px;
-      width: 100%;
-      z-index: 1;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+      padding: 18px 18px 14px;
+      max-width: 380px;
+      pointer-events: auto;
+      transition: top 0.2s, left 0.2s;
+    }
+    @media (max-width: 720px) {
+      .tour-card {
+        left: 16px !important;
+        right: 16px;
+        max-width: none;
+        bottom: 16px;
+        top: auto !important;
+      }
     }
     .tour-card__head {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
     .tour-card__step {
       font-family: var(--wf-display);
@@ -125,33 +145,33 @@ interface TourStep {
     }
     .tour-card__title {
       font-family: var(--wf-display);
-      font-size: 24px;
+      font-size: 20px;
       letter-spacing: .04em;
-      margin: 0 0 10px;
-      line-height: 1.15;
+      margin: 0 0 8px;
+      line-height: 1.2;
     }
     .tour-card__body {
-      font-size: 14px;
+      font-size: 13px;
       color: var(--wf-ink-2);
-      line-height: 1.55;
-      margin: 0 0 18px;
+      line-height: 1.5;
+      margin: 0 0 14px;
     }
     .tour-card__dots {
       display: flex;
-      gap: 6px;
+      gap: 5px;
       justify-content: center;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
     .tour-card__dot {
-      width: 8px;
-      height: 8px;
+      width: 7px;
+      height: 7px;
       border-radius: 999px;
       background: var(--wf-line);
       transition: background .2s, width .2s;
     }
     .tour-card__dot.is-active {
       background: var(--wf-green);
-      width: 22px;
+      width: 20px;
     }
     .tour-card__dot.is-done {
       background: var(--wf-green-soft);
@@ -159,70 +179,109 @@ interface TourStep {
     .tour-card__actions {
       display: flex;
       justify-content: space-between;
-      align-items: center;
       gap: 8px;
-      flex-wrap: wrap;
-    }
-    .tour-card__ctas {
-      display: flex;
-      gap: 6px;
-      margin-left: auto;
-      flex-wrap: wrap;
     }
   `],
 })
 export class TourOverlayComponent {
   private router = inject(Router);
-  private groupActions = inject(GroupActionsService);
-  private userModes = inject(UserModesService);
 
   totalSteps = 3;
   current = signal(1);
+  private dismissed = signal(false);
+  private completedFromStorage = false;
+  /** Tick para reposicionar el spotlight cuando hay scroll/resize. */
+  private positionTick = signal(0);
 
   steps: TourStep[] = [
     {
       num: 1,
       title: 'Crea o únete a un grupo',
-      body: 'Tu polla vive dentro de un grupo: tus panas, tu oficina, tu familia. ' +
-            'Crea uno nuevo o usa el código que te pasaron.',
-      ctas: [
-        { label: 'Tengo un código', action: 'join-group' },
-        { label: '＋ Crear grupo', action: 'create-group' },
-      ],
+      body: 'Tu polla vive dentro de un grupo (panas, oficina, familia). ' +
+            'Usá los botones del menú lateral o la pantalla de Mis grupos.',
+      spotlight: '.app-sidebar__section:nth-of-type(1)',  // Mis grupos section
     },
     {
       num: 2,
-      title: 'Predicción de clasificados',
+      title: 'Predicciones de clasificados',
       body: 'Antes del Mundial: arma cómo crees que terminará cada grupo. ' +
-            'Arrastra equipos del 1° al 4° y elige los 8 mejores 3eros.',
-      ctas: [
-        { label: 'Más tarde', action: 'next' },
-        { label: 'Ir a Clasificados →', action: 'goto-clasificados' },
-      ],
+            'Aquí encontrás "Clasificados" y "Llaves".',
+      spotlight: '.app-sidebar a[href="/picks/group-stage/predict"]',
     },
     {
       num: 3,
       title: 'Marcadores partido a partido',
-      body: 'Cuando arranca el torneo: predice marcadores antes de cada kickoff. ' +
-            'Auto-guarda mientras tipeas. Editable hasta que el partido empiece.',
-      ctas: [
-        { label: 'Listo, vamos', action: 'finish' },
-      ],
+      body: 'Cuando arranque el torneo: predice marcadores antes de cada kickoff. ' +
+            'Auto-guarda mientras tipeas.',
+      spotlight: '.app-topnav a[href="/picks"]',
     },
   ];
 
   currentStep = computed(() => this.steps[this.current() - 1]!);
 
-  /** Visible si: tour no completado AND user no tiene grupo aún (sino
-   *  asumimos que ya entendió el flow y no le metemos overlay). */
+  /** Visible si el tour no fue completado/dismissed Y o bien fue
+   *  iniciado manualmente (`start()`) o auto al primer ingreso. */
   visible = computed(() => {
     if (this.dismissed()) return false;
-    if (this.completedFromStorage) return false;
-    return this.userModes.groups().length === 0;
+    return !this.completedFromStorage || this.manuallyStarted();
   });
 
-  private dismissed = signal(false);
-  private completedFromStorage = false;
+  private manuallyStarted = signal(false);
+
+  /** Bounds rect del elemento a resaltar para el paso actual. */
+  spotlightRect = computed<DOMRect | null>(() => {
+    this.positionTick();   // dependencia para re-evaluar en scroll/resize
+    const sel = this.currentStep().spotlight;
+    if (!sel) return null;
+    const el = document.querySelector(sel);
+    if (!el) return null;
+    return el.getBoundingClientRect();
+  });
+
+  /** Clip-path para que el backdrop tenga un "agujero" donde está el
+   *  elemento del spotlight. Si no hay spotlight, full overlay. */
+  spotlightClipPath = computed(() => {
+    const r = this.spotlightRect();
+    if (!r) return 'none';
+    // SVG-like even-odd: outer rect minus inner rect
+    return `polygon(
+      0 0, 100% 0, 100% 100%, 0 100%, 0 0,
+      ${r.left}px ${r.top}px,
+      ${r.left}px ${r.top + r.height}px,
+      ${r.left + r.width}px ${r.top + r.height}px,
+      ${r.left + r.width}px ${r.top}px,
+      ${r.left}px ${r.top}px
+    )`;
+  });
+
+  /** Posición de la card explicativa: al lado del spotlight si hay
+   *  espacio, sino bottom-right por default. */
+  cardPos = computed<{ top: number; left: number }>(() => {
+    const r = this.spotlightRect();
+    if (!r || typeof window === 'undefined') {
+      return { top: window.innerHeight - 280, left: window.innerWidth - 400 };
+    }
+    const cardWidth = 380;
+    const cardHeight = 240;
+    // Por default a la derecha del spotlight, alineado top
+    let left = r.right + 20;
+    let top = r.top;
+    // Si no cabe a la derecha → izquierda del spotlight
+    if (left + cardWidth > window.innerWidth) {
+      left = r.left - cardWidth - 20;
+      // Si tampoco cabe a la izquierda → debajo del spotlight
+      if (left < 16) {
+        left = Math.max(16, Math.min(window.innerWidth - cardWidth - 16, r.left));
+        top = r.bottom + 20;
+      }
+    }
+    // Verticalmente: clamp a la viewport
+    if (top + cardHeight > window.innerHeight - 16) {
+      top = window.innerHeight - cardHeight - 16;
+    }
+    if (top < 16) top = 16;
+    return { top, left };
+  });
 
   constructor() {
     try {
@@ -230,47 +289,50 @@ export class TourOverlayComponent {
     } catch {
       /* no-op */
     }
+
+    // Re-posicionar spotlight en scroll/resize
+    if (typeof window !== 'undefined') {
+      const tick = () => this.positionTick.update((n) => n + 1);
+      window.addEventListener('scroll', tick, { passive: true });
+      window.addEventListener('resize', tick);
+    }
+
+    // Cuando el step cambia, scroll para que el spotlight target esté
+    // visible (si no lo está).
+    effect(() => {
+      const sel = this.currentStep().spotlight;
+      if (!sel || !this.visible()) return;
+      const el = document.querySelector(sel) as HTMLElement | null;
+      if (!el) return;
+      // requestAnimationFrame para esperar que CD termine de renderizar.
+      requestAnimationFrame(() => {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    });
+  }
+
+  /** Inicia el tour manualmente (botón "Empezar" en home). */
+  start() {
+    this.manuallyStarted.set(true);
+    this.dismissed.set(false);
+    this.current.set(1);
   }
 
   back() {
     if (this.current() > 1) this.current.update((n) => n - 1);
   }
 
-  run(action: TourStep['ctas'][number]['action']) {
-    switch (action) {
-      case 'create-group':
-        this.groupActions.openCreate();
-        this.dismiss();
-        break;
-      case 'join-group':
-        this.groupActions.openJoin();
-        this.dismiss();
-        break;
-      case 'goto-clasificados':
-        void this.router.navigate(['/picks/group-stage/predict']);
-        this.dismiss();
-        break;
-      case 'goto-picks':
-        void this.router.navigate(['/picks']);
-        this.dismiss();
-        break;
-      case 'next':
-        if (this.current() < this.totalSteps) {
-          this.current.update((n) => n + 1);
-        } else {
-          this.dismiss();
-        }
-        break;
-      case 'finish':
-        void this.router.navigate(['/picks']);
-        this.dismiss();
-        break;
+  next() {
+    if (this.current() < this.totalSteps) {
+      this.current.update((n) => n + 1);
+    } else {
+      this.dismiss();
     }
   }
 
-  /** Marca como completado y oculta. Persistente en localStorage. */
   dismiss() {
     this.dismissed.set(true);
+    this.manuallyStarted.set(false);
     try {
       localStorage.setItem(STORAGE_KEY, '1');
     } catch {

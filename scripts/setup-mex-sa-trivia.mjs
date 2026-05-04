@@ -38,7 +38,7 @@ const AWAY_TEAM_SLUG = 'sudafrica';  // Sudáfrica
 // ---- Schedule ----
 const DATE_LOCAL = '2026-05-04';
 const LOCAL_HOUR = 11;
-const LOCAL_MIN = 0;
+const LOCAL_MIN = 59;
 const TZ_OFFSET_HOURS = 5;       // Guayaquil UTC-5
 
 const client = DynamoDBDocumentClient.from(new DynamoDBClient({ region: REGION }), {

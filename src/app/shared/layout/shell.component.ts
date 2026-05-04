@@ -25,7 +25,12 @@ import { RightRailService } from '../../core/layout/right-rail.service';
         <app-picks-pending-banner />
         <router-outlet />
       </main>
-      <app-right-rail />
+      <!-- Wrapper position:relative establece el containing block del
+           sticky aside derecho — sin esto, el sticky se extiende sobre
+           el row del footer (mismo bug que tenía el sidebar izquierdo). -->
+      <div class="app-rail-wrap">
+        <app-right-rail />
+      </div>
       <app-footer />
     </div>
     <app-toast-host />

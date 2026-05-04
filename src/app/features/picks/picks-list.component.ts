@@ -299,11 +299,13 @@ interface TriviaInfo {
                   </div>
                 </div>
                 <!-- Tu pick visible en cards en vivo / jugados (donde
-                     el score muestra el real, no el del user). En upcoming
-                     ya se ve directo en el input. -->
-                @if (m.pick && (isLive(m) || isPlayed(m) || isAwaitingResult(m))) {
+                     el score muestra el real, no el del user). Lee de
+                     m.pick (DB) si existe, sino del sync (pendiente o
+                     synced) — cubre el caso del user que acaba de hacer
+                     pick y aún no se refrescó la lista de matches. -->
+                @if (hasAnyPick && (isLive(m) || isPlayed(m) || isAwaitingResult(m))) {
                   <div class="match-card__mypick">
-                    Tu pick: <strong>{{ m.pick.homeScorePred }}—{{ m.pick.awayScorePred }}</strong>
+                    Tu pick: <strong>{{ pickHomeShown(m) }}—{{ pickAwayShown(m) }}</strong>
                   </div>
                 }
                 <div class="match-card__pills">
@@ -334,15 +336,21 @@ interface TriviaInfo {
                 </div>
               </div>
               @if (trivia) {
-                <button type="button" class="match-trivia"
-                        (click)="openTrivia(m.id, $event)">
+                <div class="match-trivia">
                   <span class="match-trivia__icon">⚡</span>
                   <div class="match-trivia__body">
                     <div class="match-trivia__title">{{ trivia.title }}</div>
                     <div class="match-trivia__sub">{{ trivia.sub }}</div>
                   </div>
-                  <span class="btn-wf btn-wf--sm btn-wf--ink">Jugar</span>
-                </button>
+                  <div class="match-trivia__chips">
+                    @for (q of triviaQuestionsFor(m.id); track q.id; let i = $index) {
+                      <button type="button" class="match-trivia__chip"
+                              (click)="openTrivia(m.id, $event)">
+                        Preg {{ i + 1 }}
+                      </button>
+                    }
+                  </div>
+                </div>
               }
             </article>
           </ng-template>
@@ -698,6 +706,20 @@ export class PicksListComponent implements OnInit, OnDestroy {
     };
   }
 
+  /** Pick a mostrar en el "Tu pick: X-Y" de cards live/jugados/awaiting.
+   *  Prioriza sync (mas reciente) sobre m.pick (DB). Devuelve '?' si
+   *  no hay nada (no debería pasar — el binding hasAnyPick lo gates). */
+  pickHomeShown(m: MatchWithMeta): number | string {
+    const pending = this.sync.getPending<PickPayload>('pick', m.id);
+    if (pending && pending.homeTouched) return pending.home;
+    return m.pick?.homeScorePred ?? '?';
+  }
+  pickAwayShown(m: MatchWithMeta): number | string {
+    const pending = this.sync.getPending<PickPayload>('pick', m.id);
+    if (pending && pending.awayTouched) return pending.away;
+    return m.pick?.awayScorePred ?? '?';
+  }
+
   /** Para [value] del input. Si el side NO está tocado en sync ni
    *  hay pick en DB, devuelve '' (placeholder "0" se mantiene). */
   scoreInputValue(m: MatchWithMeta, side: 'home' | 'away'): number | string {
@@ -708,6 +730,15 @@ export class PicksListComponent implements OnInit, OnDestroy {
     }
     const v = side === 'home' ? m.pick?.homeScorePred : m.pick?.awayScorePred;
     return v ?? '';
+  }
+
+  /** Lista de preguntas YA PUBLICADAS para un match — para renderizar
+   *  los chips "Preg 1 / Preg 2 / ..." en el row inline. */
+  triviaQuestionsFor(matchId: string): Array<{ id: string }> {
+    const now = this.nowTick();
+    const list = this.triviaByMatch().get(matchId);
+    if (!list) return [];
+    return list.filter((q) => Date.parse(q.publishedAt) <= now);
   }
 
   /** Devuelve info de trivia para el row inline si hay preguntas YA

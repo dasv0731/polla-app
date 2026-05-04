@@ -1,6 +1,7 @@
 import { Component, Input, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { uploadData, getUrl } from 'aws-amplify/storage';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
@@ -69,15 +70,19 @@ interface GroupEdit {
             <span class="form-card__hint">Hasta 500 caracteres. Visible para todos los miembros.</span>
           </div>
 
-          <!-- Imagen: input de Storage key. Upload directo se hace en
-               otro componente (post-MVP); por ahora aceptamos la key
-               manualmente para flexibilidad. -->
+          <!-- Imagen del grupo: upload desde dispositivo. Storage path
+               groups/{groupId}/avatar.{ext}. Preview muestra signed URL. -->
           <div class="form-card__field">
-            <label class="form-card__label" for="edit-img">Imagen del grupo (URL/key)</label>
-            <input class="form-card__input" id="edit-img" name="imageKey" type="text"
-                   [(ngModel)]="imageKey" placeholder="groups/abc123/avatar.png">
+            <label class="form-card__label">Imagen del grupo</label>
+            @if (previewUrl()) {
+              <img [src]="previewUrl()" alt="Preview"
+                   style="width:120px;height:120px;object-fit:cover;border-radius:10px;border:1px solid var(--wf-line);display:block;margin-bottom:8px;">
+            }
+            <input type="file" accept="image/*"
+                   [disabled]="uploading()"
+                   (change)="onFileSelected($event)">
             <span class="form-card__hint">
-              Path de la imagen en Storage. (Upload directo desde el form viene en una próxima iteración.)
+              {{ uploading() ? 'Subiendo…' : (imageKey ? 'Imagen cargada · podés cambiarla' : 'Imagen opcional · JPG/PNG hasta 5 MB') }}
             </span>
           </div>
 
@@ -107,7 +112,9 @@ export class GroupEditComponent implements OnInit {
   group = signal<GroupEdit | null>(null);
   loading = signal(true);
   saving = signal(false);
+  uploading = signal(false);
   error = signal<string | null>(null);
+  previewUrl = signal<string | null>(null);
 
   name = '';
   description = '';
@@ -151,8 +158,52 @@ export class GroupEditComponent implements OnInit {
       this.name = d.name;
       this.description = (d as { description?: string | null }).description ?? '';
       this.imageKey = (d as { imageKey?: string | null }).imageKey ?? '';
+      // Si ya hay imagen, resolver signed URL para preview.
+      if (this.imageKey) {
+        try {
+          const out = await getUrl({ path: this.imageKey, options: { expiresIn: 3600 } });
+          this.previewUrl.set(out.url.toString());
+        } catch {
+          /* ignore — preview es best-effort */
+        }
+      }
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  /** File picker handler: sube la imagen a Storage y guarda la key.
+   *  La key se persiste cuando el user haga click en "Guardar cambios". */
+  async onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      this.toast.error('La imagen excede 5 MB');
+      input.value = '';
+      return;
+    }
+    this.uploading.set(true);
+    try {
+      const ext = file.name.split('.').pop()?.toLowerCase() ?? 'png';
+      const key = `groups/${this.id}/avatar-${Date.now()}.${ext}`;
+      const op = uploadData({
+        path: key,
+        data: file,
+        options: { contentType: file.type || 'image/png' },
+      });
+      await op.result;
+      this.imageKey = key;
+      const out = await getUrl({ path: key, options: { expiresIn: 3600 } });
+      this.previewUrl.set(out.url.toString());
+      this.toast.success('Imagen subida — guardá los cambios para aplicar');
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('[group-edit upload] failed', e);
+      this.toast.error('No se pudo subir la imagen');
+    } finally {
+      this.uploading.set(false);
+      input.value = '';
     }
   }
 

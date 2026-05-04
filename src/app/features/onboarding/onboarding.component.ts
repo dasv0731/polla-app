@@ -99,24 +99,20 @@ type Step = 1 | 2 | 3 | 4 | 5;
           </div>
         }
 
-        <!-- ===== PASO 4: ÚNETE A UN GRUPO ===== -->
+        <!-- ===== PASO 4: TOUR DE BIENVENIDA ===== -->
         @if (step() === 4) {
-          <div class="onb-hero onb-hero--group">👥</div>
+          <div class="onb-hero onb-hero--group">🎯</div>
           <div class="kicker">PASO 4 DE 5</div>
-          <h1 class="onb-title">Únete a un grupo<br>o crea el tuyo</h1>
+          <h1 class="onb-title">Vamos a un tour<br>rápido de la app</h1>
           <p class="onb-sub">
-            Compite contra tus panas. Cada grupo tiene su propio modo de juego
-            (simple o completo), ranking, premios y comodines.
+            Te muestro dónde están las cosas: crear grupo, predecir clasificados,
+            hacer picks de marcadores. Te toma 1 minuto.
           </p>
 
           <div class="onb-actions">
             <button class="btn-wf btn-wf--block btn-wf--primary" type="button"
-                    (click)="goJoin()">
-              <span>👥</span> Tengo un código de invitación
-            </button>
-            <button class="btn-wf btn-wf--block" type="button"
-                    (click)="goCreate()">
-              <span>＋</span> Crear mi grupo
+                    (click)="next()">
+              ▶ Empezar tour
             </button>
           </div>
 
