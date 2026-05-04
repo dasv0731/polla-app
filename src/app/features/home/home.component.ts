@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService } from '../../core/user/user-modes.service';
+import { TourOverlayComponent } from '../onboarding/tour-overlay.component';
 
 const TOURNAMENT_ID = 'mundial-2026';
 
@@ -20,8 +21,9 @@ interface UpcomingMatch {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, TourOverlayComponent],
   template: `
+    <app-tour-overlay />
     <section class="page">
 
       <header class="home-greet">

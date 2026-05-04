@@ -3190,21 +3190,18 @@ a.btn-wf { text-decoration: none; }
   .rank-table tbody td { padding: 13px 16px; }
 }
 
-/* ---------- Acciones admin ---------- */
+/* ---------- Acciones admin · siempre columna ----------
+   Antes era row en ≥992px pero con el aside derecho (rail 280px)
+   los 3 botones de 220px + gaps no caben y desbordan en mobile-desktops
+   (1280px). Columna funciona en todos los breakpoints sin riesgo. */
 .group-admin-actions {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-@media (min-width: 992px) {
-  .group-admin-actions {
-    flex-direction: row;
-    gap: 12px;
-  }
-  .group-admin-actions .btn-wf {
-    flex: 0 0 auto;
-    min-width: 220px;
-  }
+.group-admin-actions .btn-wf {
+  width: 100%;
+  justify-content: center;
 }
 
 /* ---------- Auth split-screen (override del legacy auth-shell.css) ---------- */

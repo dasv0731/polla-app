@@ -83,6 +83,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/groups/group-prizes-edit.component').then((m) => m.GroupPrizesEditComponent),
       },
       {
+        path: 'groups/:id/edit',
+        loadComponent: () => import('./features/groups/group-edit.component').then((m) => m.GroupEditComponent),
+      },
+      {
         path: 'groups/:id',
         loadComponent: () => import('./features/groups/group-detail.component').then((m) => m.GroupDetailComponent),
       },

@@ -315,8 +315,11 @@ export class ApiService {
   upsertPick(matchId: string, homeScorePred: number, awayScorePred: number) {
     return apiClient.mutations.upsertPick({ matchId, homeScorePred, awayScorePred });
   }
-  createGroup(name: string, tournamentId: string, mode: 'SIMPLE' | 'COMPLETE') {
-    return apiClient.mutations.createGroup({ name, tournamentId, mode });
+  createGroup(name: string, tournamentId: string, mode: 'SIMPLE' | 'COMPLETE', description?: string, imageKey?: string) {
+    return apiClient.mutations.createGroup({ name, tournamentId, mode, description: description ?? null, imageKey: imageKey ?? null });
+  }
+  updateGroup(input: { id: string; name?: string; description?: string | null; imageKey?: string | null }) {
+    return apiClient.models.Group.update(input);
   }
   joinGroup(code: string) {
     return apiClient.mutations.joinGroup({ code });

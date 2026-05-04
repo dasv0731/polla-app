@@ -202,6 +202,9 @@ interface RankRow {
           <section class="group-section" #adminAnchor>
             <h2 class="group-section__title" style="margin-bottom:10px;">Acciones de admin</h2>
             <div class="group-admin-actions">
+              <a class="btn-wf btn-wf--block" [routerLink]="['/groups', g.id, 'edit']">
+                ✏ Editar grupo (nombre · descripción · imagen)
+              </a>
               <a class="btn-wf btn-wf--block" [routerLink]="['/groups', g.id, 'prizes']">
                 ⚙ Editar premios
               </a>

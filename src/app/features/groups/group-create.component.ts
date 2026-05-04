@@ -51,6 +51,14 @@ const TOURNAMENT_ID = 'mundial-2026';
             </div>
 
             <div class="form-card__field">
+              <label class="form-card__label" for="grp-desc">Descripción (opcional)</label>
+              <textarea class="form-card__input" id="grp-desc" name="description"
+                        [(ngModel)]="description" placeholder="Reglas extra, premios, etc."
+                        maxlength="500" rows="3"></textarea>
+              <span class="form-card__hint">Hasta 500 caracteres. Editable después.</span>
+            </div>
+
+            <div class="form-card__field">
               <label class="form-card__label" for="grp-tournament">Torneo</label>
               <select class="form-card__select" id="grp-tournament" disabled>
                 <option>Mundial FIFA 2026 · 11 jun — 19 jul</option>
@@ -144,6 +152,7 @@ export class GroupCreateComponent {
   private toast = inject(ToastService);
 
   name = '';
+  description = '';
   mode: 'SIMPLE' | 'COMPLETE' = 'COMPLETE';
   loading = signal(false);
   error = signal<string | null>(null);
@@ -160,7 +169,12 @@ export class GroupCreateComponent {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const res = await this.api.createGroup(this.name.trim(), TOURNAMENT_ID, this.mode);
+      const res = await this.api.createGroup(
+        this.name.trim(),
+        TOURNAMENT_ID,
+        this.mode,
+        this.description.trim() || undefined,
+      );
       // Amplify Gen 2 returns { data, errors? }; non-throwing GraphQL errors
       // come through `errors` so we have to check both branches.
       if (res.errors && res.errors.length > 0) {
