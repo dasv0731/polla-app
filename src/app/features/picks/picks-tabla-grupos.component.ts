@@ -131,9 +131,9 @@ interface Totals {
           <button type="button" class="seg__item"
                   [class.is-active]="view() === 'real'"
                   (click)="view.set('real')">Tabla real</button>
-          <button type="button" class="seg__item"
-                  [class.is-active]="view() === 'pred'"
-                  (click)="view.set('pred')">Mi predicción</button>
+          <a class="seg__item"
+             [class.is-active]="view() === 'pred'"
+             routerLink="/picks/group-stage/predict">Mi predicción</a>
         </div>
       </div>
 

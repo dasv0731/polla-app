@@ -456,6 +456,37 @@ a.btn-wf { text-decoration: none; }
   margin-top: 6px;
   flex-wrap: wrap;
 }
+/* Tu pick (visible en cards en vivo/jugados) — small line subtle. */
+.match-card__mypick {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--wf-ink-3);
+  text-align: center;
+  letter-spacing: .03em;
+}
+.match-card__mypick strong {
+  color: var(--wf-ink);
+  font-weight: 700;
+  font-family: var(--wf-display);
+  font-size: 13px;
+}
+/* CTA "Ver detalles" — antes era click en todo el card. */
+.match-card__cta {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--wf-line);
+}
+.match-card__detail-link {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--wf-green-ink);
+  text-decoration: none;
+  letter-spacing: .04em;
+  cursor: pointer;
+}
+.match-card__detail-link:hover { text-decoration: underline; }
 
 /* Match row primitives (compartidas con home) */
 .match {

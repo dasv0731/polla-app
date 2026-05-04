@@ -243,79 +243,8 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
             </section>
           }
         } @else {
-          <!-- PICK FORM PROMINENT -->
-          <section>
-            <form class="pick-form" (ngSubmit)="save()">
-              <h2>Tu pick</h2>
-              <p class="pick-form__lead">
-                Predice el marcador <strong>al final del tiempo reglamentario</strong>.
-                Editable hasta el kickoff.
-              </p>
-
-              <div class="pick-form__teams">
-                <div class="pick-form__team">
-                  <app-team-flag [flagCode]="teamFlag(m.homeTeamId)" [crestUrl]="teamCrest(m.homeTeamId)" [name]="teamName(m.homeTeamId)" [size]="80" />
-                  <strong>{{ teamName(m.homeTeamId) }}</strong>
-                </div>
-                <span class="pick-form__divider">VS</span>
-                <div class="pick-form__team">
-                  <app-team-flag [flagCode]="teamFlag(m.awayTeamId)" [crestUrl]="teamCrest(m.awayTeamId)" [name]="teamName(m.awayTeamId)" [size]="80" />
-                  <strong>{{ teamName(m.awayTeamId) }}</strong>
-                </div>
-              </div>
-
-              <div class="pick-form__inputs">
-                <div class="score-input">
-                  <div class="score-input__field">
-                    <div class="score-input__stepper">
-                      <button class="score-input__btn" type="button"
-                              [disabled]="(home() ?? 0) <= 0 || isPast()"
-                              (click)="dec('home')">−</button>
-                      <input class="score-input__value" type="text" [value]="home() ?? '—'" readonly>
-                      <button class="score-input__btn" type="button"
-                              [disabled]="(home() ?? 0) >= 20 || isPast()"
-                              (click)="inc('home')">+</button>
-                    </div>
-                    <span class="score-input__label">{{ teamName(m.homeTeamId) }}</span>
-                  </div>
-                </div>
-                <span class="score-input__sep">—</span>
-                <div class="score-input">
-                  <div class="score-input__field">
-                    <div class="score-input__stepper">
-                      <button class="score-input__btn" type="button"
-                              [disabled]="(away() ?? 0) <= 0 || isPast()"
-                              (click)="dec('away')">−</button>
-                      <input class="score-input__value" type="text" [value]="away() ?? '—'" readonly>
-                      <button class="score-input__btn" type="button"
-                              [disabled]="(away() ?? 0) >= 20 || isPast()"
-                              (click)="inc('away')">+</button>
-                    </div>
-                    <span class="score-input__label">{{ teamName(m.awayTeamId) }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="pick-form__actions">
-                <button type="submit" class="btn btn--primary btn--lg"
-                        [disabled]="saving() || !canSave() || isPast()">
-                  {{ saving() ? 'Guardando…' : (p ? 'Actualizar pick' : 'Guardar pick') }}
-                </button>
-                <a routerLink="/picks" class="btn btn--ghost">Volver al listado</a>
-              </div>
-              @if (savedAt()) {
-                <p class="pick-form__hint">{{ savedAt() }}</p>
-              } @else if (isPast()) {
-                <p class="pick-form__hint" style="color: var(--color-lost);">
-                  Ventana cerrada — el partido ya empezó.
-                </p>
-              } @else {
-                <p class="pick-form__hint">Auto-guarda cada vez que confirmas el marcador.</p>
-              }
-            </form>
-          </section>
-
-          <!-- DATOS DEL PARTIDO -->
+          <!-- DATOS DEL PARTIDO (el pick form duplicado se removió;
+               el banner del hero ya tiene los inputs de marcador) -->
           <section>
             <header class="section-heading" style="margin-bottom: var(--space-md);">
               <div class="section-heading__text">
@@ -333,12 +262,24 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
             </div>
           </section>
         }
+
+        <!-- CTA Volver a mis picks (al final, ambos modos) -->
+        <div class="back-cta">
+          <a routerLink="/picks" class="btn-wf btn-wf--primary">‹ Volver a mis picks</a>
+        </div>
       </div>
     } @else {
       <p style="padding: var(--space-2xl); text-align: center;">Partido no encontrado.</p>
     }
   `,
   styles: [`
+    .back-cta {
+      display: flex;
+      justify-content: center;
+      margin: var(--space-2xl) 0 var(--space-xl);
+    }
+    .back-cta .btn-wf { min-width: 220px; justify-content: center; }
+
     .mh__pick {
       display: flex;
       flex-direction: column;
@@ -602,12 +543,27 @@ export class PickDetailComponent implements OnInit, OnDestroy {
       const phase = (phasesRes.data ?? []).find((p) => p.id === matchItem.phaseId);
       if (phase) this.phase.set({ name: phase.name, multiplier: phase.multiplier });
 
-      // My pick
+      // My pick — primero leemos del sync (pending/synced en localStorage)
+      // y caemos a la API si no hay nada local. Esto cubre el caso típico:
+      // user editó el pick en /picks → 1.5s después navega a /picks/match/X
+      // antes de que el sync flushee → API aún no tiene el valor → sin esta
+      // capa el banner del hero saldría vacío.
       const userId = this.auth.user()?.sub;
+      const pending = this.sync.getPending<PickPayload>('pick', this.id);
+      if (pending && (pending.homeTouched || pending.awayTouched)) {
+        const pickData: PickData = {
+          homeScorePred: pending.home,
+          awayScorePred: pending.away,
+          pointsEarned: null, exactScore: null, correctResult: null,
+        };
+        this.pick.set(pickData);
+        if (pending.homeTouched) this.home.set(pending.home);
+        if (pending.awayTouched) this.away.set(pending.away);
+      }
       if (userId) {
         const myPicks = await this.api.myPicks(userId);
         const found = (myPicks.data ?? []).find((p) => p.matchId === this.id);
-        if (found) {
+        if (found && !pending) {
           const pickData: PickData = {
             homeScorePred: found.homeScorePred,
             awayScorePred: found.awayScorePred,
@@ -618,6 +574,14 @@ export class PickDetailComponent implements OnInit, OnDestroy {
           this.pick.set(pickData);
           this.home.set(pickData.homeScorePred);
           this.away.set(pickData.awayScorePred);
+        } else if (found && this.pick()) {
+          // Sync tenía valor pero el server tiene metadata adicional (pointsEarned, etc).
+          this.pick.update((cur) => cur ? {
+            ...cur,
+            pointsEarned: found.pointsEarned ?? cur.pointsEarned,
+            exactScore: found.exactScore ?? cur.exactScore,
+            correctResult: found.correctResult ?? cur.correctResult,
+          } : null);
         }
       }
 

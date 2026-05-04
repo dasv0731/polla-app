@@ -239,7 +239,7 @@ interface TriviaInfo {
             <article class="match-card"
                      [class.match-card--accent]="!!trivia"
                      [class.match-card--dim]="m.pick === null && isPlayed(m)">
-              <div class="match-card__body" (click)="goToMatch(m.id)">
+              <div class="match-card__body">
                 <div class="match-card__head">
                   <span>{{ formatKickoff(m.kickoffAt) }}@if (m.phaseLabel) { · {{ m.phaseLabel }} }</span>
                   @if (isLive(m)) {
@@ -299,6 +299,14 @@ interface TriviaInfo {
                       [size]="22" />
                   </div>
                 </div>
+                <!-- Tu pick visible en cards en vivo / jugados (donde
+                     el score muestra el real, no el del user). En upcoming
+                     ya se ve directo en el input. -->
+                @if (m.pick && (isLive(m) || isPlayed(m) || isAwaitingResult(m))) {
+                  <div class="match-card__mypick">
+                    Tu pick: <strong>{{ m.pick.homeScorePred }}—{{ m.pick.awayScorePred }}</strong>
+                  </div>
+                }
                 <div class="match-card__pills">
                   @if (m.pick && isPlayed(m) && m.pick.exactScore) {
                     <span class="pill pill--green">✓ Exacto · +{{ m.pick.pointsEarned ?? 0 }}</span>
@@ -315,6 +323,15 @@ interface TriviaInfo {
                   } @else if (upcoming) {
                     <span class="pill">Sin pick</span>
                   }
+                </div>
+                <!-- Botón "Ver detalles": navegar al partido. Antes el
+                     click era en TODO el card body, lo cual generaba
+                     mistakes (clicks en input no podían no propagar bien). -->
+                <div class="match-card__cta">
+                  <a class="match-card__detail-link"
+                     [routerLink]="['/picks/match', m.id]">
+                    Ver detalles →
+                  </a>
                 </div>
               </div>
               @if (trivia) {
