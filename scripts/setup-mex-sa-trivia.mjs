@@ -36,10 +36,16 @@ const HOME_TEAM_SLUG = 'mexico';     // México
 const AWAY_TEAM_SLUG = 'sudafrica';  // Sudáfrica
 
 // ---- Schedule ----
-const DATE_LOCAL = '2026-05-04';
+// Modo "test sin límite": pone el kickoff a `now - 5 min` para que el
+// partido esté EN VIVO inmediatamente, y trivias con timerSeconds altísimo
+// (24h) para que no auto-revelen mientras testeás los modales.
+const TEST_MODE_NO_LIMIT = true;
+const DATE_LOCAL = '2026-05-04';     // legacy si TEST_MODE_NO_LIMIT=false
 const LOCAL_HOUR = 11;
 const LOCAL_MIN = 59;
 const TZ_OFFSET_HOURS = 5;       // Guayaquil UTC-5
+
+const TIMER_SECONDS = TEST_MODE_NO_LIMIT ? 86400 : 120;
 
 const client = DynamoDBDocumentClient.from(new DynamoDBClient({ region: REGION }), {
   marshallOptions: { removeUndefinedValues: true },
@@ -70,6 +76,11 @@ async function scanAll(table, fields) {
 }
 
 function kickoffISO() {
+  if (TEST_MODE_NO_LIMIT) {
+    // Kickoff = ahora - 5 min. Esto pone el match en estado LIVE (kickoff
+    // past) con 3h de ventana viva por delante para testing.
+    return new Date(Date.now() - 5 * 60_000).toISOString();
+  }
   const utcHour = LOCAL_HOUR + TZ_OFFSET_HOURS;
   const dayOffset = Math.floor(utcHour / 24);
   const realHour = utcHour % 24;
@@ -148,18 +159,38 @@ async function main() {
   const matchTrivias = allTrivias.filter((t) => t.matchId === target.id);
   if (matchTrivias.length > 0) {
     console.log(`\nBorrando ${matchTrivias.length} trivia(s) existentes…`);
-    const requests = matchTrivias.slice(0, 25).map((t) => ({
-      DeleteRequest: { Key: { id: t.id } },
-    }));
-    await client.send(new BatchWriteCommand({
-      RequestItems: { [tableName('TriviaQuestion')]: requests },
-    }));
-    console.log(`  → borradas`);
+    // BatchWrite máx 25 items por request — chunkeamos por si hay más.
+    for (let i = 0; i < matchTrivias.length; i += 25) {
+      const chunk = matchTrivias.slice(i, i + 25);
+      const requests = chunk.map((t) => ({ DeleteRequest: { Key: { id: t.id } } }));
+      await client.send(new BatchWriteCommand({
+        RequestItems: { [tableName('TriviaQuestion')]: requests },
+      }));
+    }
+    console.log(`  → ${matchTrivias.length} borradas`);
+  }
+
+  // 3b) Delete existing TriviaAnswer rows for this match — sin esto, las
+  //     respuestas viejas filtran las nuevas trivias del frontend (collectForMatch
+  //     hace `if (answeredQids.has(q.id)) continue;`) y la cola sale vacía.
+  const allAnswers = await scanAll(tableName('TriviaAnswer'), ['id', 'matchId']);
+  const matchAnswers = allAnswers.filter((a) => a.matchId === target.id);
+  if (matchAnswers.length > 0) {
+    console.log(`\nBorrando ${matchAnswers.length} respuesta(s) previas del match…`);
+    for (let i = 0; i < matchAnswers.length; i += 25) {
+      const chunk = matchAnswers.slice(i, i + 25);
+      const requests = chunk.map((a) => ({ DeleteRequest: { Key: { id: a.id } } }));
+      await client.send(new BatchWriteCommand({
+        RequestItems: { [tableName('TriviaAnswer')]: requests },
+      }));
+    }
+    console.log(`  → ${matchAnswers.length} borradas`);
   }
 
   // 4) Create 3 trivias all published at kickoff
   console.log('\nCreando 3 trivias nuevas (todas publicadas al kickoff)…');
   const now = new Date().toISOString();
+  let createdCount = 0;
   for (let i = 0; i < 3; i++) {
     const p = PROMPTS[i];
     const sponsor = SPONSORS[i % SPONSORS.length];
@@ -174,19 +205,29 @@ async function main() {
       optionA: p.optA, optionB: p.optB, optionC: p.optC, optionD: p.optD,
       correctOption: p.correct,
       publishedAt: newKickoff,    // todas al inicio
-      timerSeconds: 120,
+      timerSeconds: TIMER_SECONDS,
       explanation,
       createdAt: now,
       updatedAt: now,
     };
-    await client.send(new PutCommand({
-      TableName: tableName('TriviaQuestion'),
-      Item: item,
-    }));
-    console.log(`  ${i + 1}. "${p.prompt.slice(0, 50)}…"  ${sponsor ? '· con marca ' + sponsor.name : '· sin marca'}`);
+    try {
+      await client.send(new PutCommand({
+        TableName: tableName('TriviaQuestion'),
+        Item: item,
+      }));
+      createdCount++;
+      console.log(`  ${i + 1}. "${p.prompt.slice(0, 50)}…"  id=${item.id}  ${sponsor ? '· con marca ' + sponsor.name : '· sin marca'}`);
+    } catch (err) {
+      console.error(`  ${i + 1}. ERROR creando: ${err.message}`);
+    }
   }
 
-  console.log(`\nListo. El partido ${HOME_TEAM_SLUG.toUpperCase()}-${AWAY_TEAM_SLUG.toUpperCase()} arranca a las ${LOCAL_HOUR}:${String(LOCAL_MIN).padStart(2, '0')} local con 3 trivias en cola.`);
+  // 5) Verificación post-write: re-scan para confirmar que las 3 quedaron en DB
+  const verifyTrivias = await scanAll(tableName('TriviaQuestion'), ['id', 'matchId']);
+  const verifyForMatch = verifyTrivias.filter((t) => t.matchId === target.id);
+  console.log(`\nVerificación: ${verifyForMatch.length} trivia(s) en DB para este match (esperado: 3)`);
+
+  console.log(`\nListo. ${createdCount}/3 trivias creadas. Match ${HOME_TEAM_SLUG.toUpperCase()}-${AWAY_TEAM_SLUG.toUpperCase()} kickoff ${newKickoff}.`);
 }
 
 main().catch((e) => { console.error('\nError:', e); process.exit(1); });

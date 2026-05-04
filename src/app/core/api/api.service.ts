@@ -448,11 +448,16 @@ export class ApiService {
     });
   }
   // ----- Trivia (admin CRUD + user answers) -----
+  /** Lista trivias de un match vía el GSI `triviaByMatch` (matchId hash,
+   *  publishedAt sort). Antes usábamos `list({ filter: { matchId: { eq } } })`
+   *  pero ese path hace Scan + filter, que es eventually-consistent y dropea
+   *  items recién creados (vimos qDataLen=2 en lugar de 3). El método
+   *  GSI-backed es Query consistente. */
   listTriviaByMatch(matchId: string) {
-    return apiClient.models.TriviaQuestion.list({
-      filter: { matchId: { eq: matchId } },
-      limit: 200,
-    });
+    return apiClient.models.TriviaQuestion.listTriviaQuestionByMatchIdAndPublishedAt(
+      { matchId },
+      { limit: 200 },
+    );
   }
   listTriviaByTournament(tournamentId: string) {
     return apiClient.models.TriviaQuestion.list({

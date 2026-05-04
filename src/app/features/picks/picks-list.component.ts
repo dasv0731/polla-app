@@ -345,7 +345,7 @@ interface TriviaInfo {
                   <div class="match-trivia__chips">
                     @for (q of triviaQuestionsFor(m.id); track q.id; let i = $index) {
                       <button type="button" class="match-trivia__chip"
-                              (click)="openTrivia(m.id, $event)">
+                              (click)="openTrivia(m.id, q.id, $event)">
                         Preg {{ i + 1 }}
                       </button>
                     }
@@ -526,9 +526,9 @@ export class PicksListComponent implements OnInit, OnDestroy {
 
   /** Abre el modal de trivia scoped al match dado (evita el routerLink
    *  al /picks/trivia/:id legacy — la trivia ahora siempre es modal). */
-  openTrivia(matchId: string, event: Event) {
+  openTrivia(matchId: string, questionId: string, event: Event) {
     event.stopPropagation();   // evita que el card-body navegue al detail
-    this.triviaModal.openForMatch(matchId);
+    this.triviaModal.openForMatch(matchId, questionId);
   }
 
   // Sync de marcadores ahora vive en PicksSyncService (local-first +

@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService } from '../../core/user/user-modes.service';
@@ -286,24 +286,60 @@ export class TriviaPopupComponent implements OnInit, OnDestroy {
   constructor() {
     // Effect: cuando service.refreshTick cambia (modal se abre o re-abre),
     // resetear estado de la pregunta y recargar scopedQueue si aplica.
+    // `allowSignalWrites: true` requerido en Angular 18.x — el effect escribe
+    // activeIndex/picked/msg/revealed (vía resetQuestionState).
+    //
+    // Para evitar flicker en clicks consecutivos al mismo match (el chip
+    // "Preg 2" debe abrir directo en la pregunta 2), distinguimos:
+    //   · Cache hit  → solo movemos activeIndex al index de target
+    //                  (sin re-fetch ni clear). El modal hace una transición
+    //                  suave entre preguntas ya cargadas.
+    //   · Cache miss → clear scopedQueue y fetch. Mientras carga, el modal
+    //                  no renderiza nada (current() = null) en vez de
+    //                  mostrar contenido stale del match previo.
     effect(() => {
       this.modal.refreshTick();   // dependency
       const scope = this.modal.scopedMatchId();
-      if (this.modal.isOpen()) {
+      const target = this.modal.targetQuestionId();
+      if (!this.modal.isOpen()) return;
+
+      this.resetQuestionState();
+
+      if (!scope) {
         this.activeIndex.set(0);
-        this.resetQuestionState();
-        if (scope) {
-          void this.loadScopedQueue(scope);
-        }
+        return;
       }
-    });
+
+      // `scopedQueue` se lee con untracked: si lo trackeamos, el set([])
+      // de abajo retrigerea este mismo effect en loop (Angular signals
+      // comparan refs con Object.is — dos `[]` son distintos refs).
+      const cached = untracked(() => this.scopedQueue());
+      const cacheHit = cached.length > 0 && cached[0].matchId === scope;
+
+      if (cacheHit) {
+        // Misma cola — solo reposicionar al target (o 0 si no hay target).
+        const idx = target ? cached.findIndex((q) => q.id === target) : -1;
+        this.activeIndex.set(idx >= 0 ? idx : 0);
+      } else {
+        // Cambio de match (o sin cargar aún): clear + fetch. El modal
+        // queda blank hasta que la carga termine; es preferible a mostrar
+        // la pregunta de un partido distinto durante 100-300ms.
+        this.activeIndex.set(0);
+        if (cached.length > 0) this.scopedQueue.set([]);  // skip set si ya está vacía
+        void this.loadScopedQueue(scope);
+      }
+    }, { allowSignalWrites: true });
 
     // Effect: auto-reveal cuando el timer llega a 0 (sin haber respondido).
+    // `revealed` se lee con `untracked()` para evitar acoplar el read al
+    // reactive graph del effect; el write requiere `allowSignalWrites`.
     effect(() => {
-      if (this.modal.isOpen() && this.current() && this.secondsLeft() === 0 && !this.revealed()) {
-        this.revealed.set(true);
+      if (this.modal.isOpen() && this.current() && this.secondsLeft() === 0) {
+        if (!untracked(() => this.revealed())) {
+          this.revealed.set(true);
+        }
       }
-    });
+    }, { allowSignalWrites: true });
   }
 
   async ngOnInit() {
@@ -458,6 +494,18 @@ export class TriviaPopupComponent implements OnInit, OnDestroy {
       const teamMap = new Map<string, string>();
       for (const t of teamsRes.data ?? []) teamMap.set(t.slug, t.name);
       const list = await this.collectForMatch(mRes.data, userId, teamMap);
+
+      // Setea activeIndex ANTES de scopedQueue: si el chip pasó un
+      // targetQuestionId, así current() resuelve directo a esa pregunta
+      // cuando la cola entra en visibleQueue. Si seteamos scopedQueue
+      // primero, hay un frame intermedio con activeIndex=0 → modal
+      // renderiza la primera y al frame siguiente salta a la target,
+      // produciendo flicker P1→P2.
+      const target = this.modal.targetQuestionId();
+      if (target) {
+        const idx = list.findIndex((q) => q.id === target);
+        if (idx >= 0) this.activeIndex.set(idx);
+      }
       this.scopedQueue.set(list);
     } catch (err) {
       // eslint-disable-next-line no-console
@@ -525,3 +573,4 @@ function parseSponsor(explanation: string | null | undefined): {
     cleanExplanation: m[3].trim(),
   };
 }
+
