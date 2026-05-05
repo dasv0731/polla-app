@@ -1549,12 +1549,6 @@
               "properties": {
                 "rules": [
                   {
-                    "allow": "private",
-                    "operations": [
-                      "read"
-                    ]
-                  },
-                  {
                     "groupClaim": "cognito:groups",
                     "provider": "userPools",
                     "allow": "groups",
@@ -3404,6 +3398,60 @@
             }
           }
         },
+        "PreviewJoinCodeReturnType": {
+          "name": "PreviewJoinCodeReturnType",
+          "fields": {
+            "ok": {
+              "name": "ok",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": true,
+              "attributes": []
+            },
+            "message": {
+              "name": "message",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "groupId": {
+              "name": "groupId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": false,
+              "attributes": []
+            },
+            "groupName": {
+              "name": "groupName",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "ownerHandle": {
+              "name": "ownerHandle",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "memberCount": {
+              "name": "memberCount",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": true,
+              "attributes": []
+            },
+            "alreadyMember": {
+              "name": "alreadyMember",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": true,
+              "attributes": []
+            }
+          }
+        },
         "UpsertPickReturnType": {
           "name": "UpsertPickReturnType",
           "fields": {
@@ -3890,6 +3938,22 @@
           "isArray": false,
           "type": {
             "nonModel": "JoinGroupReturnType"
+          },
+          "isRequired": false,
+          "arguments": {
+            "code": {
+              "name": "code",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            }
+          }
+        },
+        "previewJoinCode": {
+          "name": "previewJoinCode",
+          "isArray": false,
+          "type": {
+            "nonModel": "PreviewJoinCodeReturnType"
           },
           "isRequired": false,
           "arguments": {

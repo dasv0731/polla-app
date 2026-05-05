@@ -128,44 +128,26 @@ export class GroupJoinComponent implements OnInit {
 
   private async loadGroup() {
     try {
-      const invite = await this.api.getInviteCode(this.code);
-      if (!invite.data) {
-        this.error.set('Código inválido o expirado');
+      // Lambda `previewJoinCode` hace lookup + permisos server-side. Antes
+      // hacíamos getInviteCode + getGroup + groupMembers + getUser en el front,
+      // pero esto requería que InviteCode fuese listable por authenticated
+      // (data leak: cualquier user veía todos los códigos).
+      const res = await this.api.previewJoinCode(this.code);
+      const data = res.data;
+      if (!data || !data.ok) {
+        this.error.set(data?.message ?? 'Código inválido o expirado');
         return;
       }
-      const groupId = invite.data.groupId;
-      const [grp, members] = await Promise.all([
-        this.api.getGroup(groupId),
-        this.api.groupMembers(groupId),
-      ]);
-      if (!grp.data) {
-        this.error.set('El grupo ya no existe');
-        return;
-      }
-
-      // Resolve admin handle for the 'Invitado por' line
-      let ownerHandle = grp.data.adminUserId.slice(0, 6);
-      try {
-        const owner = await this.api.getUser(grp.data.adminUserId);
-        if (owner.data?.handle) ownerHandle = owner.data.handle;
-      } catch {
-        // ignore — fallback to id slice
-      }
-
-      // Detect already-member state
-      const userId = this.auth.user()?.sub;
-      const memberCount = (members.data ?? []).length;
-      const isMember = (members.data ?? []).some((m) => m.userId === userId);
 
       this.group.set({
-        id: groupId,
-        name: grp.data.name,
-        joinCode: grp.data.joinCode,
-        ownerHandle,
-        members: memberCount,
-        createdAt: grp.data.createdAt,
+        id: data.groupId!,
+        name: data.groupName!,
+        joinCode: this.code,                  // el user ya tiene el código (vino por URL)
+        ownerHandle: data.ownerHandle ?? '—',
+        members: data.memberCount,
+        createdAt: '',                        // no exponemos en el preview
       });
-      this.alreadyMember.set(isMember);
+      this.alreadyMember.set(data.alreadyMember);
     } catch (e) {
       this.error.set(humanizeError(e));
     } finally {

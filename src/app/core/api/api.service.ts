@@ -35,8 +35,12 @@ export class ApiService {
   getGroup(id: string) {
     return apiClient.models.Group.get({ id });
   }
-  getInviteCode(code: string) {
-    return apiClient.models.InviteCode.get({ code });
+  /** Preview un código de invitación a info mínima del grupo, sin requerir
+   *  membresía. Sustituye el flow viejo getInviteCode + getGroup + ... que
+   *  requería exponer InviteCode al GraphQL public-authenticated → leak
+   *  de todos los códigos. Ahora un lambda hace el lookup server-side. */
+  previewJoinCode(code: string) {
+    return apiClient.mutations.previewJoinCode({ code });
   }
   getUserByHandle(handle: string) {
     return apiClient.models.User.list({
