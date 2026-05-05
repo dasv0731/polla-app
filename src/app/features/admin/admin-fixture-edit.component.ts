@@ -85,9 +85,22 @@ const TOURNAMENT_ID = 'mundial-2026';
 
         <div class="form-card__field">
           <label class="form-card__label" for="matchday">Jornada / fecha</label>
-          <input class="form-card__input" id="matchday" name="matchday" type="text"
-                 [(ngModel)]="matchday" maxlength="40"
-                 placeholder="Ej. Fecha 1 · Octavos · Cuartos">
+          <select class="form-card__input" id="matchday" name="matchday"
+                  [(ngModel)]="matchday">
+            <option value="">— Sin etiqueta —</option>
+            <optgroup label="Fase de grupos">
+              <option value="Fecha 1">Fecha 1</option>
+              <option value="Fecha 2">Fecha 2</option>
+              <option value="Fecha 3">Fecha 3</option>
+            </optgroup>
+            <optgroup label="Fase eliminatoria">
+              <option value="16avos">16avos</option>
+              <option value="8avos">8avos</option>
+              <option value="4tos">4tos</option>
+              <option value="Semis">Semis</option>
+              <option value="Final">Final</option>
+            </optgroup>
+          </select>
           <span class="form-card__hint">Etiqueta de jornada para filtros y rankings (opcional).</span>
         </div>
 
@@ -219,7 +232,9 @@ export class AdminFixtureEditComponent implements OnInit {
         const res = await apiClient.models.Match.update(updatePayload);
         if (res?.errors && res.errors.length > 0) {
           // eslint-disable-next-line no-console
-          console.error('[Match.update] GraphQL errors:', res.errors);
+          console.error('[Match.update] GraphQL errors:',
+            res.errors.map((e: { message?: string; errorType?: string; path?: string[] }) =>
+              ({ message: e.message, errorType: e.errorType, path: e.path })));
           this.error.set(res.errors[0]!.message ?? 'No se pudo actualizar el partido');
           return;
         }
@@ -240,7 +255,9 @@ export class AdminFixtureEditComponent implements OnInit {
         });
         if (res?.errors && res.errors.length > 0) {
           // eslint-disable-next-line no-console
-          console.error('[Match.create] GraphQL errors:', res.errors);
+          console.error('[Match.create] GraphQL errors:',
+            res.errors.map((e: { message?: string; errorType?: string; path?: string[] }) =>
+              ({ message: e.message, errorType: e.errorType, path: e.path })));
           this.error.set(res.errors[0]!.message ?? 'No se pudo crear el partido');
           return;
         }
