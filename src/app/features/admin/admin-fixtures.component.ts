@@ -21,7 +21,6 @@ interface MatchRow {
   awayScore: number | null;
   pointsCalculated: boolean;
   venue: string | null;
-  matchday: string | null;
   version: number;
   updatedAt: string | null;
 }
@@ -58,12 +57,6 @@ interface MatchRow {
           <option value="">Todas las fases</option>
           @for (p of phases(); track p.id) {
             <option [value]="p.id">{{ p.name }}</option>
-          }
-        </select>
-        <select [(ngModel)]="matchdayFilter">
-          <option value="">Todas las jornadas</option>
-          @for (md of matchdayOptions(); track md) {
-            <option [value]="md">{{ md }}</option>
           }
         </select>
         <select [(ngModel)]="statusFilter">
@@ -171,33 +164,19 @@ export class AdminFixturesComponent implements OnInit {
   picksByMatch = signal<Map<string, number>>(new Map());
 
   phaseFilter = '';
-  matchdayFilter = '';
   statusFilter = '';
   search = '';
 
   private phaseFilterSig = signal('');
-  private matchdayFilterSig = signal('');
   private statusFilterSig = signal('');
   private searchSig = signal('');
 
-  /** Lista de matchdays únicos detectados en los matches cargados,
-   *  para el dropdown del filtro. */
-  matchdayOptions = computed(() => {
-    const set = new Set<string>();
-    for (const m of this.matches()) {
-      if (m.matchday) set.add(m.matchday);
-    }
-    return [...set].sort();
-  });
-
   visible = computed(() => {
     const ph = this.phaseFilterSig();
-    const md = this.matchdayFilterSig();
     const st = this.statusFilterSig();
     const q = this.searchSig().trim().toLowerCase();
     return this.matches().filter((m) => {
       if (ph && m.phaseId !== ph) return false;
-      if (md && m.matchday !== md) return false;
       // Filtramos sobre el status efectivo: si el usuario elige "LIVE",
       // queremos los partidos que en este momento están EN VIVO según
       // hora — no los que el admin marcó manualmente como LIVE en DB.
@@ -223,7 +202,6 @@ export class AdminFixturesComponent implements OnInit {
 
   ngDoCheck() {
     if (this.phaseFilter !== this.phaseFilterSig()) this.phaseFilterSig.set(this.phaseFilter);
-    if (this.matchdayFilter !== this.matchdayFilterSig()) this.matchdayFilterSig.set(this.matchdayFilter);
     if (this.statusFilter !== this.statusFilterSig()) this.statusFilterSig.set(this.statusFilter);
     if (this.search !== this.searchSig()) this.searchSig.set(this.search);
   }
@@ -261,7 +239,6 @@ export class AdminFixturesComponent implements OnInit {
             awayScore: m.awayScore ?? null,
             pointsCalculated: m.pointsCalculated ?? false,
             venue: (m as { venue?: string | null }).venue ?? null,
-            matchday: (m as { matchday?: string | null }).matchday ?? null,
             version: m.version ?? 1,
             updatedAt: m.updatedAt ?? null,
           }))

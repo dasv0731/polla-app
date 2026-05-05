@@ -83,26 +83,6 @@ const TOURNAMENT_ID = 'mundial-2026';
           <span class="form-card__hint">Estadio · ciudad. Aparece en la tabla de fixtures.</span>
         </div>
 
-        <div class="form-card__field">
-          <label class="form-card__label" for="matchday">Jornada / fecha</label>
-          <select class="form-card__input" id="matchday" name="matchday"
-                  [(ngModel)]="matchday">
-            <option value="">— Sin etiqueta —</option>
-            <optgroup label="Fase de grupos">
-              <option value="Fecha 1">Fecha 1</option>
-              <option value="Fecha 2">Fecha 2</option>
-              <option value="Fecha 3">Fecha 3</option>
-            </optgroup>
-            <optgroup label="Fase eliminatoria">
-              <option value="16avos">16avos</option>
-              <option value="8avos">8avos</option>
-              <option value="4tos">4tos</option>
-              <option value="Semis">Semis</option>
-              <option value="Final">Final</option>
-            </optgroup>
-          </select>
-          <span class="form-card__hint">Etiqueta de jornada para filtros y rankings (opcional).</span>
-        </div>
 
         @if (showBracketField()) {
           <div class="form-card__field">
@@ -147,7 +127,6 @@ export class AdminFixtureEditComponent implements OnInit {
   awayTeamId = '';
   kickoffLocal = '';
   status = 'SCHEDULED';
-  matchday = '';
   bracketPosition: number | null = null;
   venue = '';
   fromBracket = false;
@@ -183,7 +162,6 @@ export class AdminFixtureEditComponent implements OnInit {
           this.kickoffLocal = isoToLocalInput(m.data.kickoffAt);
           this.bracketPosition = m.data.bracketPosition ?? null;
           this.venue = (m.data as { venue?: string | null }).venue ?? '';
-          this.matchday = (m.data as { matchday?: string | null }).matchday ?? '';
         }
         if (qpPos) this.bracketPosition = Number(qpPos);
       } else {
@@ -209,7 +187,6 @@ export class AdminFixtureEditComponent implements OnInit {
       const kickoffAt = localInputToIso(this.kickoffLocal);
       const bracketPos = this.showBracketField() ? this.bracketPosition : null;
       const venue = this.venue.trim() || null;
-      const matchday = this.matchday.trim() || null;
       if (this.id) {
         // bracketPosition only goes in the payload when the phase actually
         // uses it (knockouts). Sending bracketPosition:null on a group-stage
@@ -226,7 +203,6 @@ export class AdminFixtureEditComponent implements OnInit {
           status: this.status,
           version: this.version + 1,
           venue,
-          matchday,
         };
         if (bracketPos !== null) updatePayload['bracketPosition'] = bracketPos;
         const res = await apiClient.models.Match.update(updatePayload);
@@ -251,7 +227,6 @@ export class AdminFixtureEditComponent implements OnInit {
           version: 1,
           bracketPosition: bracketPos,
           venue,
-          matchday,
         });
         if (res?.errors && res.errors.length > 0) {
           // eslint-disable-next-line no-console

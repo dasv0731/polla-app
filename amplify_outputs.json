@@ -1250,6 +1250,20 @@
               "isRequired": true,
               "attributes": []
             },
+            "description": {
+              "name": "description",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "imageKey": {
+              "name": "imageKey",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
             "prize1st": {
               "name": "prize1st",
               "isArray": false,
@@ -2850,6 +2864,14 @@
               "isRequired": true,
               "attributes": []
             },
+            "r32": {
+              "name": "r32",
+              "isArray": true,
+              "type": "String",
+              "isRequired": false,
+              "attributes": [],
+              "isArrayNullable": true
+            },
             "octavos": {
               "name": "octavos",
               "isArray": true,
@@ -3017,6 +3039,13 @@
               "isRequired": false,
               "attributes": []
             },
+            "pointsBestThirds": {
+              "name": "pointsBestThirds",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": false,
+              "attributes": []
+            },
             "groupStandingsExactCount": {
               "name": "groupStandingsExactCount",
               "isArray": false,
@@ -3168,6 +3197,13 @@
             },
             "pointsBracket": {
               "name": "pointsBracket",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": false,
+              "attributes": []
+            },
+            "pointsBestThirds": {
+              "name": "pointsBestThirds",
               "isArray": false,
               "type": "Int",
               "isRequired": false,
@@ -3834,6 +3870,18 @@
                 "enum": "GameMode"
               },
               "isRequired": true
+            },
+            "description": {
+              "name": "description",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false
+            },
+            "imageKey": {
+              "name": "imageKey",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false
             }
           }
         },
@@ -3902,6 +3950,13 @@
                 "enum": "GameMode"
               },
               "isRequired": true
+            },
+            "r32": {
+              "name": "r32",
+              "isArray": true,
+              "type": "String",
+              "isRequired": false,
+              "isArrayNullable": true
             },
             "octavos": {
               "name": "octavos",
