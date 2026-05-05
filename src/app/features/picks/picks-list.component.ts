@@ -179,6 +179,18 @@ interface TriviaInfo {
                 </p>
               </div>
             }
+            @if (hasPrevDays() || hasNextDays()) {
+              <div class="days-pager days-pager--top">
+                <button class="btn-wf days-pager__btn days-pager__btn--icon" type="button"
+                        aria-label="Días anteriores"
+                        [disabled]="!hasPrevDays()"
+                        (click)="prevDays()">←</button>
+                <button class="btn-wf days-pager__btn days-pager__btn--icon" type="button"
+                        aria-label="Días siguientes"
+                        [disabled]="!hasNextDays()"
+                        (click)="nextDays()">→</button>
+              </div>
+            }
             @for (day of visibleDays(); track day.dateKey; let dayIdx = $index) {
               <div class="day-kicker">📅 {{ day.label }} · {{ day.matches.length }} {{ day.matches.length === 1 ? 'partido' : 'partidos' }}</div>
               @for (m of day.matches; track m.id) {
@@ -207,11 +219,19 @@ interface TriviaInfo {
                 </div>
               }
             }
-            @if (canLoadMore()) {
-              <button class="btn-wf btn-wf--block" type="button"
-                      (click)="loadNextTwoDays()" style="margin-top:14px;">
-                Próximos 2 días →
-              </button>
+            @if (hasPrevDays() || hasNextDays()) {
+              <div class="days-pager">
+                <button class="btn-wf days-pager__btn" type="button"
+                        [disabled]="!hasPrevDays()"
+                        (click)="prevDays()">
+                  ← Anteriores
+                </button>
+                <button class="btn-wf days-pager__btn" type="button"
+                        [disabled]="!hasNextDays()"
+                        (click)="nextDays()">
+                  Siguientes →
+                </button>
+              </div>
             }
           } @else {
             <!-- Jugados: lista plana por fecha desc -->
@@ -390,6 +410,31 @@ interface TriviaInfo {
   styles: [`
     :host { display: block; }
 
+    /* Pager días: 2 botones inline 50/50 con gap. */
+    .days-pager {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .days-pager__btn:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+    }
+    /* Variante "top": compacta, alineada a la derecha, solo flechas. */
+    .days-pager--top {
+      grid-template-columns: 40px 40px;
+      justify-content: flex-end;
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+    .days-pager__btn--icon {
+      padding: 6px 0;
+      font-size: 16px;
+      line-height: 1;
+      min-width: 0;
+    }
+
     .empty-block {
       padding: 24px;
       text-align: center;
@@ -542,7 +587,11 @@ export class PicksListComponent implements OnInit, OnDestroy {
   totals = signal<Totals>({ points: 0, exactCount: 0, resultCount: 0, globalRank: null });
   hasComplete = computed(() => this.userModes.hasComplete());
 
-  daysWindow = signal(2);
+  /** Paginación de días en la pestaña "próximos". Antes acumulaba (se sumaban
+   *  2 días al final cada click); ahora REEMPLAZA: muestra una ventana fija
+   *  de DAYS_PER_PAGE días y el user navega con botones anterior/siguiente. */
+  private static readonly DAYS_PER_PAGE = 2;
+  dayOffset = signal(0);
 
   myGroupsList = computed(() => this.userModes.groups());
   myPrizes = computed(() =>
@@ -794,14 +843,27 @@ export class PicksListComponent implements OnInit, OnDestroy {
     return days.sort((a, b) => a.dateKey.localeCompare(b.dateKey));
   });
 
-  visibleDays = computed<DayBlock[]>(() =>
-    this.allUpcomingDays().slice(0, this.daysWindow()),
+  visibleDays = computed<DayBlock[]>(() => {
+    const offset = this.dayOffset();
+    return this.allUpcomingDays().slice(offset, offset + PicksListComponent.DAYS_PER_PAGE);
+  });
+
+  hasPrevDays = computed(() => this.dayOffset() > 0);
+  hasNextDays = computed(() =>
+    this.dayOffset() + PicksListComponent.DAYS_PER_PAGE < this.allUpcomingDays().length,
   );
 
-  canLoadMore = computed(() => this.daysWindow() < this.allUpcomingDays().length);
+  /** Avanza a la siguiente ventana de DAYS_PER_PAGE días.
+   *  Reemplaza visibleDays — no acumula. */
+  nextDays() {
+    if (!this.hasNextDays()) return;
+    this.dayOffset.update((n) => n + PicksListComponent.DAYS_PER_PAGE);
+  }
 
-  loadNextTwoDays() {
-    this.daysWindow.update((n) => n + 2);
+  /** Vuelve a la ventana anterior. */
+  prevDays() {
+    if (!this.hasPrevDays()) return;
+    this.dayOffset.update((n) => Math.max(0, n - PicksListComponent.DAYS_PER_PAGE));
   }
 
   private dateKey(iso: string): string {
