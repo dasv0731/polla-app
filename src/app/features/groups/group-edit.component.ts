@@ -82,7 +82,7 @@ interface GroupEdit {
                    [disabled]="uploading()"
                    (change)="onFileSelected($event)">
             <span class="form-card__hint">
-              {{ uploading() ? 'Subiendo…' : (imageKey ? 'Imagen cargada · podés cambiarla' : 'Imagen opcional · JPG/PNG hasta 5 MB') }}
+              {{ uploading() ? 'Subiendo…' : (imageKey() ? 'Imagen cargada · podés cambiarla' : 'Imagen opcional · JPG/PNG hasta 5 MB') }}
             </span>
           </div>
 
@@ -118,7 +118,10 @@ export class GroupEditComponent implements OnInit {
 
   name = '';
   description = '';
-  imageKey = '';
+  /** Signal — `dirty` computed la lee. Si esto fuera plain field, el set
+   *  programático en `onFileSelected` no dispararía recomputo del computed,
+   *  y el botón "Guardar cambios" quedaría deshabilitado tras el upload. */
+  imageKey = signal('');
   private mode: 'SIMPLE' | 'COMPLETE' = 'COMPLETE';
 
   isAdmin = computed(() => {
@@ -133,9 +136,10 @@ export class GroupEditComponent implements OnInit {
   dirty = computed(() => {
     const g = this.group();
     if (!g) return false;
+    // imageKey es signal; la lectura `this.imageKey()` registra dependencia.
     return this.name.trim() !== g.name
       || this.description !== (g.description ?? '')
-      || this.imageKey !== (g.imageKey ?? '');
+      || this.imageKey() !== (g.imageKey ?? '');
   });
 
   async ngOnInit() {
@@ -157,11 +161,12 @@ export class GroupEditComponent implements OnInit {
       });
       this.name = d.name;
       this.description = (d as { description?: string | null }).description ?? '';
-      this.imageKey = (d as { imageKey?: string | null }).imageKey ?? '';
+      const initialKey = (d as { imageKey?: string | null }).imageKey ?? '';
+      this.imageKey.set(initialKey);
       // Si ya hay imagen, resolver signed URL para preview.
-      if (this.imageKey) {
+      if (initialKey) {
         try {
-          const out = await getUrl({ path: this.imageKey, options: { expiresIn: 3600 } });
+          const out = await getUrl({ path: initialKey, options: { expiresIn: 3600 } });
           this.previewUrl.set(out.url.toString());
         } catch {
           /* ignore — preview es best-effort */
@@ -193,7 +198,7 @@ export class GroupEditComponent implements OnInit {
         options: { contentType: file.type || 'image/png' },
       });
       await op.result;
-      this.imageKey = key;
+      this.imageKey.set(key);
       const out = await getUrl({ path: key, options: { expiresIn: 3600 } });
       this.previewUrl.set(out.url.toString());
       this.toast.success('Imagen subida — guardá los cambios para aplicar');
@@ -216,7 +221,7 @@ export class GroupEditComponent implements OnInit {
         id: this.id,
         name: this.name.trim(),
         description: this.description.trim() || null,
-        imageKey: this.imageKey.trim() || null,
+        imageKey: this.imageKey().trim() || null,
       });
       if (res.errors && res.errors.length > 0) {
         const msg = res.errors[0]?.message ?? 'Error al guardar';

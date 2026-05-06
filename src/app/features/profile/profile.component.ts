@@ -5,6 +5,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { UserAvatarComponent } from '../../shared/user-avatar/user-avatar.component';
 import { EditProfileModalComponent } from './edit-profile-modal.component';
+import { PreferencesModalComponent } from './preferences-modal.component';
 import { flagImageUrl } from '../../shared/util/countries';
 
 const TOURNAMENT_ID = 'mundial-2026';
@@ -20,7 +21,7 @@ interface Totals {
 @Component({
   standalone: true,
   selector: 'app-profile',
-  imports: [RouterLink, UserAvatarComponent, EditProfileModalComponent],
+  imports: [RouterLink, UserAvatarComponent, EditProfileModalComponent, PreferencesModalComponent],
   template: `
     @let u = user();
 
@@ -148,16 +149,17 @@ interface Totals {
               <h2 class="profile-section__title">Cuenta</h2>
               <div class="profile-list">
 
-                <a routerLink="/forgot-password" class="profile-list-item">
+                <button type="button" class="profile-list-item"
+                        (click)="openPasswordChange()">
                   <span class="profile-list-item__icon">🔒</span>
                   <div class="profile-list-item__body">
                     <div class="profile-list-item__title">Cambiar contraseña</div>
                   </div>
                   <span class="profile-list-item__chev">›</span>
-                </a>
+                </button>
 
                 <button type="button" class="profile-list-item"
-                        (click)="comingSoon('Preferencias')">
+                        (click)="openPreferences()">
                   <span class="profile-list-item__icon">⚙</span>
                   <div class="profile-list-item__body">
                     <div class="profile-list-item__title">Preferencias</div>
@@ -201,7 +203,12 @@ interface Totals {
     }
 
     @if (editProfileOpen()) {
-      <app-edit-profile-modal (closed)="closeEditProfile()" />
+      <app-edit-profile-modal
+        [initialSection]="editProfileInitialSection()"
+        (closed)="closeEditProfile()" />
+    }
+    @if (preferencesOpen()) {
+      <app-preferences-modal (closed)="closePreferences()" />
     }
   `,
 })
@@ -334,13 +341,36 @@ export class ProfileComponent implements OnInit {
   }
 
   editProfileOpen = signal(false);
+  /** Si !== null, el modal de edit-profile abre con esa sección expandida.
+   *  Usado por el item "Cambiar contraseña" del listado para abrir directo
+   *  el form de password sin requerir click adicional. */
+  editProfileInitialSection = signal<'password' | null>(null);
+  preferencesOpen = signal(false);
 
   editProfile() {
+    this.editProfileInitialSection.set(null);
+    this.editProfileOpen.set(true);
+  }
+
+  /** Disparado por el item "Cambiar contraseña" del listado de cuenta.
+   *  Antes apuntaba a /forgot-password (flow Cognito de reset por email);
+   *  ahora reusa el modal de edit-profile que ya tiene cambio de password
+   *  inline (oldPassword + newPassword sin email link). */
+  openPasswordChange() {
+    this.editProfileInitialSection.set('password');
     this.editProfileOpen.set(true);
   }
 
   closeEditProfile() {
     this.editProfileOpen.set(false);
+  }
+
+  openPreferences() {
+    this.preferencesOpen.set(true);
+  }
+
+  closePreferences() {
+    this.preferencesOpen.set(false);
   }
 
   comingSoon(label: string) {

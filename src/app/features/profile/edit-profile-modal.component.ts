@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, Output, computed, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { uploadData } from 'aws-amplify/storage';
 import { AuthService } from '../../core/auth/auth.service';
@@ -247,6 +247,9 @@ export class EditProfileModalComponent implements OnInit {
   private toast = inject(ToastService);
 
   @Output() closed = new EventEmitter<void>();
+  /** Si se setea a 'password', el modal abre con el form de cambio de
+   *  contraseña ya expandido (sin requerir click adicional al user). */
+  @Input() initialSection: 'password' | null = null;
 
   user = computed(() => this.auth.user());
   uploadingAvatar = signal(false);
@@ -278,6 +281,9 @@ export class EditProfileModalComponent implements OnInit {
     const u = this.user();
     this.country = u?.country ?? '';
     this.bio = u?.bio ?? '';
+    if (this.initialSection === 'password') {
+      this.showPwdForm.set(true);
+    }
   }
 
   markDirty() {
