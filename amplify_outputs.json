@@ -594,6 +594,27 @@
               "isRequired": false,
               "attributes": []
             },
+            "avatarKey": {
+              "name": "avatarKey",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "country": {
+              "name": "country",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "bio": {
+              "name": "bio",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
             "createdAt": {
               "name": "createdAt",
               "isArray": false,
@@ -4513,6 +4534,20 @@
             ]
           },
           "groups/*": {
+            "authenticated": [
+              "get",
+              "list",
+              "write",
+              "delete"
+            ],
+            "groupsadmins": [
+              "get",
+              "list",
+              "write",
+              "delete"
+            ]
+          },
+          "users/*": {
             "authenticated": [
               "get",
               "list",

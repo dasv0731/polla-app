@@ -52,6 +52,16 @@ export class ApiService {
   getUser(sub: string) {
     return apiClient.models.User.get({ sub });
   }
+  /** Update parcial del User. Field-level auth ownerDefinedIn('sub')
+   *  garantiza que solo el dueño puede editar. */
+  updateUser(input: {
+    sub: string;
+    avatarKey?: string | null;
+    country?: string | null;
+    bio?: string | null;
+  }) {
+    return apiClient.models.User.update(input);
+  }
   /**
    * Lista todos los users paginando vía nextToken. Amplify Gen2 cap por
    * página es ~100 — un solo `list({ limit: 1000 })` solo devuelve la

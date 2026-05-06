@@ -1,8 +1,11 @@
 import { Component, Input } from '@angular/core';
+import { UserAvatarComponent } from '../../shared/user-avatar/user-avatar.component';
 
 export interface LeaderboardRow {
   userId: string;
   handle: string;
+  /** Storage key del avatar. Optional — fallback a iniciales si null. */
+  avatarKey?: string | null;
   points: number;
   exactCount: number;
   resultCount: number;
@@ -11,6 +14,7 @@ export interface LeaderboardRow {
 @Component({
   standalone: true,
   selector: 'app-group-leaderboard',
+  imports: [UserAvatarComponent],
   template: `
     <table class="standings standings--group">
       <thead>
@@ -26,7 +30,16 @@ export interface LeaderboardRow {
         @for (row of rows; track row.userId; let i = $index) {
           <tr [class.is-me]="row.userId === currentUserId">
             <td>{{ i + 1 }}</td>
-            <td>{{ '@' + row.handle }}</td>
+            <td>
+              <span style="display:inline-flex;align-items:center;gap:8px;">
+                <app-user-avatar
+                  [sub]="row.userId"
+                  [handle]="row.handle"
+                  [avatarKey]="row.avatarKey"
+                  size="sm" />
+                {{ '@' + row.handle }}
+              </span>
+            </td>
             <td class="numeric">{{ row.points }}</td>
             <td class="numeric">{{ row.exactCount }}</td>
             <td class="numeric">{{ row.resultCount }}</td>

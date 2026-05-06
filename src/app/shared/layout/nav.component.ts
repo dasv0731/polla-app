@@ -5,13 +5,14 @@ import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService, type UserGroup } from '../../core/user/user-modes.service';
 import { GroupActionsService } from '../../core/groups/group-actions.service';
 import { PicksSyncService } from '../../core/sync/picks-sync.service';
+import { UserAvatarComponent } from '../user-avatar/user-avatar.component';
 
 type DropdownKey = 'user' | 'ranking' | null;
 
 @Component({
   standalone: true,
   selector: 'app-nav',
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink, RouterLinkActive, UserAvatarComponent],
   template: `
     <!-- ============ DESKTOP TOPNAV (≥992px) ============ -->
     <header class="app-topnav">
@@ -108,7 +109,11 @@ type DropdownKey = 'user' | 'ranking' | null;
                   (click)="toggle('user')"
                   [attr.aria-expanded]="open() === 'user'"
                   aria-haspopup="true">
-            <span class="avatar">{{ avatar() }}</span>
+            <app-user-avatar
+              [sub]="userSub() ?? ''"
+              [handle]="handle() ?? ''"
+              [avatarKey]="avatarKey()"
+              size="sm" />
             <span class="name">{{ '@' + (handle() ?? '') }}</span>
             <span aria-hidden="true">▾</span>
           </button>
@@ -161,7 +166,13 @@ type DropdownKey = 'user' | 'ranking' | null;
           @if (unreadCount() > 0) { <span class="badge">{{ unreadCount() }}</span> }
         </a>
         <button class="app-topbar__avatar" type="button" aria-label="Cuenta"
-                (click)="toggle('user'); $event.stopPropagation()">{{ avatar() }}</button>
+                (click)="toggle('user'); $event.stopPropagation()">
+          <app-user-avatar
+            [sub]="userSub() ?? ''"
+            [handle]="handle() ?? ''"
+            [avatarKey]="avatarKey()"
+            size="sm" />
+        </button>
       </div>
     </header>
 
@@ -487,7 +498,8 @@ export class NavComponent implements OnInit, OnDestroy {
 
   isAdmin = computed(() => this.auth.user()?.isAdmin ?? false);
   handle = computed(() => this.auth.user()?.handle ?? null);
-  avatar = computed(() => (this.handle() ?? '?')[0]?.toUpperCase() ?? '?');
+  userSub = computed(() => this.auth.user()?.sub ?? null);
+  avatarKey = computed(() => this.auth.user()?.avatarKey ?? null);
   hasSimple = computed(() => this.userModes.hasSimple());
   hasComplete = computed(() => this.userModes.hasComplete());
   myGroups = computed<UserGroup[]>(() => this.userModes.groups());

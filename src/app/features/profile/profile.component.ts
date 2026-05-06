@@ -3,6 +3,9 @@ import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
+import { UserAvatarComponent } from '../../shared/user-avatar/user-avatar.component';
+import { EditProfileModalComponent } from './edit-profile-modal.component';
+import { flagFromCountryCode } from '../../shared/util/countries';
 
 const TOURNAMENT_ID = 'mundial-2026';
 const TOTAL_SPECIAL_PICKS = 3; // Campeón, Subcampeón, Revelación
@@ -17,7 +20,7 @@ interface Totals {
 @Component({
   standalone: true,
   selector: 'app-profile',
-  imports: [RouterLink],
+  imports: [RouterLink, UserAvatarComponent, EditProfileModalComponent],
   template: `
     @let u = user();
 
@@ -27,13 +30,23 @@ interface Totals {
         <!-- Hero del perfil -->
         <header class="profile-hero">
           <div class="profile-hero__top">
-            <div class="profile-hero__avatar">{{ avatar() }}</div>
+            <app-user-avatar
+              [sub]="u.sub"
+              [handle]="u.handle"
+              [avatarKey]="u.avatarKey"
+              size="lg" />
             <div class="profile-hero__name-block">
-              <h1>{{ '@' + u.handle }}</h1>
+              <h1>
+                @if (countryFlag()) { <span aria-label="País" style="margin-right: 6px;">{{ countryFlag() }}</span> }
+                {{ '@' + u.handle }}
+              </h1>
               <div class="profile-hero__meta">
                 {{ u.email }}
                 @if (memberSince()) { · miembro desde {{ memberSince() }} }
               </div>
+              @if (u.bio) {
+                <p class="profile-hero__bio" style="margin: 8px 0 0; color: var(--wf-ink-2); font-size: 13px; line-height: 1.4; max-width: 480px;">{{ u.bio }}</p>
+              }
               <button type="button" class="btn-wf btn-wf--sm profile-hero__edit"
                       (click)="editProfile()">
                 Editar perfil
@@ -178,6 +191,10 @@ interface Totals {
         Cargando perfil…
       </p>
     }
+
+    @if (editProfileOpen()) {
+      <app-edit-profile-modal (closed)="closeEditProfile()" />
+    }
   `,
 })
 export class ProfileComponent implements OnInit {
@@ -210,6 +227,7 @@ export class ProfileComponent implements OnInit {
   });
 
   avatar = computed(() => (this.user()?.handle?.[0] ?? '?').toUpperCase());
+  countryFlag = computed(() => flagFromCountryCode(this.user()?.country));
 
   async ngOnInit() {
     const u = this.user();
@@ -305,8 +323,14 @@ export class ProfileComponent implements OnInit {
     }
   }
 
+  editProfileOpen = signal(false);
+
   editProfile() {
-    this.toast.info('Editar perfil — próximamente');
+    this.editProfileOpen.set(true);
+  }
+
+  closeEditProfile() {
+    this.editProfileOpen.set(false);
   }
 
   comingSoon(label: string) {

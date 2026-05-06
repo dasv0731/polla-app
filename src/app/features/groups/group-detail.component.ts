@@ -4,6 +4,7 @@ import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
+import { UserAvatarComponent } from '../../shared/user-avatar/user-avatar.component';
 
 interface GroupHeader {
   id: string;
@@ -20,6 +21,7 @@ interface GroupHeader {
 interface RankRow {
   userId: string;
   handle: string;
+  avatarKey?: string | null;
   points: number;
   exactCount: number;
   resultCount: number;
@@ -28,7 +30,7 @@ interface RankRow {
 @Component({
   standalone: true,
   selector: 'app-group-detail',
-  imports: [RouterLink],
+  imports: [RouterLink, UserAvatarComponent],
   template: `
     <section class="page">
 
@@ -175,7 +177,14 @@ interface RankRow {
                   <tr [class.is-me]="r.userId === currentUserId">
                     <td class="rank-table__pos">{{ i + 1 }}</td>
                     <td class="text-bold">
-                      {{ '@' + r.handle }}@if (r.userId === currentUserId) { <span class="text-mute"> (tú)</span> }
+                      <span style="display:inline-flex;align-items:center;gap:8px;">
+                        <app-user-avatar
+                          [sub]="r.userId"
+                          [handle]="r.handle"
+                          [avatarKey]="r.avatarKey"
+                          size="sm" />
+                        {{ '@' + r.handle }}@if (r.userId === currentUserId) { <span class="text-mute"> (tú)</span> }
+                      </span>
                     </td>
                     <td class="rank-table__pts">{{ r.points }}</td>
                     <td class="rank-table__desk">{{ r.exactCount }}</td>
@@ -334,11 +343,15 @@ export class GroupDetailComponent implements OnInit, OnChanges {
         });
       }
 
-      const handlesByUser = new Map<string, string>();
+      const userMetaByUser = new Map<string, { handle: string; avatarKey: string | null }>();
       await Promise.all(
         (members.data ?? []).map(async (m) => {
           const u = await this.api.getUser(m.userId);
-          handlesByUser.set(m.userId, u.data?.handle ?? m.userId.slice(0, 6));
+          const data = u.data as { handle?: string; avatarKey?: string | null } | undefined;
+          userMetaByUser.set(m.userId, {
+            handle: data?.handle ?? m.userId.slice(0, 6),
+            avatarKey: data?.avatarKey ?? null,
+          });
         }),
       );
 
@@ -348,7 +361,8 @@ export class GroupDetailComponent implements OnInit, OnChanges {
       this.rows.set(
         sorted.map((t) => ({
           userId: t.userId,
-          handle: handlesByUser.get(t.userId) ?? t.userId.slice(0, 6),
+          handle: userMetaByUser.get(t.userId)?.handle ?? t.userId.slice(0, 6),
+          avatarKey: userMetaByUser.get(t.userId)?.avatarKey ?? null,
           points: t.points ?? 0,
           exactCount: t.exactCount ?? 0,
           resultCount: t.resultCount ?? 0,
