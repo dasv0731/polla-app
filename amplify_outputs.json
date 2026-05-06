@@ -4511,6 +4511,20 @@
               "write",
               "delete"
             ]
+          },
+          "groups/*": {
+            "authenticated": [
+              "get",
+              "list",
+              "write",
+              "delete"
+            ],
+            "groupsadmins": [
+              "get",
+              "list",
+              "write",
+              "delete"
+            ]
           }
         }
       }
