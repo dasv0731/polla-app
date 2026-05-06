@@ -83,7 +83,13 @@ export const COUNTRY_OPTIONS: readonly CountryOption[] = [
 
 /** Convierte código ISO 2-letras a emoji de bandera regional.
  *  Ej "AR" → "🇦🇷". Devuelve string vacío si el código es inválido.
- *  Trabaja sobre Regional Indicator Symbol Letter (U+1F1E6 + offset). */
+ *  Trabaja sobre Regional Indicator Symbol Letter (U+1F1E6 + offset).
+ *
+ *  Limitación: Windows (10/11) NO renderiza flag emojis en sus fuentes
+ *  default — el browser muestra los regional indicators como texto ("AR"
+ *  en vez de la bandera). Para UI visible al user usar `flagImageUrl`
+ *  (PNG de CDN). El emoji sirve para casos donde no se puede meter <img>
+ *  (e.g. dentro de <option> del select). */
 export function flagFromCountryCode(code: string | null | undefined): string {
   if (!code || code.length !== 2) return '';
   const A = 0x1F1E6;
@@ -91,6 +97,18 @@ export function flagFromCountryCode(code: string | null | undefined): string {
   const b = code.toUpperCase().charCodeAt(1);
   if (Number.isNaN(a) || Number.isNaN(b) || a < 65 || a > 90 || b < 65 || b > 90) return '';
   return String.fromCodePoint(A + (a - 65), A + (b - 65));
+}
+
+/** URL de imagen PNG de la bandera, vía flagcdn.com (gratis, sin auth).
+ *  Devuelve null si el código es inválido. Tamaño en píxeles del ancho. */
+export function flagImageUrl(
+  code: string | null | undefined,
+  widthPx: 20 | 40 | 80 | 160 | 320 = 40,
+): string | null {
+  if (!code || code.length !== 2) return null;
+  const lower = code.toLowerCase();
+  if (!/^[a-z]{2}$/.test(lower)) return null;
+  return `https://flagcdn.com/w${widthPx}/${lower}.png`;
 }
 
 /** Nombre legible para un código. Fallback al código si no está en la lista. */

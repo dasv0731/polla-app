@@ -12,6 +12,9 @@ export interface AuthUser {
   sub: string;
   email: string;
   handle: string;
+  /** Nombre real del user (Cognito given_name attribute, capturado al
+   *  registrar). null si el user se registró sin nombre. */
+  name: string | null;
   isAdmin: boolean;
   /** Storage key del avatar. null si nunca subió uno. Se hidrata desde
    *  el modelo User después del login (best-effort). */
@@ -39,6 +42,7 @@ export class AuthService {
         sub: cu.userId,
         email: attrs['email']!,
         handle: attrs['preferred_username']!,
+        name: attrs['given_name'] ?? null,
         isAdmin: groups.includes('admins'),
         avatarKey: null,    // se hidrata abajo desde el User model (best-effort)
         country: null,

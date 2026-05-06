@@ -5,6 +5,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
 import { UserAvatarComponent } from '../../shared/user-avatar/user-avatar.component';
+import { getUrl } from 'aws-amplify/storage';
 
 interface GroupHeader {
   id: string;
@@ -13,6 +14,9 @@ interface GroupHeader {
   adminUserId: string;
   createdAt: string;
   mode: 'SIMPLE' | 'COMPLETE';
+  /** Storage key del logo/avatar del grupo. null si no se subió.
+   *  Resuelve a signed URL en `groupImageUrl` signal. */
+  imageKey: string | null;
   prize1st: string | null;
   prize2nd: string | null;
   prize3rd: string | null;
@@ -46,13 +50,19 @@ interface RankRow {
         <!-- Hero verde -->
         <header class="group-hero">
           <div class="group-hero__top">
-            <div>
-              <div class="group-hero__meta">
-                {{ g.mode === 'COMPLETE' ? 'MODO COMPLETO' : 'MODO SIMPLE' }}
-                · {{ rows().length }} {{ rows().length === 1 ? 'MIEMBRO' : 'MIEMBROS' }}
-                @if (isAdminOfGroup()) { · TÚ ERES ADMIN }
+            <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">
+              @if (groupImageUrl()) {
+                <img [src]="groupImageUrl()!" alt="Logo del grupo"
+                     style="width:64px;height:64px;border-radius:12px;object-fit:cover;flex-shrink:0;border:2px solid rgba(255,255,255,.4);">
+              }
+              <div style="min-width:0;">
+                <div class="group-hero__meta">
+                  {{ g.mode === 'COMPLETE' ? 'MODO COMPLETO' : 'MODO SIMPLE' }}
+                  · {{ rows().length }} {{ rows().length === 1 ? 'MIEMBRO' : 'MIEMBROS' }}
+                  @if (isAdminOfGroup()) { · TÚ ERES ADMIN }
+                </div>
+                <h1 class="group-hero__name">{{ g.name }}</h1>
               </div>
-              <h1 class="group-hero__name">{{ g.name }}</h1>
             </div>
             @if (isAdminOfGroup()) {
               <button class="group-hero__menu" type="button"
@@ -267,6 +277,9 @@ export class GroupDetailComponent implements OnInit, OnChanges {
   }
 
   group = signal<GroupHeader | null>(null);
+  /** Signed URL del logo del grupo (vence en 1h, se re-resuelve en cada
+   *  load del componente). */
+  groupImageUrl = signal<string | null>(null);
   rows = signal<RankRow[]>([]);
   loading = signal(true);
   copied = signal(false);
@@ -322,6 +335,7 @@ export class GroupDetailComponent implements OnInit, OnChanges {
   private async load() {
     this.loading.set(true);
     this.group.set(null);
+    this.groupImageUrl.set(null);
     this.rows.set([]);
     try {
       const [grp, totals, members] = await Promise.all([
@@ -330,6 +344,7 @@ export class GroupDetailComponent implements OnInit, OnChanges {
         this.api.groupMembers(this.id),
       ]);
       if (grp.data) {
+        const imageKey = (grp.data as { imageKey?: string | null }).imageKey ?? null;
         this.group.set({
           id: grp.data.id,
           name: grp.data.name,
@@ -337,10 +352,24 @@ export class GroupDetailComponent implements OnInit, OnChanges {
           adminUserId: grp.data.adminUserId,
           createdAt: grp.data.createdAt,
           mode: (grp.data.mode ?? 'COMPLETE') as 'SIMPLE' | 'COMPLETE',
+          imageKey,
           prize1st: grp.data.prize1st ?? null,
           prize2nd: grp.data.prize2nd ?? null,
           prize3rd: grp.data.prize3rd ?? null,
         });
+        // Resolver signed URL para el logo en background. Si falla (cert
+        // expirado, key fantasma), groupImageUrl queda null y el header
+        // muestra solo el nombre.
+        if (imageKey) {
+          (async () => {
+            try {
+              const out = await getUrl({ path: imageKey, options: { expiresIn: 3600 } });
+              this.groupImageUrl.set(out.url.toString());
+            } catch {
+              /* silencioso — sin imagen, fallback texto */
+            }
+          })();
+        }
       }
 
       const userMetaByUser = new Map<string, { handle: string; avatarKey: string | null }>();

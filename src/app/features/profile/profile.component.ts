@@ -5,7 +5,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { UserAvatarComponent } from '../../shared/user-avatar/user-avatar.component';
 import { EditProfileModalComponent } from './edit-profile-modal.component';
-import { flagFromCountryCode } from '../../shared/util/countries';
+import { flagImageUrl } from '../../shared/util/countries';
 
 const TOURNAMENT_ID = 'mundial-2026';
 const TOTAL_SPECIAL_PICKS = 3; // Campeón, Subcampeón, Revelación
@@ -36,9 +36,17 @@ interface Totals {
               [avatarKey]="u.avatarKey"
               size="lg" />
             <div class="profile-hero__name-block">
-              <h1>
-                @if (countryFlag()) { <span aria-label="País" style="margin-right: 6px;">{{ countryFlag() }}</span> }
-                {{ '@' + u.handle }}
+              <h1 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--wf-ink);">
+                @if (countryFlagUrl()) {
+                  <img [src]="countryFlagUrl()!" alt="" aria-label="País"
+                       style="width:28px;height:auto;border-radius:3px;box-shadow:0 0 0 1px rgba(0,0,0,.08);">
+                }
+                @if (u.name) {
+                  <span>{{ u.name }}</span>
+                  <span style="color: var(--wf-ink-3); font-weight: normal;">(&#64;{{ u.handle }})</span>
+                } @else {
+                  <span>{{ '@' + u.handle }}</span>
+                }
               </h1>
               <div class="profile-hero__meta">
                 {{ u.email }}
@@ -227,7 +235,9 @@ export class ProfileComponent implements OnInit {
   });
 
   avatar = computed(() => (this.user()?.handle?.[0] ?? '?').toUpperCase());
-  countryFlag = computed(() => flagFromCountryCode(this.user()?.country));
+  /** URL PNG de la bandera (CDN flagcdn.com). Reemplaza el emoji que en
+   *  Windows se renderiza como texto "EC". */
+  countryFlagUrl = computed(() => flagImageUrl(this.user()?.country, 40));
 
   async ngOnInit() {
     const u = this.user();

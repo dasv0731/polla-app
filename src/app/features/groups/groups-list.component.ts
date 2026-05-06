@@ -4,6 +4,7 @@ import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { compareRankable } from '../../shared/util/tiebreakers';
 import { GroupActionsService } from '../../core/groups/group-actions.service';
+import { getUrl } from 'aws-amplify/storage';
 
 type GameMode = 'SIMPLE' | 'COMPLETE';
 
@@ -16,6 +17,9 @@ interface GroupRow {
   adminHandle: string | null;
   createdAt: string;
   mode: GameMode;
+  /** Storage key del logo. null si no hay. URL signed se resuelve en
+   *  imageUrl signal map. */
+  imageKey: string | null;
 }
 
 @Component({
@@ -60,10 +64,16 @@ interface GroupRow {
         <div class="groups-list">
           @for (g of groups(); track g.id) {
             <a class="group-card" [routerLink]="['/groups', g.id]">
-              <span class="group-card__icon" [class.group-card__icon--admin]="g.isAdmin"
-                    [attr.aria-label]="g.isAdmin ? 'Admin del grupo' : 'Miembro'">
-                {{ icon(g) }}
-              </span>
+              @if (imageUrls()[g.id]) {
+                <img class="group-card__icon group-card__icon--image"
+                     [src]="imageUrls()[g.id]!" alt=""
+                     [attr.aria-label]="g.isAdmin ? 'Admin del grupo' : 'Miembro'">
+              } @else {
+                <span class="group-card__icon" [class.group-card__icon--admin]="g.isAdmin"
+                      [attr.aria-label]="g.isAdmin ? 'Admin del grupo' : 'Miembro'">
+                  {{ icon(g) }}
+                </span>
+              }
               <div class="group-card__body">
                 <div class="group-card__name-row">
                   <span class="group-card__name">{{ g.name }}</span>
@@ -140,6 +150,11 @@ interface GroupRow {
       background: var(--wf-green-soft);
       color: var(--wf-green-ink);
     }
+    .group-card__icon--image {
+      object-fit: cover;
+      background: transparent;
+      padding: 0;
+    }
     .group-card__body { flex: 1; min-width: 0; }
     .group-card__name-row {
       display: flex;
@@ -183,6 +198,9 @@ export class GroupsListComponent implements OnInit {
   actions = inject(GroupActionsService);
 
   groups = signal<GroupRow[]>([]);
+  /** Map de groupId → signed URL del logo. Se popula async post-load
+   *  para no bloquear el render de la lista. */
+  imageUrls = signal<Record<string, string>>({});
   loading = signal(true);
 
   countLabel = computed(() => {
@@ -232,16 +250,31 @@ export class GroupsListComponent implements OnInit {
             adminHandle,
             createdAt: grp.data.createdAt,
             mode: ((grp.data.mode as GameMode | null | undefined) ?? 'COMPLETE'),
+            imageKey: (grp.data as { imageKey?: string | null }).imageKey ?? null,
           };
         }),
       );
-      this.groups.set(
-        enriched
-          .filter((x): x is GroupRow => x !== null)
-          .sort((a, b) => a.name.localeCompare(b.name)),
-      );
+      const sorted = enriched
+        .filter((x): x is GroupRow => x !== null)
+        .sort((a, b) => a.name.localeCompare(b.name));
+      this.groups.set(sorted);
+      // Resolver signed URLs en background. Cada uno es independiente,
+      // así si una falla las otras siguen.
+      void this.resolveImageUrls(sorted);
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  private async resolveImageUrls(rows: readonly GroupRow[]) {
+    for (const r of rows) {
+      if (!r.imageKey) continue;
+      try {
+        const out = await getUrl({ path: r.imageKey, options: { expiresIn: 3600 } });
+        this.imageUrls.update((m) => ({ ...m, [r.id]: out.url.toString() }));
+      } catch {
+        /* skip — fallback a inicial */
+      }
     }
   }
 

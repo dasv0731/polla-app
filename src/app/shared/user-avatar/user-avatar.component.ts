@@ -51,7 +51,7 @@ async function resolveAvatarUrl(key: string): Promise<string> {
       justify-content: center;
       border-radius: 50%;
       background: var(--wf-fill, #e5e7eb);
-      color: var(--wf-ink-1, #111);
+      color: var(--wf-ink, #111);
       font-family: var(--wf-display, system-ui);
       font-weight: 700;
       overflow: hidden;
