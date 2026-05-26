@@ -333,12 +333,18 @@ export class RegisterComponent {
   }
 
   private async checkHandleUnique(handle: string): Promise<boolean> {
-    const res = await apiClient.models.User.list({
-      filter: { handle: { eq: handle } },
-      authMode: 'apiKey',
-      limit: 1,
-    });
-    return (res.data ?? []).length === 0;
+    // Uses the public checkHandleAvailable mutation. The User model doesn't
+    // permit apiKey reads (would expose PII), so the prior list-based check
+    // returned empty silently for any handle. The mutation does the GSI query
+    // server-side and returns only a boolean.
+    // Cast required until sandbox redeploys regenerate schema.d.ts.
+    const res = await (apiClient.mutations as unknown as {
+      checkHandleAvailable: (
+        args: { handle: string },
+        opts: { authMode: 'apiKey' },
+      ) => Promise<{ data: { available: boolean } | null }>;
+    }).checkHandleAvailable({ handle }, { authMode: 'apiKey' });
+    return res.data?.available === true;
   }
 
   // ---------- Password strength ----------
@@ -434,16 +440,21 @@ export class RegisterComponent {
       await this.auth.login(this.email, this.password);
       const u = this.auth.user();
       if (u) {
-        try {
-          await apiClient.models.User.create({
-            sub: u.sub,
-            handle: u.handle,
-            email: u.email,
-            emailStatus: 'OK',
-            createdAt: new Date().toISOString(),
-          });
-        } catch {
-          // already exists
+        // Crea el User row vía la mutation autenticada. El backend toma sub +
+        // email del Cognito identity y valida unicidad del handle server-side.
+        // Cast required until sandbox redeploys regenerate schema.d.ts.
+        const res = await (apiClient.mutations as unknown as {
+          createUserProfile: (
+            args: { handle: string },
+          ) => Promise<{ data: { ok: boolean; message: string; sub: string | null } | null }>;
+        }).createUserProfile({ handle: u.handle });
+        if (!res.data?.ok) {
+          // El handle se tomó entre el debounce check y este punto.
+          // El user verificó el email pero el perfil no se creó — vuelve al form.
+          this.error.set(res.data?.message ?? 'No se pudo crear el perfil. Intenta con otro usuario.');
+          this.handleStatus.set('taken');
+          this.step.set('form');
+          return;
         }
       }
       void this.router.navigate(['/onboarding']);
