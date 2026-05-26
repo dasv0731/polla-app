@@ -435,34 +435,60 @@ export class RegisterComponent {
     if (this.code().length !== 6) return;
     this.error.set(null);
     this.loading.set(true);
+    let loggedIn = false;
     try {
       await this.auth.confirm(this.email, this.code());
       await this.auth.login(this.email, this.password);
+      loggedIn = true;
+
       const u = this.auth.user();
       if (u) {
         // Crea el User row vía la mutation autenticada. El backend toma sub +
         // email del Cognito identity y valida unicidad del handle server-side.
         // Cast required until sandbox redeploys regenerate schema.d.ts.
         const res = await (apiClient.mutations as unknown as {
-          createUserProfile: (
-            args: { handle: string },
-          ) => Promise<{ data: { ok: boolean; message: string; sub: string | null } | null }>;
+          createUserProfile: (args: { handle: string }) => Promise<{
+            data: { ok: boolean; message: string; sub: string | null } | null;
+          }>;
         }).createUserProfile({ handle: u.handle });
         if (!res.data?.ok) {
-          // El handle se tomó entre el debounce check y este punto.
-          // El user verificó el email pero el perfil no se creó — vuelve al form.
-          this.error.set(res.data?.message ?? 'No se pudo crear el perfil. Intenta con otro usuario.');
-          this.handleStatus.set('taken');
-          this.step.set('form');
+          await this.bounceBackToForm(
+            res.data?.message ?? 'No se pudo crear el perfil. Intenta con otro usuario.',
+          );
           return;
         }
       }
       void this.router.navigate(['/onboarding']);
     } catch (e) {
-      this.error.set((e as Error).message ?? 'Código inválido');
+      if (loggedIn) {
+        // Cognito ya nos autenticó pero la creación del perfil falló (throw).
+        // Cerrar sesión para no dejar al user en un estado inconsistente
+        // (auth válida pero sin User row → otras pantallas rompen).
+        await this.bounceBackToForm(
+          (e as Error).message ?? 'No se pudo crear el perfil. Verifica el usuario y vuelve a intentarlo.',
+        );
+      } else {
+        // Pre-login: OTP inválido o sign-in falló. Mantener al user en step 'confirm'
+        // para que pueda reintentar el código.
+        this.error.set((e as Error).message ?? 'Código inválido');
+      }
     } finally {
       this.loading.set(false);
     }
+  }
+
+  /** Después de un fallo de createUserProfile, cierra sesión Cognito (si la hay)
+   *  y devuelve al user al step 'form' para que pueda elegir otro handle. */
+  private async bounceBackToForm(message: string): Promise<void> {
+    try {
+      await this.auth.logout();
+    } catch {
+      // Si el logout falla por alguna razón, igual mostramos el form;
+      // el siguiente intento de login va a forzar el refresh.
+    }
+    this.error.set(message);
+    this.handleStatus.set('taken');
+    this.step.set('form');
   }
 
   async resendCode(event: Event) {
