@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink, RouterLinkActive } from '@angular/r
 import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { projectKnockoutTree, type ProjectionMissing } from '../../core/bracket/projected-bracket.service';
 import { UserModesService } from '../../core/user/user-modes.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { TimeService } from '../../core/time/time.service';
@@ -148,15 +149,42 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
           <p>Necesitas pertenecer a al menos un grupo privado para usar el bracket.</p>
           <a class="btn-wf btn-wf--primary" routerLink="/groups/new">Crear un grupo →</a>
         </div>
-      } @else if (hasNoKnockoutMatches()) {
+      } @else if (projectionMissing()) {
+        @let miss = projectionMissing()!;
         <div class="empty-block">
-          <h3>Las llaves todavía no están armadas</h3>
-          <p>
-            El admin carga las llaves después de que termine la fase de grupos.
-            Vuelve cuando estén disponibles.
-          </p>
+          <h3>Para ver tu bracket primero termina tus predicciones</h3>
+          <ul class="check-list">
+            @if (miss.groupsWithoutFullStanding.length > 0) {
+              <li>
+                ⚠ Faltan posiciones en {{ miss.groupsWithoutFullStanding.length }} grupo(s):
+                {{ miss.groupsWithoutFullStanding.join(', ') }}
+                <a routerLink="/picks/group-stage/predict" class="btn-wf btn-wf--sm">
+                  Ir a tabla de grupos →
+                </a>
+              </li>
+            } @else {
+              <li>✓ Tablas de grupos completas</li>
+            }
+            @if (miss.thirdsCount !== 8) {
+              <li>
+                ⚠ Marca exactamente 8 mejores 3.os (tienes {{ miss.thirdsCount }})
+                <a routerLink="/profile/special-picks" class="btn-wf btn-wf--sm">
+                  Ir a mis terceros →
+                </a>
+              </li>
+            } @else {
+              <li>✓ 8 mejores 3.os marcados</li>
+            }
+          </ul>
         </div>
       } @else {
+        @if (isProjected()) {
+          <div class="info-banner" style="margin-bottom:14px;padding:10px 12px;background:rgba(0,200,100,0.08);border:1px solid rgba(0,200,100,0.25);border-radius:8px;font-size:13px;color:var(--wf-ink-2);">
+            🔮 Bracket armado desde tus predicciones de grupos.
+            Tus elecciones aquí se quedan fijas — los resultados reales
+            del Mundial puntúan tu BracketPick comparando equipos por fase.
+          </div>
+        }
         <!-- Grid del bracket: 9 columnas (16avos a ambos extremos) -->
         <div class="bracket-scroll">
           <div class="bracket-grid">
@@ -369,6 +397,8 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
   teamMap = signal<Map<string, TeamLite>>(new Map());
 
   matches = signal<KnockoutMatch[]>([]);
+  isProjected = signal(false);
+  projectionMissing = signal<ProjectionMissing | null>(null);
   /** matchId → ganador elegido (slug del team). */
   winners = signal<Map<string, string>>(new Map());
 
@@ -403,10 +433,10 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
   private nowTick = signal(Date.now());
   private lockTicker: ReturnType<typeof setInterval> | undefined;
   bracketLockAt = computed<string | null>(() => {
-    const ms = this.matches();
-    if (ms.length === 0) return null;
-    let min = ms[0]!.kickoffAt;
-    for (const m of ms) if (m.kickoffAt < min) min = m.kickoffAt;
+    const withKickoff = this.matches().filter((m) => !!m.kickoffAt);
+    if (withKickoff.length === 0) return null;
+    let min = withKickoff[0]!.kickoffAt;
+    for (const m of withKickoff) if (m.kickoffAt < min) min = m.kickoffAt;
     return min;
   });
   bracketLocked = computed(() => {
@@ -601,20 +631,42 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
         phaseOrderById.set(p.id, p.order);
       }
 
-      const knockouts: KnockoutMatch[] = (matchesRes.data ?? [])
-        .filter((mm): mm is NonNullable<typeof mm> => !!mm && !!mm.id)
-        .map((mm) => ({
-          id: mm.id,
-          phaseOrder: phaseOrderById.get(mm.phaseId) ?? 0,
-          homeTeamId: mm.homeTeamId,
-          awayTeamId: mm.awayTeamId,
-          kickoffAt: mm.kickoffAt,
-          bracketPosition: mm.bracketPosition ?? null,
-          status: mm.status ?? null,
-          homeScore: mm.homeScore ?? null,
-          awayScore: mm.awayScore ?? null,
-        }))
-        .filter((k) => k.phaseOrder >= 2 && k.phaseOrder <= 6);
+      // El bracket de /picks/bracket SIEMPRE es la proyección del propio
+      // user. Los Match rows reales que admin carga viven en otras
+      // pantallas y alimentan el scoring backend (no se renderizan aquí).
+      const [standingsRes, thirdsRes] = await Promise.all([
+        this.api.listGroupStandingPicks(this.currentUserId, m),
+        this.api.getBestThirdsPick(this.currentUserId, TOURNAMENT_ID, m),
+      ]);
+      const standings = (standingsRes.data ?? [])
+        .filter((s): s is NonNullable<typeof s> =>
+          !!s && s.tournamentId === TOURNAMENT_ID && !!s.groupLetter)
+        .map((s) => ({
+          groupLetter: s.groupLetter,
+          pos1: s.pos1 ?? '',
+          pos2: s.pos2 ?? '',
+          pos3: s.pos3 ?? '',
+          pos4: s.pos4 ?? '',
+        }));
+      const advancing = new Set<string>(
+        (thirdsRes.data?.[0]?.advancing ?? []).filter((l): l is string => !!l),
+      );
+      const result = projectKnockoutTree({
+        groupStandings: standings,
+        advancingThirds: advancing,
+        mode: m,
+      });
+
+      let knockouts: KnockoutMatch[];
+      if (result.kind === 'ok') {
+        knockouts = result.matches as KnockoutMatch[];
+        this.isProjected.set(true);
+        this.projectionMissing.set(null);
+      } else {
+        knockouts = [];
+        this.isProjected.set(false);
+        this.projectionMissing.set(result.missing);
+      }
       this.matches.set(knockouts);
 
       // Reconstruir winners: prioridad localStorage > DB row
@@ -644,6 +696,12 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
           winnersState = new Map(Object.entries(parsed));
         } catch { /* corrupt */ }
       }
+
+      // Descartar winners cuyo matchId ya no existe (puede pasar cuando
+      // el user cambió sus preds y los IDs proyectados anteriores no
+      // coinciden con los nuevos).
+      const validIds = new Set(knockouts.map((k) => k.id));
+      winnersState = new Map([...winnersState].filter(([id]) => validIds.has(id)));
 
       this.winners.set(winnersState);
       // saveStatus es ahora computed desde sync state — no se setea acá.
