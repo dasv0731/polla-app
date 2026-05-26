@@ -425,7 +425,6 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
     { points: 0, exactCount: 0, resultCount: 0, globalRank: null },
   );
 
-  hasNoKnockoutMatches = computed(() => this.matches().length === 0);
   totalKnockoutMatches = computed(() => this.matches().length);
   pickedCount = computed(() => this.winners().size);
 
@@ -607,10 +606,8 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
     if (!m) return;
     this.loading.set(true);
     try {
-      const [teamsRes, matchesRes, phasesRes, bracketRes, totalsRes, leaderboardRes] = await Promise.all([
+      const [teamsRes, bracketRes, totalsRes, leaderboardRes] = await Promise.all([
         this.api.listTeams(TOURNAMENT_ID),
-        this.api.listMatches(TOURNAMENT_ID),
-        this.api.listPhases(TOURNAMENT_ID),
         this.api.getBracketPick(this.currentUserId, TOURNAMENT_ID, m),
         this.api.myTotal(this.currentUserId, TOURNAMENT_ID),
         this.api.listLeaderboard(TOURNAMENT_ID, 200),
@@ -624,12 +621,6 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
       const tmap = new Map<string, TeamLite>();
       for (const t of list) tmap.set(t.slug, t);
       this.teamMap.set(tmap);
-
-      const phaseOrderById = new Map<string, number>();
-      for (const p of (phasesRes.data ?? [])) {
-        if (!p || !p.id) continue;
-        phaseOrderById.set(p.id, p.order);
-      }
 
       // El bracket de /picks/bracket SIEMPRE es la proyección del propio
       // user. Los Match rows reales que admin carga viven en otras
