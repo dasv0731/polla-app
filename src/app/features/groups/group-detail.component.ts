@@ -17,6 +17,9 @@ interface GroupHeader {
   /** Storage key del logo/avatar del grupo. null si no se subió.
    *  Resuelve a signed URL en `groupImageUrl` signal. */
   imageKey: string | null;
+  /** Si el grupo tiene comodines activos. Solo aplica a mode=COMPLETE.
+   *  Null/undefined = legacy group, tratamos como ON (!== false). */
+  comodinesEnabled: boolean | null;
   prize1st: string | null;
   prize2nd: string | null;
   prize3rd: string | null;
@@ -62,6 +65,21 @@ interface RankRow {
                   @if (isAdminOfGroup()) { · TÚ ERES ADMIN }
                 </div>
                 <h1 class="group-hero__name">{{ g.name }}</h1>
+                @if (g.mode === 'COMPLETE') {
+                  <div style="margin-top:6px;">
+                    @if (g.comodinesEnabled !== false) {
+                      <span class="pill pill--accent"
+                            style="display:inline-block;font-size:11px;padding:3px 8px;border-radius:999px;background:rgba(0,200,100,0.18);color:#fff;border:1px solid rgba(255,255,255,0.35);">
+                        🃏 Comodines activos
+                      </span>
+                    } @else {
+                      <span class="pill pill--mute"
+                            style="display:inline-block;font-size:11px;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,0.12);color:#fff;border:1px solid rgba(255,255,255,0.25);">
+                        🃏 Sin comodines
+                      </span>
+                    }
+                  </div>
+                }
               </div>
             </div>
             @if (isAdminOfGroup()) {
@@ -170,6 +188,14 @@ interface RankRow {
                       title="Próximamente">Por jornada</button>
             </div>
           </header>
+
+          @if (g.mode === 'COMPLETE' && g.comodinesEnabled === false) {
+            <div class="info-banner info-banner--mute"
+                 style="margin:10px 0;padding:10px 12px;background:rgba(160,160,160,0.10);border:1px solid rgba(160,160,160,0.30);border-radius:8px;font-size:13px;color:var(--wf-ink-2);">
+              ℹ Los puntos de este grupo se computan sin efectos de comodines.
+              Tu posición global (ranking del torneo) sigue incluyéndolos.
+            </div>
+          }
 
           <div class="rank-table-wrap">
             <table class="rank-table">
@@ -345,6 +371,10 @@ export class GroupDetailComponent implements OnInit, OnChanges {
       ]);
       if (grp.data) {
         const imageKey = (grp.data as { imageKey?: string | null }).imageKey ?? null;
+        // comodinesEnabled cast — schema todavía no deployado en sandbox.
+        // Task 5 regenera schema.d.ts y este cast deja de ser necesario.
+        const comodinesEnabled =
+          (grp.data as { comodinesEnabled?: boolean | null }).comodinesEnabled ?? null;
         this.group.set({
           id: grp.data.id,
           name: grp.data.name,
@@ -353,6 +383,7 @@ export class GroupDetailComponent implements OnInit, OnChanges {
           createdAt: grp.data.createdAt,
           mode: (grp.data.mode ?? 'COMPLETE') as 'SIMPLE' | 'COMPLETE',
           imageKey,
+          comodinesEnabled,
           prize1st: grp.data.prize1st ?? null,
           prize2nd: grp.data.prize2nd ?? null,
           prize3rd: grp.data.prize3rd ?? null,

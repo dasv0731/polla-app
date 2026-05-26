@@ -329,8 +329,54 @@ export class ApiService {
   upsertPick(matchId: string, homeScorePred: number, awayScorePred: number) {
     return apiClient.mutations.upsertPick({ matchId, homeScorePred, awayScorePred });
   }
-  createGroup(name: string, tournamentId: string, mode: 'SIMPLE' | 'COMPLETE', description?: string, imageKey?: string) {
-    return apiClient.mutations.createGroup({ name, tournamentId, mode, description: description ?? null, imageKey: imageKey ?? null });
+  // Two signatures: nuevo input-object (preferido, soporta comodinesEnabled)
+  // y legacy posicional (para callers viejos que aún no migran). Ambos
+  // delegan en el mismo path.
+  createGroup(input: {
+    name: string;
+    tournamentId: string;
+    mode: 'SIMPLE' | 'COMPLETE';
+    description?: string;
+    imageKey?: string;
+    comodinesEnabled?: boolean;
+  }): ReturnType<typeof apiClient.mutations.createGroup>;
+  createGroup(
+    name: string,
+    tournamentId: string,
+    mode: 'SIMPLE' | 'COMPLETE',
+    description?: string,
+    imageKey?: string,
+  ): ReturnType<typeof apiClient.mutations.createGroup>;
+  createGroup(
+    a: string | {
+      name: string;
+      tournamentId: string;
+      mode: 'SIMPLE' | 'COMPLETE';
+      description?: string;
+      imageKey?: string;
+      comodinesEnabled?: boolean;
+    },
+    tournamentId?: string,
+    mode?: 'SIMPLE' | 'COMPLETE',
+    description?: string,
+    imageKey?: string,
+  ) {
+    const input = typeof a === 'string'
+      ? { name: a, tournamentId: tournamentId!, mode: mode!, description, imageKey }
+      : a;
+    // comodinesEnabled solo se propaga si vino definido. El schema todavía
+    // no está deployado en este sandbox (Task 5 hará amplify push); por eso
+    // el cast as never — Task 5 elimina este cast cuando regenere los tipos.
+    return apiClient.mutations.createGroup({
+      name: input.name,
+      tournamentId: input.tournamentId,
+      mode: input.mode,
+      description: input.description ?? null,
+      imageKey: input.imageKey ?? null,
+      ...('comodinesEnabled' in input && input.comodinesEnabled !== undefined
+        ? { comodinesEnabled: input.comodinesEnabled }
+        : {}),
+    } as never);
   }
   updateGroup(input: { id: string; name?: string; description?: string | null; imageKey?: string | null }) {
     return apiClient.models.Group.update(input);

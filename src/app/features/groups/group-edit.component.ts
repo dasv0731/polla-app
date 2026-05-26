@@ -13,6 +13,9 @@ interface GroupEdit {
   description: string | null;
   imageKey: string | null;
   adminUserId: string;
+  /** Comodines flag — read-only en edit, definido al crear el grupo.
+   *  Null = legacy group (tratamos como ON: !== false). */
+  comodinesEnabled: boolean | null;
 }
 
 /**
@@ -86,6 +89,28 @@ interface GroupEdit {
             </span>
           </div>
 
+          @if (group()?.adminUserId && modeIsComplete()) {
+            <div class="form-card__field">
+              <label class="form-card__label">Comodines</label>
+              <div>
+                @if (group()!.comodinesEnabled !== false) {
+                  <span class="pill pill--accent"
+                        style="display:inline-block;font-size:12px;padding:4px 10px;border-radius:999px;background:rgba(0,200,100,0.15);color:var(--color-primary-green);border:1px solid rgba(0,200,100,0.4);">
+                    🃏 Activados
+                  </span>
+                } @else {
+                  <span class="pill pill--mute"
+                        style="display:inline-block;font-size:12px;padding:4px 10px;border-radius:999px;background:rgba(160,160,160,0.12);color:var(--wf-ink-2);border:1px solid rgba(160,160,160,0.35);">
+                    🃏 Desactivados
+                  </span>
+                }
+                <p class="text-mute" style="font-size:11px;margin-top:6px;color:var(--color-text-muted);">
+                  Esta configuración se eligió al crear el grupo y no se puede modificar.
+                </p>
+              </div>
+            </div>
+          }
+
           @if (error()) {
             <p class="form-card__hint" style="color:var(--color-lost);">{{ error() }}</p>
           }
@@ -130,6 +155,9 @@ export class GroupEditComponent implements OnInit {
   });
 
   modeLabel = computed(() => this.mode === 'COMPLETE' ? 'Completo' : 'Simple');
+  /** Template helper — el field `mode` es privado y los templates Angular
+   *  no pueden leer privates en strict mode. */
+  modeIsComplete = computed(() => this.mode === 'COMPLETE');
 
   /** Cualquier campo cambió respecto al valor cargado de DB. Habilita
    *  el botón Guardar solo cuando hay algo nuevo para mandar. */
@@ -152,12 +180,17 @@ export class GroupEditComponent implements OnInit {
         return;
       }
       this.mode = (d.mode ?? 'COMPLETE') as 'SIMPLE' | 'COMPLETE';
+      // comodinesEnabled cast — schema todavía no deployado en sandbox.
+      // Task 5 regenera schema.d.ts y este cast deja de ser necesario.
+      const comodinesEnabled =
+        (d as { comodinesEnabled?: boolean | null }).comodinesEnabled ?? null;
       this.group.set({
         id: d.id,
         name: d.name,
         description: (d as { description?: string | null }).description ?? null,
         imageKey: (d as { imageKey?: string | null }).imageKey ?? null,
         adminUserId: d.adminUserId,
+        comodinesEnabled,
       });
       this.name = d.name;
       this.description = (d as { description?: string | null }).description ?? '';

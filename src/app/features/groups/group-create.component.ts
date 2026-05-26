@@ -99,6 +99,23 @@ const TOURNAMENT_ID = 'mundial-2026';
               </span>
             </div>
 
+            @if (mode === 'COMPLETE') {
+              <div class="form-card__field">
+                <label class="checkbox-row" style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
+                  <input type="checkbox" name="comodinesEnabled"
+                         [(ngModel)]="comodinesEnabled"
+                         style="margin-top:3px;">
+                  <div>
+                    <div class="checkbox-row__title" style="font-weight:600;">Comodines</div>
+                    <div class="checkbox-row__sub text-mute" style="font-size:12px;line-height:1.4;">
+                      Activá los 9 tipos de comodines (multiplicadores, seguros, resets, etc).
+                      <b>No se puede cambiar después</b> de crear el grupo.
+                    </div>
+                  </div>
+                </label>
+              </div>
+            }
+
             @if (error()) {
               <p class="form-card__hint" style="color: var(--color-lost);">{{ error() }}</p>
             }
@@ -154,6 +171,9 @@ export class GroupCreateComponent {
   name = '';
   description = '';
   mode: 'SIMPLE' | 'COMPLETE' = 'COMPLETE';
+  /** Comodines flag — solo aplica si mode === 'COMPLETE'. Default true para
+   *  preservar el comportamiento histórico (siempre se contaban). */
+  comodinesEnabled = true;
   loading = signal(false);
   error = signal<string | null>(null);
   created = signal<{ id: string; joinCode: string } | null>(null);
@@ -169,12 +189,22 @@ export class GroupCreateComponent {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const res = await this.api.createGroup(
-        this.name.trim(),
-        TOURNAMENT_ID,
-        this.mode,
-        this.description.trim() || undefined,
-      );
+      const payload: {
+        name: string;
+        tournamentId: string;
+        mode: 'SIMPLE' | 'COMPLETE';
+        description?: string;
+        imageKey?: string;
+        comodinesEnabled?: boolean;
+      } = {
+        name: this.name.trim(),
+        tournamentId: TOURNAMENT_ID,
+        mode: this.mode,
+      };
+      const desc = this.description.trim();
+      if (desc) payload.description = desc;
+      if (this.mode === 'COMPLETE') payload.comodinesEnabled = this.comodinesEnabled;
+      const res = await this.api.createGroup(payload);
       // Amplify Gen 2 returns { data, errors? }; non-throwing GraphQL errors
       // come through `errors` so we have to check both branches.
       if (res.errors && res.errors.length > 0) {
