@@ -118,6 +118,40 @@ describe('projectKnockoutTree — happy path', () => {
     const r2 = projectKnockoutTree(COMPLETE_INPUT());
     expect(r2).toEqual(r1);
   });
+
+  it('matrix lookup uses sorted key (Set iteration order is irrelevant)', () => {
+    const r = projectKnockoutTree({
+      ...COMPLETE_INPUT(),
+      advancingThirds: new Set(['J', 'I', 'H', 'F', 'E', 'D', 'C', 'A']),
+    });
+    expect(r.kind).toBe('ok');
+    if (r.kind !== 'ok') throw new Error();
+    // Same expected pos 7 as the canonical test: ACDEFHIJ[1A]=3H → 1A vs 3H
+    const m = r.matches.find((mm) => mm.phaseOrder === 2 && mm.bracketPosition === 7)!;
+    expect(m.homeTeamId).toBe('1A');
+    expect(m.awayTeamId).toBe('3H');
+  });
+
+  it('T-X resolution uses the matrix value letter, not the column key', () => {
+    // Use distinctive non-symmetric pos3 slugs so a column-vs-value swap is detectable.
+    const standings = ALL_LETTERS.map((groupLetter) => ({
+      groupLetter,
+      pos1: `1${groupLetter}`,
+      pos2: `2${groupLetter}`,
+      pos3: `THIRD-${groupLetter}`,
+      pos4: `4${groupLetter}`,
+    }));
+    const r = projectKnockoutTree({
+      groupStandings: standings,
+      advancingThirds: new Set(['A', 'C', 'D', 'E', 'F', 'H', 'I', 'J']),
+      mode: 'COMPLETE',
+    });
+    expect(r.kind).toBe('ok');
+    if (r.kind !== 'ok') throw new Error();
+    // Matrix ACDEFHIJ[1A]=3H → away of pos 7 should be THIRD-H, not THIRD-A.
+    const m = r.matches.find((mm) => mm.phaseOrder === 2 && mm.bracketPosition === 7)!;
+    expect(m.awayTeamId).toBe('THIRD-H');
+  });
 });
 
 describe('projectKnockoutTree — incomplete input', () => {
@@ -157,5 +191,15 @@ describe('projectKnockoutTree — incomplete input', () => {
     expect(r.kind).toBe('incomplete');
     if (r.kind !== 'incomplete') throw new Error();
     expect(r.missing.groupsWithoutFullStanding).toContain('L');
+  });
+
+  it('returns incomplete when advancingThirds contains an invalid letter', () => {
+    const r = projectKnockoutTree({
+      ...COMPLETE_INPUT(),
+      advancingThirds: new Set(['Z', 'B', 'C', 'D', 'E', 'F', 'G', 'H']),
+    });
+    expect(r.kind).toBe('incomplete');
+    if (r.kind !== 'incomplete') throw new Error();
+    expect(r.missing.invalidThirds).toContain('Z');
   });
 });

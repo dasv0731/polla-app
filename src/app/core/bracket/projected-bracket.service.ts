@@ -49,6 +49,7 @@ export type ProjectedKnockoutMatch = {
 export type ProjectionMissing = {
   groupsWithoutFullStanding: string[];
   thirdsCount: number;
+  invalidThirds: string[];
 };
 
 export type ProjectionResult =
@@ -74,10 +75,16 @@ function validate(input: ProjectionInput): ProjectionMissing | null {
     }
   }
 
+  const validLetters = new Set<string>(ALL_LETTERS);
+  const invalidThirds: string[] = [];
+  for (const t of input.advancingThirds) {
+    if (!validLetters.has(t)) invalidThirds.push(t);
+  }
+
   const thirdsCount = input.advancingThirds.size;
 
-  if (missing.length === 0 && thirdsCount === 8) return null;
-  return { groupsWithoutFullStanding: missing, thirdsCount };
+  if (missing.length === 0 && thirdsCount === 8 && invalidThirds.length === 0) return null;
+  return { groupsWithoutFullStanding: missing, thirdsCount, invalidThirds };
 }
 
 export function projectKnockoutTree(input: ProjectionInput): ProjectionResult {
@@ -98,8 +105,9 @@ export function projectKnockoutTree(input: ProjectionInput): ProjectionResult {
   const key = [...input.advancingThirds].sort().join('');
   const row = matrix.byCombination[key];
   if (!row) {
-    // Imposible si validate() pasó (495 keys cubren todas las combinaciones).
-    throw new Error(`No matrix row for thirds combination "${key}"`);
+    // Bug interno: validate() debería garantizar que `key` siempre exista
+    // en la matriz (495 combinaciones cubren todas las opciones válidas).
+    throw new Error(`No matrix row for thirds combination "${key}" (internal bug)`);
   }
 
   // Construir 16 R32 desde la plantilla
