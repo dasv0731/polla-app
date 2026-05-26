@@ -6,6 +6,8 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { apiClient } from '../../core/api/client';
+import { PasswordRulesListComponent } from '../../shared/ui/password-rules-list.component';
+import { passwordPassesAllRules } from '../../shared/util/password-rules';
 
 type Step = 'form' | 'confirm';
 type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
@@ -13,7 +15,7 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, PasswordRulesListComponent],
   template: `
     <div class="auth-shell">
 
@@ -122,21 +124,14 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
                     autocomplete="new-password"
                     required
                     minlength="8"
-                    [(ngModel)]="password"
-                    (ngModelChange)="onPasswordChange($event)">
+                    [(ngModel)]="password">
                   <button type="button" class="auth-input-toggle"
                           (click)="showPwd.set(!showPwd())"
                           [attr.aria-label]="showPwd() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
                     {{ showPwd() ? '👁️‍🗨️' : '👁' }}
                   </button>
                 </div>
-                <div class="auth-strength">
-                  <div class="bar bar--sm flex-1" [style.background]="strengthColor(0)"></div>
-                  <div class="bar bar--sm flex-1" [style.background]="strengthColor(1)"></div>
-                  <div class="bar bar--sm flex-1" [style.background]="strengthColor(2)"></div>
-                  <div class="bar bar--sm flex-1" [style.background]="strengthColor(3)"></div>
-                </div>
-                <div class="auth-helper">Mín 8 caracteres · 1 número · 1 mayúscula</div>
+                <app-password-rules-list [password]="password" />
               </div>
 
               <label class="auth-check">
@@ -296,7 +291,6 @@ export class RegisterComponent {
   showPwd = signal(false);
 
   handleStatus = signal<HandleStatus>('idle');
-  passwordStrength = signal(0);
 
   readonly indices = [0, 1, 2, 3, 4, 5];
   otpDigits = signal<string[]>(['', '', '', '', '', '']);
@@ -310,7 +304,7 @@ export class RegisterComponent {
 
   canSubmit(): boolean {
     return !!this.name && !!this.handle && !!this.email
-      && this.password.length >= 8 && this.acceptTerms
+      && passwordPassesAllRules(this.password) && this.acceptTerms
       && this.handleStatus() !== 'taken' && this.handleStatus() !== 'checking';
   }
 
@@ -345,24 +339,6 @@ export class RegisterComponent {
       ) => Promise<{ data: { available: boolean } | null }>;
     }).checkHandleAvailable({ handle }, { authMode: 'apiKey' });
     return res.data?.available === true;
-  }
-
-  // ---------- Password strength ----------
-  onPasswordChange(value: string) {
-    let score = 0;
-    if (value.length >= 8) score++;
-    if (/[A-Z]/.test(value)) score++;
-    if (/[0-9]/.test(value)) score++;
-    if (/[^a-zA-Z0-9]/.test(value)) score++;
-    this.passwordStrength.set(score);
-  }
-
-  strengthColor(idx: number): string {
-    const score = this.passwordStrength();
-    if (idx >= score) return '';
-    if (score <= 1) return 'var(--wf-danger)';
-    if (score === 2) return 'var(--wf-warn)';
-    return 'var(--wf-green)';
   }
 
   // ---------- OTP handlers ----------

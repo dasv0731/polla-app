@@ -5,11 +5,13 @@ import {
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { PasswordRulesListComponent } from '../../shared/ui/password-rules-list.component';
+import { passwordPassesAllRules } from '../../shared/util/password-rules';
 
 @Component({
   selector: 'app-forgot-password',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, PasswordRulesListComponent],
   template: `
     <div class="auth-shell">
 
@@ -145,15 +147,8 @@ import { AuthService } from '../../core/auth/auth.service';
                   autocomplete="new-password"
                   minlength="8"
                   required
-                  [(ngModel)]="newPassword"
-                  (ngModelChange)="onPasswordChange($event)">
-                <div class="auth-strength">
-                  <div class="bar bar--sm flex-1" [style.background]="strengthColor(0)"></div>
-                  <div class="bar bar--sm flex-1" [style.background]="strengthColor(1)"></div>
-                  <div class="bar bar--sm flex-1" [style.background]="strengthColor(2)"></div>
-                  <div class="bar bar--sm flex-1" [style.background]="strengthColor(3)"></div>
-                </div>
-                <div class="auth-helper">Mín 8 caracteres · 1 número · 1 mayúscula</div>
+                  [(ngModel)]="newPassword">
+                <app-password-rules-list [password]="newPassword" />
               </div>
 
               @if (resetError()) {
@@ -167,7 +162,7 @@ import { AuthService } from '../../core/auth/auth.service';
                 type="submit"
                 class="btn-wf btn-wf--block btn-wf--primary"
                 style="padding:14px;font-size:14px;margin-top:14px;"
-                [disabled]="resetting() || code().length !== 6 || newPassword.length < 8">
+                [disabled]="resetting() || code().length !== 6 || !passwordIsValid()">
                 {{ resetting() ? 'Actualizando…' : 'Actualizar contraseña →' }}
               </button>
             </form>
@@ -219,7 +214,7 @@ export class ForgotPasswordComponent {
   resetError = signal<string | null>(null);
   resendInfo = signal<string | null>(null);
 
-  passwordStrength = signal(0);
+  passwordIsValid = (): boolean => passwordPassesAllRules(this.newPassword);
 
   readonly indices = [0, 1, 2, 3, 4, 5];
   otpDigits = signal<string[]>(['', '', '', '', '', '']);
@@ -229,23 +224,6 @@ export class ForgotPasswordComponent {
   private cooldownTimer?: ReturnType<typeof setInterval>;
 
   @ViewChildren('otpInput') otpRefs?: QueryList<ElementRef<HTMLInputElement>>;
-
-  onPasswordChange(value: string) {
-    let score = 0;
-    if (value.length >= 8) score++;
-    if (/[A-Z]/.test(value)) score++;
-    if (/[0-9]/.test(value)) score++;
-    if (/[^a-zA-Z0-9]/.test(value)) score++;
-    this.passwordStrength.set(score);
-  }
-
-  strengthColor(idx: number): string {
-    const score = this.passwordStrength();
-    if (idx >= score) return '';
-    if (score <= 1) return 'var(--wf-danger)';
-    if (score === 2) return 'var(--wf-warn)';
-    return 'var(--wf-green)';
-  }
 
   // ---------- OTP ----------
   onOtpInput(event: Event, idx: number) {
@@ -288,7 +266,6 @@ export class ForgotPasswordComponent {
     this.codeSent.set(false);
     this.otpDigits.set(['', '', '', '', '', '']);
     this.newPassword = '';
-    this.passwordStrength.set(0);
     this.resetError.set(null);
   }
 
