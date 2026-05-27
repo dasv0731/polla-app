@@ -675,7 +675,6 @@
                     "ownerField": "sub",
                     "allow": "owner",
                     "operations": [
-                      "create",
                       "read",
                       "update"
                     ],
@@ -1306,6 +1305,13 @@
               "isRequired": false,
               "attributes": []
             },
+            "comodinesEnabled": {
+              "name": "comodinesEnabled",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": false,
+              "attributes": []
+            },
             "updatedAt": {
               "name": "updatedAt",
               "isArray": false,
@@ -1482,15 +1488,6 @@
                     "operations": [
                       "read"
                     ]
-                  },
-                  {
-                    "provider": "userPools",
-                    "ownerField": "userId",
-                    "allow": "owner",
-                    "operations": [
-                      "delete"
-                    ],
-                    "identityClaim": "cognito:username"
                   },
                   {
                     "groupClaim": "cognito:groups",
@@ -3473,6 +3470,44 @@
             }
           }
         },
+        "CheckHandleAvailableReturnType": {
+          "name": "CheckHandleAvailableReturnType",
+          "fields": {
+            "available": {
+              "name": "available",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": true,
+              "attributes": []
+            }
+          }
+        },
+        "CreateUserProfileReturnType": {
+          "name": "CreateUserProfileReturnType",
+          "fields": {
+            "ok": {
+              "name": "ok",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": true,
+              "attributes": []
+            },
+            "message": {
+              "name": "message",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "sub": {
+              "name": "sub",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": false,
+              "attributes": []
+            }
+          }
+        },
         "UpsertPickReturnType": {
           "name": "UpsertPickReturnType",
           "fields": {
@@ -3528,6 +3563,25 @@
               "name": "deleted",
               "isArray": false,
               "type": "Boolean",
+              "isRequired": true,
+              "attributes": []
+            }
+          }
+        },
+        "RemoveMemberReturnType": {
+          "name": "RemoveMemberReturnType",
+          "fields": {
+            "ok": {
+              "name": "ok",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": true,
+              "attributes": []
+            },
+            "message": {
+              "name": "message",
+              "isArray": false,
+              "type": "String",
               "isRequired": true,
               "attributes": []
             }
@@ -3951,6 +4005,12 @@
               "isArray": false,
               "type": "String",
               "isRequired": false
+            },
+            "comodinesEnabled": {
+              "name": "comodinesEnabled",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": false
             }
           }
         },
@@ -3980,6 +4040,38 @@
           "arguments": {
             "code": {
               "name": "code",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            }
+          }
+        },
+        "checkHandleAvailable": {
+          "name": "checkHandleAvailable",
+          "isArray": false,
+          "type": {
+            "nonModel": "CheckHandleAvailableReturnType"
+          },
+          "isRequired": false,
+          "arguments": {
+            "handle": {
+              "name": "handle",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            }
+          }
+        },
+        "createUserProfile": {
+          "name": "createUserProfile",
+          "isArray": false,
+          "type": {
+            "nonModel": "CreateUserProfileReturnType"
+          },
+          "isRequired": false,
+          "arguments": {
+            "handle": {
+              "name": "handle",
               "isArray": false,
               "type": "String",
               "isRequired": true
@@ -4133,6 +4225,28 @@
           "arguments": {
             "groupId": {
               "name": "groupId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            }
+          }
+        },
+        "removeMember": {
+          "name": "removeMember",
+          "isArray": false,
+          "type": {
+            "nonModel": "RemoveMemberReturnType"
+          },
+          "isRequired": false,
+          "arguments": {
+            "groupId": {
+              "name": "groupId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            },
+            "userId": {
+              "name": "userId",
               "isArray": false,
               "type": "ID",
               "isRequired": true
