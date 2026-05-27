@@ -388,12 +388,7 @@ export class ApiService {
     return apiClient.mutations.deleteGroup({ groupId });
   }
   removeMember(input: { groupId: string; userId: string }) {
-    // Cast required until sandbox redeploys regenerate schema.d.ts.
-    return (apiClient.mutations as unknown as {
-      removeMember: (args: { groupId: string; userId: string }) => Promise<{
-        data: { ok: boolean; message: string } | null;
-      }>;
-    }).removeMember(input);
+    return apiClient.mutations.removeMember(input);
   }
   emailGroupInvite(groupId: string, emails: string[]) {
     return apiClient.mutations.emailGroupInvite({ groupId, emails });

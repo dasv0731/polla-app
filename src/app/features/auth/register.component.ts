@@ -331,13 +331,10 @@ export class RegisterComponent {
     // permit apiKey reads (would expose PII), so the prior list-based check
     // returned empty silently for any handle. The mutation does the GSI query
     // server-side and returns only a boolean.
-    // Cast required until sandbox redeploys regenerate schema.d.ts.
-    const res = await (apiClient.mutations as unknown as {
-      checkHandleAvailable: (
-        args: { handle: string },
-        opts: { authMode: 'apiKey' },
-      ) => Promise<{ data: { available: boolean } | null }>;
-    }).checkHandleAvailable({ handle }, { authMode: 'apiKey' });
+    const res = await apiClient.mutations.checkHandleAvailable(
+      { handle },
+      { authMode: 'apiKey' },
+    );
     return res.data?.available === true;
   }
 
@@ -421,12 +418,7 @@ export class RegisterComponent {
       if (u) {
         // Crea el User row vía la mutation autenticada. El backend toma sub +
         // email del Cognito identity y valida unicidad del handle server-side.
-        // Cast required until sandbox redeploys regenerate schema.d.ts.
-        const res = await (apiClient.mutations as unknown as {
-          createUserProfile: (args: { handle: string }) => Promise<{
-            data: { ok: boolean; message: string; sub: string | null } | null;
-          }>;
-        }).createUserProfile({ handle: u.handle });
+        const res = await apiClient.mutations.createUserProfile({ handle: u.handle });
         if (!res.data?.ok) {
           await this.bounceBackToForm(
             res.data?.message ?? 'No se pudo crear el perfil. Intenta con otro usuario.',
