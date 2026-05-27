@@ -64,9 +64,17 @@ import { humanizeError } from '../../core/notifications/domain-errors';
             <span class="form-card__hint">Aparece debajo del CTA en el email. Máx 200 caracteres.</span>
           </div>
 
-          <button class="btn btn--primary form-card__submit" type="submit" [disabled]="sending() || emails().length === 0">
-            {{ sending() ? 'Enviando…' : sendLabel() }}
+          <button class="btn btn--primary form-card__submit" type="submit"
+                  [disabled]="sending() || emails().length === 0 || groupIsFull()">
+            {{ groupIsFull() ? 'Grupo lleno' : (sending() ? 'Enviando…' : sendLabel()) }}
           </button>
+
+          @if (groupIsFull()) {
+            <p class="text-mute" style="font-size:12px;margin-top:8px;">
+              El grupo ya tiene 30 miembros. No se pueden enviar más invitaciones hasta
+              que el admin elimine a alguien.
+            </p>
+          }
 
           <p class="form-card__alt">
             Invitas al grupo <strong>"{{ g.name }}"</strong> con código <strong>{{ g.joinCode }}</strong>.
@@ -132,6 +140,7 @@ export class GroupInviteEmailComponent implements OnInit {
   draft = signal('');
   message = '';
   sending = signal(false);
+  memberCount = signal<number | null>(null);
 
   currentHandle = computed(() => this.auth.user()?.handle);
   sendLabel = computed(() => {
@@ -139,13 +148,18 @@ export class GroupInviteEmailComponent implements OnInit {
     if (n === 0) return 'Agrega al menos un email';
     return `Enviar ${n} invitación${n === 1 ? '' : 'es'}`;
   });
+  groupIsFull = computed(() => (this.memberCount() ?? 0) >= 30);
 
   async ngOnInit() {
     try {
-      const grp = await this.api.getGroup(this.id);
+      const [grp, members] = await Promise.all([
+        this.api.getGroup(this.id),
+        this.api.groupMembers(this.id),
+      ]);
       if (grp.data) {
         this.group.set({ id: grp.data.id, name: grp.data.name, joinCode: grp.data.joinCode });
       }
+      this.memberCount.set((members.data ?? []).length);
     } finally {
       this.loading.set(false);
     }
