@@ -3,7 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { GroupActionsService } from '../../core/groups/group-actions.service';
 
-type Step = 1 | 2 | 3 | 4 | 5;
+type Step = 1 | 2 | 3 | 4;
 
 @Component({
   selector: 'app-onboarding',
@@ -18,7 +18,7 @@ type Step = 1 | 2 | 3 | 4 | 5;
           <a routerLink="/picks" class="topbar__brand" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:8px;">
             <img src="assets/logo-golgana.png" alt="Golgana" style="height:28px;width:auto;">
           </a>
-          @if (step() < 5) {
+          @if (step() < 4) {
             <a href="#" (click)="onSkip($event)" class="onb-skip">Saltar</a>
           }
         </div>
@@ -33,7 +33,7 @@ type Step = 1 | 2 | 3 | 4 | 5;
         <!-- ===== PASO 1: BIENVENIDA ===== -->
         @if (step() === 1) {
           <div class="onb-hero onb-hero--ready">⚽</div>
-          <div class="kicker">PASO 1 DE 5</div>
+          <div class="kicker">PASO 1 DE 4</div>
           <h1 class="onb-title">Bienvenido,<br>{{ '@' + (handle() ?? 'jugador') }}</h1>
           <p class="onb-sub">
             El Mundial 2026 está a la vuelta. Te tomará 1 minuto entender cómo
@@ -50,7 +50,7 @@ type Step = 1 | 2 | 3 | 4 | 5;
         <!-- ===== PASO 2: MODO SIMPLE ===== -->
         @if (step() === 2) {
           <div class="onb-hero onb-hero--simple">📋</div>
-          <div class="kicker">PASO 2 DE 5 · MODO 1 DE 2</div>
+          <div class="kicker">PASO 2 DE 4 · MODO 1 DE 2</div>
           <h1 class="onb-title">Modo Simple</h1>
           <p class="onb-sub">
             Predice quién avanza en cada fase. Liviano y rápido,
@@ -76,7 +76,7 @@ type Step = 1 | 2 | 3 | 4 | 5;
         <!-- ===== PASO 3: MODO COMPLETO ===== -->
         @if (step() === 3) {
           <div class="onb-hero onb-hero--complete">⚽</div>
-          <div class="kicker">PASO 3 DE 5 · MODO 2 DE 2</div>
+          <div class="kicker">PASO 3 DE 4 · MODO 2 DE 2</div>
           <h1 class="onb-title">Modo Completo</h1>
           <p class="onb-sub">
             Todo lo del simple, más el marcador exacto de cada partido.
@@ -99,32 +99,10 @@ type Step = 1 | 2 | 3 | 4 | 5;
           </div>
         }
 
-        <!-- ===== PASO 4: TOUR DE BIENVENIDA ===== -->
+        <!-- ===== PASO 4: LISTO ===== -->
         @if (step() === 4) {
-          <div class="onb-hero onb-hero--group">🎯</div>
-          <div class="kicker">PASO 4 DE 5</div>
-          <h1 class="onb-title">Vamos a un tour<br>rápido de la app</h1>
-          <p class="onb-sub">
-            Te muestro dónde están las cosas: crear grupo, predecir clasificados,
-            hacer picks de marcadores. Te toma 1 minuto.
-          </p>
-
-          <div class="onb-actions">
-            <button class="btn-wf btn-wf--block btn-wf--primary" type="button"
-                    (click)="next()">
-              ▶ Empezar tour
-            </button>
-          </div>
-
-          <div class="onb-footer">
-            <button class="btn-wf btn-wf--sm" type="button" (click)="back()">‹ Atrás</button>
-          </div>
-        }
-
-        <!-- ===== PASO 5: LISTO ===== -->
-        @if (step() === 5) {
           <div class="onb-hero onb-hero--ready">🏆</div>
-          <div class="kicker">PASO 5 DE 5</div>
+          <div class="kicker">PASO 4 DE 4</div>
           <h1 class="onb-title">¡Estás listo!</h1>
           <p class="onb-sub">
             Vamos a tu primer pick. El Mundial empieza pronto y cada partido
@@ -251,13 +229,13 @@ export class OnboardingComponent {
   private groupActions = inject(GroupActionsService);
 
   step = signal<Step>(1);
-  readonly stepIndices: Step[] = [1, 2, 3, 4, 5];
+  readonly stepIndices: Step[] = [1, 2, 3, 4];
 
   handle = computed(() => this.auth.user()?.handle ?? null);
 
   next() {
     const cur = this.step();
-    if (cur < 5) this.step.set((cur + 1) as Step);
+    if (cur < 4) this.step.set((cur + 1) as Step);
   }
 
   back() {
