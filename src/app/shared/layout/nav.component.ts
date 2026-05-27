@@ -3,7 +3,6 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService, type UserGroup } from '../../core/user/user-modes.service';
-import { GroupActionsService } from '../../core/groups/group-actions.service';
 import { PicksSyncService } from '../../core/sync/picks-sync.service';
 import { UserAvatarComponent } from '../user-avatar/user-avatar.component';
 
@@ -176,130 +175,6 @@ type DropdownKey = 'user' | 'ranking' | null;
       </div>
     </header>
 
-    <!-- Mobile user menu (anclado top-right bajo el avatar) -->
-    @if (open() === 'user') {
-      <div class="mobile-menu" role="menu" (click)="$event.stopPropagation()">
-        @if (hasComplete()) {
-          <a class="mobile-menu__item" role="menuitem" (click)="goComodines()">🃏 Mis comodines</a>
-        }
-        <a class="mobile-menu__item" role="menuitem" (click)="goSpecialPicks()">⭐ Picks especiales</a>
-        <a class="mobile-menu__item" role="menuitem" (click)="goNotifications()">
-          🔔 Notificaciones
-          @if (unreadCount() > 0) { <span class="pill pill--solid">{{ unreadCount() }}</span> }
-        </a>
-        <a class="mobile-menu__item" role="menuitem" (click)="goProfile()">⚙ Editar perfil</a>
-        @if (isAdmin()) {
-          <hr class="mobile-menu__sep">
-          <a class="mobile-menu__item" role="menuitem" routerLink="/admin/fixtures" (click)="closeAll()">🛠 Partidos</a>
-          <a class="mobile-menu__item" role="menuitem" routerLink="/admin/results" (click)="closeAll()">📋 Resultados</a>
-          <a class="mobile-menu__item" role="menuitem" routerLink="/admin/teams" (click)="closeAll()">🏳 Equipos</a>
-          <a class="mobile-menu__item" role="menuitem" routerLink="/admin/sponsors" (click)="closeAll()">🎁 Sponsors</a>
-          <a class="mobile-menu__item" role="menuitem" routerLink="/admin/users" (click)="closeAll()">👥 Usuarios</a>
-        }
-        <hr class="mobile-menu__sep">
-        <a class="mobile-menu__item mobile-menu__item--danger" role="menuitem" (click)="logout()">⏻ Cerrar sesión</a>
-      </div>
-    }
-
-    <!-- ============ SIDEBAR DESKTOP (≥992px) ============
-         Wrapper con position:relative establece el containing block
-         para el sticky del aside; sin esto, el containing block default
-         es .app-shell entero y el sticky se extiende sobre el footer. -->
-    <div class="app-sidebar-wrap">
-    <aside class="app-sidebar">
-      @if (isAdmin()) {
-        <div class="app-sidebar__section">
-          <div class="app-sidebar__kicker">Admin</div>
-          <a class="sidebar-row" routerLink="/admin" routerLinkActive="is-active" [routerLinkActiveOptions]="{exact: true}">
-            <span><span class="sidebar-row__icon">📊</span>Dashboard</span>
-          </a>
-          <a class="sidebar-row" routerLink="/admin/fixtures" routerLinkActive="is-active">
-            <span><span class="sidebar-row__icon">⚽</span>Partidos (grupos)</span>
-          </a>
-          <a class="sidebar-row" routerLink="/admin/bracket" routerLinkActive="is-active">
-            <span><span class="sidebar-row__icon">🌳</span>Llaves</span>
-          </a>
-          <a class="sidebar-row" routerLink="/admin/results" routerLinkActive="is-active">
-            <span><span class="sidebar-row__icon">🏆</span>Resultados</span>
-          </a>
-          <a class="sidebar-row" routerLink="/admin/teams" routerLinkActive="is-active">
-            <span><span class="sidebar-row__icon">🏳️</span>Equipos</span>
-          </a>
-          <a class="sidebar-row" routerLink="/admin/special-results" routerLinkActive="is-active">
-            <span><span class="sidebar-row__icon">⭐</span>Especiales</span>
-          </a>
-          <a class="sidebar-row" routerLink="/admin/sponsors" routerLinkActive="is-active">
-            <span><span class="sidebar-row__icon">🎁</span>Sponsors</span>
-          </a>
-          <a class="sidebar-row" routerLink="/admin/groups-overview" routerLinkActive="is-active">
-            <span><span class="sidebar-row__icon">📋</span>Grupos overview</span>
-          </a>
-          <a class="sidebar-row" routerLink="/admin/rankings-overview" routerLinkActive="is-active">
-            <span><span class="sidebar-row__icon">🥇</span>Rankings</span>
-          </a>
-          <a class="sidebar-row" routerLink="/admin/users" routerLinkActive="is-active">
-            <span><span class="sidebar-row__icon">👥</span>Users</span>
-          </a>
-        </div>
-      } @else {
-        <div class="app-sidebar__section">
-          <div class="app-sidebar__kicker">Mis grupos</div>
-          @for (g of topGroups(); track g.id) {
-            <a class="sidebar-row" [routerLink]="['/groups', g.id]" routerLinkActive="is-active">
-              <span>{{ g.name }}</span>
-              <span class="sidebar-row__pos">{{ g.mode === 'COMPLETE' ? 'C' : 'S' }}</span>
-            </a>
-          }
-          @if (myGroups().length > topGroups().length) {
-            <a class="sidebar-row sidebar-row--more" routerLink="/groups">
-              <span>Ver todos ({{ myGroups().length }})</span>
-            </a>
-          }
-          @if (myGroups().length === 0) {
-            <p class="sidebar-empty">Aún no estás en ningún grupo.</p>
-          }
-          <button class="btn-wf btn-wf--block btn-wf--sm" type="button"
-                  (click)="goToGroupsNew()" style="margin-top:10px;">+ Crear grupo</button>
-          <button class="btn-wf btn-wf--block btn-wf--sm" type="button"
-                  (click)="goToGroupsJoin()" style="margin-top:6px;">→ Unirme con código</button>
-        </div>
-
-        <!-- Polla Mundialista: campeón / subcampeón / revelación
-             (los picks especiales del torneo). Con icono de trofeo. -->
-        <div class="app-sidebar__section">
-          <div class="app-sidebar__kicker">Polla Mundialista</div>
-          <a class="sidebar-row" routerLink="/profile/special-picks" routerLinkActive="is-active">
-            <span><span class="sidebar-row__icon">🏆</span>Campeón / Subcampeón / Revelación</span>
-          </a>
-        </div>
-
-        <!-- Mis predicciones: clasificados (fase de grupos) + bracket -->
-        <div class="app-sidebar__section">
-          <div class="app-sidebar__kicker">Mis predicciones</div>
-          <a class="sidebar-row" routerLink="/picks/group-stage/predict"
-             routerLinkActive="is-active">
-            <span><span class="sidebar-row__icon">📋</span>Clasificados</span>
-          </a>
-          @if (bracketReady()) {
-            <a class="sidebar-row" routerLink="/picks/bracket"
-               routerLinkActive="is-active">
-              <span><span class="sidebar-row__icon">🌳</span>Llaves (bracket)</span>
-            </a>
-          } @else {
-            <div class="sidebar-row is-disabled"
-                 title="Disponible cuando el admin cargue los partidos de eliminatoria">
-              <span><span class="sidebar-row__icon">🌳</span>Llaves (bracket)</span>
-              <span class="pill" style="padding:1px 6px;font-size:9px;">Pronto</span>
-            </div>
-          }
-          <p class="sidebar-empty" style="margin-top:6px;">
-            Aplican a tus grupos en modo simple y completo.
-          </p>
-        </div>
-      }
-    </aside>
-    </div>
-
     <!-- ============ MOBILE TABBAR (<992px) ============ -->
     <nav class="app-tabbar" aria-label="Navegación principal">
       @if (isAdmin()) {
@@ -427,63 +302,6 @@ type DropdownKey = 'user' | 'ranking' | null;
       margin: 4px 0;
     }
 
-    /* Mobile menu (dropdown del avatar) — anclado bajo la topbar */
-    .mobile-menu {
-      position: fixed;
-      top: 56px;
-      right: 12px;
-      min-width: 220px;
-      z-index: 60;
-      background: var(--wf-paper);
-      border: 1px solid var(--wf-line-2);
-      border-radius: 10px;
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
-      padding: 6px;
-    }
-    @media (min-width: 992px) { .mobile-menu { display: none; } }
-
-    .mobile-menu__item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 12px;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--wf-ink);
-      text-decoration: none;
-      cursor: pointer;
-    }
-    .mobile-menu__item:hover { background: var(--wf-fill); }
-    .mobile-menu__item--danger { color: var(--wf-danger); }
-    .mobile-menu__sep {
-      border: 0;
-      border-top: 1px solid var(--wf-line-2);
-      margin: 6px 0;
-    }
-
-    /* Sidebar — ítem extra "ver todos" + estado vacío + logout */
-    .sidebar-row--more {
-      color: var(--wf-green-ink);
-      font-weight: 700;
-    }
-    .sidebar-empty {
-      font-size: 11px;
-      color: var(--wf-ink-3);
-      padding: 8px 10px;
-      margin: 0;
-      line-height: 1.4;
-    }
-    .sidebar-row--logout {
-      width: 100%;
-      text-align: left;
-      border: 0;
-      background: transparent;
-      color: var(--wf-danger);
-      font-family: inherit;
-      cursor: pointer;
-      margin-top: 8px;
-    }
   `],
 })
 export class NavComponent implements OnInit, OnDestroy {
@@ -491,7 +309,6 @@ export class NavComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private router = inject(Router);
   private userModes = inject(UserModesService);
-  private groupActions = inject(GroupActionsService);
   sync = inject(PicksSyncService);
 
   open = signal<DropdownKey>(null);
@@ -500,18 +317,11 @@ export class NavComponent implements OnInit, OnDestroy {
   handle = computed(() => this.auth.user()?.handle ?? null);
   userSub = computed(() => this.auth.user()?.sub ?? null);
   avatarKey = computed(() => this.auth.user()?.avatarKey ?? null);
-  hasSimple = computed(() => this.userModes.hasSimple());
-  hasComplete = computed(() => this.userModes.hasComplete());
   myGroups = computed<UserGroup[]>(() => this.userModes.groups());
   topGroups = computed<UserGroup[]>(() => this.myGroups().slice(0, 5));
 
   unreadCount = signal(0);
   private notifSub: { unsubscribe: () => void } | undefined;
-
-  /** True si hay al menos un partido cargado en fases eliminatorias
-   *  (phaseOrder ≥ 2). Mientras sea false, "Llaves" se muestra
-   *  deshabilitado en el sidebar — los equipos aún no se conocen. */
-  bracketReady = signal(false);
 
   async ngOnInit() {
     const userId = this.auth.user()?.sub;
@@ -527,29 +337,6 @@ export class NavComponent implements OnInit, OnDestroy {
         console.warn('[nav] notification subscription error', err);
       },
     });
-
-    // Chequeo de "bracketReady": si hay partidos en fases eliminatorias
-    // (phaseOrder ≥ 2), habilitamos el link en el sidebar. One-shot.
-    void this.checkBracketReady();
-  }
-
-  private async checkBracketReady() {
-    try {
-      const [matchesRes, phasesRes] = await Promise.all([
-        this.api.listMatches('mundial-2026'),
-        this.api.listPhases('mundial-2026'),
-      ]);
-      const koPhaseIds = new Set(
-        ((phasesRes.data ?? []) as Array<{ id: string; order: number }>)
-          .filter((p) => (p.order ?? 0) >= 2)
-          .map((p) => p.id),
-      );
-      const hasKO = ((matchesRes.data ?? []) as Array<{ phaseId: string }>)
-        .some((m) => koPhaseIds.has(m.phaseId));
-      this.bracketReady.set(hasKO);
-    } catch {
-      // ignore — queda en false (deshabilitado)
-    }
   }
 
   ngOnDestroy() {
@@ -566,19 +353,6 @@ export class NavComponent implements OnInit, OnDestroy {
 
   @HostListener('document:keydown.escape')
   onEsc() { if (this.open()) this.open.set(null); }
-
-  goProfile() { this.closeAll(); void this.router.navigate(['/profile']); }
-  goComodines() { this.closeAll(); void this.router.navigate(['/mis-comodines']); }
-  goNotifications() { this.closeAll(); void this.router.navigate(['/notificaciones']); }
-  goSpecialPicks() { this.closeAll(); void this.router.navigate(['/profile/special-picks']); }
-  goToGroupsNew() {
-    this.closeAll();
-    this.groupActions.openCreate();
-  }
-  goToGroupsJoin() {
-    this.closeAll();
-    this.groupActions.openJoin();
-  }
 
   async logout() {
     this.closeAll();
