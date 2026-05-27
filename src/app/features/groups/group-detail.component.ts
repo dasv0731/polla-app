@@ -197,6 +197,13 @@ interface RankRow {
             </div>
           }
 
+          <div class="group-member-count" style="display:flex;justify-content:space-between;align-items:center;margin:0 0 10px;font-size:13px;color:var(--wf-ink-2);">
+            <span class="text-bold">Miembros</span>
+            <span [class.text-warn]="rows().length >= 30">
+              <span class="text-bold">{{ rows().length }}</span> / 30
+            </span>
+          </div>
+
           <div class="rank-table-wrap">
             <table class="rank-table">
               <thead>
@@ -206,6 +213,9 @@ interface RankRow {
                   <th>Pts</th>
                   <th class="rank-table__desk">Exactos</th>
                   <th class="rank-table__desk">Result.</th>
+                  @if (isAdminOfGroup()) {
+                    <th style="width:60px;text-align:center;">Acción</th>
+                  }
                 </tr>
               </thead>
               <tbody>
@@ -225,10 +235,23 @@ interface RankRow {
                     <td class="rank-table__pts">{{ r.points }}</td>
                     <td class="rank-table__desk">{{ r.exactCount }}</td>
                     <td class="rank-table__desk">{{ r.resultCount }}</td>
+                    @if (isAdminOfGroup()) {
+                      <td style="text-align:center;">
+                        @if (r.userId !== g.adminUserId) {
+                          <button type="button" class="btn-wf btn-wf--sm btn-wf--danger"
+                                  style="padding:4px 8px;font-size:11px;"
+                                  [disabled]="removingUserId() === r.userId"
+                                  (click)="confirmRemoveMember(r.userId, r.handle)"
+                                  aria-label="Eliminar miembro">
+                            {{ removingUserId() === r.userId ? '...' : '🗑' }}
+                          </button>
+                        }
+                      </td>
+                    }
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="5" style="text-align:center; padding: 22px; color: var(--wf-ink-3);">
+                    <td [attr.colspan]="isAdminOfGroup() ? 6 : 5" style="text-align:center; padding: 22px; color: var(--wf-ink-3);">
                       Aún no hay puntajes. Espera al primer partido.
                     </td>
                   </tr>
@@ -309,6 +332,7 @@ export class GroupDetailComponent implements OnInit, OnChanges {
   rows = signal<RankRow[]>([]);
   loading = signal(true);
   copied = signal(false);
+  removingUserId = signal<string | null>(null);
   currentUserId = '';
 
   isAdminOfGroup = computed(() => this.group()?.adminUserId === this.currentUserId);
@@ -458,6 +482,32 @@ export class GroupDetailComponent implements OnInit, OnChanges {
       void this.router.navigate(['/groups']);
     } catch (e) {
       this.toast.error(humanizeError(e));
+    }
+  }
+
+  async confirmRemoveMember(userId: string, handle: string): Promise<void> {
+    const confirmed = window.confirm(
+      `¿Eliminar a @${handle} del grupo? Su score acumulado en este grupo se borra. ` +
+      `Sus picks del torneo no se ven afectados.`,
+    );
+    if (!confirmed) return;
+    const groupId = this.group()?.id;
+    if (!groupId) return;
+
+    this.removingUserId.set(userId);
+    try {
+      const res = await this.api.removeMember({ groupId, userId });
+      if (!res.data?.ok) {
+        const msg = res.data?.message ?? 'No se pudo eliminar al miembro';
+        this.toast.error(msg);
+        return;
+      }
+      this.toast.success(`@${handle} eliminado del grupo`);
+      await this.load();
+    } catch (e) {
+      this.toast.error(humanizeError(e));
+    } finally {
+      this.removingUserId.set(null);
     }
   }
 }
