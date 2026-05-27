@@ -94,8 +94,7 @@ interface EditState {
 
             <label class="auth-label">URL externa (https://golgana.net/news/...)</label>
             <input class="auth-input" [(ngModel)]="e.externalUrl"
-                   placeholder="https://golgana.net/news/mbappe-renueva"
-                   pattern="https?://.+">
+                   placeholder="https://golgana.net/news/mbappe-renueva">
 
             <label class="auth-label">Imagen de portada</label>
             <input type="file" accept="image/*" (change)="onFile($event)">
@@ -105,7 +104,7 @@ interface EditState {
               <p class="text-mute" style="font-size:12px;">✓ Imagen cargada ({{ e.imageKey }})</p>
             }
 
-            <label class="auth-label">Fecha de publicación</label>
+            <label class="auth-label">Fecha de publicación (Quito)</label>
             <input type="datetime-local" class="auth-input" [(ngModel)]="e.publishedAt">
 
             <label class="auth-label">Orden (lower = primero)</label>
@@ -191,7 +190,7 @@ export class AdminArticlesComponent implements OnInit {
       await Promise.all(rows.map(async (r) => {
         if (r.imageKey) {
           try {
-            const { url } = await getUrl({ key: r.imageKey, options: { expiresIn: 3600 } });
+            const { url } = await getUrl({ path: r.imageKey, options: { expiresIn: 3600 } });
             r.resolvedImageUrl = url.toString();
           } catch { /* ignore */ }
         }
@@ -215,7 +214,7 @@ export class AdminArticlesComponent implements OnInit {
       title: '',
       imageKey: null,
       externalUrl: '',
-      publishedAt: new Date().toISOString().slice(0, 16),
+      publishedAt: this.isoToLocalInput(new Date().toISOString()),
       status: 'DRAFT',
       sortOrder: 0,
     });
@@ -227,7 +226,7 @@ export class AdminArticlesComponent implements OnInit {
       title: a.title,
       imageKey: a.imageKey,
       externalUrl: a.externalUrl,
-      publishedAt: a.publishedAt.slice(0, 16),
+      publishedAt: this.isoToLocalInput(a.publishedAt),
       status: a.status,
       sortOrder: a.sortOrder ?? 0,
     });
@@ -256,7 +255,7 @@ export class AdminArticlesComponent implements OnInit {
       const ext = (file.name.split('.').pop() ?? 'jpg').toLowerCase();
       const id = this.editing()?.id ?? crypto.randomUUID();
       const key = `articles/${id}/cover.${ext}`;
-      await uploadData({ key, data: file, options: { contentType: file.type } }).result;
+      await uploadData({ path: key, data: file, options: { contentType: file.type } }).result;
       const e = this.editing();
       if (e) this.editing.set({ ...e, imageKey: key });
     } catch (err) {
@@ -275,7 +274,7 @@ export class AdminArticlesComponent implements OnInit {
     }
     this.saving.set(true);
     try {
-      const publishedAtIso = new Date(e.publishedAt).toISOString();
+      const publishedAtIso = this.localInputToIso(e.publishedAt);
       if (e.id) {
         await this.api.updateArticle({
           id: e.id, title: e.title, imageKey: e.imageKey ?? undefined,
@@ -308,5 +307,25 @@ export class AdminArticlesComponent implements OnInit {
     } catch (err) {
       this.toast.error((err as Error).message ?? 'Error al eliminar');
     }
+  }
+
+  // Quito = UTC-5. Convert UTC ISO (stored in DDB) ↔ datetime-local input value.
+  private isoToLocalInput(iso: string): string {
+    const d = new Date(iso);
+    const local = new Date(d.getTime() - 5 * 3600_000);
+    const yyyy = local.getUTCFullYear();
+    const mm = String(local.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(local.getUTCDate()).padStart(2, '0');
+    const hh = String(local.getUTCHours()).padStart(2, '0');
+    const mi = String(local.getUTCMinutes()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+  }
+
+  private localInputToIso(local: string): string {
+    const [date, time] = local.split('T');
+    const [y, m, d] = (date ?? '').split('-').map(Number);
+    const [hh, mm] = (time ?? '').split(':').map(Number);
+    const utc = new Date(Date.UTC(y!, m! - 1, d!, hh! + 5, mm!));
+    return utc.toISOString();
   }
 }
