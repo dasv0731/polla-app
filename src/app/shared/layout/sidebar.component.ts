@@ -2,193 +2,206 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
-import { UserModesService, type UserGroup } from '../../core/user/user-modes.service';
-import { GroupActionsService } from '../../core/groups/group-actions.service';
 
-const STORAGE_KEY = 'polla-sidebar-collapsed';
+const TOURNAMENT_ID = 'mundial-2026';
 
 /**
- * Sidebar fijo izquierdo, solo visible en >=1024px. Por defecto colapsado
- * a 56px (solo iconos). Click en el toggle expande a 200px (persistente en
- * localStorage). Hover sobre el rail colapsado expande temporalmente sin
- * persistir. Mobile/tablet usan bottom-nav.
+ * Sidebar negro design-v3. Layout vertical fijo a la izquierda en desktop
+ * (≥768px): 64px colapsado mostrando solo iconos, 200px al hover. En mobile
+ * (<768px) se transforma en bottom-nav horizontal con 5 items + labels chicos
+ * (reemplaza al bottom-nav.component.ts que se elimina).
  *
- * Reemplaza al sidebar embebido que vivia dentro de nav.component.ts.
- * `bracketReady` replica el one-shot async check que el nav original hacia
- * via `checkBracketReady()` (busca partidos con phaseOrder >= 2).
+ * Items principales: Inicio · Mis picks · Grupos · Ranking · Mundial 2026
+ * (+ Admin si isAdmin). Bottom area (solo desktop): notificaciones (bell) +
+ * avatar/handle. En mobile el bottom area se oculta — el bell vive en el
+ * topbar mobile.
  */
 @Component({
   standalone: true,
   selector: 'app-sidebar',
   imports: [RouterLink, RouterLinkActive],
   template: `
-    <aside class="app-sidebar" [class.is-collapsed]="collapsed()">
-      <button type="button" class="app-sidebar__toggle" (click)="toggle()"
-              [attr.aria-label]="collapsed() ? 'Expandir sidebar' : 'Colapsar sidebar'">
-        ☰
-      </button>
+    <aside class="lsb" aria-label="Navegación principal">
+      <a class="lsb__logo" routerLink="/home" aria-label="Inicio">
+        <img src="assets/logo-golgana.png" alt="">
+        <strong>POLLA</strong>
+      </a>
 
+      <a routerLink="/home" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+        <span class="lsb__i" aria-hidden="true">🏠</span><span class="lsb__t">Inicio</span>
+      </a>
+      <a routerLink="/picks" routerLinkActive="active">
+        <span class="lsb__i" aria-hidden="true">⚽</span><span class="lsb__t">Mis picks</span>
+      </a>
+      <a routerLink="/groups" routerLinkActive="active">
+        <span class="lsb__i" aria-hidden="true">👥</span><span class="lsb__t">Grupos</span>
+      </a>
+      <a routerLink="/ranking" routerLinkActive="active">
+        <span class="lsb__i" aria-hidden="true">🏆</span><span class="lsb__t">Ranking</span>
+      </a>
+      <a routerLink="/picks/group-stage/predict" routerLinkActive="active">
+        <span class="lsb__i" aria-hidden="true">🌎</span><span class="lsb__t">Mundial 2026</span>
+      </a>
       @if (isAdmin()) {
-        <div class="app-sidebar__section">
-          <div class="app-sidebar__kicker">Admin</div>
-          <a class="sidebar-row" routerLink="/admin" routerLinkActive="is-active" [routerLinkActiveOptions]="{exact: true}">
-            <span class="sidebar-row__icon">📊</span><span class="sidebar-row__label">Dashboard</span>
-          </a>
-          <a class="sidebar-row" routerLink="/admin/fixtures" routerLinkActive="is-active">
-            <span class="sidebar-row__icon">⚽</span><span class="sidebar-row__label">Partidos</span>
-          </a>
-          <a class="sidebar-row" routerLink="/admin/bracket" routerLinkActive="is-active">
-            <span class="sidebar-row__icon">🌳</span><span class="sidebar-row__label">Llaves</span>
-          </a>
-          <a class="sidebar-row" routerLink="/admin/results" routerLinkActive="is-active">
-            <span class="sidebar-row__icon">🏆</span><span class="sidebar-row__label">Resultados</span>
-          </a>
-          <a class="sidebar-row" routerLink="/admin/teams" routerLinkActive="is-active">
-            <span class="sidebar-row__icon">🏳️</span><span class="sidebar-row__label">Equipos</span>
-          </a>
-          <a class="sidebar-row" routerLink="/admin/special-results" routerLinkActive="is-active">
-            <span class="sidebar-row__icon">⭐</span><span class="sidebar-row__label">Especiales</span>
-          </a>
-          <a class="sidebar-row" routerLink="/admin/sponsors" routerLinkActive="is-active">
-            <span class="sidebar-row__icon">🎁</span><span class="sidebar-row__label">Sponsors</span>
-          </a>
-          <a class="sidebar-row" routerLink="/admin/articles" routerLinkActive="is-active">
-            <span class="sidebar-row__icon">📰</span><span class="sidebar-row__label">Noticias</span>
-          </a>
-          <a class="sidebar-row" routerLink="/admin/groups-overview" routerLinkActive="is-active">
-            <span class="sidebar-row__icon">📋</span><span class="sidebar-row__label">Grupos overview</span>
-          </a>
-          <a class="sidebar-row" routerLink="/admin/rankings-overview" routerLinkActive="is-active">
-            <span class="sidebar-row__icon">🥇</span><span class="sidebar-row__label">Rankings</span>
-          </a>
-          <a class="sidebar-row" routerLink="/admin/users" routerLinkActive="is-active">
-            <span class="sidebar-row__icon">👥</span><span class="sidebar-row__label">Users</span>
-          </a>
-        </div>
-      } @else {
-        <div class="app-sidebar__section">
-          <div class="app-sidebar__kicker">Mis grupos</div>
-          @for (g of topGroups(); track g.id) {
-            <a class="sidebar-row" [routerLink]="['/groups', g.id]" routerLinkActive="is-active">
-              <span class="sidebar-row__icon">{{ g.mode === 'COMPLETE' ? '🟢' : '🟡' }}</span>
-              <span class="sidebar-row__label">{{ g.name }}</span>
-            </a>
-          }
-          @if (myGroups().length > topGroups().length) {
-            <a class="sidebar-row sidebar-row--more" routerLink="/groups">
-              <span class="sidebar-row__icon">↗</span>
-              <span class="sidebar-row__label">Ver todos ({{ myGroups().length }})</span>
-            </a>
-          }
-          @if (myGroups().length === 0) {
-            <p class="sidebar-empty">Aún no estás en ningún grupo.</p>
-          }
-          <button class="sidebar-row sidebar-row--btn" type="button" (click)="goCreate()">
-            <span class="sidebar-row__icon">＋</span>
-            <span class="sidebar-row__label">Crear grupo</span>
-          </button>
-          <button class="sidebar-row sidebar-row--btn" type="button" (click)="goJoin()">
-            <span class="sidebar-row__icon">→</span>
-            <span class="sidebar-row__label">Unirme</span>
-          </button>
-        </div>
-
-        <div class="app-sidebar__section">
-          <div class="app-sidebar__kicker">Polla Mundialista</div>
-          <a class="sidebar-row" routerLink="/profile/special-picks" routerLinkActive="is-active">
-            <span class="sidebar-row__icon">🏆</span>
-            <span class="sidebar-row__label">Camp/Sub/Reve</span>
-          </a>
-        </div>
-
-        <div class="app-sidebar__section">
-          <div class="app-sidebar__kicker">Mis predicciones</div>
-          <a class="sidebar-row" routerLink="/picks/group-stage/predict" routerLinkActive="is-active">
-            <span class="sidebar-row__icon">📋</span>
-            <span class="sidebar-row__label">Clasificados</span>
-          </a>
-          @if (bracketReady()) {
-            <a class="sidebar-row" routerLink="/picks/bracket" routerLinkActive="is-active">
-              <span class="sidebar-row__icon">🌳</span>
-              <span class="sidebar-row__label">Llaves</span>
-            </a>
-          }
-        </div>
+        <a routerLink="/admin" routerLinkActive="active">
+          <span class="lsb__i" aria-hidden="true">🛠</span><span class="lsb__t">Admin</span>
+        </a>
       }
+
+      <div class="lsb__bottom">
+        <a routerLink="/notificaciones" routerLinkActive="active" class="lsb__bell">
+          <span class="lsb__i" aria-hidden="true">🔔</span><span class="lsb__t">Notificaciones</span>
+        </a>
+        <a routerLink="/profile" class="lsb__usr">
+          <div class="lsb__av">{{ avatarInitials() }}</div>
+          <span class="lsb__t">{{ '@' + (handle() ?? 'jugador') }}</span>
+        </a>
+      </div>
     </aside>
   `,
   styles: [`
     :host { display: contents; }
 
-    .app-sidebar {
-      position: sticky; top: 64px;
-      width: 200px;
-      max-height: calc(100vh - 64px);
-      overflow-y: auto;
-      padding: 12px 8px;
-      background: var(--wf-paper);
-      border-right: 1px solid var(--wf-line);
-      transition: width 200ms;
+    .lsb {
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      width: 64px;
+      background: #0a0a0a;
+      border-right: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 14px 0;
+      gap: 6px;
+      z-index: 50;
+      transition: width 0.2s;
+      overflow: hidden;
+    }
+    .lsb:hover { width: 200px; align-items: stretch; }
+
+    .lsb__logo {
+      width: 36px; height: 36px;
+      display: grid; place-items: center;
+      margin-bottom: 18px;
+      flex-shrink: 0;
+    }
+    .lsb:hover .lsb__logo {
+      width: auto; margin-left: 14px;
+      justify-content: flex-start;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .lsb__logo img { height: 28px; }
+    .lsb__logo strong {
+      display: none;
+      color: #fff; font-family: var(--font-display);
+      font-size: 18px; letter-spacing: 0.04em;
+    }
+    .lsb:hover .lsb__logo strong { display: block; }
+
+    .lsb a {
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      display: flex; align-items: center; gap: 14px;
+      width: 48px; height: 44px;
+      justify-content: center;
+      border-radius: 8px;
+      font-size: 18px;
+      transition: all 0.15s;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .lsb:hover a { width: auto; justify-content: flex-start; padding: 0 14px; margin: 0 8px; }
+    .lsb__t {
+      font-size: 13px; font-weight: 500; letter-spacing: 0.04em;
       display: none;
     }
-    @media (min-width: 1024px) {
-      .app-sidebar { display: block; }
-    }
-    .app-sidebar.is-collapsed { width: 56px; }
-    .app-sidebar.is-collapsed:hover { width: 200px; }
-
-    .app-sidebar__toggle {
-      background: transparent; border: 0; cursor: pointer;
-      padding: 6px 8px; font-size: 18px; color: var(--wf-ink-2);
-      margin-bottom: 12px;
+    .lsb:hover .lsb__t { display: inline; }
+    .lsb a:hover, .lsb a.active {
+      background: rgba(2,204,116,0.18);
+      color: #fff;
     }
 
-    .app-sidebar__section { margin-bottom: 18px; }
-    .app-sidebar__kicker {
-      font-size: 10px; letter-spacing: .12em;
-      color: var(--wf-ink-3); text-transform: uppercase;
-      padding: 0 8px; margin-bottom: 6px;
-      transition: opacity 150ms;
+    .lsb__bottom {
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+      width: 100%;
     }
-    .app-sidebar.is-collapsed:not(:hover) .app-sidebar__kicker { opacity: 0; }
-    .app-sidebar.is-collapsed:not(:hover) .sidebar-row__label { opacity: 0; }
+    .lsb:hover .lsb__bottom { align-items: stretch; }
 
-    .sidebar-row {
+    .lsb__bell { position: relative; }
+
+    .lsb__usr {
       display: flex; align-items: center; gap: 10px;
-      padding: 8px;
-      border-radius: 8px;
-      text-decoration: none;
-      color: var(--wf-ink);
-      font-size: 13px;
-      cursor: pointer;
-      white-space: nowrap;
-      overflow: hidden;
-      transition: background 150ms;
+      width: 48px; height: 48px;
+      justify-content: center;
+      flex-shrink: 0;
     }
-    .sidebar-row:hover { background: var(--wf-fill); }
-    .sidebar-row.is-active { background: var(--wf-green-soft); color: var(--wf-green-ink); font-weight: 600; }
-    .sidebar-row__icon { width: 24px; text-align: center; flex-shrink: 0; }
-    .sidebar-row__label { transition: opacity 150ms; }
+    .lsb:hover .lsb__usr { width: auto; justify-content: flex-start; padding: 0 14px; margin: 0 8px 8px; }
+    .lsb__av {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #067a4a, #02cc74);
+      display: grid; place-items: center;
+      color: #fff;
+      font-weight: 600;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
 
-    .sidebar-row--btn { background: transparent; border: 0; width: 100%; text-align: left; }
-    .sidebar-empty { font-size: 12px; color: var(--wf-ink-3); padding: 0 8px; margin: 4px 0; }
+    /* MOBILE / TABLET: bottom-nav horizontal */
+    @media (max-width: 767px) {
+      .lsb {
+        top: auto; bottom: 0; left: 0; right: 0;
+        width: 100%; height: 60px;
+        flex-direction: row;
+        padding: 0 calc(env(safe-area-inset-bottom, 0px) / 2) env(safe-area-inset-bottom, 0px);
+        border-right: 0;
+        border-top: 1px solid rgba(255,255,255,0.08);
+        justify-content: space-around;
+        align-items: center;
+        overflow: visible;
+      }
+      .lsb:hover { width: 100%; align-items: center; }
+      .lsb__logo { display: none; }
+      .lsb a {
+        width: auto; height: 46px;
+        flex-direction: column;
+        gap: 2px;
+        padding: 6px 10px;
+        font-size: 16px;
+        margin: 0;
+      }
+      .lsb:hover a {
+        width: auto; justify-content: center;
+        padding: 6px 10px; margin: 0;
+      }
+      .lsb__t {
+        display: block;
+        font-size: 9px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .lsb__bottom { display: none; }
+    }
   `],
 })
 export class SidebarComponent implements OnInit {
   private auth = inject(AuthService);
   private api = inject(ApiService);
-  private userModes = inject(UserModesService);
-  private groupActions = inject(GroupActionsService);
 
-  collapsed = signal<boolean>(this.readInitialState());
-
+  handle = computed(() => this.auth.user()?.handle ?? null);
+  avatarInitials = computed(() => {
+    const h = this.handle();
+    if (!h) return '?';
+    return h.slice(0, 2).toUpperCase();
+  });
   isAdmin = computed(() => this.auth.user()?.isAdmin === true);
-  myGroups = computed(() => this.userModes.groups());
-  topGroups = computed<UserGroup[]>(() => this.myGroups().slice(0, 5));
 
-  /** True si hay al menos un partido cargado en fases eliminatorias
-   *  (phaseOrder >= 2). Mientras sea false, "Llaves" se oculta del sidebar.
-   *  One-shot check on init, replica de la logica original en nav.component. */
+  // Kept for parity with the previous sidebar (the bracket link is no longer
+  // surfaced from here in v3, but consumers may still query the signal).
   bracketReady = signal(false);
 
   ngOnInit() {
@@ -198,8 +211,8 @@ export class SidebarComponent implements OnInit {
   private async checkBracketReady() {
     try {
       const [matchesRes, phasesRes] = await Promise.all([
-        this.api.listMatches('mundial-2026'),
-        this.api.listPhases('mundial-2026'),
+        this.api.listMatches(TOURNAMENT_ID),
+        this.api.listPhases(TOURNAMENT_ID),
       ]);
       const koPhaseIds = new Set(
         ((phasesRes.data ?? []) as Array<{ id: string; order: number }>)
@@ -210,24 +223,7 @@ export class SidebarComponent implements OnInit {
         .some((m) => koPhaseIds.has(m.phaseId));
       this.bracketReady.set(hasKO);
     } catch {
-      // ignore — queda en false (oculto)
+      /* no-op */
     }
   }
-
-  toggle() {
-    const next = !this.collapsed();
-    this.collapsed.set(next);
-    try { localStorage.setItem(STORAGE_KEY, String(next)); } catch { /* no-op */ }
-  }
-
-  private readInitialState(): boolean {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw === null) return true;   // default collapsed
-      return raw === 'true';
-    } catch { return true; }
-  }
-
-  goCreate() { this.groupActions.openCreate(); }
-  goJoin() { this.groupActions.openJoin(); }
 }
