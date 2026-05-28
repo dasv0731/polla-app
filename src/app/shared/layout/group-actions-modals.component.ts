@@ -157,34 +157,80 @@ type GameMode = 'SIMPLE' | 'COMPLETE';
     }
   `,
   styles: [`
+    /* design-v3 re-skin overrides (scoped — only afecta los modales que
+       este componente renderiza). El backdrop usa fondo negro con blur,
+       cards con border-radius 16 + padding 28, y el header tipográfico
+       en Bebas Neue. */
+    .picks-modal {
+      background: rgba(10, 10, 10, 0.75) !important;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    .picks-modal__card {
+      border-radius: 16px !important;
+      padding: 28px !important;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
+      border: 1px solid var(--color-line);
+    }
+    .picks-modal__head .title {
+      font-family: var(--font-display);
+      font-size: 28px !important;
+      line-height: 1 !important;
+      letter-spacing: 0.02em;
+    }
+    .picks-modal__head .meta {
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-primary-green);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .auth-input:focus {
+      border-color: var(--color-primary-green);
+      box-shadow: 0 0 0 3px rgba(2, 204, 116, 0.15);
+      outline: 0;
+    }
+
+    .btn-wf--primary {
+      background: var(--color-primary-green) !important;
+      color: #fff !important;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border: 0;
+    }
+    .btn-wf--primary:hover { filter: brightness(1.05); }
+
     .mode-card {
       display: flex;
       align-items: flex-start;
       gap: 10px;
       padding: 12px;
-      border: 1px solid var(--wf-line);
+      border: 1px solid var(--color-line);
       border-radius: 10px;
       cursor: pointer;
       transition: border-color .15s, background .15s;
     }
-    .mode-card:hover { border-color: var(--wf-ink-3); }
+    .mode-card:hover { border-color: rgba(2, 204, 116, 0.5); }
     .mode-card.is-active {
-      border-color: var(--wf-green);
-      background: var(--wf-green-soft);
+      border-color: var(--color-primary-green);
+      background: rgba(2, 204, 116, 0.08);
     }
     .mode-card input[type="radio"] {
       margin: 2px 0 0;
-      accent-color: var(--wf-green);
+      accent-color: var(--color-primary-green);
       flex-shrink: 0;
     }
 
     .modal-error {
       font-size: 12px;
-      color: var(--wf-danger);
+      color: #dc2626;
       padding: 8px 12px;
-      background: rgba(195, 51, 51, 0.08);
+      background: rgba(220, 38, 38, 0.08);
       border-radius: 6px;
-      border: 1px solid rgba(195, 51, 51, 0.2);
+      border: 1px solid rgba(220, 38, 38, 0.2);
       margin: 0;
     }
   `],

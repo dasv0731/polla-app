@@ -745,52 +745,61 @@ a.btn-wf { text-decoration: none; }
 .ad-feed--adidas { background: linear-gradient(110deg, #1a73e8 0%, #1a73e8cc 100%); }
 .ad-feed--adidas .ad-feed__cta { color: #1a73e8; }
 
-/* FAB pill — flotante de trivia */
+/* FAB pill — design v3 (gradient verde con pulse) */
 .trivia-fab {
   position: fixed;
-  bottom: 80px;            /* sobre la tabbar mobile */
-  right: 16px;
-  background: var(--wf-ink);
-  color: white;
-  padding: 10px 14px;
+  bottom: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #02cc74, #016b3d);
+  color: #fff;
+  padding: 13px 20px;
   border-radius: 999px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.22);
+  box-shadow: 0 12px 30px rgba(2, 204, 116, 0.4);
   display: flex;
   align-items: center;
   gap: 8px;
+  font-family: inherit;
+  font-weight: 600;
   font-size: 12px;
-  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   text-decoration: none;
   z-index: 60;
   border: 0;
   cursor: pointer;
-  transition: transform .15s, box-shadow .15s;
+  animation: trivia-fab-pulse 2.5s infinite;
 }
-.trivia-fab:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 24px rgba(0,0,0,0.28);
+@keyframes trivia-fab-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.05); }
 }
+.trivia-fab:hover { filter: brightness(1.05); }
 .trivia-fab__icon {
   width: 22px; height: 22px;
   border-radius: 999px;
-  background: var(--wf-green);
-  color: white;
+  background: #fff;
+  color: var(--color-primary-green);
   display: inline-flex;
   align-items: center; justify-content: center;
-  font-size: 13px;
+  font-size: 12px;
   flex-shrink: 0;
 }
 .trivia-fab__time {
-  background: rgba(255,255,255,0.18);
-  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.22);
+  padding: 2px 7px;
   border-radius: 4px;
   font-size: 10px;
-  font-family: var(--wf-mono);
+  font-weight: 700;
 }
-@media (min-width: 992px) {
-  .trivia-fab { bottom: 24px; right: 24px; padding: 12px 18px; font-size: 13px; gap: 10px; }
-  .trivia-fab__icon { width: 26px; height: 26px; font-size: 15px; }
-  .trivia-fab__time { font-size: 11px; padding: 3px 8px; }
+@media (max-width: 767px) {
+  /* Subir el FAB por encima del bottom-nav (60px) + safe area */
+  .trivia-fab {
+    bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+    right: 14px;
+    padding: 11px 14px;
+    font-size: 10px;
+  }
+  .trivia-fab__icon { width: 20px; height: 20px; font-size: 11px; }
 }
 
 /* ---------- Trivia modal (con marca + sin marca) ---------- */

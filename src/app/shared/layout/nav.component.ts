@@ -301,6 +301,17 @@ type DropdownKey = 'user' | 'ranking' | null;
       margin: 4px 0;
     }
 
+    /* ============================================================
+       design-v3 overrides: el sidebar negro absorbe la navegación
+       primaria + el bottom-nav mobile. Mantenemos sólo el topbar
+       mobile (<768px) con bell + avatar. El topnav desktop y el
+       tabbar mobile quedan ocultos.
+       ============================================================ */
+    .app-topnav { display: none !important; }
+    .app-tabbar { display: none !important; }
+    @media (min-width: 768px) {
+      .app-topbar { display: none !important; }
+    }
   `],
 })
 export class NavComponent implements OnInit, OnDestroy {
