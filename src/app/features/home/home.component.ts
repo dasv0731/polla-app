@@ -51,24 +51,21 @@ interface ComodinSlotVm {
   template: `
     <section class="home-page">
 
-      <!-- HERO compacto -->
+      <!-- HERO compacto: tira delgada (single-row) con info esencial -->
       <section class="hero">
         <div class="hero__in">
           <div class="hero__av">{{ avatarInitials() }}</div>
-          <div>
-            <div class="hero__k">Hola, {{ '@' + (handle() ?? 'jugador') }}</div>
+          <div class="hero__b">
             <div class="hero__t">
-              Quedan <strong>{{ daysToTournament() }} días</strong>
+              <span class="hero__h">{{ '@' + (handle() ?? 'jugador') }}</span> ·
+              <strong>{{ daysToTournament() }}d</strong> al Mundial
               @if (totals().globalRank) {
-                · estás en <strong>#{{ totals().globalRank }}</strong>
+                · <strong>#{{ totals().globalRank }}</strong> global
               }
-            </div>
-            <div class="hero__s">
-              {{ totals().points }} pts · {{ myGroupsCount() }} grupos activos
-              @if (accuracyPct() !== null) { · {{ accuracyPct() }}% de aciertos }
+              · {{ totals().points }} pts
             </div>
             @if (pendingPicksCount() > 0 && nextDeadlineLabel()) {
-              <div class="hero__alert">⚠ Cierra el primer pick en {{ nextDeadlineLabel() }}</div>
+              <div class="hero__alert">⚠ Cierra en {{ nextDeadlineLabel() }}</div>
             }
           </div>
           <a routerLink="/picks" class="hero__cta">Hacer picks →</a>
@@ -229,69 +226,74 @@ interface ComodinSlotVm {
 
     .text-mute { color: var(--color-text-muted); font-size: 13px; }
 
-    /* Hero compacto */
+    /* Hero · tira delgada (single-row strip) */
     .hero {
       background: linear-gradient(135deg, #0a0a0a 0%, #0a3d20 60%, #067a4a 100%);
       color: #fff;
-      border-radius: 14px;
-      padding: 14px 18px;
+      border-radius: 10px;
+      padding: 8px 14px;
       position: relative;
       overflow: hidden;
     }
     .hero::before {
       content: ""; position: absolute; inset: 0; z-index: 0;
-      background: radial-gradient(60% 80% at 80% 30%, rgba(2,204,116,0.22), transparent 60%);
+      background: radial-gradient(60% 100% at 80% 50%, rgba(2,204,116,0.20), transparent 60%);
     }
     .hero__in {
       position: relative; z-index: 1;
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      gap: 14px;
+      display: flex;
       align-items: center;
+      gap: 12px;
     }
     .hero__av {
-      width: 42px; height: 42px;
+      width: 32px; height: 32px;
       border-radius: 50%;
       background: linear-gradient(135deg, #02cc74, #016b3d);
       display: grid; place-items: center;
       font-family: var(--font-display);
-      font-size: 16px;
+      font-size: 13px;
       color: #fff;
+      flex-shrink: 0;
     }
-    .hero__k { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.55); margin-bottom: 2px; }
-    .hero__t { font-family: var(--font-display); font-size: 18px; line-height: 1.05; letter-spacing: 0.02em; }
-    .hero__t strong { color: var(--color-primary-green); font-style: normal; }
-    .hero__s { font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px; }
+    .hero__b { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .hero__t {
+      font-size: 13px;
+      line-height: 1.2;
+    }
+    .hero__h { font-family: var(--font-display); font-size: 14px; letter-spacing: 0.02em; }
+    .hero__t strong { color: var(--color-primary-green); font-weight: 700; }
     .hero__alert {
       background: rgba(220,38,38,0.18);
       border: 1px solid rgba(220,38,38,0.45);
       color: #fca5a5;
-      padding: 4px 8px;
-      border-radius: 5px;
+      padding: 2px 8px;
+      border-radius: 4px;
       font-size: 10px;
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      margin-top: 4px;
+      white-space: nowrap;
     }
     .hero__cta {
       background: var(--color-primary-green);
       color: #fff;
-      padding: 9px 16px;
-      border-radius: 7px;
+      padding: 6px 12px;
+      border-radius: 6px;
       font-weight: 600;
       text-decoration: none;
       font-size: 11px;
       letter-spacing: 0.04em;
       text-transform: uppercase;
       white-space: nowrap;
+      flex-shrink: 0;
     }
     @media (max-width: 640px) {
-      .hero { padding: 12px 14px; }
-      .hero__in { grid-template-columns: auto 1fr; gap: 10px; }
-      .hero__av { width: 38px; height: 38px; font-size: 14px; align-self: start; }
-      .hero__t { font-size: 16px; }
-      .hero__cta { grid-column: 1 / -1; text-align: center; padding: 9px; font-size: 11px; }
+      .hero { padding: 8px 12px; }
+      .hero__in { gap: 10px; }
+      .hero__av { width: 28px; height: 28px; font-size: 11px; }
+      .hero__t { font-size: 12px; }
+      .hero__h { font-size: 12px; }
+      .hero__cta { padding: 5px 10px; font-size: 10px; }
     }
 
     /* KPI strip */
