@@ -183,104 +183,75 @@ Spec: docs/superpowers/specs/2026-05-28-ux-redesign-master-plan-design.md"
 
 ---
 
-### Task 3: Create icon name enum + Lucide map
+### Task 3: Create icon name enum + register Lucide icons via DI
 
 **Files:**
 - Create: `src/app/shared/ui/icon/icon-map.ts`
+- Modify: `src/app/app.config.ts` — register Lucide icons via `provideLucideIcons`
 
-- [ ] **Step 1: Create icon-map.ts with initial icon set**
+**API note (post-install discovery)**: `@lucide/angular@1.x` (the maintained replacement for deprecated `lucide-angular@0.x`) uses standalone provider API, NOT the Module API. Icons register via `provideLucideIcons({ name: LucideXxx, ... })` in app config, then referenced by name in templates (`<svg lucideIcon="bell"/>` or dynamic `[lucideIcon]="name()"`). Keys passed to `provideLucideIcons` are lower-kebab-cased automatically.
+
+- [ ] **Step 1: Create icon-map.ts (TypeScript types only)**
 
 Create `src/app/shared/ui/icon/icon-map.ts`:
 
 ```typescript
 /**
- * Icon Map — Single source of truth para los iconos disponibles en
- * <app-icon name="X">. Cada nombre mapea a un Lucide icon import.
+ * Icon Map — TypeScript types para los iconos disponibles en <app-icon>.
  *
- * Para agregar un icono: import desde 'lucide-angular' y agregar al
- * ICON_MAP. Para retirar: eliminar la entry. TypeScript strict mode
- * validará que `name` sea siempre un IconName válido.
+ * Single source of truth de qué nombres son válidos. Los icons en sí
+ * se registran en app.config.ts via provideLucideIcons() y se
+ * referencian por nombre en templates.
  *
- * Convención de naming: kebab-case minúsculas. Mapean 1:1 al inventory
- * matrix en docs/ux-redesign/icon-inventory.md.
+ * Para agregar un icono:
+ * 1. Importar el componente Lucide en app.config.ts (e.g. LucideBell).
+ * 2. Agregarlo al provideLucideIcons({ ... }) con el nombre kebab-case.
+ * 3. Agregar el nombre a ICON_NAMES aquí (TypeScript strict valida).
+ *
+ * Convención de naming: kebab-case minúsculas.
  */
-import {
-  Bell,
-  Home,
-  Trophy,
-  Users,
-  Globe,
-  Wrench,
-  X,
-  Eye,
-  EyeOff,
-  Plus,
-  ArrowRight,
-  ArrowLeft,
-  ChevronRight,
-  ChevronLeft,
-  Check,
-  CircleAlert,
-  Clock,
-  Star,
-  Zap,
-  Dice5,
-  Gift,
-  Crown,
-  Trash2,
-  LogOut,
-  Pencil,
-  ClipboardList,
-  Mail,
-  Lock,
-  Settings,
-  RotateCcw,
-  Search,
-  Filter,
-  type LucideIconData,
-} from 'lucide-angular';
 
-export const ICON_MAP = {
+export const ICON_NAMES = [
   // Navigation
-  home: Home,
-  trophy: Trophy,
-  users: Users,
-  globe: Globe,
-  wrench: Wrench,
-  bell: Bell,
+  'home',
+  'trophy',
+  'users',
+  'globe',
+  'wrench',
+  'bell',
 
   // Actions
-  close: X,
-  eye: Eye,
-  'eye-off': EyeOff,
-  plus: Plus,
-  'arrow-right': ArrowRight,
-  'arrow-left': ArrowLeft,
-  'chevron-right': ChevronRight,
-  'chevron-left': ChevronLeft,
-  check: Check,
-  alert: CircleAlert,
+  'close',
+  'eye',
+  'eye-off',
+  'plus',
+  'arrow-right',
+  'arrow-left',
+  'chevron-right',
+  'chevron-left',
+  'check',
+  'alert',
 
   // Domain
-  clock: Clock,
-  star: Star,
-  zap: Zap,
-  dice: Dice5,
-  gift: Gift,
-  crown: Crown,
-  trash: Trash2,
-  logout: LogOut,
-  pencil: Pencil,
-  clipboard: ClipboardList,
-  mail: Mail,
-  lock: Lock,
-  settings: Settings,
-  undo: RotateCcw,
-  search: Search,
-  filter: Filter,
-} as const satisfies Record<string, LucideIconData>;
+  'clock',
+  'star',
+  'zap',
+  'dice',
+  'gift',
+  'crown',
+  'trash',
+  'logout',
+  'pencil',
+  'clipboard',
+  'mail',
+  'lock',
+  'settings',
+  'undo',
+  'search',
+  'filter',
+] as const;
 
-export type IconName = keyof typeof ICON_MAP;
+export type IconName = typeof ICON_NAMES[number];
 
 /** Size variants → pixel value. Consumido por <app-icon> y debe
  *  alinearse con design system spacing (no inventar valores). */
@@ -294,23 +265,104 @@ export const ICON_SIZE_PX = {
 export type IconSize = keyof typeof ICON_SIZE_PX;
 ```
 
-- [ ] **Step 2: Verify build**
+- [ ] **Step 2: Register icons in app.config.ts via provideLucideIcons**
+
+Read current `src/app/app.config.ts` to find the `providers` array. Append `provideLucideIcons(...)` to it:
+
+```typescript
+import {
+  provideLucideIcons,
+  LucideHome,
+  LucideTrophy,
+  LucideUsers,
+  LucideGlobe,
+  LucideWrench,
+  LucideBell,
+  LucideX,
+  LucideEye,
+  LucideEyeOff,
+  LucidePlus,
+  LucideArrowRight,
+  LucideArrowLeft,
+  LucideChevronRight,
+  LucideChevronLeft,
+  LucideCheck,
+  LucideCircleAlert,
+  LucideClock,
+  LucideStar,
+  LucideZap,
+  LucideDice5,
+  LucideGift,
+  LucideCrown,
+  LucideTrash2,
+  LucideLogOut,
+  LucidePencil,
+  LucideClipboardList,
+  LucideMail,
+  LucideLock,
+  LucideSettings,
+  LucideRotateCcw,
+  LucideSearch,
+  LucideFilter,
+} from '@lucide/angular';
+
+// In appConfig.providers array, append:
+provideLucideIcons({
+  'home': LucideHome,
+  'trophy': LucideTrophy,
+  'users': LucideUsers,
+  'globe': LucideGlobe,
+  'wrench': LucideWrench,
+  'bell': LucideBell,
+  'close': LucideX,
+  'eye': LucideEye,
+  'eye-off': LucideEyeOff,
+  'plus': LucidePlus,
+  'arrow-right': LucideArrowRight,
+  'arrow-left': LucideArrowLeft,
+  'chevron-right': LucideChevronRight,
+  'chevron-left': LucideChevronLeft,
+  'check': LucideCheck,
+  'alert': LucideCircleAlert,
+  'clock': LucideClock,
+  'star': LucideStar,
+  'zap': LucideZap,
+  'dice': LucideDice5,
+  'gift': LucideGift,
+  'crown': LucideCrown,
+  'trash': LucideTrash2,
+  'logout': LucideLogOut,
+  'pencil': LucidePencil,
+  'clipboard': LucideClipboardList,
+  'mail': LucideMail,
+  'lock': LucideLock,
+  'settings': LucideSettings,
+  'undo': LucideRotateCcw,
+  'search': LucideSearch,
+  'filter': LucideFilter,
+}),
+```
+
+**Validation**: keys (e.g. `'eye-off'`, `'arrow-right'`) are already kebab-case so `provideLucideIcons` won't transform them. Names match `ICON_NAMES` array in icon-map.ts. If any Lucide class name doesn't exist (e.g. `LucideDice5` might be `LucideDice` in newer versions), grep `node_modules/@lucide/angular/types/lucide-angular.d.ts` for the correct name.
+
+- [ ] **Step 3: Verify build**
 
 Run:
 ```bash
 npx ng build --configuration=development
 ```
 
-Expected: build success. Si Lucide imports fallan, verificar nombres exactos en `node_modules/lucide-angular/dist/index.d.ts`.
+Expected: build success. If TS errors, verify imports exist in `@lucide/angular` (`grep '^export.*LucideXxx' node_modules/@lucide/angular/types/lucide-angular.d.ts`).
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
-git add src/app/shared/ui/icon/icon-map.ts
-git commit -m "feat(icon): add icon-map with initial 30 icons + size variants
+git add src/app/shared/ui/icon/icon-map.ts src/app/app.config.ts
+git commit -m "feat(icon): add icon-map + register 30 Lucide icons via DI
 
 Single source of truth para nombres válidos en <app-icon>. TypeScript
-strict valida IconName en compile time."
+strict valida IconName en compile time. Icons registered via
+provideLucideIcons() in app.config.ts (v1 API of @lucide/angular)."
 ```
 
 ---
@@ -370,32 +422,38 @@ Expected: FAIL — "Cannot find module './icon.component'" o similar. **Esto con
 **Files:**
 - Create: `src/app/shared/ui/icon/icon.component.ts`
 
+**API note**: `@lucide/angular@1.x` uses the `LucideDynamicIcon` standalone component with selector `svg[lucideIcon]` and `[lucideIcon]` input binding for dynamic icon name. Icon names are resolved via the registry created by `provideLucideIcons()` in `app.config.ts` (see Task 3 Step 2).
+
 - [ ] **Step 1: Create icon.component.ts**
 
 Create `src/app/shared/ui/icon/icon.component.ts`:
 
 ```typescript
 import { Component, computed, input } from '@angular/core';
-import { LucideAngularModule } from 'lucide-angular';
-import { ICON_MAP, ICON_SIZE_PX, type IconName, type IconSize } from './icon-map';
+import { LucideDynamicIcon } from '@lucide/angular';
+import { ICON_SIZE_PX, type IconName, type IconSize } from './icon-map';
 
 /**
- * `<app-icon name="bell" size="md">` — SVG icon wrapper sobre lucide-angular.
+ * `<app-icon name="bell" size="md">` — SVG icon wrapper sobre @lucide/angular.
  *
  * - `name` es type-checked contra IconName (icon-map.ts).
- * - `size` es one of sm/md/lg/xl, mapea a px desde tokens design system.
- * - aria-hidden por default (decorative). Para iconos con meaning usar
- *   `aria-label` adicional en el container o setear `decorative="false"`.
+ * - `size` es one of sm/md/lg/xl, mapea a px desde design tokens.
+ * - aria-hidden por default (decorative). Para iconos con meaning,
+ *   setear `decorative="false"` y agregar `aria-label` en el container.
+ *
+ * Icons deben estar registrados en app.config.ts via provideLucideIcons()
+ * con el mismo nombre kebab-case. Si el nombre no existe en el registry,
+ * LucideDynamicIcon NO renderiza nada (no throws).
  */
 @Component({
   standalone: true,
   selector: 'app-icon',
-  imports: [LucideAngularModule],
+  imports: [LucideDynamicIcon],
   template: `
-    <lucide-icon
-      [img]="iconRef()"
-      [size]="px()"
-      [attr.aria-hidden]="decorative() ? 'true' : null" />
+    <svg lucideIcon
+         [lucideIcon]="name()"
+         [size]="px()"
+         [attr.aria-hidden]="decorative() ? 'true' : null"></svg>
   `,
   styles: [`
     :host {
@@ -412,7 +470,6 @@ export class IconComponent {
   size = input<IconSize>('md');
   decorative = input<boolean>(true);
 
-  iconRef = computed(() => ICON_MAP[this.name()]);
   px = computed(() => ICON_SIZE_PX[this.size()]);
 }
 ```
@@ -426,6 +483,8 @@ npx jest src/app/shared/ui/icon/icon.component.spec.ts
 
 Expected output: `Tests: 2 passed, 2 total`.
 
+**Note for test setup**: Tests need access to the `provideLucideIcons` registry. If test fails because icon doesn't render, the test TestBed needs the same provider as app.config.ts. Adapt the spec's `beforeEach` to add `providers: [provideLucideIcons({ bell: LucideBell, /* ... */ })]` if needed.
+
 - [ ] **Step 3: Commit**
 
 ```bash
@@ -433,7 +492,8 @@ git add src/app/shared/ui/icon/icon.component.ts src/app/shared/ui/icon/icon.com
 git commit -m "feat(icon): add IconComponent with basic render
 
 TDD pattern: failing test first, then minimal implementation.
-Wraps lucide-icon with type-safe name + size variants from icon-map."
+Wraps LucideDynamicIcon with type-safe name + size variants. Icons
+resolved via provideLucideIcons() registry in app.config.ts."
 ```
 
 ---
