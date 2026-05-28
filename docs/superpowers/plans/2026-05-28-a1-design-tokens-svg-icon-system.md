@@ -306,44 +306,47 @@ import {
   LucideFilter,
 } from '@lucide/angular';
 
-// In appConfig.providers array, append:
-provideLucideIcons({
-  'home': LucideHome,
-  'trophy': LucideTrophy,
-  'users': LucideUsers,
-  'globe': LucideGlobe,
-  'wrench': LucideWrench,
-  'bell': LucideBell,
-  'close': LucideX,
-  'eye': LucideEye,
-  'eye-off': LucideEyeOff,
-  'plus': LucidePlus,
-  'arrow-right': LucideArrowRight,
-  'arrow-left': LucideArrowLeft,
-  'chevron-right': LucideChevronRight,
-  'chevron-left': LucideChevronLeft,
-  'check': LucideCheck,
-  'alert': LucideCircleAlert,
-  'clock': LucideClock,
-  'star': LucideStar,
-  'zap': LucideZap,
-  'dice': LucideDice5,
-  'gift': LucideGift,
-  'crown': LucideCrown,
-  'trash': LucideTrash2,
-  'logout': LucideLogOut,
-  'pencil': LucidePencil,
-  'clipboard': LucideClipboardList,
-  'mail': LucideMail,
-  'lock': LucideLock,
-  'settings': LucideSettings,
-  'undo': LucideRotateCcw,
-  'search': LucideSearch,
-  'filter': LucideFilter,
-}),
+// In appConfig.providers array, append. NOTE: provideLucideIcons accepts
+// rest-args of LucideIconData, NOT a dictionary. To use our canonical
+// kebab-case names instead of Lucide's defaults (e.g. 'close' instead of
+// Lucide's 'x'), spread each component's .icon property and override name.
+provideLucideIcons(
+  { ...LucideHome.icon, name: 'home' },
+  { ...LucideTrophy.icon, name: 'trophy' },
+  { ...LucideUsers.icon, name: 'users' },
+  { ...LucideGlobe.icon, name: 'globe' },
+  { ...LucideWrench.icon, name: 'wrench' },
+  { ...LucideBell.icon, name: 'bell' },
+  { ...LucideX.icon, name: 'close' },
+  { ...LucideEye.icon, name: 'eye' },
+  { ...LucideEyeOff.icon, name: 'eye-off' },
+  { ...LucidePlus.icon, name: 'plus' },
+  { ...LucideArrowRight.icon, name: 'arrow-right' },
+  { ...LucideArrowLeft.icon, name: 'arrow-left' },
+  { ...LucideChevronRight.icon, name: 'chevron-right' },
+  { ...LucideChevronLeft.icon, name: 'chevron-left' },
+  { ...LucideCheck.icon, name: 'check' },
+  { ...LucideCircleAlert.icon, name: 'alert' },
+  { ...LucideClock.icon, name: 'clock' },
+  { ...LucideStar.icon, name: 'star' },
+  { ...LucideZap.icon, name: 'zap' },
+  { ...LucideDice5.icon, name: 'dice' },
+  { ...LucideGift.icon, name: 'gift' },
+  { ...LucideCrown.icon, name: 'crown' },
+  { ...LucideTrash2.icon, name: 'trash' },
+  { ...LucideLogOut.icon, name: 'logout' },
+  { ...LucidePencil.icon, name: 'pencil' },
+  { ...LucideClipboardList.icon, name: 'clipboard' },
+  { ...LucideMail.icon, name: 'mail' },
+  { ...LucideLock.icon, name: 'lock' },
+  { ...LucideSettings.icon, name: 'settings' },
+  { ...LucideRotateCcw.icon, name: 'undo' },
+  { ...LucideSearch.icon, name: 'search' },
+  { ...LucideFilter.icon, name: 'filter' },
+),
 ```
 
-**Validation**: keys (e.g. `'eye-off'`, `'arrow-right'`) are already kebab-case so `provideLucideIcons` won't transform them. Names match `ICON_NAMES` array in icon-map.ts. If any Lucide class name doesn't exist (e.g. `LucideDice5` might be `LucideDice` in newer versions), grep `node_modules/@lucide/angular/types/lucide-angular.d.ts` for the correct name.
+**Validation**: 32 icons registered, matches the 32 entries in `ICON_NAMES`. Names match `ICON_NAMES` array in icon-map.ts. Templates reference them as `<svg lucideIcon="home"/>` static or `[lucideIcon]="dynamicName()"`.
 
 - [ ] **Step 3: Verify build**
 
