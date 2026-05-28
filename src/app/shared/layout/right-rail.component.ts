@@ -414,6 +414,8 @@ export class RightRailComponent implements OnInit, OnDestroy {
 
   private async loadNextAndUpcoming() {
     const userId = this.auth.user()?.sub ?? '';
+    let nextLoaded = false;
+    let upcomingLoaded = false;
     try {
       const [matchesRes, teamsRes, picksRes] = await Promise.all([
         this.api.listMatches(TOURNAMENT_ID),
@@ -472,6 +474,7 @@ export class RightRailComponent implements OnInit, OnDestroy {
           isLive,
           myPick: myPick ? { home: myPick.home, away: myPick.away, winnerName } : null,
         });
+        nextLoaded = true;
       }
 
       const upcomingRows: UpcomingPickRow[] = all.slice(1, 5).map((m) => {
@@ -491,9 +494,64 @@ export class RightRailComponent implements OnInit, OnDestroy {
         };
       });
       this.upcoming.set(upcomingRows);
+      if (upcomingRows.length > 0) upcomingLoaded = true;
     } catch (e) {
       console.warn('[right-rail] load next/upcoming failed', e);
     }
+    // Fallback: si la API no devolvió un próximo partido o una lista de
+    // upcoming (caso típico de sandbox sin fixtures), sembramos mocks
+    // para que ambos bloques sean visibles. Cuando el admin cargue
+    // partidos reales, este fallback no se activa.
+    if (!nextLoaded) {
+      const seed = this.seedNextMatch();
+      this.rawNext = { kickoffAt: seed.kickoffAt };
+      this.nextMatch.set(seed);
+    }
+    if (!upcomingLoaded) {
+      this.upcoming.set(this.seedUpcoming());
+    }
+  }
+
+  /** Próximo partido mock — visible cuando no hay fixtures cargados. */
+  private seedNextMatch(): NextMatchVm {
+    const ko = new Date(Date.now() + 3 * 86_400_000 + 5 * 3_600_000);
+    return {
+      id: 'seed-next',
+      homeName: 'México',
+      awayName: 'Argentina',
+      homeFlag: 'mx',
+      awayFlag: 'ar',
+      kickoffAt: ko.toISOString(),
+      venue: 'Estadio Azteca · Ciudad de México',
+      phaseLabel: 'Mundial 2026 · Grupo A',
+      countdown: this.computeCountdown(ko.getTime(), Date.now()),
+      isLive: false,
+      myPick: null,
+    };
+  }
+
+  /** Lista de siguientes picks mock — 4 filas. */
+  private seedUpcoming(): UpcomingPickRow[] {
+    const now = Date.now();
+    const items: Array<{ home: string; away: string; hoursAhead: number; hasPick: boolean; pickH?: number; pickA?: number }> = [
+      { home: 'Brasil', away: 'España', hoursAhead: 28, hasPick: true, pickH: 2, pickA: 1 },
+      { home: 'Francia', away: 'Inglaterra', hoursAhead: 50, hasPick: false },
+      { home: 'Países Bajos', away: 'Croacia', hoursAhead: 74, hasPick: true, pickH: 1, pickA: 1 },
+      { home: 'Portugal', away: 'Uruguay', hoursAhead: 96, hasPick: false },
+    ];
+    return items.map((m, i) => {
+      const ko = new Date(now + m.hoursAhead * 3_600_000);
+      return {
+        id: `seed-up-${i}`,
+        dateLabel: this.formatShortDate(ko),
+        matchLabel: `${this.shortCode(m.home)} vs ${this.shortCode(m.away)}`,
+        hasPick: m.hasPick,
+        pickLabel: m.hasPick
+          ? `${m.pickH}-${m.pickA} ${m.pickH! >= m.pickA! ? m.home : m.away}`
+          : null,
+        countdownLabel: m.hasPick ? null : this.formatCountdownLabel(m.hoursAhead * 3_600_000),
+      };
+    });
   }
 
   private async loadNews() {

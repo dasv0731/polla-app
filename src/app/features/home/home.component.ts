@@ -233,8 +233,8 @@ interface ComodinSlotVm {
     .hero {
       background: linear-gradient(135deg, #0a0a0a 0%, #0a3d20 60%, #067a4a 100%);
       color: #fff;
-      border-radius: 16px;
-      padding: 22px 26px;
+      border-radius: 14px;
+      padding: 14px 18px;
       position: relative;
       overflow: hidden;
     }
@@ -246,51 +246,52 @@ interface ComodinSlotVm {
       position: relative; z-index: 1;
       display: grid;
       grid-template-columns: auto 1fr auto;
-      gap: 20px;
+      gap: 14px;
       align-items: center;
     }
     .hero__av {
-      width: 54px; height: 54px;
+      width: 42px; height: 42px;
       border-radius: 50%;
       background: linear-gradient(135deg, #02cc74, #016b3d);
       display: grid; place-items: center;
       font-family: var(--font-display);
-      font-size: 20px;
+      font-size: 16px;
       color: #fff;
     }
-    .hero__k { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.55); margin-bottom: 4px; }
-    .hero__t { font-family: var(--font-display); font-size: 24px; line-height: 1.05; }
+    .hero__k { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.55); margin-bottom: 2px; }
+    .hero__t { font-family: var(--font-display); font-size: 18px; line-height: 1.05; letter-spacing: 0.02em; }
     .hero__t strong { color: var(--color-primary-green); font-style: normal; }
-    .hero__s { font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 4px; }
+    .hero__s { font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px; }
     .hero__alert {
       background: rgba(220,38,38,0.18);
       border: 1px solid rgba(220,38,38,0.45);
       color: #fca5a5;
-      padding: 5px 10px;
-      border-radius: 6px;
+      padding: 4px 8px;
+      border-radius: 5px;
       font-size: 10px;
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      margin-top: 6px;
+      margin-top: 4px;
     }
     .hero__cta {
       background: var(--color-primary-green);
       color: #fff;
-      padding: 11px 18px;
-      border-radius: 8px;
+      padding: 9px 16px;
+      border-radius: 7px;
       font-weight: 600;
       text-decoration: none;
-      font-size: 12px;
+      font-size: 11px;
       letter-spacing: 0.04em;
       text-transform: uppercase;
       white-space: nowrap;
     }
     @media (max-width: 640px) {
-      .hero__in { grid-template-columns: auto 1fr; gap: 12px; }
-      .hero__av { width: 42px; height: 42px; font-size: 16px; align-self: start; }
-      .hero__t { font-size: 20px; }
-      .hero__cta { grid-column: 1 / -1; text-align: center; padding: 10px; font-size: 11px; }
+      .hero { padding: 12px 14px; }
+      .hero__in { grid-template-columns: auto 1fr; gap: 10px; }
+      .hero__av { width: 38px; height: 38px; font-size: 14px; align-self: start; }
+      .hero__t { font-size: 16px; }
+      .hero__cta { grid-column: 1 / -1; text-align: center; padding: 9px; font-size: 11px; }
     }
 
     /* KPI strip */
