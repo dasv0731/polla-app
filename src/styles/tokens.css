@@ -7,7 +7,8 @@
 :root {
   /* -------- Colores de marca -------- */
   --color-primary-green: #02CC74;
-  --color-primary-black: #1a1a1a;   /* softened from #000 — wireframe ink */
+  --color-primary-black: #0A0A0A;   /* design v3 sidebar/dark blocks */
+  --color-ink-soft:      #1A1A1A;   /* previous wireframe ink, preserved for text where needed */
   --color-primary-white: #FFFFFF;
   --color-primary-grey:  #E0E0E0;
 
@@ -22,6 +23,8 @@
   --color-green-40: rgba(2, 204, 116, 0.40);
   --color-text-muted: rgba(0, 0, 0, 0.5);
   --color-on-dark-muted: rgba(255, 255, 255, 0.7);
+  --color-bg-cream: #F5F4F0;                   /* design v3 body background */
+  --color-line:     rgba(0, 0, 0, 0.08);       /* design v3 card borders */
 
   /* -------- Tipografía -------- */
   --font-display:   "Bebas Neue", system-ui, sans-serif;   /* hero, H1/H2 grandes */
