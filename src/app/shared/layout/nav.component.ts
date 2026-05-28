@@ -164,14 +164,13 @@ type DropdownKey = 'user' | 'ranking' | null;
           🔔
           @if (unreadCount() > 0) { <span class="badge">{{ unreadCount() }}</span> }
         </a>
-        <button class="app-topbar__avatar" type="button" aria-label="Cuenta"
-                (click)="toggle('user'); $event.stopPropagation()">
+        <a class="app-topbar__avatar" routerLink="/profile" aria-label="Mi perfil" (click)="closeAll()">
           <app-user-avatar
             [sub]="userSub() ?? ''"
             [handle]="handle() ?? ''"
             [avatarKey]="avatarKey()"
             size="sm" />
-        </button>
+        </a>
       </div>
     </header>
 
