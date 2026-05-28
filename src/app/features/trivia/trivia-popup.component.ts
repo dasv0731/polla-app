@@ -340,6 +340,18 @@ export class TriviaPopupComponent implements OnInit, OnDestroy {
         }
       }
     }, { allowSignalWrites: true });
+
+    // Mantener actualizado el contador externo (consumido por
+    // <app-trivia-toast>). Cuenta solo preguntas live YA publicadas y
+    // no dismisseadas — la misma condición que define `showFab`.
+    effect(() => {
+      const now = this.nowMs();
+      const dismissed = this.dismissed();
+      const count = this.allQueue().filter(
+        (q) => !dismissed.has(q.id) && Date.parse(q.publishedAt) <= now,
+      ).length;
+      this.modal.setPendingCount(count);
+    }, { allowSignalWrites: true });
   }
 
   async ngOnInit() {

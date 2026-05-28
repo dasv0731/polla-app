@@ -15,6 +15,7 @@ export class TriviaModalService {
   private _scopedMatchId = signal<string | null>(null);
   private _targetQuestionId = signal<string | null>(null);
   private _refreshTick = signal(0);
+  private _pendingCount = signal(0);
 
   isOpen = this._isOpen.asReadonly();
   scopedMatchId = this._scopedMatchId.asReadonly();
@@ -24,6 +25,16 @@ export class TriviaModalService {
   targetQuestionId = this._targetQuestionId.asReadonly();
   /** Bumped cuando se pide al popup que recargue (e.g. al abrir scoped). */
   refreshTick = this._refreshTick.asReadonly();
+  /** Preguntas live YA publicadas y no respondidas/dismissed. La actualiza
+   *  el popup tras cada poll. Lo consume <app-trivia-toast> (banner top)
+   *  para mostrar/ocultar el aviso y el conteo. */
+  pendingCount = this._pendingCount.asReadonly();
+
+  /** Setter para que el popup actualice el conteo externo cada vez que
+   *  cambia su `visibleQueue` derivada de `allQueue`. */
+  setPendingCount(n: number) {
+    this._pendingCount.set(n);
+  }
 
   /** Abre modal mostrando solo las preguntas del match indicado.
    *  `questionId` opcional: si se pasa, el popup salta a esa pregunta
