@@ -1,51 +1,49 @@
-import { Component, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { NavComponent } from './nav.component';
+import { SidebarComponent } from './sidebar.component';
+import { BottomNavComponent } from './bottom-nav.component';
 import { FooterComponent } from './footer.component';
 import { PicksPendingBannerComponent } from '../../features/picks/picks-pending-banner.component';
 import { ToastHostComponent } from '../../core/notifications/toast-host.component';
 import { TriviaPopupComponent } from '../../features/trivia/trivia-popup.component';
 import { GroupActionsModalsComponent } from './group-actions-modals.component';
 import { RedeemModalComponent } from './redeem-modal.component';
-import { RightRailComponent } from './right-rail.component';
-import { RightRailService } from '../../core/layout/right-rail.service';
 
 @Component({
   standalone: true,
   selector: 'app-shell',
   imports: [
-    RouterOutlet, NavComponent, FooterComponent,
+    RouterOutlet, NavComponent, SidebarComponent, BottomNavComponent, FooterComponent,
     PicksPendingBannerComponent, ToastHostComponent, TriviaPopupComponent,
-    GroupActionsModalsComponent, RedeemModalComponent, RightRailComponent,
+    GroupActionsModalsComponent, RedeemModalComponent,
   ],
   template: `
-    <div class="app-shell" [class.has-rail]="rail.visible()">
+    <div class="app-shell">
       <app-nav />
-      <main class="app-main">
-        <app-picks-pending-banner />
-        <router-outlet />
-      </main>
-      <!-- Wrapper position:relative establece el containing block del
-           sticky aside derecho — sin esto, el sticky se extiende sobre
-           el row del footer (mismo bug que tenía el sidebar izquierdo). -->
-      <div class="app-rail-wrap">
-        <app-right-rail />
+      <div class="app-shell__body">
+        <app-sidebar />
+        <main class="app-main">
+          <app-picks-pending-banner />
+          <router-outlet />
+        </main>
       </div>
       <app-footer />
     </div>
+    <app-bottom-nav />
     <app-toast-host />
-    <!-- Popup global de trivia: visible en toda la app cuando hay
-         preguntas activas no contestadas (modo COMPLETE). -->
     <app-trivia-popup />
-    <!-- Modales globales de "Crear grupo" / "Unirme con código" -->
     <app-group-actions-modals />
-    <!-- Modal global de "Canjear código de sponsor" -->
     <app-redeem-modal />
   `,
   styles: [`
     :host { display: block; }
+    .app-shell { display: flex; flex-direction: column; min-height: 100dvh; }
+    .app-shell__body { display: flex; flex: 1; }
+    .app-main { flex: 1; min-width: 0; padding: 18px 22px 80px; }
+    @media (max-width: 767px) {
+      .app-main { padding-bottom: 88px; }   /* clearance for bottom-nav */
+    }
   `],
 })
-export class ShellComponent {
-  rail = inject(RightRailService);
-}
+export class ShellComponent {}
