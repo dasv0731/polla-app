@@ -1,200 +1,576 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
-import { UserModesService, type UserGroup } from '../../core/user/user-modes.service';
-import { RightRailService } from '../../core/layout/right-rail.service';
-import { RedeemModalService } from '../../core/sponsors/redeem-modal.service';
+import { getUrl } from 'aws-amplify/storage';
 
 const TOURNAMENT_ID = 'mundial-2026';
+const NEWS_HUB_URL = 'https://golgana.net/news';
 
-interface ComodinPreview {
+interface NextMatchVm {
   id: string;
-  type: string | null;
-  status: string;
+  homeName: string;
+  awayName: string;
+  homeFlag: string;
+  awayFlag: string;
+  kickoffAt: string;
+  venue: string | null;
+  phaseLabel: string;
+  countdown: { d: string; h: string; m: string; s: string };
+  isLive: boolean;
+  myPick: { home: number; away: number; winnerName: string | null } | null;
+}
+
+interface UpcomingPickRow {
+  id: string;
+  dateLabel: string;
+  matchLabel: string;
+  hasPick: boolean;
+  pickLabel: string | null;
+  countdownLabel: string | null;
+}
+
+interface NewsItemVm {
+  id: string;
+  title: string;
+  externalUrl: string;
+  resolvedImageUrl: string | null;
+  relativeTime: string;
 }
 
 /**
- * Aside derecho fijo (sticky) en /picks · /picks/group-stage · /picks/bracket
- * y /groups. Muestra premios arriba + mis comodines abajo (con activos si
- * los hay) + botón canjear código + botón ver comodines.
- *
- * Iteración previa: estos botones eran inline en el header de cada página
- * y abrían modales. Cambio a aside porque el contenido es secundario pero
- * de consulta frecuente — un aside sticky permite verlo siempre sin
- * tener que abrir modal cada vez.
+ * Aside derecho design-v3, sticky a 320px en desktop ≥1100px. Tres bloques
+ * verticales: próximo partido (dark card con countdown + flags + mi pick),
+ * siguientes picks (4 filas hacia /picks/match/:id) y noticias (hero card +
+ * 3 rows desde Article.listPublishedArticles). Se colapsa a bloque normal
+ * debajo del main en tablet/mobile.
  */
 @Component({
   standalone: true,
   selector: 'app-right-rail',
   imports: [RouterLink],
   template: `
-    @if (rail.visible()) {
-      <aside class="app-rail">
-        <!-- Premios -->
-        <section class="app-rail__section">
-          <h3 class="app-rail__title">🏆 Premios</h3>
-          @if (groupsWithPrizes().length === 0) {
-            <p class="app-rail__empty">
-              Tus grupos aún no tienen premios definidos.
-            </p>
-          } @else {
-            @for (g of groupsWithPrizes(); track g.id) {
-              <div class="rail-prize-card">
-                <div class="rail-prize-card__head">
-                  <div class="rail-prize-card__group">{{ g.name }}</div>
-                  <div class="rail-prize-card__total">{{ totalLabel(g.prize1st, g.prize2nd, g.prize3rd) }}</div>
+    <aside class="side">
+
+      @if (nextMatch(); as m) {
+        <div class="np">
+          <div class="np__bg"></div>
+          <div class="np__in">
+            <div class="np__top">
+              <span class="np__live">{{ m.isLive ? '● EN VIVO' : 'Próximo' }}</span>
+              <span class="np__tag">{{ m.phaseLabel }}</span>
+            </div>
+            <div class="np__hl">El <em>próximo</em> partido</div>
+            <div class="np__sub">{{ m.venue ?? 'Sede por confirmar' }}</div>
+
+            @if (!m.isLive) {
+              <div class="np__cd">
+                <div class="np__cd__c"><div class="np__cd__n">{{ m.countdown.d }}</div><div class="np__cd__l">Días</div></div>
+                <div class="np__cd__c"><div class="np__cd__n">{{ m.countdown.h }}</div><div class="np__cd__l">Hrs</div></div>
+                <div class="np__cd__c"><div class="np__cd__n">{{ m.countdown.m }}</div><div class="np__cd__l">Min</div></div>
+                <div class="np__cd__c"><div class="np__cd__n">{{ m.countdown.s }}</div><div class="np__cd__l">Seg</div></div>
+              </div>
+            }
+
+            <div class="np__t">
+              <div class="np__tm np__tm--home">
+                <div class="np__fl">
+                  @if (m.homeFlag) {
+                    <span class="fi fi-{{ m.homeFlag.toLowerCase() }}"></span>
+                  } @else {
+                    🏳️
+                  }
                 </div>
-                @if (g.prize1st) {
-                  <div class="rail-prize-card__row">
-                    <span>🥇</span><span class="lbl">1°</span>
-                    <span class="amount">{{ g.prize1st }}</span>
-                  </div>
-                }
-                @if (g.prize2nd) {
-                  <div class="rail-prize-card__row">
-                    <span>🥈</span><span class="lbl">2°</span>
-                    <span class="amount">{{ g.prize2nd }}</span>
-                  </div>
-                }
-                @if (g.prize3rd) {
-                  <div class="rail-prize-card__row">
-                    <span>🥉</span><span class="lbl">3°</span>
-                    <span class="amount">{{ g.prize3rd }}</span>
-                  </div>
+                <div class="np__n">{{ m.homeName }}</div>
+              </div>
+              <div class="np__vs"><div class="np__vs__l">VS</div></div>
+              <div class="np__tm">
+                <div class="np__fl">
+                  @if (m.awayFlag) {
+                    <span class="fi fi-{{ m.awayFlag.toLowerCase() }}"></span>
+                  } @else {
+                    🏳️
+                  }
+                </div>
+                <div class="np__n">{{ m.awayName }}</div>
+              </div>
+            </div>
+
+            @if (m.myPick) {
+              <div class="np__pk">
+                <div>
+                  <span class="np__pk__l">Tu pick</span>
+                  <strong>{{ m.myPick.home }} – {{ m.myPick.away }}
+                    @if (m.myPick.winnerName) { <em>{{ m.myPick.winnerName }}</em> }
+                  </strong>
+                </div>
+                <a class="np__pk__e" [routerLink]="['/picks/match', m.id]">Editar</a>
+              </div>
+            } @else {
+              <a class="np__pk np__pk--cta" [routerLink]="['/picks/match', m.id]">
+                <div>
+                  <span class="np__pk__l">Sin pick</span>
+                  <strong>Hacer pick →</strong>
+                </div>
+              </a>
+            }
+
+            <a class="np__cta" [routerLink]="['/picks/match', m.id]">Ver previa completa →</a>
+          </div>
+        </div>
+      }
+
+      @if (upcoming().length > 0) {
+        <div class="up">
+          <div class="up__h">
+            <span>Siguientes picks</span>
+            <a routerLink="/picks">Ver todos →</a>
+          </div>
+          @for (r of upcoming(); track r.id) {
+            <a class="up__r" [routerLink]="['/picks/match', r.id]">
+              <div class="up__r__h">
+                <span>{{ r.dateLabel }} · {{ r.matchLabel }}</span>
+                @if (r.hasPick) {
+                  <span class="ok">✓ Pick</span>
+                } @else {
+                  <span class="pe">⚠ {{ r.countdownLabel }}</span>
                 }
               </div>
-            }
-          }
-        </section>
-
-        <!-- Comodines -->
-        <section class="app-rail__section">
-          <h3 class="app-rail__title">🎁 Mis comodines</h3>
-          @if (!hasComplete()) {
-            <p class="app-rail__empty">
-              Disponibles solo en grupos modo completo.
-            </p>
-          } @else if (comodinesLoading()) {
-            <p class="app-rail__empty">Cargando…</p>
-          } @else if (activeComodines().length === 0) {
-            <p class="app-rail__empty">
-              Aún no tienes comodines.
-            </p>
-          } @else {
-            @for (c of activeComodines(); track c.id) {
-              <div class="rail-comodin">
-                <div class="rail-comodin__type">{{ typeLabel(c.type) }}</div>
-                <div class="rail-comodin__status">{{ statusLabel(c.status) }}</div>
+              <div class="up__r__t" [class.m]="!r.hasPick">
+                {{ r.hasPick ? r.pickLabel : 'Pendiente' }}
               </div>
-            }
-            @if (totalComodines() > activeComodines().length) {
-              <p class="app-rail__more">
-                +{{ totalComodines() - activeComodines().length }} más asignados
-              </p>
-            }
+            </a>
           }
+        </div>
+      }
 
-          <button type="button" class="btn-wf btn-wf--block btn-wf--sm"
-                  style="margin-top:10px;"
-                  (click)="redeem.open()">
-            🎁 Canjear código
-          </button>
-          <a routerLink="/mis-comodines"
-             class="btn-wf btn-wf--block btn-wf--sm btn-wf--primary"
-             style="margin-top:6px;">
-            Ver todos los comodines →
+      @if (newsHero(); as hero) {
+        <div class="news">
+          <a [href]="hero.externalUrl" target="_blank" rel="noopener noreferrer" class="news__hero">
+            @if (hero.resolvedImageUrl) {
+              <img [src]="hero.resolvedImageUrl" [alt]="hero.title">
+            } @else {
+              <img src="assets/news-placeholder.svg" [alt]="hero.title">
+            }
+            <div class="news__hero__b">
+              <div class="news__hero__k">Destacada · {{ hero.relativeTime }}</div>
+              <div class="news__hero__t">{{ hero.title }}</div>
+            </div>
           </a>
-        </section>
-      </aside>
-    }
+          @if (newsList().length > 0) {
+            <div class="news__list">
+              @for (a of newsList(); track a.id) {
+                <a [href]="a.externalUrl" target="_blank" rel="noopener noreferrer" class="news__row">
+                  <div class="news__row__img"
+                       [style.backgroundImage]="a.resolvedImageUrl ? 'url(' + a.resolvedImageUrl + ')' : null"></div>
+                  <div class="news__row__b">
+                    <div class="news__row__k">{{ a.relativeTime }}</div>
+                    <div class="news__row__t">{{ a.title }}</div>
+                  </div>
+                </a>
+              }
+              <a [href]="newsHubUrl" target="_blank" rel="noopener noreferrer" class="news__more">Ver todas →</a>
+            </div>
+          }
+        </div>
+      }
+    </aside>
   `,
   styles: [`
     :host { display: contents; }
+
+    .side {
+      position: sticky;
+      top: 24px;
+      align-self: start;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-height: calc(100vh - 48px);
+      overflow-y: auto;
+    }
+    .side::-webkit-scrollbar { width: 4px; }
+    .side::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 99px; }
+
+    @media (max-width: 1099px) {
+      .side { position: static; max-height: none; overflow: visible; }
+    }
+
+    /* Next match — see polla-v3.html .np */
+    .np {
+      background: #0a0a0a;
+      color: #fff;
+      border-radius: 18px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(2,204,116,0.3);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+    }
+    .np__bg {
+      position: absolute; inset: 0; z-index: 0;
+      background: linear-gradient(160deg, #0a0a0a 0%, #0a3d20 55%, #067a4a 120%);
+    }
+    .np__bg::before {
+      content: ""; position: absolute; inset: 0;
+      background:
+        radial-gradient(80% 50% at 50% 0%, rgba(2,204,116,0.5), transparent 65%),
+        radial-gradient(60% 60% at 100% 100%, rgba(2,204,116,0.2), transparent 60%);
+    }
+    .np__in { position: relative; z-index: 1; padding: 22px; }
+    .np__top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .np__live {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(2,204,116,0.18);
+      border: 1px solid rgba(2,204,116,0.4);
+      border-radius: 999px;
+      padding: 5px 12px;
+      font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+      font-weight: 700;
+      color: var(--color-primary-green);
+    }
+    .np__tag { font-size: 10px; color: rgba(255,255,255,0.55); letter-spacing: 0.08em; }
+    .np__hl { font-family: var(--font-display); font-size: 20px; line-height: 1.1; color: #fff; margin-bottom: 4px; }
+    .np__hl em { font-style: normal; color: var(--color-primary-green); }
+    .np__sub { font-size: 11px; color: rgba(255,255,255,0.55); margin-bottom: 16px; }
+
+    .np__cd { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 18px; }
+    .np__cd__c {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 10px 0 8px;
+      text-align: center;
+    }
+    .np__cd__n { font-family: var(--font-display); font-size: 26px; line-height: 1; color: #fff; }
+    .np__cd__l { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-top: 4px; font-weight: 600; }
+
+    .np__t {
+      display: grid; grid-template-columns: 1fr auto 1fr; gap: 14px;
+      align-items: center; padding: 18px 4px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      margin-bottom: 14px;
+      background: rgba(255,255,255,0.02);
+    }
+    .np__tm { text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+    .np__fl {
+      width: 54px; height: 54px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      display: grid; place-items: center;
+      font-size: 32px;
+      border: 2px solid rgba(255,255,255,0.18);
+    }
+    .np__tm--home .np__fl { border-color: rgba(2,204,116,0.5); box-shadow: 0 0 0 4px rgba(2,204,116,0.12); }
+    .np__n { font-family: var(--font-display); font-size: 17px; line-height: 1; color: #fff; }
+    .np__vs { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .np__vs__l { font-family: var(--font-display); font-size: 20px; color: var(--color-primary-green); line-height: 1; }
+
+    .np__pk {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 14px;
+      background: linear-gradient(90deg, rgba(2,204,116,0.22), rgba(2,204,116,0.08));
+      border: 1px solid rgba(2,204,116,0.45);
+      border-radius: 10px;
+      margin-bottom: 8px;
+      text-decoration: none;
+      color: inherit;
+    }
+    .np__pk__l { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.7); font-weight: 600; display: block; margin-bottom: 2px; }
+    .np__pk strong { font-family: var(--font-display); font-size: 22px; color: #fff; display: flex; align-items: center; gap: 6px; }
+    .np__pk strong em { font-style: normal; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; font-family: var(--font-primary); font-weight: 700; background: rgba(2,204,116,0.35); padding: 3px 8px; border-radius: 5px; }
+    .np__pk__e {
+      color: var(--color-primary-green);
+      font-size: 11px; text-decoration: none; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 6px 10px;
+      background: rgba(2,204,116,0.15);
+      border: 1px solid rgba(2,204,116,0.3);
+      border-radius: 6px;
+    }
+    .np__cta {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      width: 100%; padding: 10px;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 8px;
+      color: rgba(255,255,255,0.8);
+      text-decoration: none;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-weight: 600;
+      box-sizing: border-box;
+    }
+
+    /* Upcoming picks */
+    .up {
+      background: #fff;
+      border: 1px solid var(--color-line);
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .up__h {
+      font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--color-text-muted);
+      margin-bottom: 10px;
+      display: flex; justify-content: space-between;
+    }
+    .up__h a { color: var(--color-primary-green); font-weight: 600; text-decoration: none; }
+    .up__r {
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      text-decoration: none;
+      color: inherit;
+      display: flex; flex-direction: column; gap: 3px;
+    }
+    .up__r:last-child { border-bottom: 0; }
+    .up__r__h { display: flex; justify-content: space-between; font-size: 10px; color: var(--color-text-muted); }
+    .up__r__h .ok { color: var(--color-primary-green); font-weight: 700; }
+    .up__r__h .pe { color: #dc2626; font-weight: 700; }
+    .up__r__t { font-family: var(--font-display); font-size: 13px; }
+    .up__r__t.m { color: var(--color-text-muted); }
+
+    /* News */
+    .news { display: flex; flex-direction: column; gap: 10px; }
+    .news__hero {
+      background: #0a0a0a;
+      border-radius: 12px;
+      overflow: hidden;
+      text-decoration: none;
+      color: #fff;
+      position: relative;
+      aspect-ratio: 5 / 3;
+      display: flex;
+      align-items: end;
+    }
+    .news__hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.55; }
+    .news__hero::before {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, transparent 60%);
+      z-index: 1;
+    }
+    .news__hero__b { position: relative; z-index: 2; padding: 14px; }
+    .news__hero__k { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-primary-green); font-weight: 700; margin-bottom: 5px; }
+    .news__hero__t { font-family: var(--font-display); font-size: 16px; line-height: 1.1; }
+    .news__list {
+      background: #fff;
+      border: 1px solid var(--color-line);
+      border-radius: 12px;
+      padding: 4px 14px;
+    }
+    .news__row {
+      display: flex; gap: 10px;
+      padding: 11px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      text-decoration: none;
+      color: inherit;
+    }
+    .news__row:last-of-type { border-bottom: 0; }
+    .news__row__img {
+      width: 46px; height: 46px;
+      border-radius: 7px;
+      background: linear-gradient(135deg, #0a3d20, #067a4a) center/cover no-repeat;
+      flex-shrink: 0;
+    }
+    .news__row__b { flex: 1; min-width: 0; }
+    .news__row__k { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-primary-green); font-weight: 700; margin-bottom: 3px; }
+    .news__row__t { font-family: var(--font-display); font-size: 13px; line-height: 1.15; }
+    .news__more {
+      display: block; padding: 11px 0;
+      text-align: center;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--color-primary-green);
+      text-decoration: none;
+      font-weight: 600;
+    }
   `],
 })
-export class RightRailComponent implements OnInit {
-  rail = inject(RightRailService);
-  redeem = inject(RedeemModalService);
+export class RightRailComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private auth = inject(AuthService);
-  private userModes = inject(UserModesService);
 
-  hasComplete = computed(() => this.userModes.hasComplete());
-  myGroups = computed<UserGroup[]>(() => this.userModes.groups());
+  readonly newsHubUrl = NEWS_HUB_URL;
 
-  groupsWithPrizes = computed<UserGroup[]>(() =>
-    this.myGroups().filter((g) => !!(g.prize1st || g.prize2nd || g.prize3rd)),
-  );
+  nextMatch = signal<NextMatchVm | null>(null);
+  upcoming = signal<UpcomingPickRow[]>([]);
+  newsHero = signal<NewsItemVm | null>(null);
+  newsList = signal<NewsItemVm[]>([]);
 
-  comodinesLoading = signal(true);
-  private comodines = signal<ComodinPreview[]>([]);
-  totalComodines = computed(() => this.comodines().length);
-
-  /** Top 4 comodines no expirados, priorizando pendientes y disponibles. */
-  activeComodines = computed<ComodinPreview[]>(() => {
-    const list = this.comodines();
-    const pending   = list.filter((c) => c.status === 'PENDING_TYPE_CHOICE');
-    const available = list.filter((c) => c.status === 'UNASSIGNED');
-    return [...pending, ...available].slice(0, 4);
-  });
+  private tickerId?: ReturnType<typeof setInterval>;
+  private rawNext: { kickoffAt: string } | null = null;
 
   async ngOnInit() {
-    const userId = this.auth.user()?.sub;
-    if (!userId) {
-      this.comodinesLoading.set(false);
-      return;
-    }
+    void this.loadNextAndUpcoming();
+    void this.loadNews();
+    this.tickerId = setInterval(() => this.refreshCountdown(), 1000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.tickerId) clearInterval(this.tickerId);
+  }
+
+  private async loadNextAndUpcoming() {
+    const userId = this.auth.user()?.sub ?? '';
     try {
-      const res = await this.api.listMyComodines(userId, TOURNAMENT_ID);
-      const rows = ((res.data ?? []) as ComodinPreview[])
-        .filter((c) => c.status !== 'EXPIRED');
-      this.comodines.set(rows);
-    } catch {
-      /* ignore */
-    } finally {
-      this.comodinesLoading.set(false);
+      const [matchesRes, teamsRes, picksRes] = await Promise.all([
+        this.api.listMatches(TOURNAMENT_ID),
+        this.api.listTeams(TOURNAMENT_ID),
+        userId
+          ? this.api.myPicks(userId)
+          : Promise.resolve({ data: [] as ReadonlyArray<{ matchId: string; homeScorePred: number; awayScorePred: number }> }),
+      ]);
+
+      const teamMap = new Map<string, { name: string; flag: string }>();
+      for (const t of (teamsRes.data ?? [])) {
+        if (t?.slug) teamMap.set(t.slug, { name: t.name ?? t.slug, flag: t.flagCode ?? '' });
+      }
+      const pickMap = new Map<string, { home: number; away: number }>();
+      for (const p of ((picksRes.data ?? []) as ReadonlyArray<{ matchId: string; homeScorePred: number; awayScorePred: number }>)) {
+        pickMap.set(p.matchId, { home: p.homeScorePred, away: p.awayScorePred });
+      }
+
+      const now = Date.now();
+      type MRow = {
+        id: string;
+        kickoffAt: string;
+        homeTeamId: string;
+        awayTeamId: string;
+        status?: string | null;
+        venue?: string | null;
+      };
+      const all = ((matchesRes.data ?? []) as ReadonlyArray<MRow>)
+        .filter((m): m is MRow => !!m?.id && !!m?.kickoffAt)
+        .filter((m) => new Date(m.kickoffAt).getTime() > now - 2 * 3600 * 1000)
+        .sort((a, b) => new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime());
+
+      const first = all[0];
+      if (first) {
+        const ko = new Date(first.kickoffAt);
+        const home = teamMap.get(first.homeTeamId) ?? { name: first.homeTeamId, flag: '' };
+        const away = teamMap.get(first.awayTeamId) ?? { name: first.awayTeamId, flag: '' };
+        const myPick = pickMap.get(first.id);
+        const isLive = first.status === 'IN_PROGRESS' || first.status === 'LIVE';
+        let winnerName: string | null = null;
+        if (myPick) {
+          if (myPick.home > myPick.away) winnerName = home.name;
+          else if (myPick.away > myPick.home) winnerName = away.name;
+        }
+        this.rawNext = { kickoffAt: first.kickoffAt };
+        this.nextMatch.set({
+          id: first.id,
+          homeName: home.name,
+          awayName: away.name,
+          homeFlag: home.flag,
+          awayFlag: away.flag,
+          kickoffAt: first.kickoffAt,
+          venue: first.venue ?? null,
+          phaseLabel: 'Mundial 2026',
+          countdown: this.computeCountdown(ko.getTime(), now),
+          isLive,
+          myPick: myPick ? { home: myPick.home, away: myPick.away, winnerName } : null,
+        });
+      }
+
+      const upcomingRows: UpcomingPickRow[] = all.slice(1, 5).map((m) => {
+        const ko = new Date(m.kickoffAt);
+        const home = teamMap.get(m.homeTeamId) ?? { name: m.homeTeamId, flag: '' };
+        const away = teamMap.get(m.awayTeamId) ?? { name: m.awayTeamId, flag: '' };
+        const myPick = pickMap.get(m.id);
+        return {
+          id: m.id,
+          dateLabel: this.formatShortDate(ko),
+          matchLabel: `${this.shortCode(home.name)} vs ${this.shortCode(away.name)}`,
+          hasPick: !!myPick,
+          pickLabel: myPick
+            ? `${myPick.home}-${myPick.away} ${myPick.home >= myPick.away ? home.name : away.name}`
+            : null,
+          countdownLabel: !myPick ? this.formatCountdownLabel(ko.getTime() - Date.now()) : null,
+        };
+      });
+      this.upcoming.set(upcomingRows);
+    } catch (e) {
+      console.warn('[right-rail] load next/upcoming failed', e);
     }
   }
 
-  typeLabel(t: string | null): string {
-    if (!t) return 'Sin tipo';
-    switch (t) {
-      case 'MULTIPLIER_X2':         return '2× Doble pts';
-      case 'PHASE_BOOST':           return 'Boost de fase';
-      case 'GROUP_SAFE_PICK':       return 'Safe Grupos';
-      case 'BRACKET_SAFE_PICK':     return 'Safe Llaves';
-      case 'REASSIGN_CHAMP_RUNNER': return 'Reasign campeón';
-      case 'LATE_EDIT':             return 'Edición tardía';
-      case 'BRACKET_RESET':         return 'Reset bracket';
-      case 'GROUP_RESET':           return 'Reset grupo';
-      case 'ANTI_PENALTY':          return 'Anti-penal';
-      default:                      return t;
+  private async loadNews() {
+    try {
+      const res = await this.api.listPublishedArticles(4);
+      const rows = ((res.data ?? []) as ReadonlyArray<{
+        id: string; title: string; externalUrl: string; imageKey?: string | null; publishedAt: string;
+      }>).slice();
+      const enriched: NewsItemVm[] = await Promise.all(rows.map(async (a): Promise<NewsItemVm> => {
+        let resolvedImageUrl: string | null = null;
+        if (a.imageKey) {
+          try {
+            const { url } = await getUrl({ path: a.imageKey, options: { expiresIn: 3600 } });
+            resolvedImageUrl = url.toString();
+          } catch { /* ignore */ }
+        }
+        return {
+          id: a.id,
+          title: a.title,
+          externalUrl: a.externalUrl,
+          resolvedImageUrl,
+          relativeTime: this.formatRelative(a.publishedAt),
+        };
+      }));
+      this.newsHero.set(enriched[0] ?? null);
+      this.newsList.set(enriched.slice(1));
+    } catch (e) {
+      console.warn('[right-rail] load news failed', e);
     }
   }
 
-  statusLabel(s: string): string {
-    switch (s) {
-      case 'PENDING_TYPE_CHOICE': return '⚠ Elige tipo';
-      case 'UNASSIGNED':          return 'Disponible';
-      case 'ASSIGNED':            return 'Asignado';
-      case 'ACTIVATED':           return 'Activo';
-      default:                    return s;
-    }
+  private refreshCountdown() {
+    if (!this.rawNext) return;
+    const ko = new Date(this.rawNext.kickoffAt).getTime();
+    const now = Date.now();
+    const cur = this.nextMatch();
+    if (!cur || cur.isLive) return;
+    if (ko - now <= 0) return;
+    this.nextMatch.set({ ...cur, countdown: this.computeCountdown(ko, now) });
   }
 
-  /** Suma $X de los 3 premios; si alguno no es numérico cae a "N premios". */
-  totalLabel(p1: string | null, p2: string | null, p3: string | null): string {
-    const raws = [p1, p2, p3].filter((v): v is string => !!v);
-    if (raws.length === 0) return 'Sin definir';
-    const numbers = raws.map((s) => {
-      const m = s.match(/\$\s*(\d[\d.,]*)/);
-      return m ? parseFloat(m[1].replace(/,/g, '')) : null;
-    });
-    if (numbers.every((n) => n !== null)) {
-      const sum = (numbers as number[]).reduce((a, n) => a + n, 0);
-      return `$${Math.round(sum)} en juego`;
-    }
-    return `${raws.length} ${raws.length === 1 ? 'premio' : 'premios'}`;
+  private computeCountdown(targetMs: number, nowMs: number) {
+    const diff = Math.max(0, targetMs - nowMs);
+    const d = Math.floor(diff / 86_400_000);
+    const h = Math.floor((diff % 86_400_000) / 3_600_000);
+    const m = Math.floor((diff % 3_600_000) / 60_000);
+    const s = Math.floor((diff % 60_000) / 1000);
+    const p2 = (n: number) => (n < 10 ? '0' : '') + n;
+    return { d: String(d), h: p2(h), m: p2(m), s: p2(s) };
+  }
+
+  private formatShortDate(d: Date): string {
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    return `${day}/${month}`;
+  }
+
+  /** 3-letter uppercase shortcode (used in "ARG vs BRA" labels). */
+  private shortCode(name: string): string {
+    return name.slice(0, 3).toUpperCase();
+  }
+
+  private formatCountdownLabel(diffMs: number): string {
+    if (diffMs < 0) return 'cerrado';
+    const h = Math.round(diffMs / 3_600_000);
+    if (h < 1) return `${Math.round(diffMs / 60_000)}m`;
+    if (h < 24) return `${h}h`;
+    return `${Math.round(h / 24)}d`;
+  }
+
+  private formatRelative(iso: string): string {
+    const diff = Date.now() - new Date(iso).getTime();
+    const h = Math.round(diff / 3_600_000);
+    if (h < 1) return 'hace minutos';
+    if (h < 24) return `hace ${h}h`;
+    const d = Math.round(h / 24);
+    if (d < 7) return d === 1 ? 'hace 1 día' : `hace ${d} días`;
+    return new Date(iso).toLocaleDateString();
   }
 }
