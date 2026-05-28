@@ -640,43 +640,14 @@ export class ApiService {
   // ----- Articles (admin-curated news) -----
 
   listPublishedArticles(limit = 4) {
-    // Cast required until sandbox redeploys regenerate schema.d.ts.
-    return (apiClient.models as unknown as {
-      Article: {
-        listArticleByStatusAndPublishedAt: (
-          input: { status: 'PUBLISHED' },
-          opts: { sortDirection: 'DESC' | 'ASC'; limit: number; authMode: 'apiKey' },
-        ) => Promise<{ data: ReadonlyArray<{
-          id: string;
-          title: string;
-          imageKey: string | null;
-          externalUrl: string;
-          publishedAt: string;
-          status: 'PUBLISHED' | 'DRAFT';
-          sortOrder: number | null;
-        }> }>;
-      };
-    }).Article.listArticleByStatusAndPublishedAt(
+    return apiClient.models.Article.listArticleByStatusAndPublishedAt(
       { status: 'PUBLISHED' },
       { sortDirection: 'DESC', limit, authMode: 'apiKey' },
     );
   }
 
   listAllArticles() {
-    // Cast required until sandbox redeploys regenerate schema.d.ts.
-    return (apiClient.models as unknown as {
-      Article: {
-        list: (opts?: { limit?: number }) => Promise<{ data: ReadonlyArray<{
-          id: string;
-          title: string;
-          imageKey: string | null;
-          externalUrl: string;
-          publishedAt: string;
-          status: 'PUBLISHED' | 'DRAFT';
-          sortOrder: number | null;
-        }> }>;
-      };
-    }).Article.list({ limit: 200 });
+    return apiClient.models.Article.list({ limit: 200 });
   }
 
   createArticle(input: {
@@ -687,17 +658,7 @@ export class ApiService {
     status: 'PUBLISHED' | 'DRAFT';
     sortOrder?: number;
   }) {
-    type CreateArticleInput = {
-      title: string;
-      imageKey?: string;
-      externalUrl: string;
-      publishedAt: string;
-      status: 'PUBLISHED' | 'DRAFT';
-      sortOrder?: number;
-    };
-    return (apiClient.models as unknown as {
-      Article: { create: (input: CreateArticleInput) => Promise<{ data: { id: string } | null }> };
-    }).Article.create(input);
+    return apiClient.models.Article.create(input);
   }
 
   updateArticle(input: {
@@ -709,23 +670,10 @@ export class ApiService {
     status?: 'PUBLISHED' | 'DRAFT';
     sortOrder?: number;
   }) {
-    type UpdateArticleInput = {
-      id: string;
-      title?: string;
-      imageKey?: string;
-      externalUrl?: string;
-      publishedAt?: string;
-      status?: 'PUBLISHED' | 'DRAFT';
-      sortOrder?: number;
-    };
-    return (apiClient.models as unknown as {
-      Article: { update: (input: UpdateArticleInput) => Promise<{ data: { id: string } | null }> };
-    }).Article.update(input);
+    return apiClient.models.Article.update(input);
   }
 
   deleteArticle(id: string) {
-    return (apiClient.models as unknown as {
-      Article: { delete: (input: { id: string }) => Promise<{ data: { id: string } | null }> };
-    }).Article.delete({ id });
+    return apiClient.models.Article.delete({ id });
   }
 }
