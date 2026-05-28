@@ -49,3 +49,5 @@ Thumbs.db
 # server-side polla-backend repo's amplify_outputs.json stays gitignored.
 src/amplify_outputs.json
 .claude/
+.agents/
+skills-lock.json
