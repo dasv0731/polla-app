@@ -497,12 +497,13 @@ export class RightRailComponent implements OnInit, OnDestroy {
   }
 
   private async loadNews() {
+    let enriched: NewsItemVm[] = [];
     try {
       const res = await this.api.listPublishedArticles(4);
       const rows = ((res.data ?? []) as ReadonlyArray<{
         id: string; title: string; externalUrl: string; imageKey?: string | null; publishedAt: string;
       }>).slice();
-      const enriched: NewsItemVm[] = await Promise.all(rows.map(async (a): Promise<NewsItemVm> => {
+      enriched = await Promise.all(rows.map(async (a): Promise<NewsItemVm> => {
         let resolvedImageUrl: string | null = null;
         if (a.imageKey) {
           try {
@@ -518,11 +519,35 @@ export class RightRailComponent implements OnInit, OnDestroy {
           relativeTime: this.formatRelative(a.publishedAt),
         };
       }));
-      this.newsHero.set(enriched[0] ?? null);
-      this.newsList.set(enriched.slice(1));
     } catch (e) {
       console.warn('[right-rail] load news failed', e);
     }
+    // Fallback a noticias seed para que el bloque tenga contenido visible
+    // hasta que el admin publique noticias reales o conectemos una fuente
+    // externa (RSS / news API). Remover cuando haya feed productivo.
+    if (enriched.length === 0) {
+      enriched = this.seedNews();
+    }
+    this.newsHero.set(enriched[0] ?? null);
+    this.newsList.set(enriched.slice(1));
+  }
+
+  /** Noticias mock — visibles hasta que existan Article reales en DB. */
+  private seedNews(): NewsItemVm[] {
+    const now = Date.now();
+    const items: Array<{ title: string; hoursAgo: number }> = [
+      { title: 'Sorteo confirmado: México estrena el Mundial en Estadio Azteca', hoursAgo: 4 },
+      { title: 'Mbappé llega tocado al microciclo de Francia: alerta en la concentración', hoursAgo: 14 },
+      { title: 'Argentina anuncia su lista preliminar de 35 con sorpresas', hoursAgo: 28 },
+      { title: 'Análisis: el grupo de la muerte que nadie quiere enfrentar', hoursAgo: 50 },
+    ];
+    return items.map((item, idx) => ({
+      id: `seed-${idx}`,
+      title: item.title,
+      externalUrl: NEWS_HUB_URL,
+      resolvedImageUrl: null,
+      relativeTime: this.formatRelative(new Date(now - item.hoursAgo * 3_600_000).toISOString()),
+    }));
   }
 
   private refreshCountdown() {
