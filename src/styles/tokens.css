@@ -93,12 +93,11 @@
   --transition-normal: 0.3s ease;
   --transition-slow:   0.5s ease;
 
-  /* -------- Z-index system -------- */
-  --z-dropdown: 100;
-  --z-sticky:   200;
-  --z-fixed:    300;
-  --z-modal:    400;
-  --z-tooltip:  500;
+  /* -------- Z-index legacy (replaced abajo por nueva escala A1) --------
+     --z-fixed se conserva temporalmente porque page-shell.css y
+     components.css aún lo consumen para headers/sub-headers.
+     TODO: migrar consumers a --z-overlay y eliminar. */
+  --z-fixed:    500;
 
   /* -------- Breakpoints (referencia; se usan como min-width en media queries) -------- */
   --bp-tablet:  480px;
@@ -136,4 +135,61 @@
   --wf-ui:      'Inter', system-ui, -apple-system, sans-serif;
   --wf-display: 'Bebas Neue', 'Arial Narrow', sans-serif;
   --wf-mono:    ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* ============================================================
+     A1 foundation — layout primitives, z-index scale, animations
+     ============================================================ */
+
+  /* -------- Layout primitives (sidebar, modal, hit-target) -------- */
+  /* Sidebar width: collapsed default. Componente <app-sidebar> mutates
+     this value to 200px on hover. Shell + trivia-toast consume reactively
+     via margin-left calc to evitar overlap (A3 bug fix). */
+  --sidebar-w: 64px;
+
+  /* Modal sizing — single source of truth para todos los modales unificados
+     en sub-proyecto A2 (sistema `<app-modal>` reemplaza 4 paralelos). */
+  --modal-radius: 16px;
+  --modal-padding: 28px;
+  --modal-padding-sm: 20px;
+  --modal-padding-lg: 36px;
+  --modal-max-width-sm: 380px;
+  --modal-max-width-md: 480px;
+  --modal-max-width-lg: 640px;
+
+  /* Backdrop tokens — usados por todos los modales. */
+  --modal-backdrop-color: rgba(0, 0, 0, 0.75);
+  --modal-backdrop-blur: 6px;
+
+  /* Logo size unificado — 5ta variante (28/32/40) consolidada a 1 token. */
+  --logo-size-md: 32px;
+  --logo-size-sm: 24px;
+  --logo-size-lg: 48px;
+
+  /* Hit target mínimo recomendado (Apple HIG 44pt / Material 48dp).
+     Aplicar a buttons icon-only, close buttons, delete member buttons. */
+  --hit-target-min: 44px;
+
+  /* -------- Z-index scale (mental model: low to high) -------- */
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-overlay: 100;     /* tour-overlay, drawer mobile */
+  --z-modal: 1000;      /* modales y dialogs */
+  --z-dropdown: 1100;   /* dropdowns dentro de modales */
+  --z-toast: 1500;      /* toasts global */
+  --z-tooltip: 2000;    /* tooltips */
+
+  /* -------- Animation durations + easings -------- */
+  --anim-fast: 150ms;
+  --anim-base: 200ms;
+  --anim-slow: 300ms;
+
+  --easing-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-enter: cubic-bezier(0, 0, 0.2, 1);
+  --easing-exit: cubic-bezier(0.4, 0, 1, 1);
+
+  /* -------- prefers-reduced-motion safe defaults --------
+     Components que respeten reduced-motion deben envolver sus animations
+     con `@media (prefers-reduced-motion: reduce) { animation: none; }`
+     (ver SkeletonComponent como ejemplo). NO hay helper class global —
+     pattern in-component es preferido para evitar coupling. */
 }
