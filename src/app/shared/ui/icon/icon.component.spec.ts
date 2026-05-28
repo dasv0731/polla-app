@@ -28,4 +28,28 @@ describe('IconComponent', () => {
     const svg = fixture.nativeElement.querySelector('svg');
     expect(svg).toBeTruthy();
   });
+
+  it('applies correct pixel size for each variant', () => {
+    fixture.componentRef.setInput('name', 'bell');
+
+    fixture.componentRef.setInput('size', 'sm');
+    fixture.detectChanges();
+    let svg = fixture.nativeElement.querySelector('svg');
+    expect(svg.getAttribute('width')).toBe('16');
+
+    fixture.componentRef.setInput('size', 'md');
+    fixture.detectChanges();
+    svg = fixture.nativeElement.querySelector('svg');
+    expect(svg.getAttribute('width')).toBe('20');
+
+    fixture.componentRef.setInput('size', 'lg');
+    fixture.detectChanges();
+    svg = fixture.nativeElement.querySelector('svg');
+    expect(svg.getAttribute('width')).toBe('24');
+
+    fixture.componentRef.setInput('size', 'xl');
+    fixture.detectChanges();
+    svg = fixture.nativeElement.querySelector('svg');
+    expect(svg.getAttribute('width')).toBe('32');
+  });
 });
