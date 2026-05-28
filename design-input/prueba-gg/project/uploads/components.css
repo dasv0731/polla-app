@@ -1,0 +1,912 @@
+/* ============================================================
+   Golgana — Components
+   Botones · cards · tablas · badges · header · footer · drawer · benefits clip · breadcrumb · FAQ · hero
+   ============================================================ */
+
+/* ============================================================
+   Botón primario (CTA)
+   Fondo verde, texto blanco, borde verde, radius-md
+   UPPERCASE, font-weight 600
+   Hover: invierte a fondo blanco + texto verde
+   ============================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  cursor: pointer;
+  font-family: var(--font-primary);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  border-radius: var(--radius-md);
+  padding: 12px 24px;
+  font-size: var(--fs-base);
+  transition: background var(--transition-normal),
+              color var(--transition-normal),
+              border-color var(--transition-normal);
+  border: 1px solid transparent;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.btn--primary {
+  background: var(--color-primary-green);
+  color: var(--color-primary-white);
+  border-color: var(--color-primary-green);
+}
+.btn--primary:hover {
+  background: var(--color-primary-white);
+  color: var(--color-primary-green);
+}
+
+/* Variante sobre hero con fondo imagen: invertir a negro */
+.btn--primary-on-hero:hover {
+  background: var(--color-primary-black);
+  color: var(--color-primary-white);
+  border-color: var(--color-primary-green);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--color-primary-green);
+  border-color: var(--color-primary-green);
+}
+.btn--ghost:hover {
+  background: var(--color-primary-green);
+  color: var(--color-primary-white);
+}
+
+/* Link secundario verde */
+.link-green {
+  color: var(--color-primary-green);
+  font-weight: var(--fw-bold);
+  cursor: pointer;
+}
+.link-green:hover { text-decoration: underline; }
+
+/* Botón grande (hero) */
+.btn--lg {
+  padding: 16px 48px;
+  font-size: var(--fs-lg);
+}
+
+/* Botón pequeño (chips inline) */
+.btn--sm {
+  padding: 6px 14px;
+  font-size: var(--fs-sm);
+}
+
+@media (min-width: 992px) {
+  .btn { padding: 14px 42px; font-size: var(--fs-lg); }
+  .btn--sm { padding: 8px 16px; font-size: var(--fs-sm); }
+  .btn--lg { padding: 18px 56px; }
+}
+
+/* ============================================================
+   Card (patrón "tools": gris + skew -8° en desktop)
+   ============================================================ */
+.card {
+  background: var(--color-primary-grey);
+  border-radius: var(--radius-card);
+  padding: var(--space-lg);
+}
+
+.card--skewed {
+  /* Skew solo en desktop, mobile plano (manual §8.3) */
+  transition: transform var(--transition-normal);
+}
+
+.card--skewed > .card__inner {
+  display: block;
+}
+
+@media (min-width: 992px) {
+  .card--skewed {
+    transform: skewY(-4deg);
+    padding: var(--space-2xl) var(--space-xl);
+  }
+  .card--skewed > .card__inner {
+    transform: skewY(4deg);
+  }
+}
+
+.card--white {
+  background: var(--color-primary-white);
+  border: var(--border-grey);
+}
+
+.card--flat {
+  background: var(--color-primary-grey);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+}
+
+.card__title {
+  font-family: var(--font-primary);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  font-size: var(--fs-base);
+  margin-bottom: var(--space-sm);
+}
+
+.card__desc {
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+}
+
+/* Card con media arriba (artículos, equipos, jugadores) */
+.card-media {
+  background: var(--color-primary-white);
+  border: var(--border-grey);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+.card-media:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+.card-media__media {
+  aspect-ratio: 16 / 9;
+  background: var(--color-primary-grey);
+  overflow: hidden;
+}
+.card-media__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.card-media__body {
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  flex: 1;
+}
+.card-media__title {
+  font-family: var(--font-primary);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-md);
+  line-height: var(--lh-compact);
+}
+
+/* ============================================================
+   Tabla standings (manual §8.5)
+   ============================================================ */
+.standings {
+  width: 100%;
+  font-size: var(--fs-sm);
+  border-bottom: var(--border-green);
+}
+.standings thead th {
+  background: var(--color-primary-green);
+  color: var(--color-primary-white);
+  font-family: var(--font-primary);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  padding: 12px var(--space-md);
+  text-align: left;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.05em;
+}
+.standings thead th:first-child { border-top-left-radius: var(--radius-th); }
+.standings thead th:last-child  { border-top-right-radius: var(--radius-th); }
+
+.standings tbody td {
+  padding: 12px var(--space-md);
+  border-right: var(--border-green);
+  background: var(--color-primary-white);
+  vertical-align: middle;
+}
+.standings tbody td:last-child { border-right: none; }
+.standings tbody tr:hover td { background: var(--color-green-5); }
+
+.standings .pos { font-weight: var(--fw-bold); width: 32px; text-align: center; }
+.standings .team-cell { display: flex; align-items: center; gap: var(--space-sm); font-weight: var(--fw-medium); min-width: 140px; }
+.standings .team-cell img { width: 24px; height: 24px; }
+
+/* Zona Copa Libertadores */
+.standings tbody tr.zone-libertadores td:first-child { border-left: 4px solid var(--color-primary-green); }
+/* Zona descenso */
+.standings tbody tr.zone-descent td:first-child { border-left: 4px solid var(--color-lost); }
+
+/* Wrapper con scroll horizontal en mobile + primera col sticky */
+.standings-wrap {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.standings-wrap::-webkit-scrollbar { display: none; }
+
+@media (max-width: 991px) {
+  /* min-width + sticky SOLO dentro del wrapper con overflow-x.
+     Sin este scope, una tabla sin wrapper rompería el layout de la
+     página empujando el main a 800px en mobile. */
+  .standings-wrap .standings { min-width: 800px; }
+  .standings-wrap .standings thead th:first-child,
+  .standings-wrap .standings tbody td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: var(--z-dropdown);
+  }
+  .standings-wrap .standings thead th:first-child { background: var(--color-primary-green); }
+  .standings-wrap .standings tbody td:first-child { background: var(--color-primary-white); }
+}
+
+/* ============================================================
+   Badges de resultado (últimos 5)
+   W = verde / D = amarillo con texto negro / L = rojo
+   ============================================================ */
+.result-streak {
+  display: inline-flex;
+  gap: 6px;
+}
+.result-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-primary);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-sm);
+  color: var(--color-primary-white);
+}
+.result-badge--w { background: var(--color-win); }
+.result-badge--d { background: var(--color-draw); color: var(--color-primary-black); }
+.result-badge--l { background: var(--color-lost); }
+
+/* ============================================================
+   Header global
+   Fondo negro, logo izquierda, nav derecha, drawer en mobile (CSS-only)
+   ============================================================ */
+.site-header {
+  background: var(--color-primary-black);
+  color: var(--color-primary-white);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+}
+
+.site-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--section-x-mobile);
+  min-height: 70px;
+}
+
+.site-header__logo img {
+  height: 40px;
+  width: auto;
+}
+
+.site-header__nav {
+  display: none;
+}
+
+.site-header__nav a {
+  font-family: var(--font-primary);
+  font-size: var(--fs-base);
+  padding: var(--space-sm) var(--space-md);
+}
+.site-header__nav a:hover { color: var(--color-primary-green); }
+.site-header__nav a.is-active { color: var(--color-primary-green); font-weight: var(--fw-semibold); }
+
+.site-header__socials {
+  display: none;
+  gap: var(--space-sm);
+}
+.social-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-white);
+  color: var(--color-primary-black);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition-normal), color var(--transition-normal);
+}
+.social-icon:hover {
+  background: var(--color-primary-green);
+  color: var(--color-primary-white);
+}
+.social-icon svg { width: 16px; height: 16px; fill: currentColor; }
+
+/* Drawer toggle (CSS-only) */
+.drawer-toggle { display: none; }
+.drawer-btn {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: var(--space-sm);
+  cursor: pointer;
+}
+.drawer-btn span {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: var(--color-primary-white);
+  transition: transform var(--transition-normal), opacity var(--transition-normal);
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: 80%;
+  max-width: 300px;
+  background: var(--color-primary-black);
+  color: var(--color-primary-white);
+  transform: translateX(100%);
+  transition: transform var(--transition-normal);
+  z-index: var(--z-fixed);
+  padding: calc(70px + var(--space-lg)) var(--space-lg) var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  overflow-y: auto;
+}
+.drawer a {
+  font-family: var(--font-primary);
+  font-size: var(--fs-lg);
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.drawer a:hover { color: var(--color-primary-green); }
+
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-normal);
+  z-index: calc(var(--z-fixed) - 1);
+}
+
+.drawer-toggle:checked ~ .drawer { transform: translateX(0); }
+.drawer-toggle:checked ~ .drawer-backdrop { opacity: 1; pointer-events: auto; }
+.drawer-toggle:checked + .site-header .drawer-btn span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.drawer-toggle:checked + .site-header .drawer-btn span:nth-child(2) { opacity: 0; }
+.drawer-toggle:checked + .site-header .drawer-btn span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+@media (min-width: 992px) {
+  .site-header__inner {
+    padding: 0 var(--section-x-desktop);
+    min-height: 20vh;
+    max-height: 120px;
+  }
+  .site-header__logo img { height: 56px; }
+  .site-header__nav {
+    display: flex;
+    gap: var(--space-md);
+  }
+  .site-header__socials { display: inline-flex; }
+  .drawer-btn, .drawer, .drawer-backdrop { display: none; }
+}
+
+/* ============================================================
+   Footer global
+   ============================================================ */
+.site-footer {
+  background: var(--color-primary-black);
+  color: var(--color-primary-white);
+  padding: var(--space-2xl) var(--section-x-mobile) var(--space-lg);
+}
+.site-footer__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-xl);
+}
+.site-footer__brand { grid-column: 1 / -1; }
+.site-footer__brand img { height: 48px; margin-bottom: var(--space-md); }
+.site-footer__brand p { max-width: 40ch; color: var(--color-on-dark-muted); }
+
+.site-footer__col h4 {
+  font-family: var(--font-primary);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.08em;
+  color: var(--color-primary-green);
+  margin-bottom: var(--space-md);
+}
+.site-footer__col a {
+  display: block;
+  padding: 6px 0;
+  color: var(--color-on-dark-muted);
+  font-size: var(--fs-sm);
+}
+.site-footer__col a:hover { color: var(--color-primary-green); }
+
+.site-footer__socials {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+}
+.site-footer__socials .social-icon {
+  width: 35px;
+  height: 35px;
+}
+.site-footer__socials .social-icon svg { width: 18px; height: 18px; }
+
+.site-footer__divider {
+  background: rgba(255, 255, 255, 0.15);
+  margin: var(--space-xl) 0 var(--space-lg);
+}
+.site-footer__copy {
+  font-size: var(--fs-xs);
+  color: var(--color-on-dark-muted);
+  text-align: center;
+}
+
+@media (min-width: 992px) {
+  .site-footer { padding: var(--space-3xl) var(--section-x-desktop) var(--space-xl); }
+  .site-footer__grid { grid-template-columns: 3fr 1fr 1fr 1fr; }
+  .site-footer__brand { grid-column: auto; }
+  .site-footer__copy { text-align: left; }
+}
+
+/* ============================================================
+   Breadcrumb
+   ============================================================ */
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  padding-block: var(--space-md);
+}
+.breadcrumb a:hover { color: var(--color-primary-green); }
+.breadcrumb__sep {
+  color: var(--color-text-muted);
+  opacity: 0.5;
+}
+.breadcrumb [aria-current="page"] {
+  color: var(--color-primary-black);
+  font-weight: var(--fw-semibold);
+}
+
+/* ============================================================
+   Bloque "benefits" verde completo con clip-path (manual §8.4)
+   ============================================================ */
+.benefits {
+  background: var(--color-primary-green);
+  color: var(--color-primary-white);
+  padding-block: var(--space-3xl) var(--space-3xl);
+  padding-inline: var(--section-x-mobile);
+  clip-path: polygon(0 4%, 100% 0, 100% 96%, 0 100%);
+  margin-block: var(--space-2xl);
+}
+.benefits__grid {
+  display: grid;
+  gap: var(--space-xl);
+  grid-template-columns: 1fr;
+  max-width: var(--container-wide);
+  margin-inline: auto;
+}
+.benefits__list li {
+  display: flex;
+  gap: var(--space-md);
+  align-items: start;
+  padding-block: var(--space-sm);
+}
+.benefits__check {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-white);
+  color: var(--color-primary-green);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--fw-bold);
+}
+
+@media (min-width: 992px) {
+  .benefits {
+    padding-inline: var(--section-x-desktop);
+    padding-block: var(--space-3xl) var(--space-3xl);
+    clip-path: polygon(0 6%, 100% 0, 100% 94%, 0 100%);
+  }
+  .benefits__grid { grid-template-columns: 1fr 1fr; align-items: center; }
+}
+
+/* ============================================================
+   Hero editorial (home, torneo, equipo, jugador)
+   ============================================================ */
+.hero {
+  background: var(--color-primary-black);
+  color: var(--color-primary-white);
+  min-height: 480px;
+  display: flex;
+  align-items: center;
+  padding: var(--section-y-mobile) var(--section-x-mobile);
+  position: relative;
+  overflow: hidden;
+}
+.hero__bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
+  opacity: 0.9;
+  z-index: 0;
+}
+.hero__bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.35;
+  position: absolute;
+  inset: 0;
+}
+.hero__content {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+}
+.hero__kicker { margin-bottom: var(--space-md); }
+.hero__title {
+  color: var(--color-primary-white);
+  margin-bottom: var(--space-md);
+}
+.hero__lead {
+  color: var(--color-on-dark-muted);
+  font-size: var(--fs-md);
+  margin-bottom: var(--space-lg);
+  max-width: 60ch;
+}
+.hero__actions { display: flex; gap: var(--space-md); flex-wrap: wrap; }
+
+@media (min-width: 992px) {
+  .hero { min-height: 640px; padding: var(--section-y-desktop) var(--section-x-desktop); }
+  .hero__lead { font-size: var(--fs-lg); }
+}
+
+/* ============================================================
+   Stats bar (hero de entidad: equipo, torneo, jugador)
+   ============================================================ */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  background: var(--color-primary-grey);
+  border-radius: var(--radius-card);
+}
+.stat__label {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+.stat__value {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  line-height: 1;
+}
+
+@media (min-width: 480px) {
+  .stats { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* ============================================================
+   FAQ acordeón (CSS-only con <details>)
+   ============================================================ */
+.faq { display: flex; flex-direction: column; gap: var(--space-sm); }
+.faq details {
+  background: var(--color-primary-grey);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md) var(--space-lg);
+  transition: background var(--transition-normal);
+}
+.faq details[open] { background: var(--color-primary-white); border: var(--border-green); }
+.faq summary {
+  cursor: pointer;
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-md);
+  list-style: none;
+}
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after {
+  content: "+";
+  font-size: var(--fs-2xl);
+  color: var(--color-primary-green);
+  transition: transform var(--transition-normal);
+}
+.faq details[open] summary::after { content: "−"; }
+.faq p { margin-top: var(--space-md); color: var(--color-text-muted); }
+
+/* ============================================================
+   Partido (card compacta con escudos + marcador/hora)
+   Layout: 3 columnas — equipo local / centro / equipo visitante.
+   Los equipos se muestran en vertical (escudo arriba, nombre centrado
+   abajo) para que nombres largos no desborden ni se solapen con el centro.
+   ============================================================ */
+.match-card {
+  display: grid;
+  grid-template-columns: 1fr minmax(100px, auto) 1fr;
+  gap: var(--space-sm);
+  align-items: start;
+  background: var(--color-primary-white);
+  border: var(--border-grey);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
+}
+.match-card:hover {
+  border-color: var(--color-primary-green);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.match-card__team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-xs);
+  text-align: center;
+  min-width: 0;  /* permite shrink correcto en grid */
+}
+/* El visitante tiene el <img> después del <span> en el DOM.
+   Con column se vería invertido (nombre arriba, escudo abajo),
+   column-reverse corrige el orden visual sin tocar el HTML. */
+.match-card__team--away { flex-direction: column-reverse; }
+
+.match-card__team img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+.match-card__team span {
+  font-family: var(--font-primary);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-sm);
+  line-height: 1.2;
+  word-break: break-word;
+  hyphens: auto;
+  /* máx 2 líneas con fallback universal */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.match-card__center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-xs);
+  padding-top: 6px;  /* alinea visualmente con el nombre que está debajo del escudo */
+  text-align: center;
+  min-width: 0;
+}
+.match-card__center small {
+  font-family: var(--font-primary);
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  max-width: 14ch;
+  display: block;
+}
+.match-card__score {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  line-height: 1;
+  color: var(--color-primary-black);
+}
+.match-card__time {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  line-height: 1;
+  color: var(--color-primary-black);
+}
+
+/* Estados del partido */
+.match-status {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: var(--fw-semibold);
+}
+.match-status--scheduled { background: var(--color-primary-grey); color: var(--color-primary-black); }
+.match-status--playing   { background: var(--color-lost); color: var(--color-primary-white); animation: pulse 1.5s ease-in-out infinite; }
+.match-status--finished  { background: var(--color-primary-black); color: var(--color-primary-white); }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* ============================================================
+   Team crest + player avatar placeholders
+   ============================================================ */
+.crest {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+.crest--lg { width: 120px; height: 120px; }
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  background: var(--color-primary-grey);
+}
+.avatar--lg { width: 120px; height: 120px; }
+
+/* ============================================================
+   Ad slot (reservado, visible con borde punteado en mocks)
+   ============================================================ */
+.ad-slot {
+  border: 2px dashed var(--color-primary-grey);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-block: var(--space-xl);
+}
+
+/* ============================================================
+   Chip / tag
+   ============================================================ */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-grey);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: var(--fw-medium);
+}
+.chip--green {
+  background: var(--color-green-20);
+  color: var(--color-primary-green);
+}
+.chip--outline {
+  background: transparent;
+  border: 1px solid var(--color-primary-grey);
+}
+
+/* ============================================================
+   Horizontal scroll (partidos destacados home)
+   ============================================================ */
+.h-scroll {
+  display: flex;
+  gap: var(--space-md);
+  overflow-x: auto;
+  padding-bottom: var(--space-md);
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+}
+.h-scroll > * {
+  flex: 0 0 280px;
+  scroll-snap-align: start;
+}
+
+/* ============================================================
+   Filters — barra de filtros con selects + CTA "Aplicar"
+   Uso: calendario, goleadores, hubs, directorios.
+   Diferenciado con borde verde izquierdo + label visible por select +
+   el botón queda claramente separado (última columna en desktop, fila
+   completa en mobile).
+   ============================================================ */
+.filters {
+  display: grid;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--color-primary-grey);
+  border-radius: var(--radius-lg);
+  border-left: 4px solid var(--color-primary-green);
+  margin-block: var(--space-lg);
+}
+.filters__title {
+  grid-column: 1 / -1;
+  font-family: var(--font-primary);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: var(--fw-bold);
+  color: var(--color-primary-green);
+  margin: 0;
+}
+.filters__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.filters__label {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  font-weight: var(--fw-semibold);
+}
+.filters__select {
+  all: unset;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 40px 10px 14px;
+  background-color: var(--color-primary-white);
+  border: var(--border-grey);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  font-family: var(--font-primary);
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path d='M2 4 L6 8 L10 4' stroke='%23000000' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 12px;
+  transition: border-color var(--transition-normal);
+}
+.filters__select:hover,
+.filters__select:focus-visible {
+  border-color: var(--color-primary-green);
+}
+.filters__submit {
+  /* Mobile (base): botón en su propia fila, ancho completo */
+  width: 100%;
+  margin-top: var(--space-xs);
+}
+
+@media (min-width: 480px) {
+  .filters {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .filters__submit { grid-column: 1 / -1; }
+}
+@media (min-width: 992px) {
+  .filters {
+    grid-template-columns: repeat(3, 1fr) auto;
+    align-items: end;
+  }
+  .filters__submit {
+    width: auto;
+    grid-column: auto;
+    margin-top: 0;
+    white-space: nowrap;
+  }
+}
+
+/* ============================================================
+   Section heading (kicker + h2 + opcional CTA derecha)
+   ============================================================ */
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+  flex-wrap: wrap;
+}
+.section-heading__text { flex: 1; min-width: 260px; }
+.section-heading__cta { align-self: center; }

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es-EC"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Grupos · Mundial 2026 — Golgana</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./styles/tokens.css"><link rel="stylesheet" href="./styles/base.css"><link rel="stylesheet" href="./styles/components.css"><link rel="stylesheet" href="./styles/golgana-pro.css">
+<link rel="icon" type="image/png" href="./assets/logo-golgana.png">
+<style>
+.gtable{width:100%;border-collapse:collapse;font-size:13px}
+.gtable th{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--color-text-muted);font-weight:500;text-align:right;padding:6px 4px;border-bottom:1px solid var(--color-border)}
+.gtable th:first-child{text-align:left;width:24px}
+.gtable th:nth-child(2){text-align:left}
+.gtable td{padding:8px 4px;text-align:right;border-bottom:1px solid var(--color-border-soft);font-variant-numeric:tabular-nums}
+.gtable td:first-child{font-family:var(--font-display);color:var(--color-text-muted);font-size:14px;width:24px}
+.gtable td:nth-child(2){text-align:left;font-weight:500;display:flex;align-items:center;gap:8px}
+.gtable td:nth-child(2) .flag{font-size:16px}
+.gtable .pts{font-family:var(--font-display);font-size:16px;color:var(--color-text)}
+.gtable tr.q td:first-child{color:var(--color-primary-green)}
+.gtable tr.q td:first-child::after{content:"";display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--color-primary-green);margin-left:6px;vertical-align:middle}
+.gtable tr:last-child td{border-bottom:none}
+.group-card{display:flex;flex-direction:column;gap:14px}
+.group-card__head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;border-bottom:1px solid var(--color-border);padding-bottom:10px}
+.group-card__title{font-family:var(--font-display);font-size:32px;line-height:1;letter-spacing:0.04em}
+.group-card__meta{font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-text-muted)}
+.group-card__fix{display:flex;flex-wrap:wrap;gap:6px;font-size:11px;color:var(--color-text-muted)}
+.group-card__fix span{background:var(--color-bg-soft);padding:4px 8px;border-radius:6px;letter-spacing:0.04em}
+.group-card__cta{font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-primary-green);font-weight:600;text-decoration:none;border-top:1px solid var(--color-border-soft);padding-top:10px;display:flex;justify-content:space-between;align-items:center}
+.group-card.is-tri{background:linear-gradient(160deg,rgba(2,204,116,0.06),transparent 60%);border-color:rgba(2,204,116,0.35)}
+.group-card.is-tri .group-card__title{color:var(--color-primary-green)}
+.legend{display:flex;gap:20px;flex-wrap:wrap;font-size:12px;color:var(--color-text-muted);align-items:center}
+.legend__dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--color-primary-green);margin-right:6px;vertical-align:middle}
+</style>
+</head>
+<body data-variant="bento" data-density="normal" data-accent="muted">
+<input type="checkbox" id="drawer" class="drawer-toggle sr-only">
+<header class="site-header"><div class="site-header__inner">
+<a href="./home-mejorada.html" class="site-header__logo"><img src="./assets/logo-golgana.png" alt="Golgana"></a>
+<nav class="site-header__nav"><a href="./home-mejorada.html">Inicio</a><a href="./mundial-2026.html" class="is-active">Mundial 2026</a><a href="./torneo-mejorado.html">LigaPro</a><a href="./equipo-mejorado.html">Equipos</a><a href="./jugador-mejorado.html">Jugadores</a></nav>
+<label for="drawer" class="drawer-btn"><span></span><span></span><span></span></label></div></header>
+
+<main>
+<div class="pro-container"><nav class="pcrumb"><a href="./home-mejorada.html">Inicio</a><span class="pcrumb__sep">/</span><a href="#">Torneos</a><span class="pcrumb__sep">/</span><a href="./mundial-2026.html">Mundial 2026</a><span class="pcrumb__sep">/</span><span aria-current="page">Grupos</span></nav></div>
+
+<section class="pro-hero">
+<div class="pro-hero__inner"><div class="pro-hero__main">
+<div class="pro-hero__bg" style="background:linear-gradient(135deg,#000 0%,#0a3d20 50%,#067a4a 100%)"></div>
+<span class="pro-hero__kicker">Fase de grupos · 12 × 4 · 72 partidos</span>
+<h1 class="pro-hero__title">Los 12<br>grupos</h1>
+<p class="pro-hero__lead">Por primera vez en la historia, 48 selecciones reparten en 12 grupos de cuatro. Pasan los dos primeros y los ocho mejores terceros — 32 al nuevo Dieciseisavos. Aquí seguimos cada llave en vivo.</p>
+<div class="pro-hero__meta"><span>11 jun – 27 jun · fase de grupos</span><span>72 partidos</span><span>32 clasifican</span></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-top:32px;max-width:680px">
+<div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:16px"><div style="font-family:var(--font-display);font-size:36px;line-height:0.9;color:var(--color-primary-green)">12</div><div style="font-size:11px;color:rgba(255,255,255,0.65);letter-spacing:0.14em;text-transform:uppercase;margin-top:6px">Grupos</div></div>
+<div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:16px"><div style="font-family:var(--font-display);font-size:36px;line-height:0.9;color:#fff">48</div><div style="font-size:11px;color:rgba(255,255,255,0.65);letter-spacing:0.14em;text-transform:uppercase;margin-top:6px">Selecciones</div></div>
+<div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:16px"><div style="font-family:var(--font-display);font-size:36px;line-height:0.9;color:#fff">17d</div><div style="font-size:11px;color:rgba(255,255,255,0.65);letter-spacing:0.14em;text-transform:uppercase;margin-top:6px">Duración</div></div>
+<div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:16px"><div style="font-family:var(--font-display);font-size:36px;line-height:0.9;color:#fff">32</div><div style="font-size:11px;color:rgba(255,255,255,0.65);letter-spacing:0.14em;text-transform:uppercase;margin-top:6px">A 16avos</div></div>
+</div>
+</div>
+<aside class="pro-hero__side" style="display:flex;flex-direction:column;gap:14px">
+<h3>Estado del torneo</h3>
+<div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:12px;padding:16px">
+<div style="font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-primary-green);margin-bottom:10px">Cuenta regresiva · Inauguración</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+<div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px 4px;text-align:center"><div style="font-family:var(--font-display);font-size:30px;line-height:1;color:#fff" data-wc-cd="d">--</div><div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-top:4px">Días</div></div>
+<div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px 4px;text-align:center"><div style="font-family:var(--font-display);font-size:30px;line-height:1;color:#fff" data-wc-cd="h">--</div><div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-top:4px">Horas</div></div>
+<div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px 4px;text-align:center"><div style="font-family:var(--font-display);font-size:30px;line-height:1;color:#fff" data-wc-cd="m">--</div><div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-top:4px">Min</div></div>
+<div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px 4px;text-align:center"><div style="font-family:var(--font-display);font-size:30px;line-height:1;color:#fff" data-wc-cd="s">--</div><div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-top:4px">Seg</div></div>
+</div>
+<div style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:10px;letter-spacing:0.04em">11 jun · Azteca · México</div>
+</div>
+<div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:12px;padding:16px">
+<div style="font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-bottom:10px">Saltar al grupo</div>
+<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px">
+<a href="#grupo-a" style="background:rgba(255,255,255,0.08);color:#fff;text-align:center;padding:10px 0;border-radius:8px;text-decoration:none;font-family:var(--font-display);font-size:18px">A</a>
+<a href="#grupo-b" style="background:rgba(255,255,255,0.08);color:#fff;text-align:center;padding:10px 0;border-radius:8px;text-decoration:none;font-family:var(--font-display);font-size:18px">B</a>
+<a href="#grupo-c" style="background:rgba(255,255,255,0.08);color:#fff;text-align:center;padding:10px 0;border-radius:8px;text-decoration:none;font-family:var(--font-display);font-size:18px">C</a>
+<a href="#grupo-d" style="background:var(--color-primary-green);color:#fff;text-align:center;padding:10px 0;border-radius:8px;text-decoration:none;font-family:var(--font-display);font-size:18px">D</a>
+<a href="#grupo-e" style="background:rgba(255,255,255,0.08);color:#fff;text-align:center;padding:10px 0;border-radius:8px;text-decoration:none;font-family:var(--font-display);font-size:18px">E</a>
+<a href="#grupo-f" style="background:rgba(255,255,255,0.08);color:#fff;text-align:center;padding:10px 0;border-radius:8px;text-decoration:none;font-family:var(--font-display);font-size:18px">F</a>
+<a href="#grupo-g" style="background:rgba(255,255,255,0.08);color:#fff;text-align:center;padding:10px 0;border-radius:8px;text-decoration:none;font-family:var(--font-display);font-size:18px">G</a>
+<a href="#grupo-h" style="background:rgba(255,255,255,0.08);color:#fff;text-align:center;padding:10px 0;border-radius:8px;text-decoration:none;font-family:var(--font-display);font-size:18px">H</a>
+<a href="#grupo-i" style="background:rgba(255,255,255,0.08);color:#fff;text-align:center;padding:10px 0;border-radius:8px;text-decoration:none;font-family:var(--font-display);font-size:18px">I</a>
+<a href="#grupo-j" style="background:rgba(255,255,255,0.08);color:#fff;text-align:center;padding:10px 0;border-radius:8px;text-decoration:none;font-family:var(--font-display);font-size:18px">J</a>
+<a href="#grupo-k" style="background:rgba(255,255,255,0.08);color:#fff;text-align:center;padding:10px 0;border-radius:8px;text-decoration:none;font-family:var(--font-display);font-size:18px">K</a>
+<a href="#grupo-l" style="background:rgba(255,255,255,0.08);color:#fff;text-align:center;padding:10px 0;border-radius:8px;text-decoration:none;font-family:var(--font-display);font-size:18px">L</a>
+</div>
+</div>
+<a href="./mundial-partido.html" style="text-decoration:none;color:#fff;background:linear-gradient(135deg,rgba(2,204,116,0.18),rgba(2,204,116,0.05));border:1px solid rgba(2,204,116,0.5);border-radius:12px;padding:18px;display:block">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-primary-green);font-weight:600">Próximo partido</div><div style="font-size:11px;color:rgba(255,255,255,0.6);letter-spacing:0.06em">11 JUN · 14:00 ET</div></div>
+<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center">
+<div style="text-align:right"><div style="font-size:26px;line-height:0.95">🇲🇽</div><div style="font-family:var(--font-display);font-size:22px;line-height:1.05;margin-top:4px">México</div></div>
+<div style="font-family:var(--font-display);font-size:18px;color:#fff;background:rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;line-height:1">VS</div>
+<div><div style="font-size:26px;line-height:0.95">🇲🇦</div><div style="font-family:var(--font-display);font-size:22px;line-height:1.05;margin-top:4px">Marruecos</div></div>
+</div>
+<div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:12px;letter-spacing:0.04em;border-top:1px solid rgba(2,204,116,0.25);padding-top:10px;display:flex;justify-content:space-between"><span>Azteca · CDMX</span><span style="color:var(--color-primary-green);font-weight:600">Inauguración →</span></div>
+</a>
+</aside></div></section>
+
+<nav class="pindex"><div class="pindex__inner">
+<a class="is-active" href="#grupos">Grupos</a><a href="#destacados">Imperdibles</a><a href="#contexto">Contexto</a></div></nav>
+
+<section id="contexto" class="pro-section pro-container">
+<div class="pro-sec-head"><div class="pro-sec-head__l"><span class="pro-sec-head__kicker">Cómo funciona</span><h2 class="pro-sec-head__title">El nuevo formato a 48</h2></div></div>
+<div class="bento">
+<article class="tile b-c4"><span class="tile__kicker">12 grupos de 4</span><div class="tile__big-num">3</div><p class="tile__caption">Partidos de fase de grupos por selección. Mismo formato que 1998–2022.</p></article>
+<article class="tile b-c4"><span class="tile__kicker">Clasifican</span><div class="tile__big-num">32</div><p class="tile__caption">1° y 2° de cada grupo + los 8 mejores terceros pasan a Dieciseisavos.</p></article>
+<article class="tile tile--green b-c4"><span class="tile__kicker">Nueva fase</span><div class="tile__big-num">16avos</div><p class="tile__caption" style="color:rgba(255,255,255,0.85)">Por primera vez en la historia. Antes el knockout empezaba en octavos.</p></article>
+</div>
+</section>
+
+<section id="grupos" class="pro-section pro-container">
+<div class="pro-sec-head"><div class="pro-sec-head__l"><span class="pro-sec-head__kicker">12 llaves · 4 selecciones cada una</span><h2 class="pro-sec-head__title">Tabla y fixture por grupo</h2></div><div class="legend"><span><span class="legend__dot"></span>Clasifica directo</span><span style="color:var(--color-text-muted)">Última actualización: pre-torneo</span></div></div>
+
+<div class="bento">
+
+<article id="grupo-a" class="tile group-card b-c4">
+<div class="group-card__head"><h3 class="group-card__title">Grupo A</h3><span class="group-card__meta">Azteca · CDMX</span></div>
+<table class="gtable"><thead><tr><th>#</th><th>Equipo</th><th>PJ</th><th>DG</th><th>Pts</th></tr></thead><tbody>
+<tr class="q"><td>1</td><td><span class="flag">🇲🇽</span>México</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr class="q"><td>2</td><td><span class="flag">🇲🇦</span>Marruecos</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr><td>3</td><td><span class="flag">🇨🇦</span>Canadá</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr><td>4</td><td><span class="flag">🇮🇷</span>Irán</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+</tbody></table>
+<div class="group-card__fix"><span>11/6 MEX–MAR</span><span>16/6 CAN–IRN</span><span>21/6 finales J3</span></div>
+<a href="#" class="group-card__cta">Ficha grupo A <span>→</span></a>
+</article>
+
+<article id="grupo-b" class="tile group-card b-c4">
+<div class="group-card__head"><h3 class="group-card__title">Grupo B</h3><span class="group-card__meta">SoFi · LA</span></div>
+<table class="gtable"><thead><tr><th>#</th><th>Equipo</th><th>PJ</th><th>DG</th><th>Pts</th></tr></thead><tbody>
+<tr class="q"><td>1</td><td><span class="flag">🇪🇸</span>España</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr class="q"><td>2</td><td><span class="flag">🇸🇳</span>Senegal</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr><td>3</td><td><span class="flag">🇨🇷</span>Costa Rica</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr><td>4</td><td><span class="flag">🇸🇦</span>A. Saudí</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+</tbody></table>
+<div class="group-card__fix"><span>13/6 ESP–SEN</span><span>18/6 CRC–KSA</span><span>23/6 finales J3</span></div>
+<a href="#" class="group-card__cta">Ficha grupo B <span>→</span></a>
+</article>
+
+<article id="grupo-c" class="tile group-card b-c4">
+<div class="group-card__head"><h3 class="group-card__title">Grupo C</h3><span class="group-card__meta">Mercedes-Benz · ATL</span></div>
+<table class="gtable"><thead><tr><th>#</th><th>Equipo</th><th>PJ</th><th>DG</th><th>Pts</th></tr></thead><tbody>
+<tr class="q"><td>1</td><td><span class="flag">🇺🇸</span>USA</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr class="q"><td>2</td><td><span class="flag">🇯🇵</span>Japón</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr><td>3</td><td><span class="flag">🇩🇰</span>Dinamarca</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr><td>4</td><td><span class="flag">🇨🇩</span>RD Congo</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+</tbody></table>
+<div class="group-card__fix"><span>12/6 USA–JPN</span><span>17/6 DEN–COD</span><span>23/6 finales J3</span></div>
+<a href="#" class="group-card__cta">Ficha grupo C <span>→</span></a>
+</article>
+
+<article id="grupo-d" class="tile group-card b-c4 is-tri">
+<div class="group-card__head"><h3 class="group-card__title">Grupo D</h3><span class="group-card__meta" style="color:var(--color-primary-green);font-weight:600">🇪🇨 La Tri</span></div>
+<table class="gtable"><thead><tr><th>#</th><th>Equipo</th><th>PJ</th><th>DG</th><th>Pts</th></tr></thead><tbody>
+<tr class="q"><td>1</td><td><span class="flag">🏴󠁧󠁢󠁥󠁮󠁧󠁿</span>Inglaterra</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr class="q"><td>2</td><td><span class="flag">🇪🇨</span><strong style="color:var(--color-primary-green)">Ecuador</strong></td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr><td>3</td><td><span class="flag">🇨🇮</span>C. Marfil</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr><td>4</td><td><span class="flag">🇺🇿</span>Uzbekistán</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+</tbody></table>
+<div class="group-card__fix"><span style="background:rgba(2,204,116,0.15);color:var(--color-primary-green);font-weight:600">12/6 ECU–UZB</span><span>14/6 ENG–CIV</span><span>18/6 ENG–ECU</span></div>
+<a href="./mundial-grupo.html" class="group-card__cta">Ficha completa <span>→</span></a>
+</article>
+
+<article id="grupo-e" class="tile group-card b-c4">
+<div class="group-card__head"><h3 class="group-card__title">Grupo E</h3><span class="group-card__meta">MetLife · NJ</span></div>
+<table class="gtable"><thead><tr><th>#</th><th>Equipo</th><th>PJ</th><th>DG</th><th>Pts</th></tr></thead><tbody>
+<tr class="q"><td>1</td><td><span class="flag">🇫🇷</span>Francia</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr class="q"><td>2</td><td><span class="flag">🇨🇴</span>Colombia</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr><td>3</td><td><span class="flag">🇩🇿</span>Argelia</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr><td>4</td><td><span class="flag">🇳🇿</span>N. Zelanda</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+</tbody></table>
+<div class="group-card__fix"><span>13/6 FRA–COL</span><span>17/6 ALG–NZL</span><span>22/6 finales J3</span></div>
+<a href="#" class="group-card__cta">Ficha grupo E <span>→</span></a>
+</article>
+
+<article id="grupo-f" class="tile group-card b-c4">
+<div class="group-card__head"><h3 class="group-card__title">Grupo F</h3><span class="group-card__meta">MetLife · NJ</span></div>
+<table class="gtable"><thead><tr><th>#</th><th>Equipo</th><th>PJ</th><th>DG</th><th>Pts</th></tr></thead><tbody>
+<tr class="q"><td>1</td><td><span class="flag">🇦🇷</span>Argentina</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr class="q"><td>2</td><td><span class="flag">🇨🇭</span>Suiza</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr><td>3</td><td><span class="flag">🇪🇬</span>Egipto</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr><td>4</td><td><span class="flag">🇵🇦</span>Panamá</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+</tbody></table>
+<div class="group-card__fix"><span>12/6 ARG–SUI</span><span>16/6 EGY–PAN</span><span>22/6 finales J3</span></div>
+<a href="#" class="group-card__cta">Ficha grupo F <span>→</span></a>
+</article>
+
+<article id="grupo-g" class="tile group-card b-c4">
+<div class="group-card__head"><h3 class="group-card__title">Grupo G</h3><span class="group-card__meta">BMO · Toronto</span></div>
+<table class="gtable"><thead><tr><th>#</th><th>Equipo</th><th>PJ</th><th>DG</th><th>Pts</th></tr></thead><tbody>
+<tr class="q"><td>1</td><td><span class="flag">🇩🇪</span>Alemania</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr class="q"><td>2</td><td><span class="flag">🇰🇷</span>Corea Sur</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr><td>3</td><td><span class="flag">🇸🇰</span>Eslovaquia</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr><td>4</td><td><span class="flag">🇨🇼</span>Curazao</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+</tbody></table>
+<div class="group-card__fix"><span>14/6 GER–KOR</span><span>17/6 SVK–CUW</span><span>23/6 finales J3</span></div>
+<a href="#" class="group-card__cta">Ficha grupo G <span>→</span></a>
+</article>
+
+<article id="grupo-h" class="tile group-card b-c4">
+<div class="group-card__head"><h3 class="group-card__title">Grupo H</h3><span class="group-card__meta">Akron · GDL</span></div>
+<table class="gtable"><thead><tr><th>#</th><th>Equipo</th><th>PJ</th><th>DG</th><th>Pts</th></tr></thead><tbody>
+<tr class="q"><td>1</td><td><span class="flag">🇧🇷</span>Brasil</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr class="q"><td>2</td><td><span class="flag">🇨🇲</span>Camerún</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr><td>3</td><td><span class="flag">🇨🇱</span>Chile</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr><td>4</td><td><span class="flag">🇯🇴</span>Jordania</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+</tbody></table>
+<div class="group-card__fix"><span>14/6 BRA–CMR</span><span>18/6 CHI–JOR</span><span>23/6 finales J3</span></div>
+<a href="#" class="group-card__cta">Ficha grupo H <span>→</span></a>
+</article>
+
+<article id="grupo-i" class="tile group-card b-c4">
+<div class="group-card__head"><h3 class="group-card__title">Grupo I</h3><span class="group-card__meta">SoFi · LA</span></div>
+<table class="gtable"><thead><tr><th>#</th><th>Equipo</th><th>PJ</th><th>DG</th><th>Pts</th></tr></thead><tbody>
+<tr class="q"><td>1</td><td><span class="flag">🇵🇹</span>Portugal</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr class="q"><td>2</td><td><span class="flag">🇿🇦</span>Sudáfrica</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr><td>3</td><td><span class="flag">🇲🇽</span>México B</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr><td>4</td><td><span class="flag">🇶🇦</span>Catar</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+</tbody></table>
+<div class="group-card__fix"><span>15/6 POR–RSA</span><span>19/6 MEX–QAT</span><span>24/6 finales J3</span></div>
+<a href="#" class="group-card__cta">Ficha grupo I <span>→</span></a>
+</article>
+
+<article id="grupo-j" class="tile group-card b-c4">
+<div class="group-card__head"><h3 class="group-card__title">Grupo J</h3><span class="group-card__meta">Lumen · Seattle</span></div>
+<table class="gtable"><thead><tr><th>#</th><th>Equipo</th><th>PJ</th><th>DG</th><th>Pts</th></tr></thead><tbody>
+<tr class="q"><td>1</td><td><span class="flag">🇧🇪</span>Bélgica</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr class="q"><td>2</td><td><span class="flag">🇺🇾</span>Uruguay</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr><td>3</td><td><span class="flag">🇹🇳</span>Túnez</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr><td>4</td><td><span class="flag">🇭🇹</span>Haití</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+</tbody></table>
+<div class="group-card__fix"><span>15/6 BEL–URU</span><span>19/6 TUN–HAI</span><span>24/6 finales J3</span></div>
+<a href="#" class="group-card__cta">Ficha grupo J <span>→</span></a>
+</article>
+
+<article id="grupo-k" class="tile group-card b-c4">
+<div class="group-card__head"><h3 class="group-card__title">Grupo K</h3><span class="group-card__meta">Hard Rock · Miami</span></div>
+<table class="gtable"><thead><tr><th>#</th><th>Equipo</th><th>PJ</th><th>DG</th><th>Pts</th></tr></thead><tbody>
+<tr class="q"><td>1</td><td><span class="flag">🇳🇱</span>P. Bajos</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr class="q"><td>2</td><td><span class="flag">🇳🇬</span>Nigeria</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr><td>3</td><td><span class="flag">🇦🇺</span>Australia</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr><td>4</td><td><span class="flag">🇵🇾</span>Paraguay</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+</tbody></table>
+<div class="group-card__fix"><span>16/6 NED–NGA</span><span>20/6 AUS–PAR</span><span>25/6 finales J3</span></div>
+<a href="#" class="group-card__cta">Ficha grupo K <span>→</span></a>
+</article>
+
+<article id="grupo-l" class="tile group-card b-c4">
+<div class="group-card__head"><h3 class="group-card__title">Grupo L</h3><span class="group-card__meta">Gillette · Boston</span></div>
+<table class="gtable"><thead><tr><th>#</th><th>Equipo</th><th>PJ</th><th>DG</th><th>Pts</th></tr></thead><tbody>
+<tr class="q"><td>1</td><td><span class="flag">🇮🇹</span>Italia</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr class="q"><td>2</td><td><span class="flag">🇭🇷</span>Croacia</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr><td>3</td><td><span class="flag">🇬🇭</span>Ghana</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+<tr><td>4</td><td><span class="flag">🇨🇻</span>Cabo Verde</td><td>0</td><td>+0</td><td class="pts">0</td></tr>
+</tbody></table>
+<div class="group-card__fix"><span>16/6 ITA–CRO</span><span>20/6 GHA–CPV</span><span>25/6 finales J3</span></div>
+<a href="#" class="group-card__cta">Ficha grupo L <span>→</span></a>
+</article>
+
+</div></section>
+
+<section id="destacados" class="pro-section pro-container">
+<div class="pro-sec-head"><div class="pro-sec-head__l"><span class="pro-sec-head__kicker">Imperdibles de fase de grupos</span><h2 class="pro-sec-head__title">Los 6 partidos que hay que ver</h2></div></div>
+<div class="bento">
+<a class="tile tile--dark b-c6" href="./mundial-partido.html"><span class="tile__kicker">Inauguración · 11 jun · 14:00</span>
+<div class="pmatch" style="margin-top:12px"><div class="pmatch__head"><span style="color:rgba(255,255,255,0.7)">Azteca · Grupo A</span></div>
+<div class="pmatch__teams"><div class="pmatch__team"><img src="./assets/crest-placeholder.svg" alt=""><strong style="color:#fff">México</strong></div><div class="pmatch__center">VS</div><div class="pmatch__team"><img src="./assets/crest-placeholder.svg" alt=""><strong style="color:#fff">Marruecos</strong></div></div></div></a>
+
+<a class="tile tile--green b-c6" href="./mundial-partido.html"><span class="tile__kicker">Debut Tri · 12 jun · 19:00</span>
+<div class="pmatch" style="margin-top:12px"><div class="pmatch__head"><span style="color:rgba(255,255,255,0.85)">Atlanta · Grupo D</span></div>
+<div class="pmatch__teams"><div class="pmatch__team"><img src="./assets/crest-placeholder.svg" alt=""><strong style="color:#fff">Ecuador</strong></div><div class="pmatch__center">VS</div><div class="pmatch__team"><img src="./assets/crest-placeholder.svg" alt=""><strong style="color:#fff">Uzbekistán</strong></div></div></div></a>
+
+<a class="tile b-c4" href="#"><span class="tile__kicker">12 jun · MetLife</span>
+<div class="pmatch__teams" style="margin-top:8px"><div class="pmatch__team"><strong>Argentina</strong></div><div class="pmatch__center">VS</div><div class="pmatch__team"><strong>Suiza</strong></div></div></a>
+
+<a class="tile b-c4" href="#"><span class="tile__kicker">13 jun · Filadelfia</span>
+<div class="pmatch__teams" style="margin-top:8px"><div class="pmatch__team"><strong>España</strong></div><div class="pmatch__center">VS</div><div class="pmatch__team"><strong>Senegal</strong></div></div></a>
+
+<a class="tile b-c4" href="./mundial-partido.html"><span class="tile__kicker">18 jun · Houston · J2</span>
+<div class="pmatch__teams" style="margin-top:8px"><div class="pmatch__team"><strong>Inglaterra</strong></div><div class="pmatch__center">VS</div><div class="pmatch__team"><strong style="color:var(--color-primary-green)">Ecuador</strong></div></div></a>
+
+<a class="tile b-c4" href="#"><span class="tile__kicker">14 jun · Toronto</span>
+<div class="pmatch__teams" style="margin-top:8px"><div class="pmatch__team"><strong>Brasil</strong></div><div class="pmatch__center">VS</div><div class="pmatch__team"><strong>Camerún</strong></div></div></a>
+</div></section>
+
+<section id="editorial" class="pro-section pro-container">
+<div class="pro-sec-head"><div class="pro-sec-head__l"><span class="pro-sec-head__kicker">Cobertura editorial</span><h2 class="pro-sec-head__title">Notas y análisis por grupo</h2></div><a href="#" class="pro-sec-head__cta">Ver todas →</a></div>
+<div class="bento">
+<a class="media-tile media-tile--tall b-c4" href="./tema-mejorado.html"><img src="./assets/news-placeholder.svg" alt=""><div class="media-tile__body"><span class="media-tile__kicker">Análisis Grupo D · 8 min</span><h3 class="media-tile__title" style="font-size:24px">Por qué Ecuador es 2° favorito en su grupo</h3><span class="media-tile__meta">2 may · Por D. Granda</span></div></a>
+<a class="media-tile media-tile--tall b-c4" href="./tema-mejorado.html"><img src="./assets/hero-placeholder.svg" alt=""><div class="media-tile__body"><span class="media-tile__kicker">Reportaje Grupo F · 12 min</span><h3 class="media-tile__title" style="font-size:24px">Argentina, la defensora que se reinventa</h3><span class="media-tile__meta">28 abr · Por A. Mejía</span></div></a>
+<a class="media-tile media-tile--tall b-c4" href="./tema-mejorado.html"><img src="./assets/stadium-placeholder.svg" alt=""><div class="media-tile__body"><span class="media-tile__kicker">Opinión Grupo A · 5 min</span><h3 class="media-tile__title" style="font-size:24px">México abre el Mundial: ¿presión o impulso?</h3><span class="media-tile__meta">25 abr · Por R. Estrada</span></div></a>
+
+<a class="tile b-c6" href="./tema-mejorado.html"><span class="tile__kicker">Datos · 4 min</span><h3 class="tile__title">Los 8 mejores terceros: cómo se decide en 2026</h3><p class="tile__caption" style="margin-top:8px">Con 12 grupos, ocho selecciones que terminen 3° pasan a 16avos. Las claves del desempate y los antecedentes en torneos de 24 equipos.</p></a>
+<a class="tile b-c6" href="./tema-mejorado.html"><span class="tile__kicker">Power ranking · 6 min</span><h3 class="tile__title">Los 48 ordenados: del candidato al cenicero</h3><p class="tile__caption" style="margin-top:8px">Francia, Brasil y España en el podio. Ecuador en el #14, mejor que cualquier sudamericano salvo los grandes. Cabo Verde, Curazao y Haití cierran la lista.</p></a>
+
+<a class="tile tile--dark b-c4" href="./tema-mejorado.html"><span class="tile__kicker">Grupo H</span><h3 class="tile__title" style="color:#fff">Brasil sin Vinicius: el plan B de Dorival</h3></a>
+<a class="tile tile--dark b-c4" href="./tema-mejorado.html"><span class="tile__kicker">Grupo E</span><h3 class="tile__title" style="color:#fff">Colombia regresa con James de capitán</h3></a>
+<a class="tile tile--dark b-c4" href="./tema-mejorado.html"><span class="tile__kicker">Grupo I</span><h3 class="tile__title" style="color:#fff">El sorteo que dejó a México B contra Portugal</h3></a>
+</div></section>
+
+</main>
+<footer class="site-footer"><p class="site-footer__copy">© 2026 Golgana — Mundial 2026 · Grupos</p></footer>
+<script>
+(function(){var k=new Date('2026-06-11T18:00:00Z').getTime();function p(n){return n<10?'0'+n:''+n}function t(){var d=k-Date.now();if(d<=0)return;var dd=Math.floor(d/86400000),hh=Math.floor((d%86400000)/3600000),mm=Math.floor((d%3600000)/60000),ss=Math.floor((d%60000)/1000);var eD=document.querySelector('[data-wc-cd="d"]'),eH=document.querySelector('[data-wc-cd="h"]'),eM=document.querySelector('[data-wc-cd="m"]'),eS=document.querySelector('[data-wc-cd="s"]');if(eD){eD.textContent=p(dd);eH.textContent=p(hh);eM.textContent=p(mm);eS.textContent=p(ss)}}t();setInterval(t,1000);})();
+</script>
+<script src="./scripts/tweaks.js"></script>
+</body></html>

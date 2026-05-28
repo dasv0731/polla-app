@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es-EC"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ecuador — Mundial 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./styles/tokens.css"><link rel="stylesheet" href="./styles/base.css"><link rel="stylesheet" href="./styles/components.css"><link rel="stylesheet" href="./styles/golgana-pro.css">
+<link rel="icon" type="image/png" href="./assets/logo-golgana.png">
+<style>
+.eq-hero { position:relative; background:#000; color:#fff; overflow:hidden; }
+.eq-hero__bg { position:absolute; inset:0; background:linear-gradient(135deg,#000 0%,#0a3d20 55%,#067a4a 100%); z-index:0; }
+.eq-hero__bg::after { content:""; position:absolute; inset:0; background:radial-gradient(circle at 80% 20%, rgba(255,212,0,0.18), transparent 50%); }
+.eq-hero__inner { position:relative; z-index:1; max-width:1440px; margin:0 auto; padding:48px 20px 56px; display:grid; gap:32px; grid-template-columns:1fr; }
+@media (min-width:992px){ .eq-hero__inner { grid-template-columns: 1.55fr 1fr; padding:64px 64px 72px; gap:48px; align-items:stretch; } }
+.eq-hero__left { display:grid; grid-template-columns:auto 1fr; gap:32px; align-items:start; }
+@media (max-width:640px){ .eq-hero__left{ grid-template-columns:1fr; } }
+.eq-hero__crest { width:160px; height:160px; border-radius:50%; background:rgba(255,255,255,0.08); border:2px solid rgba(255,255,255,0.18); display:grid; place-items:center; flex-shrink:0; }
+.eq-hero__crest span { font-size:88px; line-height:1; }
+@media (min-width:992px){ .eq-hero__crest{ width:200px; height:200px; } .eq-hero__crest span{ font-size:120px; } }
+.eq-hero__kicker { font-family:var(--font-primary); font-weight:700; font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:var(--color-primary-green); display:flex; align-items:center; gap:8px; }
+.eq-hero__kicker::before { content:""; width:24px; height:2px; background:var(--color-primary-green); display:inline-block; }
+.eq-hero__title { font-family:var(--font-display); font-size:clamp(64px,11vw,160px); line-height:0.85; text-transform:uppercase; margin:12px 0 0; letter-spacing:-0.01em; }
+.eq-hero__lead { max-width:52ch; color:rgba(255,255,255,0.78); font-size:16px; line-height:1.55; margin-top:20px; }
+.eq-hero__meta { display:flex; flex-wrap:wrap; gap:14px; margin-top:16px; font-size:11px; text-transform:uppercase; letter-spacing:0.1em; color:rgba(255,255,255,0.55); }
+.eq-hero__meta > * + *::before { content:"·"; margin-right:14px; color:var(--color-primary-green); }
+.eq-hero__metrics { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.12); border-radius:16px; overflow:hidden; align-self:stretch; }
+.eq-hero__metric { background:rgba(0,0,0,0.4); padding:24px 20px; display:flex; flex-direction:column; justify-content:space-between; min-height:140px; }
+.eq-hero__metric--accent { background:linear-gradient(135deg,var(--color-primary-green) 0%,#016b3d 100%); }
+.eq-hero__metric-label { font-family:var(--font-primary); font-weight:700; font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:rgba(255,255,255,0.65); }
+.eq-hero__metric--accent .eq-hero__metric-label { color:rgba(255,255,255,0.85); }
+.eq-hero__metric-num { font-family:var(--font-display); font-size:clamp(36px,4.5vw,52px); line-height:1; color:#fff; margin-top:8px; }
+.eq-hero__metric-cap { font-size:11px; color:rgba(255,255,255,0.6); margin-top:6px; line-height:1.4; }
+
+/* Pitch */
+.pitch { position:relative; aspect-ratio:7/9; background:linear-gradient(180deg,#0a6e3a 0%,#0d8a48 100%); border-radius:14px; overflow:hidden; padding:24px 20px; box-shadow:inset 0 0 0 2px rgba(255,255,255,0.18); }
+.pitch::before, .pitch::after { content:""; position:absolute; left:50%; transform:translateX(-50%); border:2px solid rgba(255,255,255,0.18); border-radius:50%; }
+.pitch::before { top:-15%; width:32%; aspect-ratio:1; }
+.pitch::after { bottom:-15%; width:32%; aspect-ratio:1; }
+.pitch__mid { position:absolute; left:0; right:0; top:50%; height:2px; background:rgba(255,255,255,0.18); }
+.pitch__circle { position:absolute; left:50%; top:50%; width:22%; aspect-ratio:1; border:2px solid rgba(255,255,255,0.18); border-radius:50%; transform:translate(-50%,-50%); }
+.pitch__rows { position:relative; display:grid; grid-template-rows:repeat(4,1fr); height:100%; gap:8px; z-index:2; }
+.pitch__row { display:flex; justify-content:space-around; align-items:center; gap:12px; }
+.pp { display:flex; flex-direction:column; align-items:center; gap:4px; color:#fff; }
+.pp__num { width:38px; height:38px; border-radius:50%; background:#fff; color:var(--color-primary-green); display:grid; place-items:center; font-family:var(--font-display); font-size:18px; box-shadow:0 4px 12px rgba(0,0,0,0.3); border:2px solid rgba(255,255,255,0.5); }
+.pp--cap .pp__num { background:#FFD400; color:#000; border-color:#000; }
+.pp__name { font-family:var(--font-primary); font-weight:600; font-size:11px; text-shadow:0 1px 2px rgba(0,0,0,0.6); white-space:nowrap; }
+
+/* Editorial cards */
+.ed-card { display:grid; grid-template-rows:auto auto; gap:0; background:#fff; border:1px solid var(--color-divider); border-radius:14px; overflow:hidden; transition:transform 0.2s,box-shadow 0.2s; }
+.ed-card:hover { transform:translateY(-2px); box-shadow:0 12px 32px -16px rgba(0,0,0,0.18); }
+.ed-card__img { aspect-ratio:16/9; background:linear-gradient(135deg,#0a3d20,#067a4a); position:relative; overflow:hidden; }
+.ed-card__img img { width:100%; height:100%; object-fit:cover; }
+.ed-card__body { padding:20px; display:flex; flex-direction:column; gap:8px; }
+.ed-card__kicker { font-family:var(--font-primary); font-weight:700; font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:var(--color-primary-green); }
+.ed-card__title { font-family:var(--font-display); font-size:22px; line-height:1.05; text-wrap:balance; color:var(--color-primary-black); }
+.ed-card__meta { font-size:11px; color:var(--color-text-muted); letter-spacing:0.06em; text-transform:uppercase; margin-top:auto; padding-top:8px; border-top:1px solid var(--color-divider); }
+.ed-card--lead { grid-column:span 8; grid-row:span 2; }
+.ed-card--lead .ed-card__img { aspect-ratio:16/10; }
+.ed-card--lead .ed-card__title { font-size:36px; }
+@media (max-width:768px){ .ed-card--lead { grid-column:span 12; } }
+</style>
+</head>
+<body data-variant="bento" data-density="normal" data-accent="muted">
+<input type="checkbox" id="drawer" class="drawer-toggle sr-only">
+<header class="site-header"><div class="site-header__inner">
+<a href="./home-mejorada.html" class="site-header__logo"><img src="./assets/logo-golgana.png" alt="Golgana"></a>
+<nav class="site-header__nav"><a href="./home-mejorada.html">Inicio</a><a href="./mundial-2026.html" class="is-active">Mundial 2026</a><a href="./torneo-mejorado.html">LigaPro</a><a href="./equipo-mejorado.html">Equipos</a><a href="./jugador-mejorado.html">Jugadores</a></nav>
+<label for="drawer" class="drawer-btn"><span></span><span></span><span></span></label></div></header>
+
+<main>
+<div class="pro-container"><nav class="pcrumb"><a href="./home-mejorada.html">Inicio</a><span class="pcrumb__sep">/</span><a href="./mundial-2026.html">Mundial 2026</a><span class="pcrumb__sep">/</span><a href="./mundial-grupo.html">Grupo D</a><span class="pcrumb__sep">/</span><span aria-current="page">Ecuador</span></nav></div>
+
+<!-- HERO -->
+<section class="eq-hero">
+<div class="eq-hero__bg"></div>
+<div class="eq-hero__inner">
+  <div class="eq-hero__left" style="display:flex;flex-direction:column;gap:32px;align-items:stretch">
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:32px;align-items:center">
+      <div class="eq-hero__crest"><span>🇪🇨</span></div>
+      <div>
+        <span class="eq-hero__kicker">Selección de Ecuador · Grupo D</span>
+        <h1 class="eq-hero__title">La Tri</h1>
+        <div class="eq-hero__meta" style="margin-top:20px"><span>DT: Sebastián Beccacece</span><span>FIFA 25°</span><span>4° Mundial</span></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.12);border-radius:14px;overflow:hidden">
+      <div style="background:rgba(0,0,0,0.45);padding:18px 16px"><span style="font-family:var(--font-primary);font-weight:700;font-size:10px;letter-spacing:0.14em;color:rgba(255,255,255,0.6);text-transform:uppercase">Valor plantilla</span><div style="font-family:var(--font-display);font-size:32px;color:#fff;line-height:1;margin-top:8px">€480M</div><span style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:4px;display:block">Récord Tri</span></div>
+      <div style="background:rgba(0,0,0,0.45);padding:18px 16px"><span style="font-family:var(--font-primary);font-weight:700;font-size:10px;letter-spacing:0.14em;color:rgba(255,255,255,0.6);text-transform:uppercase">Edad media</span><div style="font-family:var(--font-display);font-size:32px;color:#fff;line-height:1;margin-top:8px">26.1</div><span style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:4px;display:block">18 en Europa</span></div>
+      <div style="background:linear-gradient(135deg,var(--color-primary-green),#016b3d);padding:18px 16px"><span style="font-family:var(--font-primary);font-weight:700;font-size:10px;letter-spacing:0.14em;color:rgba(255,255,255,0.85);text-transform:uppercase">Invicto elim.</span><div style="font-family:var(--font-display);font-size:32px;color:#fff;line-height:1;margin-top:8px">11</div><span style="font-size:11px;color:rgba(255,255,255,0.85);margin-top:4px;display:block">PJ sin perder</span></div>
+      <div style="background:rgba(0,0,0,0.45);padding:18px 16px"><span style="font-family:var(--font-primary);font-weight:700;font-size:10px;letter-spacing:0.14em;color:rgba(255,255,255,0.6);text-transform:uppercase">Mejor defensa</span><div style="font-family:var(--font-display);font-size:32px;color:#fff;line-height:1;margin-top:8px">10</div><span style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:4px;display:block">GC en 18 PJ</span></div>
+    </div>
+  </div>
+
+  <div class="eq-hero__metrics" style="grid-template-columns:1fr;align-content:stretch">
+    <div class="eq-hero__metric" style="min-height:0;padding:20px 22px;gap:8px">
+      <span class="eq-hero__metric-label" style="color:rgba(255,255,255,0.55)">Último partido · Amistoso</span>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+        <div style="color:#fff;font-family:var(--font-primary);font-weight:600;font-size:15px">🇪🇨 Ecuador <span style="color:rgba(255,255,255,0.4);margin:0 6px">vs</span> 🇲🇽 México</div>
+        <span style="font-family:var(--font-display);font-size:32px;color:var(--color-primary-green);line-height:1">1-0</span>
+      </div>
+      <span class="eq-hero__metric-cap">28 mar · Quito · Atahualpa</span>
+    </div>
+    <div class="eq-hero__metric eq-hero__metric--accent" style="min-height:0;padding:24px 22px;gap:8px">
+      <span class="eq-hero__metric-label">Próximo · J1 Mundial</span>
+      <div style="display:flex;justify-content:space-between;align-items:end;gap:12px">
+        <div><div style="color:#fff;font-family:var(--font-primary);font-weight:600;font-size:15px">🇪🇨 Ecuador <span style="color:rgba(255,255,255,0.55);margin:0 6px">vs</span> 🇺🇿 Uzbekistán</div><span class="eq-hero__metric-cap" style="color:rgba(255,255,255,0.85);margin-top:6px;display:block">Atlanta · Mercedes-Benz Stadium · 19:00 ET</span></div>
+        <div style="text-align:right"><div class="eq-hero__metric-num" style="font-size:36px">12 jun</div></div>
+      </div>
+      <a href="./mundial-partido.html" style="display:inline-flex;align-self:start;margin-top:6px;color:#fff;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;border-bottom:2px solid #fff;padding-bottom:2px">Ver previa →</a>
+    </div>
+  </div>
+</div>
+</section>
+
+<nav class="pindex"><div class="pindex__inner"><a class="is-active" href="#resumen">Resumen</a><a href="#fixture">Fixture</a><a href="#estilo">Estilo</a><a href="#plantilla">Plantilla</a><a href="#noticias">Noticias</a><a href="#historia">Historia</a></div></nav>
+
+<section id="resumen" class="pro-section pro-container">
+<div class="pro-sec-head"><div class="pro-sec-head__l"><span class="pro-sec-head__kicker">Cómo llega</span><h2 class="pro-sec-head__title">La Tri 2026 en cifras</h2></div></div>
+<div class="bento">
+<article class="tile tile--green b-c4"><span class="tile__kicker">Eliminatorias</span><div class="tile__big-num">2°</div><p class="tile__caption">Conmebol · 25 pts en 18 PJ</p></article>
+<article class="tile b-c4"><span class="tile__kicker">Goles a favor</span><div class="tile__big-num" style="color:var(--color-primary-green)">22</div><p class="tile__caption">3° mejor ataque eliminatorias</p></article>
+<article class="tile tile--dark b-c4"><span class="tile__kicker">Mundialistas activos</span><div class="tile__big-num">14</div><p class="tile__caption">Estuvieron en Qatar 2022</p></article>
+<article class="tile b-c12" style="display:none"></article>
+
+<article class="tile b-c8"><span class="tile__kicker">Forma últimos 10 amistosos</span><h3 class="tile__title">Racha sólida — 7G · 2E · 1P</h3>
+<span class="streak" style="margin-top:8px"><span class="streak__b streak__b--w">G</span><span class="streak__b streak__b--w">G</span><span class="streak__b streak__b--d">E</span><span class="streak__b streak__b--w">G</span><span class="streak__b streak__b--l">P</span><span class="streak__b streak__b--w">G</span><span class="streak__b streak__b--w">G</span><span class="streak__b streak__b--d">E</span><span class="streak__b streak__b--w">G</span><span class="streak__b streak__b--w">G</span></span>
+<p class="tile__caption" style="margin-top:8px">vs México (1-0) · Brasil (1-0) · Italia (1-1) · Japón (2-1) · Portugal (1-2)</p></article>
+
+<article class="tile tile--dark b-c4" style="border-color:rgba(255,255,255,0.08)"><span class="tile__kicker">Pieza clave</span>
+<div style="display:flex;align-items:center;gap:16px;margin-top:8px">
+<div style="width:64px;height:64px;background:rgba(255,255,255,0.1);border-radius:50%;display:grid;place-items:center;font-family:var(--font-display);font-size:24px;color:#fff">22</div>
+<div><h3 class="tile__title" style="color:#fff;font-size:22px">Moisés Caicedo</h3><p style="color:rgba(255,255,255,0.7);font-size:12px">Capitán · Mediocentro · Chelsea</p></div>
+</div>
+<a href="./mundial-jugador.html" class="btn btn--primary" style="margin-top:12px;align-self:start">Ver perfil →</a></article>
+</div></section>
+
+<!-- FIXTURE -->
+<section id="fixture" class="pro-section pro-container">
+<div class="pro-sec-head"><div class="pro-sec-head__l"><span class="pro-sec-head__kicker">Calendario fase de grupos</span><h2 class="pro-sec-head__title">3 partidos · 11 días</h2></div></div>
+<div class="bento">
+<a class="tile tile--green b-c4" href="./mundial-partido.html"><span class="tile__kicker">J1 · 12 jun</span><h3 class="tile__title" style="color:#fff;font-size:24px">vs Uzbekistán</h3><p class="tile__caption">19:00 ET · Atlanta · Mercedes-Benz</p><span class="pchip" style="background:#fff;color:var(--color-primary-green);align-self:start;margin-top:auto">82% probabilidad de victoria</span></a>
+<a class="tile b-c4" href="#"><span class="tile__kicker">J2 · 17 jun</span><h3 class="tile__title">vs Inglaterra</h3><p class="tile__caption">15:00 ET · Filadelfia · Lincoln Financial</p><span class="pchip pchip--out" style="align-self:start;margin-top:auto">28% probabilidad de victoria</span></a>
+<a class="tile b-c4" href="#"><span class="tile__kicker">J3 · 23 jun</span><h3 class="tile__title">vs Costa de Marfil</h3><p class="tile__caption">15:00 ET · Toronto · BMO Field</p><span class="pchip" style="background:rgba(2,204,116,0.15);color:var(--color-primary-green);align-self:start;margin-top:auto">54% probabilidad de victoria</span></a>
+</div></section>
+
+<!-- ESTILO + CANCHA -->
+<section id="estilo" class="pro-section pro-container">
+<div class="pro-sec-head"><div class="pro-sec-head__l"><span class="pro-sec-head__kicker">Sistema de Beccacece</span><h2 class="pro-sec-head__title">Cómo juega Ecuador</h2></div></div>
+<div class="bento">
+<article class="tile b-c7">
+<div class="chip-row" style="margin-bottom:16px">
+<span class="pchip pchip--green">4-3-3</span><span class="pchip pchip--green">Presión alta</span><span class="pchip">Salida desde el fondo</span><span class="pchip">Pivote único</span><span class="pchip pchip--out">Transición vertical</span><span class="pchip pchip--dark">Bloque medio</span>
+</div>
+<p style="color:var(--color-text-muted);max-width:80ch;line-height:1.7">El 4-3-3 de Beccacece se sostiene en tres pilares: Caicedo como pivote único que permite a Sarmiento e Hincapié subir, una línea defensiva alta con Pacho e Hincapié leyendo el offside, y dos extremos abiertos —Plata por derecha, Páez por izquierda— que generan superioridades. La identidad: presionar en campo rival y atacar el espacio cuando se recupera.</p>
+
+<div class="bars" style="margin-top:24px">
+<div class="bar"><span class="bar__label">Posesión</span><div class="bar__track"><div class="bar__fill" style="width:54%"></div></div><span class="bar__val">54%</span></div>
+<div class="bar"><span class="bar__label">PPDA (presión)</span><div class="bar__track"><div class="bar__fill" style="width:78%"></div></div><span class="bar__val">9.2</span></div>
+<div class="bar"><span class="bar__label">Recuperaciones campo rival</span><div class="bar__track"><div class="bar__fill" style="width:71%"></div></div><span class="bar__val">7.1</span></div>
+<div class="bar"><span class="bar__label">xG por partido</span><div class="bar__track"><div class="bar__fill" style="width:63%"></div></div><span class="bar__val">1.8</span></div>
+</div>
+</article>
+
+<article class="tile tile--dark b-c5" style="background:#0a0a0a">
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px">
+<span class="tile__kicker">XI titular probable</span>
+<span style="font-family:var(--font-display);color:var(--color-primary-green);font-size:18px">4-3-3</span>
+</div>
+<div class="pitch">
+<span class="pitch__mid"></span><span class="pitch__circle"></span>
+<div class="pitch__rows">
+  <div class="pitch__row">
+    <div class="pp"><span class="pp__num">14</span><span class="pp__name">Plata</span></div>
+    <div class="pp"><span class="pp__num">9</span><span class="pp__name">E. Valencia</span></div>
+    <div class="pp"><span class="pp__num">19</span><span class="pp__name">J. Sarmiento</span></div>
+  </div>
+  <div class="pitch__row" style="padding:0 14%">
+    <div class="pp"><span class="pp__num">23</span><span class="pp__name">M. Sarmiento</span></div>
+    <div class="pp"><span class="pp__num">10</span><span class="pp__name">Páez</span></div>
+    <div class="pp pp--cap"><span class="pp__num">22</span><span class="pp__name">Caicedo (C)</span></div>
+  </div>
+  <div class="pitch__row">
+    <div class="pp"><span class="pp__num">7</span><span class="pp__name">Estupiñán</span></div>
+    <div class="pp"><span class="pp__num">3</span><span class="pp__name">Hincapié</span></div>
+    <div class="pp"><span class="pp__num">4</span><span class="pp__name">Pacho</span></div>
+    <div class="pp"><span class="pp__num">17</span><span class="pp__name">Preciado</span></div>
+  </div>
+  <div class="pitch__row">
+    <div class="pp"><span class="pp__num">1</span><span class="pp__name">Galíndez</span></div>
+  </div>
+</div>
+</div>
+</article>
+</div></section>
+
+<!-- PLANTILLA -->
+<section id="plantilla" class="pro-section pro-container">
+<div class="pro-sec-head"><div class="pro-sec-head__l"><span class="pro-sec-head__kicker">26 convocados</span><h2 class="pro-sec-head__title">Plantilla oficial</h2></div><a href="./mundial-plantilla.html" class="pro-sec-head__cta">Ver plantilla completa →</a></div>
+
+<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+<span class="pchip pchip--green">3 POR</span><span class="pchip">9 DEF</span><span class="pchip">8 MED</span><span class="pchip">6 DEL</span>
+</div>
+
+<div class="bento">
+<a class="ptile b-c2" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">1</span><div class="ptile__body"><span class="ptile__pos">POR</span><span class="ptile__name">Galíndez</span></div></a>
+<a class="ptile b-c2" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">4</span><div class="ptile__body"><span class="ptile__pos">DEF</span><span class="ptile__name">Pacho</span></div></a>
+<a class="ptile b-c2" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">3</span><div class="ptile__body"><span class="ptile__pos">DEF</span><span class="ptile__name">Hincapié</span></div></a>
+<a class="ptile b-c2" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">7</span><div class="ptile__body"><span class="ptile__pos">DEF</span><span class="ptile__name">Estupiñán</span></div></a>
+<a class="ptile b-c2" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">17</span><div class="ptile__body"><span class="ptile__pos">DEF</span><span class="ptile__name">Preciado</span></div></a>
+<a class="ptile b-c2" href="./mundial-jugador.html" style="outline:3px solid var(--color-primary-green)"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num" style="background:var(--color-primary-green);color:#fff">22</span><div class="ptile__body"><span class="ptile__pos">CAP · MED</span><span class="ptile__name">Caicedo</span></div></a>
+
+<a class="ptile b-c2" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">23</span><div class="ptile__body"><span class="ptile__pos">MED</span><span class="ptile__name">M. Sarmiento</span></div></a>
+<a class="ptile b-c2" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">10</span><div class="ptile__body"><span class="ptile__pos">MED</span><span class="ptile__name">Páez</span></div></a>
+<a class="ptile b-c2" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">8</span><div class="ptile__body"><span class="ptile__pos">MED</span><span class="ptile__name">Franco</span></div></a>
+<a class="ptile b-c2" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">9</span><div class="ptile__body"><span class="ptile__pos">DEL</span><span class="ptile__name">E. Valencia</span></div></a>
+<a class="ptile b-c2" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">14</span><div class="ptile__body"><span class="ptile__pos">DEL</span><span class="ptile__name">Plata</span></div></a>
+<a class="ptile b-c2" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">19</span><div class="ptile__body"><span class="ptile__pos">DEL</span><span class="ptile__name">J. Sarmiento</span></div></a>
+</div></section>
+
+<!-- EDITORIAL -->
+<section id="noticias" class="pro-section pro-container">
+<div class="pro-sec-head"><div class="pro-sec-head__l"><span class="pro-sec-head__kicker">Editorial · cobertura La Tri</span><h2 class="pro-sec-head__title">Lo último de Ecuador</h2></div><a href="#" class="pro-sec-head__cta">Ver todo →</a></div>
+
+<div class="bento">
+<a class="ed-card ed-card--lead b-c8" href="#">
+<div class="ed-card__img"><img src="./assets/hero-placeholder.svg" alt=""></div>
+<div class="ed-card__body">
+<span class="ed-card__kicker">Análisis · 5 may</span>
+<h3 class="ed-card__title">Beccacece confirma el XI: Caicedo capitán y Páez de enganche libre frente a Uzbekistán</h3>
+<p class="tile__caption">El DT argentino sorprende con Páez de 10 y mantiene a Estupiñán pese a las dudas físicas. La práctica a puertas cerradas dejó pistas claras: presión alta desde el primer minuto y Plata por derecha como variante de desequilibrio.</p>
+<span class="ed-card__meta">Por Carlos Mosquera · 8 min lectura</span>
+</div></a>
+
+<a class="ed-card b-c4" href="#">
+<div class="ed-card__img"><img src="./assets/hero-placeholder.svg" alt=""></div>
+<div class="ed-card__body">
+<span class="ed-card__kicker">Crónica</span>
+<h3 class="ed-card__title">Pacho responde a Inglaterra: "No le tenemos miedo a Bellingham"</h3>
+<span class="ed-card__meta">4 may · 4 min</span>
+</div></a>
+
+<a class="ed-card b-c4" href="#">
+<div class="ed-card__img"><img src="./assets/hero-placeholder.svg" alt=""></div>
+<div class="ed-card__body">
+<span class="ed-card__kicker">Datos</span>
+<h3 class="ed-card__title">Por qué la Tri llega como mejor defensa de Conmebol</h3>
+<span class="ed-card__meta">3 may · 6 min</span>
+</div></a>
+
+<a class="ed-card b-c4" href="#">
+<div class="ed-card__img"><img src="./assets/hero-placeholder.svg" alt=""></div>
+<div class="ed-card__body">
+<span class="ed-card__kicker">Entrevista</span>
+<h3 class="ed-card__title">Kendry Páez: "Crecí viendo Mundiales, ahora me toca jugar uno"</h3>
+<span class="ed-card__meta">2 may · 12 min</span>
+</div></a>
+
+<a class="ed-card b-c4" href="#">
+<div class="ed-card__img"><img src="./assets/hero-placeholder.svg" alt=""></div>
+<div class="ed-card__body">
+<span class="ed-card__kicker">Opinión</span>
+<h3 class="ed-card__title">¿Hincapié o Mina como tercero detrás? El dilema de Beccacece</h3>
+<span class="ed-card__meta">1 may · 7 min</span>
+</div></a>
+
+<a class="ed-card b-c4" href="#">
+<div class="ed-card__img"><img src="./assets/hero-placeholder.svg" alt=""></div>
+<div class="ed-card__body">
+<span class="ed-card__kicker">Hinchada</span>
+<h3 class="ed-card__title">22.000 ecuatorianos viajan a Atlanta: el operativo de la Tri Embajadora</h3>
+<span class="ed-card__meta">30 abr · 5 min</span>
+</div></a>
+</div></section>
+
+<!-- HISTORIA -->
+<section id="historia" class="pro-section pro-container">
+<div class="pro-sec-head"><div class="pro-sec-head__l"><span class="pro-sec-head__kicker">Mundiales anteriores</span><h2 class="pro-sec-head__title">Historia mundialista</h2></div></div>
+<div class="bento">
+<article class="tile b-c3"><span class="tile__kicker">2002 · Corea/Japón</span><h3 class="tile__title">Debut</h3><p class="tile__caption">Fase de grupos · 1G 2P · Eliminado.</p></article>
+<article class="tile tile--green b-c3"><span class="tile__kicker">2006 · Alemania</span><h3 class="tile__title" style="color:#fff">Octavos</h3><p class="tile__caption" style="color:rgba(255,255,255,0.85)">Mejor actuación · perdió 0-3 con Inglaterra.</p></article>
+<article class="tile b-c3"><span class="tile__kicker">2014 · Brasil</span><h3 class="tile__title">Grupos</h3><p class="tile__caption">Suiza-Honduras-Francia · 4 pts · eliminado por gol diferencia.</p></article>
+<article class="tile b-c3"><span class="tile__kicker">2022 · Catar</span><h3 class="tile__title">Grupos</h3><p class="tile__caption">Catar-Países Bajos-Senegal · 4 pts · eliminado por gol diferencia.</p></article>
+</div></section>
+
+</main>
+<footer class="site-footer"><p class="site-footer__copy">© 2026 Golgana — Mundial 2026</p></footer>
+<script src="./scripts/tweaks.js"></script>
+</body></html>

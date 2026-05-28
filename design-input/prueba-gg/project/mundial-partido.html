@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="es-EC"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ecuador vs Uzbekistán — Mundial 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./styles/tokens.css"><link rel="stylesheet" href="./styles/base.css"><link rel="stylesheet" href="./styles/components.css"><link rel="stylesheet" href="./styles/golgana-pro.css">
+<link rel="icon" type="image/png" href="./assets/logo-golgana.png">
+<style>
+/* ============ MATCH HERO ============ */
+.mh{position:relative;color:#fff;background:#000;overflow:hidden;border-radius:0}
+.mh::before{content:"";position:absolute;inset:0;background:radial-gradient(60% 80% at 22% 50%,rgba(2,204,116,0.5),transparent 60%),radial-gradient(60% 80% at 78% 50%,rgba(30,181,58,0.35),transparent 60%);z-index:0}
+.mh__inner{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:48px 24px 56px}
+.mh__top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:rgba(255,255,255,0.7);margin-bottom:32px}
+.mh__pill{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.18);border-radius:999px;color:#fff}
+.mh__pill::before{content:"";width:6px;height:6px;border-radius:50%;background:#02cc74;box-shadow:0 0 0 4px rgba(2,204,116,0.3)}
+.mh__match{display:grid;grid-template-columns:1fr auto 1fr;gap:24px;align-items:center}
+.mh__team{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+.mh__team--l{align-items:flex-end;text-align:right}
+.mh__team--r{align-items:flex-start;text-align:left}
+.mh__flag{width:clamp(80px,12vw,140px);height:clamp(80px,12vw,140px);border-radius:50%;border:3px solid rgba(255,255,255,0.2);background-size:cover;background-position:center;box-shadow:0 12px 40px rgba(0,0,0,0.5)}
+.mh__flag--ec{background:linear-gradient(180deg,#fde047 0%,#fde047 50%,#1d4ed8 50%,#1d4ed8 75%,#dc2626 75%,#dc2626 100%)}
+.mh__flag--uz{background:linear-gradient(180deg,#1eb53a 0%,#1eb53a 33%,#fff 33%,#fff 38%,#0099b5 38%,#0099b5 65%,#fff 65%,#fff 70%,#ce1126 70%,#ce1126 100%)}
+.mh__name{font-family:var(--font-display);font-size:clamp(36px,5.5vw,80px);line-height:0.9;letter-spacing:0.01em}
+.mh__role{font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:rgba(255,255,255,0.65)}
+.mh__center{display:flex;flex-direction:column;align-items:center;gap:14px;min-width:200px}
+.mh__time{font-family:var(--font-display);font-size:clamp(56px,8vw,120px);line-height:1;color:var(--color-primary-green)}
+.mh__date{font-size:13px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.85);text-align:center}
+.mh__venue{font-size:12px;color:rgba(255,255,255,0.6);text-align:center;max-width:240px}
+
+/* COUNTDOWN */
+.cdown{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:32px;max-width:520px;margin-inline:auto}
+.cdown__c{padding:14px 8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);border-radius:10px;text-align:center}
+.cdown__n{font-family:var(--font-display);font-size:36px;line-height:1;color:#fff}
+.cdown__l{font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:rgba(255,255,255,0.65);margin-top:4px}
+
+/* ============ MATCH INFO STRIP ============ */
+.minfo{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));background:#f5f4f0;border-top:1px solid rgba(0,0,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06)}
+.minfo__c{padding:24px 20px;border-right:1px solid rgba(0,0,0,0.06)}
+.minfo__c:last-child{border-right:0}
+.minfo__l{font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:6px}
+.minfo__v{font-family:var(--font-display);font-size:22px;line-height:1.1;color:var(--color-primary-black)}
+.minfo__s{font-size:11px;color:var(--color-text-muted);margin-top:2px}
+
+/* ============ H2H HERO ============ */
+.h2h-card{background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:16px;padding:28px;box-shadow:0 8px 32px rgba(0,0,0,0.04)}
+.h2h-top{display:grid;grid-template-columns:1fr auto 1fr;gap:24px;align-items:center;margin-bottom:24px}
+.h2h-side{text-align:center}
+.h2h-side__num{font-family:var(--font-display);font-size:clamp(56px,7vw,96px);line-height:0.9}
+.h2h-side--ec .h2h-side__num{color:var(--color-primary-green)}
+.h2h-side--uz .h2h-side__num{color:var(--color-text-muted)}
+.h2h-side__l{font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-text-muted);margin-top:6px}
+.h2h-mid{text-align:center}
+.h2h-mid__num{font-family:var(--font-display);font-size:48px;line-height:0.9;color:#9ca3af}
+.h2h-mid__l{font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-text-muted);margin-top:4px}
+.h2h-bar{display:flex;height:14px;border-radius:999px;overflow:hidden;background:#f3f4f6;margin-bottom:18px}
+.h2h-bar__seg{display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff;letter-spacing:0.06em}
+.h2h-bar__seg--ec{background:var(--color-primary-green)}
+.h2h-bar__seg--d{background:#9ca3af}
+.h2h-bar__seg--uz{background:#6b7280}
+
+.h2h-table{width:100%;border-collapse:collapse;margin-top:12px}
+.h2h-table th{text-align:left;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-text-muted);padding:12px 14px;border-bottom:1px solid rgba(0,0,0,0.08);font-weight:600}
+.h2h-table td{padding:14px;border-bottom:1px solid rgba(0,0,0,0.05);font-size:14px}
+.h2h-table tr:last-child td{border-bottom:0}
+.h2h-table .res{font-family:var(--font-display);font-size:18px}
+.h2h-table .res--ec{color:var(--color-primary-green)}
+.h2h-table .res--d{color:var(--color-text-muted)}
+.h2h-table .winner-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:middle}
+.h2h-table .winner-dot--ec{background:var(--color-primary-green)}
+.h2h-table .winner-dot--d{background:#9ca3af}
+
+/* ============ PICK AGGREGATE ============ */
+.pick{background:#0a0a0a;color:#fff;border-radius:16px;padding:32px;position:relative;overflow:hidden}
+.pick::before{content:"";position:absolute;inset:0;background:radial-gradient(50% 60% at 50% 0%,rgba(2,204,116,0.18),transparent 70%);z-index:0}
+.pick__inner{position:relative;z-index:1}
+.pick__h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:24px;gap:16px;flex-wrap:wrap}
+.pick__t{font-family:var(--font-display);font-size:32px}
+.pick__sub{font-size:12px;color:rgba(255,255,255,0.6);letter-spacing:0.06em}
+.pick__row{display:grid;grid-template-columns:120px 1fr 60px;gap:16px;align-items:center;margin-bottom:14px}
+.pick__row:last-of-type{margin-bottom:0}
+.pick__l{font-size:13px;color:rgba(255,255,255,0.85)}
+.pick__l strong{font-weight:600}
+.pick__bar{position:relative;height:32px;background:rgba(255,255,255,0.06);border-radius:6px;overflow:hidden}
+.pick__bar__fill{position:absolute;inset:0;border-radius:6px;background:linear-gradient(90deg,var(--color-primary-green),#1eb53a)}
+.pick__bar__fill--d{background:linear-gradient(90deg,#6b7280,#9ca3af)}
+.pick__bar__fill--uz{background:linear-gradient(90deg,#1e3a8a,#1e40af)}
+.pick__v{font-family:var(--font-display);font-size:22px;text-align:right;color:#fff}
+
+/* PICK CTA */
+.pcta{background:var(--color-primary-green);color:#fff;border-radius:16px;padding:36px;display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center;margin-top:16px}
+.pcta__t{font-family:var(--font-display);font-size:32px;line-height:1.05}
+.pcta__s{font-size:13px;color:rgba(255,255,255,0.85);margin-top:4px}
+.pcta__b{padding:14px 28px;background:#fff;color:var(--color-primary-green);font-weight:600;border-radius:10px;text-decoration:none;font-size:14px;letter-spacing:0.04em;text-transform:uppercase}
+
+@media (max-width:680px){
+  .mh__match{grid-template-columns:1fr;gap:32px}
+  .mh__team--l,.mh__team--r{align-items:center;text-align:center}
+  .h2h-top{grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .pick__row{grid-template-columns:90px 1fr 50px;gap:10px}
+  .pcta{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body data-variant="bento" data-density="normal" data-accent="muted">
+<input type="checkbox" id="drawer" class="drawer-toggle sr-only">
+<header class="site-header"><div class="site-header__inner">
+<a href="./home-mejorada.html" class="site-header__logo"><img src="./assets/logo-golgana.png" alt="Golgana"></a>
+<nav class="site-header__nav"><a href="./home-mejorada.html">Inicio</a><a href="./mundial-2026.html" class="is-active">Mundial 2026</a><a href="./torneo-mejorado.html">LigaPro</a><a href="./equipo-mejorado.html">Equipos</a><a href="./jugador-mejorado.html">Jugadores</a></nav>
+<label for="drawer" class="drawer-btn"><span></span><span></span><span></span></label></div></header>
+
+<main>
+<div class="pro-container"><nav class="pcrumb"><a href="./home-mejorada.html">Inicio</a><span class="pcrumb__sep">/</span><a href="./mundial-2026.html">Mundial 2026</a><span class="pcrumb__sep">/</span><a href="./mundial-grupo.html">Grupo D</a><span class="pcrumb__sep">/</span><span aria-current="page">Ecuador vs Uzbekistán</span></nav></div>
+
+<!-- ============ MATCH HERO ============ -->
+<section class="mh">
+<div class="mh__inner">
+<div class="mh__top">
+<span>J1 · Grupo D · Mundial 2026</span>
+<span class="mh__pill">Programado</span>
+<span>Mercedes-Benz Stadium · Atlanta</span>
+</div>
+
+<div class="mh__match">
+<div class="mh__team mh__team--l">
+<div class="mh__flag mh__flag--ec" role="img" aria-label="Bandera de Ecuador"></div>
+<div>
+<div class="mh__name">Ecuador</div>
+<div class="mh__role">25° FIFA · Conmebol</div>
+</div>
+</div>
+<div class="mh__center">
+<div class="mh__time">19:00</div>
+<div class="mh__date">12 jun · Hora ET</div>
+<div class="mh__venue">71.000 localidades · Árbitro: S. Marciniak (POL)</div>
+</div>
+<div class="mh__team mh__team--r">
+<div class="mh__flag mh__flag--uz" role="img" aria-label="Bandera de Uzbekistán"></div>
+<div>
+<div class="mh__name">Uzbekistán</div>
+<div class="mh__role">58° FIFA · AFC · Debut</div>
+</div>
+</div>
+</div>
+
+<!-- COUNTDOWN -->
+<div class="cdown" id="cdown">
+<div class="cdown__c"><div class="cdown__n" data-cd="d">04</div><div class="cdown__l">Días</div></div>
+<div class="cdown__c"><div class="cdown__n" data-cd="h">12</div><div class="cdown__l">Horas</div></div>
+<div class="cdown__c"><div class="cdown__n" data-cd="m">28</div><div class="cdown__l">Min</div></div>
+<div class="cdown__c"><div class="cdown__n" data-cd="s">42</div><div class="cdown__l">Seg</div></div>
+</div>
+</div>
+</section>
+
+<!-- ============ MATCH INFO ============ -->
+<div class="minfo">
+<div class="minfo__c"><div class="minfo__l">Fecha</div><div class="minfo__v">12 jun 2026</div><div class="minfo__s">Viernes</div></div>
+<div class="minfo__c"><div class="minfo__l">Hora</div><div class="minfo__v">19:00 ET</div><div class="minfo__s">18:00 hora EC</div></div>
+<div class="minfo__c"><div class="minfo__l">Estadio</div><div class="minfo__v">Mercedes-Benz</div><div class="minfo__s">Atlanta · GA</div></div>
+<div class="minfo__c"><div class="minfo__l">Capacidad</div><div class="minfo__v">71.000</div><div class="minfo__s">Sold out</div></div>
+<div class="minfo__c"><div class="minfo__l">Árbitro</div><div class="minfo__v">S. Marciniak</div><div class="minfo__s">Polonia</div></div>
+<div class="minfo__c"><div class="minfo__l">TV</div><div class="minfo__v">ESPN</div><div class="minfo__s">+ Tigo Sports</div></div>
+</div>
+
+<nav class="pindex"><div class="pindex__inner"><a class="is-active" href="#previa">Previa</a><a href="#xis">Alineaciones</a><a href="#prono">Pronóstico</a><a href="#forma">Forma</a><a href="#h2h">Historial</a><a href="#voz">Audiencia</a></div></nav>
+
+<section id="previa" class="pro-section pro-container">
+<div class="pro-sec-head"><div class="pro-sec-head__l"><span class="pro-sec-head__kicker">Previa</span><h2 class="pro-sec-head__title">Lo que está en juego</h2></div></div>
+<div class="bento">
+<article class="tile b-c8"><span class="tile__kicker">Análisis</span><h3 class="tile__title">Tres puntos para encarrilar el grupo</h3>
+<p class="tile__caption" style="margin-top:8px;line-height:1.7;max-width:75ch">Ecuador necesita ganar de entrada para no depender del cruce con Inglaterra. Beccacece repite el XI que venció a Brasil 1-0 en marzo: 4-3-3 con Caicedo de pivote, Páez como enganche libre y Plata por derecha. Uzbekistán es debutante mundialista, pero llegó imbatido a la última ronda asiática y tiene un 9 interesante en Eldor Shomurodov (Roma). El partido debería resolverse por la diferencia individual en transición.</p></article>
+<article class="tile tile--green b-c4"><span class="tile__kicker">A seguir</span>
+<h3 class="tile__title" style="color:#fff">Caicedo vs Yakhshiboev</h3>
+<p class="tile__caption" style="color:rgba(255,255,255,0.85);line-height:1.6;margin-top:8px">El duelo en el círculo central definirá quién impone ritmo. Si Yakhshiboev consigue salir limpio de la presión, Uzbekistán puede sostener el empate.</p></article>
+</div></section>
+
+<section id="xis" class="pro-section pro-container">
+<div class="pro-sec-head"><div class="pro-sec-head__l"><span class="pro-sec-head__kicker">Alineaciones probables</span><h2 class="pro-sec-head__title">Los XI</h2></div></div>
+<div class="bento">
+<article class="tile tile--green b-c6"><span class="tile__kicker">🇪🇨 Ecuador · 4-3-3</span>
+<div style="position:relative;background:linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.12));border-radius:12px;aspect-ratio:1.3/1;margin-top:12px;padding:16px;color:#fff;font-family:var(--font-display);font-size:13px">
+<div style="display:grid;grid-template-rows:repeat(4,1fr);height:100%;gap:8px;text-align:center">
+<div style="display:flex;justify-content:space-around;align-items:center"><span>14 Plata</span><span>9 E. Valencia</span><span>19 J. Sarmiento</span></div>
+<div style="display:flex;justify-content:space-around;align-items:center"><span>23 M. Sarmiento</span><span>10 K. Páez</span></div>
+<div style="display:flex;justify-content:center;align-items:center"><span style="background:#fff;color:var(--color-primary-green);padding:4px 10px;border-radius:6px">22 Caicedo (C)</span></div>
+<div style="display:flex;justify-content:space-around;align-items:center"><span>17 Preciado</span><span>4 Pacho</span><span>3 Hincapié</span><span>7 Estupiñán</span></div>
+</div>
+<div style="text-align:center;margin-top:8px;font-size:13px">1 Galíndez</div>
+</div></article>
+
+<article class="tile tile--dark b-c6"><span class="tile__kicker">🇺🇿 Uzbekistán · 4-2-3-1</span>
+<div style="position:relative;background:rgba(255,255,255,0.05);border-radius:12px;aspect-ratio:1.3/1;margin-top:12px;padding:16px;color:#fff;font-family:var(--font-display);font-size:13px">
+<div style="display:grid;grid-template-rows:repeat(5,1fr);height:100%;gap:6px;text-align:center">
+<div style="display:flex;justify-content:center;align-items:center"><span>9 Shomurodov</span></div>
+<div style="display:flex;justify-content:space-around;align-items:center"><span>11 Urunov</span><span>10 Erkinov</span><span>7 Yakhshiboev</span></div>
+<div style="display:flex;justify-content:space-around;align-items:center"><span>6 Khusanov</span><span>8 Akhmedov</span></div>
+<div style="display:flex;justify-content:space-around;align-items:center"><span>3 Saidov</span><span>4 Egamberdiev</span><span>5 Ismailov</span><span>2 Nasrullaev</span></div>
+<div style="display:flex;justify-content:center;align-items:center"><span>1 Ergashev</span></div>
+</div>
+</div></article>
+</div></section>
+
+<section id="prono" class="pro-section pro-container">
+<div class="pro-sec-head"><div class="pro-sec-head__l"><span class="pro-sec-head__kicker">Modelo Golgana · 10.000 simulaciones</span><h2 class="pro-sec-head__title">Pronóstico</h2></div></div>
+<div class="bento">
+<article class="tile b-c4"><span class="tile__kicker">Gana Ecuador</span><div class="tile__big-num" style="color:var(--color-primary-green)">62%</div><p class="tile__caption">Cuota mercado: 1.55</p></article>
+<article class="tile tile--dark b-c4"><span class="tile__kicker">Empate</span><div class="tile__big-num">24%</div><p class="tile__caption">Cuota mercado: 3.80</p></article>
+<article class="tile b-c4"><span class="tile__kicker">Gana Uzbekistán</span><div class="tile__big-num">14%</div><p class="tile__caption">Cuota mercado: 6.50</p></article>
+
+<article class="tile b-c8"><span class="tile__kicker">Marcador más probable</span>
+<div class="bars" style="margin-top:12px">
+<div class="bar"><span class="bar__label">2-0 Ecuador</span><div class="bar__track"><div class="bar__fill" style="width:18%"></div></div><span class="bar__val">18%</span></div>
+<div class="bar"><span class="bar__label">1-0 Ecuador</span><div class="bar__track"><div class="bar__fill" style="width:16%"></div></div><span class="bar__val">16%</span></div>
+<div class="bar"><span class="bar__label">2-1 Ecuador</span><div class="bar__track"><div class="bar__fill" style="width:13%"></div></div><span class="bar__val">13%</span></div>
+<div class="bar"><span class="bar__label">3-0 Ecuador</span><div class="bar__track"><div class="bar__fill" style="width:10%"></div></div><span class="bar__val">10%</span></div>
+<div class="bar"><span class="bar__label">1-1</span><div class="bar__track"><div class="bar__fill" style="width:11%"></div></div><span class="bar__val">11%</span></div>
+<div class="bar"><span class="bar__label">0-0</span><div class="bar__track"><div class="bar__fill" style="width:7%"></div></div><span class="bar__val">7%</span></div>
+</div></article>
+<article class="tile tile--green b-c4"><span class="tile__kicker">xG esperado</span>
+<div style="display:flex;justify-content:space-between;color:#fff;margin-top:12px;font-family:var(--font-display);font-size:36px"><span>2.1</span><span style="opacity:0.6">·</span><span>0.8</span></div>
+<p class="tile__caption" style="color:rgba(255,255,255,0.8);font-size:12px;margin-top:8px">Goles totales esperados: 2.9 · BTTS 38%</p></article>
+</div></section>
+
+<!-- ============ FORMA RECIENTE ============ -->
+<section id="forma" class="pro-section pro-container">
+<div class="pro-sec-head"><div class="pro-sec-head__l"><span class="pro-sec-head__kicker">Últimos 5 partidos</span><h2 class="pro-sec-head__title">Cómo vienen los equipos</h2></div></div>
+<div class="bento">
+
+<article class="tile b-c6"><span class="tile__kicker">🇪🇨 Ecuador · 3G 1E 1P</span>
+<div style="display:flex;gap:6px;margin:14px 0 18px">
+<span style="flex:1;height:6px;border-radius:3px;background:var(--color-primary-green)"></span>
+<span style="flex:1;height:6px;border-radius:3px;background:var(--color-primary-green)"></span>
+<span style="flex:1;height:6px;border-radius:3px;background:#9ca3af"></span>
+<span style="flex:1;height:6px;border-radius:3px;background:var(--color-primary-green)"></span>
+<span style="flex:1;height:6px;border-radius:3px;background:#dc2626"></span>
+</div>
+<table class="ptable" style="margin-top:8px">
+<thead><tr><th>Fecha</th><th>Rival</th><th>Comp.</th><th class="num">Res</th></tr></thead>
+<tbody>
+<tr><td>28 mar</td><td>vs 🇲🇽 México</td><td>Amistoso</td><td class="num"><strong style="color:var(--color-primary-green)">1-0 G</strong></td></tr>
+<tr><td>22 mar</td><td>vs 🇨🇱 Chile</td><td>Elim.</td><td class="num"><strong style="color:var(--color-primary-green)">2-1 G</strong></td></tr>
+<tr><td>16 nov</td><td>@ 🇨🇴 Colombia</td><td>Elim.</td><td class="num"><strong style="color:#9ca3af">0-0 E</strong></td></tr>
+<tr><td>11 nov</td><td>vs 🇧🇴 Bolivia</td><td>Elim.</td><td class="num"><strong style="color:var(--color-primary-green)">3-0 G</strong></td></tr>
+<tr><td>15 oct</td><td>@ 🇻🇪 Venezuela</td><td>Elim.</td><td class="num"><strong style="color:#dc2626">1-2 P</strong></td></tr>
+</tbody></table>
+<div style="display:flex;justify-content:space-between;margin-top:14px;padding-top:14px;border-top:1px solid rgba(0,0,0,0.08);font-size:12px;color:var(--color-text-muted)">
+<span>GF: <strong style="color:var(--color-primary-black);font-family:var(--font-display);font-size:18px">7</strong></span>
+<span>GC: <strong style="color:var(--color-primary-black);font-family:var(--font-display);font-size:18px">3</strong></span>
+<span>Pts: <strong style="color:var(--color-primary-green);font-family:var(--font-display);font-size:18px">10</strong></span>
+</div></article>
+
+<article class="tile b-c6"><span class="tile__kicker">🇺🇿 Uzbekistán · 2G 1E 2P</span>
+<div style="display:flex;gap:6px;margin:14px 0 18px">
+<span style="flex:1;height:6px;border-radius:3px;background:var(--color-primary-green)"></span>
+<span style="flex:1;height:6px;border-radius:3px;background:#dc2626"></span>
+<span style="flex:1;height:6px;border-radius:3px;background:var(--color-primary-green)"></span>
+<span style="flex:1;height:6px;border-radius:3px;background:#9ca3af"></span>
+<span style="flex:1;height:6px;border-radius:3px;background:#dc2626"></span>
+</div>
+<table class="ptable" style="margin-top:8px">
+<thead><tr><th>Fecha</th><th>Rival</th><th>Comp.</th><th class="num">Res</th></tr></thead>
+<tbody>
+<tr><td>26 mar</td><td>vs 🇰🇬 Kirguistán</td><td>Amistoso</td><td class="num"><strong style="color:var(--color-primary-green)">2-0 G</strong></td></tr>
+<tr><td>22 mar</td><td>@ 🇮🇷 Irán</td><td>Elim.</td><td class="num"><strong style="color:#dc2626">0-2 P</strong></td></tr>
+<tr><td>19 nov</td><td>vs 🇶🇦 Catar</td><td>Elim.</td><td class="num"><strong style="color:var(--color-primary-green)">1-0 G</strong></td></tr>
+<tr><td>14 nov</td><td>@ 🇦🇪 Emiratos</td><td>Elim.</td><td class="num"><strong style="color:#9ca3af">1-1 E</strong></td></tr>
+<tr><td>15 oct</td><td>vs 🇰🇷 Corea Sur</td><td>Elim.</td><td class="num"><strong style="color:#dc2626">0-1 P</strong></td></tr>
+</tbody></table>
+<div style="display:flex;justify-content:space-between;margin-top:14px;padding-top:14px;border-top:1px solid rgba(0,0,0,0.08);font-size:12px;color:var(--color-text-muted)">
+<span>GF: <strong style="color:var(--color-primary-black);font-family:var(--font-display);font-size:18px">4</strong></span>
+<span>GC: <strong style="color:var(--color-primary-black);font-family:var(--font-display);font-size:18px">4</strong></span>
+<span>Pts: <strong style="color:var(--color-primary-black);font-family:var(--font-display);font-size:18px">7</strong></span>
+</div></article>
+
+</div>
+</section>
+
+<!-- ============ H2H FUSIONADO: barra + tabla ============ -->
+<section id="h2h" class="pro-section pro-container">
+<div class="pro-sec-head"><div class="pro-sec-head__l"><span class="pro-sec-head__kicker">Historial · 3 enfrentamientos</span><h2 class="pro-sec-head__title">Cara a cara</h2></div></div>
+
+<div class="h2h-card">
+  <!-- contadores -->
+  <div class="h2h-top">
+    <div class="h2h-side h2h-side--ec">
+      <div class="h2h-side__num">2</div>
+      <div class="h2h-side__l">Victorias 🇪🇨</div>
+    </div>
+    <div class="h2h-mid">
+      <div class="h2h-mid__num">1</div>
+      <div class="h2h-mid__l">Empates</div>
+    </div>
+    <div class="h2h-side h2h-side--uz">
+      <div class="h2h-side__num">0</div>
+      <div class="h2h-side__l">Victorias 🇺🇿</div>
+    </div>
+  </div>
+
+  <!-- barra apilada (resume los 3 partidos: 67% EC · 33% E · 0% UZ) -->
+  <div class="h2h-bar" aria-label="Distribución de resultados históricos">
+    <div class="h2h-bar__seg h2h-bar__seg--ec" style="width:66.66%">67%</div>
+    <div class="h2h-bar__seg h2h-bar__seg--d" style="width:33.34%">33%</div>
+  </div>
+
+  <!-- tabla integrada -->
+  <table class="h2h-table">
+    <thead><tr><th>Fecha</th><th>Torneo</th><th>Sede</th><th style="text-align:right">Resultado</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>oct 2024</td>
+        <td>Amistoso</td>
+        <td>Doha</td>
+        <td style="text-align:right"><span class="winner-dot winner-dot--ec"></span><span class="res res--ec">Ecuador 2 — 0 Uzbekistán</span></td>
+      </tr>
+      <tr>
+        <td>mar 2018</td>
+        <td>Amistoso</td>
+        <td>Tashkent</td>
+        <td style="text-align:right"><span class="winner-dot winner-dot--d"></span><span class="res res--d">Uzbekistán 1 — 1 Ecuador</span></td>
+      </tr>
+      <tr>
+        <td>ago 2010</td>
+        <td>Amistoso</td>
+        <td>Quito</td>
+        <td style="text-align:right"><span class="winner-dot winner-dot--ec"></span><span class="res res--ec">Ecuador 3 — 1 Uzbekistán</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+</section>
+
+<!-- ============ PICK AGGREGATE ============ -->
+<section id="voz" class="pro-section pro-container">
+<div class="pro-sec-head"><div class="pro-sec-head__l"><span class="pro-sec-head__kicker">Voz de la afición · 12.480 votos</span><h2 class="pro-sec-head__title">¿Qué piensa la gente?</h2></div></div>
+
+<div class="pick">
+<div class="pick__inner">
+<div class="pick__h">
+<div class="pick__t">El pick más popular: <span style="color:var(--color-primary-green)">Gana Ecuador</span></div>
+<div class="pick__sub">Encuesta abierta · cierra al pitazo inicial</div>
+</div>
+
+<div class="pick__row">
+<div class="pick__l"><strong>🇪🇨 Ecuador</strong></div>
+<div class="pick__bar"><div class="pick__bar__fill" style="width:71%"></div></div>
+<div class="pick__v">71%</div>
+</div>
+<div class="pick__row">
+<div class="pick__l"><strong>Empate</strong></div>
+<div class="pick__bar"><div class="pick__bar__fill pick__bar__fill--d" style="width:18%"></div></div>
+<div class="pick__v">18%</div>
+</div>
+<div class="pick__row">
+<div class="pick__l"><strong>🇺🇿 Uzbekistán</strong></div>
+<div class="pick__bar"><div class="pick__bar__fill pick__bar__fill--uz" style="width:11%"></div></div>
+<div class="pick__v">11%</div>
+</div>
+</div>
+</div>
+
+<!-- CTA -->
+<div class="pcta">
+<div>
+<div class="pcta__t">¿Cuál es tu pronóstico?</div>
+<div class="pcta__s">Suma tu voz a los 12.480 hinchas que ya votaron</div>
+</div>
+<a href="#" class="pcta__b">Hacer mi pick</a>
+</div>
+</section>
+
+</main>
+<footer class="site-footer"><p class="site-footer__copy">© 2026 Golgana — Mundial 2026</p></footer>
+
+<script>
+// COUNTDOWN: kickoff 12 jun 2026 19:00 ET (UTC-4 = 23:00 UTC)
+(function(){
+  var kickoff = new Date('2026-06-12T23:00:00Z').getTime();
+  var elD=document.querySelector('[data-cd="d"]'),elH=document.querySelector('[data-cd="h"]'),elM=document.querySelector('[data-cd="m"]'),elS=document.querySelector('[data-cd="s"]');
+  function pad(n){return n<10?'0'+n:''+n}
+  function tick(){
+    var now=Date.now(),diff=kickoff-now;
+    if(diff<=0){elD.textContent='00';elH.textContent='00';elM.textContent='00';elS.textContent='00';return}
+    var d=Math.floor(diff/86400000),h=Math.floor((diff%86400000)/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);
+    elD.textContent=pad(d);elH.textContent=pad(h);elM.textContent=pad(m);elS.textContent=pad(s);
+  }
+  tick();setInterval(tick,1000);
+})();
+</script>
+<script src="./scripts/tweaks.js"></script>
+</body></html>

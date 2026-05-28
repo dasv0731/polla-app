@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" role="img" aria-label="Estadio (placeholder)">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1a1a"></stop>
+      <stop offset="1" stop-color="#3a3a3a"></stop>
+    </linearGradient>
+    <linearGradient id="pitch" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#02CC74"></stop>
+      <stop offset="1" stop-color="#016b3d"></stop>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#sky)"></rect>
+  <ellipse cx="400" cy="330" rx="360" ry="120" fill="#111"></ellipse>
+  <ellipse cx="400" cy="320" rx="330" ry="105" fill="url(#pitch)"></ellipse>
+  <rect x="395" y="230" width="10" height="180" fill="#fff" opacity="0.3"></rect>
+  <circle cx="400" cy="320" r="40" fill="none" stroke="#fff" stroke-width="2" opacity="0.3"></circle>
+  <rect x="0" y="0" width="800" height="100" fill="#000" opacity="0.2"></rect>
+  <text x="400" y="60" text-anchor="middle" font-family="Arial" font-size="14" font-weight="700" fill="#fff" opacity="0.6" letter-spacing="4">ESTADIO</text>
+</svg>

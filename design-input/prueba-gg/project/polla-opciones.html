@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="es-EC"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Explorador de opciones — Polla</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./styles/tokens.css"><link rel="stylesheet" href="./styles/base.css"><link rel="stylesheet" href="./styles/golgana-pro.css">
+<style>
+body{background:#f5f4f0}
+.wrap{max-width:1440px;margin:0 auto;padding:32px 24px 80px}
+.head{margin-bottom:32px}
+.head h1{font-family:var(--font-display);font-size:clamp(36px,4vw,56px);line-height:1;margin-bottom:8px}
+.head p{font-size:15px;color:var(--color-text-muted);max-width:64ch;line-height:1.6}
+
+.sect-h{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin:48px 0 16px;padding-bottom:10px;border-bottom:2px solid var(--color-primary-black)}
+.sect-h h2{font-family:var(--font-display);font-size:28px}
+.sect-h__k{font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-primary-green);font-weight:600}
+
+/* ============ LAYOUT PREVIEW CARDS ============ */
+.layouts{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+@media(max-width:880px){.layouts{grid-template-columns:1fr}}
+.layout-card{background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;text-decoration:none;color:inherit;transition:all 0.2s}
+.layout-card:hover{border-color:var(--color-primary-green);transform:translateY(-2px);box-shadow:0 12px 32px rgba(0,0,0,0.06)}
+.layout-card__preview{background:#0a0a0a;aspect-ratio:16/10;position:relative;overflow:hidden}
+.layout-card__body{padding:22px 24px}
+.layout-card__tag{display:inline-block;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-primary-green);font-weight:700;background:rgba(2,204,116,0.12);padding:4px 10px;border-radius:6px;margin-bottom:8px}
+.layout-card__title{font-family:var(--font-display);font-size:26px;line-height:1.05;margin-bottom:6px}
+.layout-card__desc{font-size:13px;color:var(--color-text-muted);line-height:1.55;margin-bottom:12px}
+.layout-card__pros{display:flex;flex-wrap:wrap;gap:6px}
+.layout-card__pro{font-size:11px;background:#f3f4f6;color:var(--color-primary-black);padding:4px 10px;border-radius:999px;letter-spacing:0.02em}
+.layout-card__cta{display:flex;justify-content:space-between;align-items:center;padding:14px 24px;border-top:1px solid rgba(0,0,0,0.08);background:#fafaf6}
+.layout-card__cta strong{font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-primary-green);font-weight:700}
+
+/* Wireframe blocks inside previews */
+.wf{position:absolute;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);border-radius:4px}
+.wf.green{background:rgba(2,204,116,0.4);border-color:rgba(2,204,116,0.6)}
+.wf.dark{background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.08)}
+.wf.solid{background:rgba(255,255,255,0.92);border-color:transparent}
+.wf-label{position:absolute;color:rgba(255,255,255,0.6);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;padding:4px 6px}
+
+/* Color tags for components */
+.legend-row{display:flex;gap:14px;font-size:11px;color:var(--color-text-muted);margin-bottom:18px;flex-wrap:wrap}
+.legend-row span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.l-nav::before{background:rgba(255,255,255,0.18)}
+.l-hero::before{background:rgba(2,204,116,0.5)}
+.l-main::before{background:rgba(255,255,255,0.85)}
+.l-side::before{background:rgba(2,204,116,0.18)}
+
+/* ============ COMPONENT OPTIONS ============ */
+.comp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:880px){.comp-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.comp-grid{grid-template-columns:1fr}}
+.comp{background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:14px;overflow:hidden}
+.comp__pic{padding:18px;background:#fafaf6;border-bottom:1px solid rgba(0,0,0,0.06);min-height:180px;display:flex;align-items:center;justify-content:center}
+.comp__body{padding:14px 16px}
+.comp__t{font-family:var(--font-display);font-size:16px;margin-bottom:4px}
+.comp__d{font-size:12px;color:var(--color-text-muted);line-height:1.4}
+.comp__tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.comp__tag{font-size:10px;background:#f3f4f6;padding:3px 8px;border-radius:999px;letter-spacing:0.02em}
+
+/* ===== INLINE MINI COMPONENTS ===== */
+/* Próximo partido versions */
+.np-a{width:100%;background:linear-gradient(135deg,#0a0a0a,#0a3d20);color:#fff;border-radius:10px;padding:14px}
+.np-a__l{font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-primary-green);margin-bottom:8px}
+.np-a__t{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
+.np-a__team{text-align:center}
+.np-a__team strong{font-family:var(--font-display);font-size:14px;display:block}
+.np-a__team span{font-size:16px}
+.np-a__vs{font-family:var(--font-display);font-size:14px;color:var(--color-primary-green)}
+
+.np-b{width:100%;background:#fff;border:1px solid rgba(0,0,0,0.1);border-radius:10px;padding:14px;border-left:4px solid var(--color-primary-green)}
+.np-b__h{display:flex;justify-content:space-between;font-size:10px;color:var(--color-text-muted);margin-bottom:8px}
+.np-b__t{font-family:var(--font-display);font-size:14px}
+
+.np-c{width:100%;background:#fff;border:1px solid rgba(0,0,0,0.1);border-radius:10px;padding:14px;display:flex;justify-content:space-between;align-items:center}
+.np-c__d{display:flex;gap:6px;align-items:center}
+.np-c__d strong{font-family:var(--font-display);font-size:18px}
+.np-c__pill{background:#dc2626;color:#fff;font-size:9px;padding:3px 8px;border-radius:999px}
+
+/* Ranking versions */
+.rk-a{background:#0a0a0a;color:#fff;border-radius:10px;padding:14px;width:100%}
+.rk-a__row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0}
+.rk-a__row.me{background:rgba(2,204,116,0.18);padding:6px 8px;border-radius:6px;margin:4px -4px}
+.rk-a__p{font-family:var(--font-display);color:#fde047;width:20px}
+.rk-a__pts{font-family:var(--font-display)}
+
+.rk-b{width:100%;background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:10px;padding:14px;text-align:center}
+.rk-b__big{font-family:var(--font-display);font-size:48px;color:var(--color-primary-green);line-height:1}
+.rk-b__l{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-text-muted)}
+
+.rk-c{width:100%;background:linear-gradient(135deg,#02cc74,#016b3d);color:#fff;border-radius:10px;padding:14px}
+.rk-c__big{font-family:var(--font-display);font-size:36px;line-height:1}
+.rk-c__l{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.85);margin-top:4px}
+
+/* Picks pendientes versions */
+.pp-a{width:100%;background:rgba(2,204,116,0.08);border:1px solid rgba(2,204,116,0.3);border-left:4px solid var(--color-primary-green);border-radius:10px;padding:14px}
+.pp-a__t{font-family:var(--font-display);font-size:16px;margin-bottom:4px}
+.pp-a__t strong{color:var(--color-primary-green)}
+.pp-a__s{font-size:11px;color:var(--color-text-muted)}
+
+.pp-b{width:100%;background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:10px;padding:14px}
+.pp-b__row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.05);font-size:12px}
+.pp-b__row:last-child{border-bottom:0}
+.pp-b__dot{width:8px;height:8px;border-radius:50%;background:var(--color-primary-green);display:inline-block;margin-right:6px}
+.pp-b__dot--p{background:#dc2626}
+
+.pp-c{width:100%;background:#0a0a0a;color:#fff;border-radius:10px;padding:16px;text-align:center}
+.pp-c__n{font-family:var(--font-display);font-size:48px;color:var(--color-primary-green);line-height:1}
+.pp-c__l{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.65)}
+
+/* Picks especiales */
+.sp-a{width:100%;background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.sp-a__r{display:flex;justify-content:space-between;font-size:12px;align-items:center}
+.sp-a__r strong{font-family:var(--font-display);font-size:14px}
+.sp-a__r span{font-size:18px}
+
+.sp-b{width:100%;background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:10px;padding:14px;text-align:center}
+.sp-b__c{display:flex;justify-content:center;gap:14px}
+.sp-b__c > div{flex:1}
+.sp-b__big{font-size:24px}
+.sp-b__l{font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-text-muted);margin-top:2px}
+
+.sp-c{width:100%;background:linear-gradient(135deg,#fde047,#f59e0b);color:#7c2d12;border-radius:10px;padding:14px;text-align:center}
+.sp-c__t{font-family:var(--font-display);font-size:18px;line-height:1}
+.sp-c__s{font-size:11px;margin-top:4px}
+
+/* Pick badge in pages */
+.pick-status{position:absolute;top:8px;right:8px;background:var(--color-primary-green);color:#fff;font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px;letter-spacing:0.06em;text-transform:uppercase}
+.pick-status--off{background:rgba(0,0,0,0.6)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<div class="head">
+<div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--color-primary-green);font-weight:700;margin-bottom:10px">Mockups · Polla Mundialista</div>
+<h1>Elegí cómo armar la home</h1>
+<p>4 estructuras de layout + variaciones de cada módulo. Mira las opciones, decide cuál te convence y combina componentes. Después construyo la versión final.</p>
+</div>
+
+<!-- ============ SECCIÓN 1: LAYOUTS ============ -->
+<div class="sect-h">
+<div><div class="sect-h__k">Paso 1 · Estructura general</div><h2>Opciones de layout</h2></div>
+<div style="font-size:12px;color:var(--color-text-muted)">4 opciones</div>
+</div>
+
+<div class="legend-row">
+<span class="l-nav">Top nav / Sidebar</span>
+<span class="l-hero">Hero / acción</span>
+<span class="l-main">Contenido</span>
+<span class="l-side">Sidebar derecha</span>
+</div>
+
+<div class="layouts">
+
+<!-- A · FOCUS -->
+<div class="layout-card">
+<div class="layout-card__preview">
+<div class="wf" style="top:0;left:0;right:0;height:9%;border-radius:0">
+<span class="wf-label" style="top:50%;left:14px;transform:translateY(-50%)">TOP NAV · 60px</span>
+</div>
+<div class="wf green" style="top:13%;left:5%;right:5%;height:18%">
+<span class="wf-label" style="top:50%;left:14px;transform:translateY(-50%);color:#fff">HERO PERSONAL · cifras grandes</span>
+</div>
+<div class="wf" style="top:34%;left:5%;width:62%;height:9%"><span class="wf-label">Acción urgente</span></div>
+<div class="wf solid" style="top:34%;right:5%;width:18%;height:9%"><span class="wf-label" style="color:#333">Trivia</span></div>
+<div class="wf solid" style="top:46%;left:5%;width:30%;height:18%"><span class="wf-label" style="color:#333">Próx. partidos</span></div>
+<div class="wf solid" style="top:46%;left:36.5%;width:30%;height:18%"><span class="wf-label" style="color:#333">Mis grupos</span></div>
+<div class="wf solid" style="top:46%;right:5%;width:18.5%;height:18%"><span class="wf-label" style="color:#333">Especiales</span></div>
+<div class="wf solid" style="top:67%;left:5%;width:45%;height:18%"><span class="wf-label" style="color:#333">Ranking</span></div>
+<div class="wf solid" style="top:67%;right:5%;width:41%;height:18%"><span class="wf-label" style="color:#333">Noticias</span></div>
+<div class="wf green" style="bottom:6%;right:6%;width:14%;height:8%;border-radius:99px"><span class="wf-label" style="color:#fff">FAB</span></div>
+</div>
+<div class="layout-card__body">
+<div class="layout-card__tag">Opción A · Focus</div>
+<h3 class="layout-card__title">Top nav + contenido amplio</h3>
+<p class="layout-card__desc">Sin sidebar. Todo el ancho disponible para contenido. La navegación va arriba (5 secciones). Trivia y notificaciones como botones flotantes.</p>
+<div class="layout-card__pros">
+<span class="layout-card__pro">Más espacio horizontal</span>
+<span class="layout-card__pro">Mobile-friendly</span>
+<span class="layout-card__pro">Foco en contenido</span>
+</div>
+</div>
+<div class="layout-card__cta">
+<strong>Recomendado para mobile</strong>
+<span style="font-size:11px;color:var(--color-text-muted)">Sin sidebar permanente</span>
+</div>
+</div>
+
+<!-- B · ICON SIDEBAR -->
+<div class="layout-card">
+<div class="layout-card__preview">
+<div class="wf" style="top:0;left:0;right:0;height:9%;border-radius:0"><span class="wf-label" style="top:50%;left:14px;transform:translateY(-50%)">TOP NAV mínima</span></div>
+<div class="wf dark" style="top:13%;left:0;bottom:0;width:6%;border-radius:0"><span class="wf-label" style="top:50%;left:50%;transform:translate(-50%,-50%);writing-mode:vertical-rl">SIDEBAR ICONOS</span></div>
+<div class="wf green" style="top:13%;left:9%;right:5%;height:18%"><span class="wf-label" style="color:#fff">HERO PERSONAL</span></div>
+<div class="wf solid" style="top:34%;left:9%;right:5%;height:12%"><span class="wf-label" style="color:#333">Picks pendientes — banner ancho</span></div>
+<div class="wf solid" style="top:49%;left:9%;width:43%;height:18%"><span class="wf-label" style="color:#333">Próximos partidos</span></div>
+<div class="wf solid" style="top:49%;right:5%;width:43%;height:18%"><span class="wf-label" style="color:#333">Grupos · Ranking</span></div>
+<div class="wf solid" style="top:70%;left:9%;right:5%;height:18%"><span class="wf-label" style="color:#333">Mundial · Noticias</span></div>
+</div>
+<div class="layout-card__body">
+<div class="layout-card__tag">Opción B · Productivo</div>
+<h3 class="layout-card__title">Sidebar izquierdo (solo iconos)</h3>
+<p class="layout-card__desc">Sidebar fijo de 64px con iconos. Al hover se expande mostrando labels. Top nav minimal. Maximiza espacio sin perder navegación visible.</p>
+<div class="layout-card__pros">
+<span class="layout-card__pro">Nav siempre visible</span>
+<span class="layout-card__pro">Compacto</span>
+<span class="layout-card__pro">Tipo Notion/Linear</span>
+</div>
+</div>
+<div class="layout-card__cta">
+<strong>Recomendado para uso frecuente</strong>
+<span style="font-size:11px;color:var(--color-text-muted)">Desktop primero</span>
+</div>
+</div>
+
+<!-- C · RIGHT SIDEBAR -->
+<div class="layout-card">
+<div class="layout-card__preview">
+<div class="wf" style="top:0;left:0;right:0;height:9%;border-radius:0"><span class="wf-label" style="top:50%;left:14px;transform:translateY(-50%)">TOP NAV</span></div>
+<div class="wf green" style="top:13%;left:5%;width:60%;height:18%"><span class="wf-label" style="color:#fff">HERO PERSONAL</span></div>
+<div class="wf" style="top:13%;right:5%;width:25%;height:30%;background:rgba(2,204,116,0.18);border-color:rgba(2,204,116,0.4)"><span class="wf-label" style="color:#fff">PRÓX. PARTIDO destacado</span></div>
+<div class="wf solid" style="top:34%;left:5%;width:60%;height:9%"><span class="wf-label" style="color:#333">Acción urgente</span></div>
+<div class="wf solid" style="top:46%;left:5%;width:60%;height:20%"><span class="wf-label" style="color:#333">Próx. partidos con picks · grid</span></div>
+<div class="wf" style="top:46%;right:5%;width:25%;height:42%"><span class="wf-label">NOTICIAS · feed</span></div>
+<div class="wf solid" style="top:69%;left:5%;width:60%;height:18%"><span class="wf-label" style="color:#333">Grupos · Ranking</span></div>
+</div>
+<div class="layout-card__body">
+<div class="layout-card__tag">Opción C · Cobertura</div>
+<h3 class="layout-card__title">Sidebar derecho sticky · contexto del Mundial</h3>
+<p class="layout-card__desc">Contenido principal a la izq (toda la polla). A la derecha, sidebar fijo que sigue scrolleando con próximo partido grande + feed de noticias + trivia. Visible siempre.</p>
+<div class="layout-card__pros">
+<span class="layout-card__pro">Contexto siempre presente</span>
+<span class="layout-card__pro">Estilo periodístico</span>
+<span class="layout-card__pro">Para fans del fútbol</span>
+</div>
+</div>
+<div class="layout-card__cta">
+<strong>Recomendado para engagement</strong>
+<span style="font-size:11px;color:var(--color-text-muted)">Contenido editorial siempre arriba</span>
+</div>
+</div>
+
+<!-- D · SPLIT DASHBOARD -->
+<div class="layout-card">
+<div class="layout-card__preview">
+<div class="wf" style="top:0;left:0;right:0;height:9%;border-radius:0"><span class="wf-label" style="top:50%;left:14px;transform:translateY(-50%)">TOP NAV</span></div>
+<div class="wf green" style="top:13%;left:5%;right:5%;height:14%"><span class="wf-label" style="color:#fff">HERO ANCHO · resumen + countdown</span></div>
+<div class="wf solid" style="top:30%;left:5%;width:46%;height:55%"><span class="wf-label" style="color:#333;top:14px;left:14px">COLUMNA "TU POLLA" — picks · grupos · especiales · comodines</span></div>
+<div class="wf" style="top:30%;right:5%;width:43%;height:55%;background:rgba(2,204,116,0.1);border-color:rgba(2,204,116,0.3)"><span class="wf-label" style="color:#fff;top:14px;left:14px">COLUMNA "MUNDIAL" — partidos · ranking · noticias</span></div>
+</div>
+<div class="layout-card__body">
+<div class="layout-card__tag">Opción D · Dashboard</div>
+<h3 class="layout-card__title">Split 50/50 · Personal vs Mundial</h3>
+<p class="layout-card__desc">Dos columnas balanceadas. Izquierda: todo lo del usuario (picks, grupos, comodines, especiales). Derecha: contexto del Mundial (partidos, ranking, noticias).</p>
+<div class="layout-card__pros">
+<span class="layout-card__pro">Mental model claro</span>
+<span class="layout-card__pro">Densidad media</span>
+<span class="layout-card__pro">Sin scroll para lo esencial</span>
+</div>
+</div>
+<div class="layout-card__cta">
+<strong>Recomendado para usuarios power</strong>
+<span style="font-size:11px;color:var(--color-text-muted)">Necesita pantalla amplia</span>
+</div>
+</div>
+
+</div>
+
+<!-- ============ SECCIÓN 2 · HERO ============ -->
+<div class="sect-h">
+<div><div class="sect-h__k">Paso 2 · Componente Hero / Bienvenida</div><h2>¿Cómo saludamos al usuario?</h2></div>
+<div style="font-size:12px;color:var(--color-text-muted)">3 estilos</div>
+</div>
+
+<div class="comp-grid">
+
+<div class="comp">
+<div class="comp__pic">
+<div style="background:linear-gradient(135deg,#0a0a0a,#067a4a);color:#fff;border-radius:10px;padding:20px;width:100%">
+<div style="font-size:9px;letter-spacing:0.16em;color:rgba(255,255,255,0.6);margin-bottom:6px">HOLA, @DASV0731</div>
+<div style="font-family:var(--font-display);font-size:24px;line-height:1;margin-bottom:8px">Estás <span style="color:var(--color-primary-green)">#147</span></div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px">
+<div style="background:rgba(255,255,255,0.06);border-radius:6px;padding:6px;text-align:center"><div style="font-family:var(--font-display);font-size:16px">128</div><div style="font-size:8px;color:rgba(255,255,255,0.6);letter-spacing:0.1em;text-transform:uppercase">PTS</div></div>
+<div style="background:rgba(255,255,255,0.06);border-radius:6px;padding:6px;text-align:center"><div style="font-family:var(--font-display);font-size:16px">3</div><div style="font-size:8px;color:rgba(255,255,255,0.6);letter-spacing:0.1em;text-transform:uppercase">GR</div></div>
+<div style="background:rgba(2,204,116,0.2);border-radius:6px;padding:6px;text-align:center"><div style="font-family:var(--font-display);font-size:16px">2</div><div style="font-size:8px;color:rgba(255,255,255,0.85);letter-spacing:0.1em;text-transform:uppercase">COM</div></div>
+<div style="background:rgba(255,255,255,0.06);border-radius:6px;padding:6px;text-align:center"><div style="font-family:var(--font-display);font-size:16px">68%</div><div style="font-size:8px;color:rgba(255,255,255,0.6);letter-spacing:0.1em;text-transform:uppercase">HIT</div></div>
+</div>
+</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">Hero A · Status compacto</div>
+<div class="comp__d">Saludo + posición + 4 KPIs en mini-grid. Densidad alta, lectura rápida.</div>
+<div class="comp__tags"><span class="comp__tag">Eficiente</span><span class="comp__tag">Para Layout B/D</span></div>
+</div>
+</div>
+
+<div class="comp">
+<div class="comp__pic">
+<div style="background:linear-gradient(135deg,#0a0a0a,#0a3d20,#067a4a);color:#fff;border-radius:10px;padding:20px;width:100%">
+<div style="font-size:9px;letter-spacing:0.16em;color:rgba(255,255,255,0.6);margin-bottom:4px">HOLA, @DASV0731</div>
+<div style="font-family:var(--font-display);font-size:22px;line-height:1.05;margin-bottom:8px">Quedan <span style="color:var(--color-primary-green)">15 días</span> · 3 picks pendientes</div>
+<div style="display:flex;gap:6px;align-items:center;background:rgba(220,38,38,0.15);border:1px solid rgba(220,38,38,0.4);border-radius:6px;padding:6px 10px;font-size:11px;color:#fca5a5">⚠ Cierra en 2h 14min</div>
+<div style="margin-top:10px;font-size:11px;color:rgba(255,255,255,0.7)">Hacer mis picks →</div>
+</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">Hero B · Acción urgente</div>
+<div class="comp__d">Cuenta regresiva grande + alerta de picks pendientes + CTA. Foco en lo que tiene que hacer YA.</div>
+<div class="comp__tags"><span class="comp__tag">Urgencia</span><span class="comp__tag">Para Layout A/C</span></div>
+</div>
+</div>
+
+<div class="comp">
+<div class="comp__pic">
+<div style="background:linear-gradient(135deg,#0a0a0a,#067a4a);color:#fff;border-radius:10px;padding:20px;width:100%;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center">
+<div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#02cc74,#016b3d);display:grid;place-items:center;font-family:var(--font-display);font-size:20px">DS</div>
+<div>
+<div style="font-size:9px;letter-spacing:0.16em;color:rgba(255,255,255,0.6)">@DASV0731</div>
+<div style="font-family:var(--font-display);font-size:20px;line-height:1.1;margin:4px 0">Hola, Daniel</div>
+<div style="font-size:10px;color:rgba(255,255,255,0.7)">128 pts · #147 global · 3 grupos</div>
+</div>
+</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">Hero C · Identidad personal</div>
+<div class="comp__d">Avatar grande + saludo informal + 1 línea con stats. Más cálido, menos enfático.</div>
+<div class="comp__tags"><span class="comp__tag">Casual</span><span class="comp__tag">Compacto</span></div>
+</div>
+</div>
+
+</div>
+
+<!-- ============ SECCIÓN 3 · PRÓXIMO PARTIDO ============ -->
+<div class="sect-h">
+<div><div class="sect-h__k">Paso 3 · Próximo partido</div><h2>Cómo mostrar el próximo</h2></div>
+<div style="font-size:12px;color:var(--color-text-muted)">3 estilos</div>
+</div>
+
+<div class="comp-grid">
+
+<div class="comp">
+<div class="comp__pic" style="background:#fafaf6">
+<div style="background:linear-gradient(135deg,#0a0a0a,#067a4a);color:#fff;border-radius:10px;padding:18px;width:100%;position:relative">
+<div class="pick-status">PICK ✓</div>
+<div style="font-size:9px;letter-spacing:0.14em;color:var(--color-primary-green);margin-bottom:10px">PRÓXIMO · 12 JUN 19:00</div>
+<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center">
+<div style="text-align:center"><div style="font-size:28px">🇪🇨</div><strong style="font-family:var(--font-display);font-size:16px">Ecuador</strong></div>
+<div style="font-family:var(--font-display);font-size:20px;color:var(--color-primary-green)">VS</div>
+<div style="text-align:center"><div style="font-size:28px">🇺🇿</div><strong style="font-family:var(--font-display);font-size:16px">Uzbekistán</strong></div>
+</div>
+<div style="margin-top:10px;padding:6px;background:rgba(2,204,116,0.15);border-radius:6px;text-align:center;font-size:11px">Tu pick: <strong style="font-family:var(--font-display);font-size:14px">3-0</strong></div>
+</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">Partido A · Card grande oscuro</div>
+<div class="comp__d">Bandera grandes + status del pick inline + edit rápido. Estilo destacado, una sola card.</div>
+<div class="comp__tags"><span class="comp__tag">Inline pick</span><span class="comp__tag">Para sidebar</span></div>
+</div>
+</div>
+
+<div class="comp">
+<div class="comp__pic" style="background:#fafaf6">
+<div style="width:100%;display:flex;flex-direction:column;gap:6px">
+<div class="np-b">
+<div class="np-b__h"><span>12/06 · ECU vs UZB</span><span style="color:var(--color-primary-green)">✓ Pick</span></div>
+<div class="np-b__t">3-0 a favor de Ecuador</div>
+</div>
+<div class="np-b" style="border-left-color:#dc2626">
+<div class="np-b__h"><span>13/06 · ESP vs SEN</span><span style="color:#dc2626">⚠ Pendiente</span></div>
+<div class="np-b__t" style="color:#dc2626">Hacer pick →</div>
+</div>
+<div class="np-b" style="border-left-color:rgba(0,0,0,0.2)">
+<div class="np-b__h"><span>14/06 · BRA vs CMR</span><span>Cierra en 3d</span></div>
+<div class="np-b__t" style="color:var(--color-text-muted)">Aún no se puede</div>
+</div>
+</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">Partido B · Lista compacta</div>
+<div class="comp__d">Lista de 3-5 partidos próximos. Cada uno muestra estado del pick. Eficiente para sidebar o feed.</div>
+<div class="comp__tags"><span class="comp__tag">Lista densa</span><span class="comp__tag">Múltiples</span></div>
+</div>
+</div>
+
+<div class="comp">
+<div class="comp__pic" style="background:#fafaf6">
+<div style="width:100%;background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:10px;padding:16px">
+<div style="font-size:9px;letter-spacing:0.14em;color:var(--color-text-muted);margin-bottom:10px">FALTAN PARA EL PRÓXIMO</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:12px">
+<div style="background:#0a0a0a;color:#fff;text-align:center;padding:6px 0;border-radius:6px"><div style="font-family:var(--font-display);font-size:18px">15</div><div style="font-size:8px;letter-spacing:0.1em;text-transform:uppercase">D</div></div>
+<div style="background:#0a0a0a;color:#fff;text-align:center;padding:6px 0;border-radius:6px"><div style="font-family:var(--font-display);font-size:18px">04</div><div style="font-size:8px;letter-spacing:0.1em;text-transform:uppercase">H</div></div>
+<div style="background:#0a0a0a;color:#fff;text-align:center;padding:6px 0;border-radius:6px"><div style="font-family:var(--font-display);font-size:18px">22</div><div style="font-size:8px;letter-spacing:0.1em;text-transform:uppercase">M</div></div>
+<div style="background:#0a0a0a;color:#fff;text-align:center;padding:6px 0;border-radius:6px"><div style="font-family:var(--font-display);font-size:18px">10</div><div style="font-size:8px;letter-spacing:0.1em;text-transform:uppercase">S</div></div>
+</div>
+<div style="font-size:11px;color:var(--color-text-muted)">🇪🇨 Ecuador vs Uzbekistán 🇺🇿</div>
+</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">Partido C · Countdown card</div>
+<div class="comp__d">Cuenta regresiva grande + nombre del partido como subtítulo. Ideal para hero o lateral arriba.</div>
+<div class="comp__tags"><span class="comp__tag">Countdown</span><span class="comp__tag">Energía</span></div>
+</div>
+</div>
+
+</div>
+
+<!-- ============ SECCIÓN 4 · PICKS PENDIENTES ============ -->
+<div class="sect-h">
+<div><div class="sect-h__k">Paso 4 · Picks pendientes</div><h2>Cómo alertar acciones</h2></div>
+<div style="font-size:12px;color:var(--color-text-muted)">3 estilos</div>
+</div>
+
+<div class="comp-grid">
+
+<div class="comp">
+<div class="comp__pic" style="background:#fafaf6">
+<div class="pp-a">
+<div class="pp-a__t"><strong>3 picks pendientes</strong> para hoy</div>
+<div class="pp-a__s">Cierran en 2h 14min · 30 pts potenciales</div>
+<div style="margin-top:10px"><span style="display:inline-block;background:var(--color-primary-green);color:#fff;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase">Hacer picks →</span></div>
+</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">Picks A · Banner ancho</div>
+<div class="comp__d">Una banda completa con CTA. Imposible de ignorar. Buena para arriba de la home.</div>
+<div class="comp__tags"><span class="comp__tag">Crítico</span><span class="comp__tag">Una sola pieza</span></div>
+</div>
+</div>
+
+<div class="comp">
+<div class="comp__pic" style="background:#fafaf6">
+<div class="pp-b">
+<div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:8px">⏰ Próximos cierres</div>
+<div class="pp-b__row"><span><span class="pp-b__dot pp-b__dot--p"></span><strong>ESP vs SEN</strong></span><span style="color:#dc2626;font-weight:600">2h 14m</span></div>
+<div class="pp-b__row"><span><span class="pp-b__dot pp-b__dot--p"></span><strong>USA vs JPN</strong></span><span style="color:#dc2626">1d</span></div>
+<div class="pp-b__row"><span><span class="pp-b__dot"></span><strong>ECU vs UZB</strong></span><span style="color:var(--color-primary-green)">✓</span></div>
+<div class="pp-b__row"><span><span class="pp-b__dot"></span><strong>ARG vs SUI</strong></span><span style="color:var(--color-primary-green)">✓</span></div>
+</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">Picks B · Lista de estados</div>
+<div class="comp__d">Lista de próximos partidos con estado por color. Más sutil pero informativa.</div>
+<div class="comp__tags"><span class="comp__tag">Visión global</span><span class="comp__tag">Para sidebar</span></div>
+</div>
+</div>
+
+<div class="comp">
+<div class="comp__pic" style="background:#fafaf6">
+<div class="pp-c">
+<div class="pp-c__n">3</div>
+<div class="pp-c__l">Picks pendientes</div>
+<div style="margin-top:8px;font-size:11px;color:#fca5a5">⚠ El primero cierra en 2h 14m</div>
+<div style="margin-top:10px"><span style="display:inline-block;background:var(--color-primary-green);color:#fff;padding:6px 14px;border-radius:999px;font-size:10px;font-weight:600">Hacer picks →</span></div>
+</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">Picks C · Big number</div>
+<div class="comp__d">Solo la cifra grande + label. Versión dark, compacta, perfecta para hero o sidebar.</div>
+<div class="comp__tags"><span class="comp__tag">Visual</span><span class="comp__tag">Pequeño</span></div>
+</div>
+</div>
+
+</div>
+
+<!-- ============ SECCIÓN 5 · RANKING ============ -->
+<div class="sect-h">
+<div><div class="sect-h__k">Paso 5 · Ranking</div><h2>Cómo mostrar la posición</h2></div>
+<div style="font-size:12px;color:var(--color-text-muted)">3 estilos</div>
+</div>
+
+<div class="comp-grid">
+
+<div class="comp">
+<div class="comp__pic" style="background:#fafaf6">
+<div class="rk-a">
+<div style="font-size:9px;letter-spacing:0.14em;color:var(--color-primary-green);font-weight:700;margin-bottom:8px">TOP 5 · GLOBAL</div>
+<div class="rk-a__row"><span><span class="rk-a__p">1</span>@juanmacedo</span><span class="rk-a__pts">312</span></div>
+<div class="rk-a__row"><span><span class="rk-a__p" style="color:#fde047">2</span>@martin</span><span class="rk-a__pts">298</span></div>
+<div class="rk-a__row"><span><span class="rk-a__p" style="color:#fde047">3</span>@carolina</span><span class="rk-a__pts">287</span></div>
+<div class="rk-a__row me"><span><span class="rk-a__p" style="color:var(--color-primary-green)">147</span>@dasv0731</span><span class="rk-a__pts" style="color:var(--color-primary-green)">128</span></div>
+</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">Ranking A · Tabla con tu fila</div>
+<div class="comp__d">Top 5 + tu posición destacada en verde abajo. Da contexto de qué tan lejos estás.</div>
+<div class="comp__tags"><span class="comp__tag">Contexto</span><span class="comp__tag">Mediano</span></div>
+</div>
+</div>
+
+<div class="comp">
+<div class="comp__pic" style="background:#fafaf6">
+<div class="rk-b">
+<div class="rk-b__big">#147</div>
+<div class="rk-b__l">DE 14.892 JUGADORES</div>
+<div style="margin-top:10px;padding:6px;background:rgba(2,204,116,0.1);border-radius:6px;font-size:11px;color:var(--color-primary-green);font-weight:600">▲ Subiste 23 esta semana</div>
+</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">Ranking B · Big number solo</div>
+<div class="comp__d">Solo tu posición en grande + total + delta semanal. Mínimo, motivador.</div>
+<div class="comp__tags"><span class="comp__tag">Compacto</span><span class="comp__tag">Para hero</span></div>
+</div>
+</div>
+
+<div class="comp">
+<div class="comp__pic" style="background:#fafaf6">
+<div class="rk-c">
+<div style="display:flex;justify-content:space-between;align-items:baseline">
+<div>
+<div class="rk-c__big">#147</div>
+<div class="rk-c__l">Global</div>
+</div>
+<div style="text-align:right">
+<div style="font-family:var(--font-display);font-size:24px;line-height:1">#1</div>
+<div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;opacity:0.85">EN PRUEBA1</div>
+</div>
+</div>
+<div style="margin-top:10px;height:4px;background:rgba(255,255,255,0.25);border-radius:999px;overflow:hidden"><div style="width:78%;height:100%;background:#fff"></div></div>
+<div style="margin-top:6px;font-size:10px;opacity:0.85">128 pts · 17 de 25 picks acertados</div>
+</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">Ranking C · Global + grupo</div>
+<div class="comp__d">Posición global y en tu mejor grupo, con barra de progreso de aciertos.</div>
+<div class="comp__tags"><span class="comp__tag">Dual</span><span class="comp__tag">Para hero</span></div>
+</div>
+</div>
+
+</div>
+
+<!-- ============ SECCIÓN 6 · PICKS ESPECIALES ============ -->
+<div class="sect-h">
+<div><div class="sect-h__k">Paso 6 · Picks especiales</div><h2>Campeón · Subcampeón · Revelación</h2></div>
+<div style="font-size:12px;color:var(--color-text-muted)">3 estilos</div>
+</div>
+
+<div class="comp-grid">
+
+<div class="comp">
+<div class="comp__pic" style="background:#fafaf6">
+<div class="sp-a">
+<div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:4px">Picks especiales</div>
+<div class="sp-a__r"><span>🏆</span><strong>Argentina</strong><span style="font-size:10px;color:var(--color-text-muted)">Campeón · 30 pts</span></div>
+<div class="sp-a__r"><span>🥈</span><strong>Brasil</strong><span style="font-size:10px;color:var(--color-text-muted)">Sub · 15 pts</span></div>
+<div class="sp-a__r"><span>⚡</span><strong style="color:var(--color-primary-green)">+ Elegir</strong><span style="font-size:10px;color:var(--color-text-muted)">Revelación · 20 pts</span></div>
+</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">Especiales A · Lista vertical</div>
+<div class="comp__d">3 filas, cada una con bandera + selección + puntos. Compacto. Marca lo no elegido.</div>
+<div class="comp__tags"><span class="comp__tag">Eficiente</span></div>
+</div>
+</div>
+
+<div class="comp">
+<div class="comp__pic" style="background:#fafaf6">
+<div class="sp-b">
+<div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:10px">Picks especiales</div>
+<div class="sp-b__c">
+<div><div class="sp-b__big">🇦🇷</div><div class="sp-b__l">Campeón</div></div>
+<div><div class="sp-b__big">🇧🇷</div><div class="sp-b__l">Subcampeón</div></div>
+<div style="opacity:0.5"><div class="sp-b__big">?</div><div class="sp-b__l">Revelación</div></div>
+</div>
+</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">Especiales B · 3 banderas horizontales</div>
+<div class="comp__d">Solo 3 banderas grandes con label. Visual y minimal. Lo no elegido en gris.</div>
+<div class="comp__tags"><span class="comp__tag">Visual</span><span class="comp__tag">Pequeño</span></div>
+</div>
+</div>
+
+<div class="comp">
+<div class="comp__pic" style="background:#fafaf6">
+<div style="width:100%;display:flex;flex-direction:column;gap:6px">
+<div style="background:linear-gradient(135deg,#fde047,#f59e0b);color:#7c2d12;padding:10px 14px;border-radius:8px;display:flex;justify-content:space-between;align-items:center"><strong style="font-family:var(--font-display);font-size:16px">🏆 Argentina</strong><span style="font-size:10px;font-weight:700">CAMPEÓN · 30 PTS</span></div>
+<div style="background:linear-gradient(135deg,#e5e7eb,#9ca3af);color:#1f2937;padding:10px 14px;border-radius:8px;display:flex;justify-content:space-between;align-items:center"><strong style="font-family:var(--font-display);font-size:16px">🥈 Brasil</strong><span style="font-size:10px;font-weight:700">SUB · 15 PTS</span></div>
+<div style="background:#f3f4f6;color:var(--color-primary-green);padding:10px 14px;border-radius:8px;border:1px dashed var(--color-primary-green);display:flex;justify-content:space-between;align-items:center"><strong style="font-family:var(--font-display);font-size:16px">+ Elegir Revelación</strong><span style="font-size:10px;font-weight:700">20 PTS</span></div>
+</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">Especiales C · Banderines de podio</div>
+<div class="comp__d">3 cards con colores tematizados oro/plata/verde. Tema de podio claro.</div>
+<div class="comp__tags"><span class="comp__tag">Editorial</span><span class="comp__tag">Llamativo</span></div>
+</div>
+</div>
+
+</div>
+
+<!-- ============ MÁS LAYOUTS ============ -->
+<div class="sect-h">
+<div><div class="sect-h__k">Más opciones de layout · Paso 1B</div><h2>Variantes adicionales</h2></div>
+<div style="font-size:12px;color:var(--color-text-muted)">4 opciones extra</div>
+</div>
+
+<div class="layouts">
+
+<!-- E · MAGAZINE -->
+<div class="layout-card">
+<div class="layout-card__preview">
+<div class="wf" style="top:0;left:0;right:0;height:9%;border-radius:0"><span class="wf-label" style="top:50%;left:14px;transform:translateY(-50%)">TOP NAV</span></div>
+<div class="wf green" style="top:13%;left:5%;width:60%;height:48%"><span class="wf-label" style="color:#fff;top:14px;left:14px">HERO EDITORIAL · imagen + título grande</span></div>
+<div class="wf solid" style="top:13%;right:5%;width:25%;height:22%"><span class="wf-label" style="color:#333">Tu estado · KPIs</span></div>
+<div class="wf solid" style="top:38%;right:5%;width:25%;height:23%"><span class="wf-label" style="color:#333">Picks pendientes</span></div>
+<div class="wf solid" style="top:64%;left:5%;width:28%;height:22%"><span class="wf-label" style="color:#333">Grupos</span></div>
+<div class="wf solid" style="top:64%;left:36%;width:28%;height:22%"><span class="wf-label" style="color:#333">Ranking</span></div>
+<div class="wf solid" style="top:64%;right:5%;width:25%;height:22%"><span class="wf-label" style="color:#333">Noticias</span></div>
+</div>
+<div class="layout-card__body">
+<div class="layout-card__tag">Opción E · Magazine</div>
+<h3 class="layout-card__title">Hero editorial gigante + sidebar derecho con status</h3>
+<p class="layout-card__desc">Estilo revista: el hero ocupa 2/3 del ancho con imagen del Mundial. A la derecha tu estado en mini-cards. Abajo en 3 columnas los módulos restantes.</p>
+<div class="layout-card__pros">
+<span class="layout-card__pro">Editorial</span>
+<span class="layout-card__pro">Imagen protagonista</span>
+<span class="layout-card__pro">Estilo The Athletic</span>
+</div>
+</div>
+<div class="layout-card__cta"><strong>Recomendado para storytelling</strong><span style="font-size:11px;color:var(--color-text-muted)">Foto del partido como hero</span></div>
+</div>
+
+<!-- F · STREAM -->
+<div class="layout-card">
+<div class="layout-card__preview">
+<div class="wf" style="top:0;left:0;right:0;height:9%;border-radius:0"><span class="wf-label" style="top:50%;left:14px;transform:translateY(-50%)">TOP NAV</span></div>
+<div class="wf solid" style="top:13%;left:25%;right:25%;height:14%"><span class="wf-label" style="color:#333;top:14px;left:14px">Hero compacto centrado</span></div>
+<div class="wf solid" style="top:30%;left:25%;right:25%;height:13%"><span class="wf-label" style="color:#333">Picks pendientes</span></div>
+<div class="wf solid" style="top:46%;left:25%;right:25%;height:18%"><span class="wf-label" style="color:#333">Próximos partidos</span></div>
+<div class="wf solid" style="top:67%;left:25%;right:25%;height:13%"><span class="wf-label" style="color:#333">Grupos · Especiales</span></div>
+<div class="wf solid" style="top:83%;left:25%;right:25%;height:10%"><span class="wf-label" style="color:#333">Ranking · Noticias</span></div>
+</div>
+<div class="layout-card__body">
+<div class="layout-card__tag">Opción F · Stream</div>
+<h3 class="layout-card__title">Feed centrado tipo Twitter / Instagram</h3>
+<p class="layout-card__desc">Columna central angosta (max 720px), todo en stack vertical. Cada módulo es una card. Pensado para scroll lineal sin distracciones.</p>
+<div class="layout-card__pros">
+<span class="layout-card__pro">Lectura lineal</span>
+<span class="layout-card__pro">Mobile=desktop</span>
+<span class="layout-card__pro">Sin sobrecarga</span>
+</div>
+</div>
+<div class="layout-card__cta"><strong>Recomendado para enfoque</strong><span style="font-size:11px;color:var(--color-text-muted)">Una cosa a la vez</span></div>
+</div>
+
+<!-- G · COCKPIT -->
+<div class="layout-card">
+<div class="layout-card__preview">
+<div class="wf dark" style="top:0;left:0;bottom:0;width:6%"><span class="wf-label" style="top:50%;left:50%;transform:translate(-50%,-50%);writing-mode:vertical-rl">ICONS</span></div>
+<div class="wf" style="top:0;left:9%;right:0;height:7%;border-radius:0"><span class="wf-label" style="top:50%;left:14px;transform:translateY(-50%)">BREADCRUMB / SEARCH</span></div>
+<div class="wf solid" style="top:10%;left:9%;width:43%;height:14%"><span class="wf-label" style="color:#333">KPI 1</span></div>
+<div class="wf solid" style="top:10%;left:55%;width:21%;height:14%"><span class="wf-label" style="color:#333">KPI 2</span></div>
+<div class="wf green" style="top:10%;right:0%;width:18%;height:14%"><span class="wf-label" style="color:#fff">KPI 3</span></div>
+<div class="wf solid" style="top:27%;left:9%;width:43%;height:30%"><span class="wf-label" style="color:#333">Próx. partidos con picks</span></div>
+<div class="wf solid" style="top:27%;left:55%;right:0;height:30%"><span class="wf-label" style="color:#333">Grupos</span></div>
+<div class="wf solid" style="top:60%;left:9%;width:28%;height:28%"><span class="wf-label" style="color:#333">Ranking</span></div>
+<div class="wf solid" style="top:60%;left:40%;width:28%;height:28%"><span class="wf-label" style="color:#333">Especiales</span></div>
+<div class="wf solid" style="top:60%;left:71%;right:0;height:28%"><span class="wf-label" style="color:#333">Noticias</span></div>
+</div>
+<div class="layout-card__body">
+<div class="layout-card__tag">Opción G · Cockpit</div>
+<h3 class="layout-card__title">Bento denso · todo a un golpe de vista</h3>
+<p class="layout-card__desc">Sidebar iconos + KPI strip + grid de 5 módulos sin scroll en pantallas grandes. Para usuarios que quieren ver TODO antes de decidir.</p>
+<div class="layout-card__pros">
+<span class="layout-card__pro">Cero scroll inicial</span>
+<span class="layout-card__pro">Máxima densidad</span>
+<span class="layout-card__pro">Stripe/Linear style</span>
+</div>
+</div>
+<div class="layout-card__cta"><strong>Recomendado para power users</strong><span style="font-size:11px;color:var(--color-text-muted)">Necesita ≥1440px</span></div>
+</div>
+
+<!-- H · MOBILE FIRST -->
+<div class="layout-card">
+<div class="layout-card__preview">
+<div style="position:absolute;inset:0;display:flex;justify-content:center;align-items:center;padding:14px">
+<div style="background:#222;border-radius:18px;width:30%;height:100%;padding:8px;border:2px solid rgba(255,255,255,0.2);position:relative">
+<div style="background:#fff;border-radius:12px;height:100%;display:flex;flex-direction:column;padding:8px;gap:6px">
+<div style="background:rgba(0,0,0,0.08);height:8%;border-radius:4px"></div>
+<div style="background:rgba(2,204,116,0.6);height:18%;border-radius:6px"></div>
+<div style="background:rgba(0,0,0,0.1);height:14%;border-radius:6px"></div>
+<div style="background:rgba(0,0,0,0.1);height:14%;border-radius:6px"></div>
+<div style="background:rgba(0,0,0,0.1);height:14%;border-radius:6px"></div>
+<div style="background:rgba(0,0,0,0.08);height:10%;border-radius:6px"></div>
+</div>
+</div>
+<div style="margin-left:18px;color:#fff;font-size:11px;max-width:140px;line-height:1.4">
+<strong style="font-family:var(--font-display);font-size:16px;display:block">Mobile-first</strong>
+<span style="color:rgba(255,255,255,0.7)">Diseño nacido para móvil con bottom-nav y cards apiladas. Desktop = mobile a 480px max.</span>
+</div>
+</div>
+</div>
+<div class="layout-card__body">
+<div class="layout-card__tag">Opción H · Mobile First</div>
+<h3 class="layout-card__title">App nativa · bottom nav · stack vertical</h3>
+<p class="layout-card__desc">Diseñado primero para móvil. Bottom navigation con 5 iconos. Stack de cards verticales. En desktop se centra a 480px max. UX tipo app.</p>
+<div class="layout-card__pros">
+<span class="layout-card__pro">App-like</span>
+<span class="layout-card__pro">Bottom nav</span>
+<span class="layout-card__pro">Para PWA</span>
+</div>
+</div>
+<div class="layout-card__cta"><strong>Recomendado si la mayoría usa móvil</strong><span style="font-size:11px;color:var(--color-text-muted)">90% de los usuarios casuales</span></div>
+</div>
+
+</div>
+
+<!-- ============ COMPONENTE · MIS GRUPOS ============ -->
+<div class="sect-h">
+<div><div class="sect-h__k">Paso 7 · Mis grupos</div><h2>Cómo listar los grupos del usuario</h2></div>
+<div style="font-size:12px;color:var(--color-text-muted)">3 estilos</div>
+</div>
+
+<div class="comp-grid">
+
+<div class="comp">
+<div class="comp__pic" style="background:#fafaf6">
+<div style="width:100%;display:grid;gap:8px">
+<div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:8px;padding:10px;display:flex;align-items:center;gap:10px">
+<div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#067a4a,#02cc74);color:#fff;display:grid;place-items:center;font-family:var(--font-display);font-size:14px">P1</div>
+<div style="flex:1;min-width:0"><strong style="font-family:var(--font-display);font-size:14px;display:block">Prueba1</strong><span style="font-size:10px;color:var(--color-text-muted)">12 jug · $50</span></div>
+<span style="background:rgba(245,158,11,0.2);color:#b45309;padding:3px 8px;border-radius:6px;font-family:var(--font-display);font-size:13px">#1</span>
+</div>
+<div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:8px;padding:10px;display:flex;align-items:center;gap:10px">
+<div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;display:grid;place-items:center;font-family:var(--font-display);font-size:14px">OF</div>
+<div style="flex:1;min-width:0"><strong style="font-family:var(--font-display);font-size:14px;display:block">Oficina FC</strong><span style="font-size:10px;color:var(--color-text-muted)">24 jug · $200</span></div>
+<span style="background:rgba(180,83,9,0.2);color:#92400e;padding:3px 8px;border-radius:6px;font-family:var(--font-display);font-size:13px">#3</span>
+</div>
+</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">Grupos A · Lista compacta</div>
+<div class="comp__d">Filas pequeñas con avatar + nombre + posición. Cabe mucho en poco espacio.</div>
+<div class="comp__tags"><span class="comp__tag">Sidebar</span><span class="comp__tag">Compacto</span></div>
+</div>
+</div>
+
+<div class="comp">
+<div class="comp__pic" style="background:#fafaf6">
+<div style="width:100%;background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:10px;padding:14px">
+<div style="display:flex;align-items:center;gap:12px;padding-bottom:10px;border-bottom:1px solid rgba(0,0,0,0.05)">
+<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#067a4a,#02cc74);color:#fff;display:grid;place-items:center;font-family:var(--font-display);font-size:18px">P1</div>
+<div style="flex:1"><strong style="font-family:var(--font-display);font-size:18px">Prueba1</strong><div style="font-size:11px;color:var(--color-text-muted)">Tu mejor grupo</div></div>
+<div style="text-align:right"><div style="font-family:var(--font-display);font-size:24px;color:var(--color-primary-green);line-height:1">#1</div><div style="font-size:9px;color:var(--color-text-muted);letter-spacing:0.1em;text-transform:uppercase">DE 12</div></div>
+</div>
+<div style="font-size:11px;color:var(--color-text-muted);margin-top:8px">+ 2 grupos más activos →</div>
+</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">Grupos B · Spotlight + resto</div>
+<div class="comp__d">Una sola card grande con tu MEJOR grupo destacado. Link "+ N grupos más" al final.</div>
+<div class="comp__tags"><span class="comp__tag">Foco</span><span class="comp__tag">Para hero</span></div>
+</div>
+</div>
+
+<div class="comp">
+<div class="comp__pic" style="background:#fafaf6">
+<div style="width:100%;display:flex;gap:8px">
+<div style="flex:1;aspect-ratio:1;border-radius:10px;background:linear-gradient(135deg,#067a4a,#02cc74);color:#fff;padding:10px;position:relative;display:flex;flex-direction:column;justify-content:space-between">
+<span style="background:rgba(255,255,255,0.25);font-size:11px;padding:3px 8px;border-radius:4px;align-self:flex-start;font-family:var(--font-display)">#1</span>
+<div><strong style="font-family:var(--font-display);font-size:15px;display:block;line-height:1">Prueba1</strong><span style="font-size:9px;opacity:0.85">12 jug</span></div>
+</div>
+<div style="flex:1;aspect-ratio:1;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;padding:10px;position:relative;display:flex;flex-direction:column;justify-content:space-between">
+<span style="background:rgba(255,255,255,0.25);font-size:11px;padding:3px 8px;border-radius:4px;align-self:flex-start;font-family:var(--font-display)">#3</span>
+<div><strong style="font-family:var(--font-display);font-size:14px;display:block;line-height:1">Oficina</strong><span style="font-size:9px;opacity:0.85">24 jug</span></div>
+</div>
+<div style="flex:1;aspect-ratio:1;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#b45309);color:#fff;padding:10px;position:relative;display:flex;flex-direction:column;justify-content:space-between">
+<span style="background:rgba(255,255,255,0.25);font-size:11px;padding:3px 8px;border-radius:4px;align-self:flex-start;font-family:var(--font-display)">#23</span>
+<div><strong style="font-family:var(--font-display);font-size:14px;display:block;line-height:1">Familia</strong><span style="font-size:9px;opacity:0.85">8 jug</span></div>
+</div>
+</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">Grupos C · Cards cuadradas color</div>
+<div class="comp__d">Tarjetas cuadradas con color de identidad por grupo. Más visual, menos info.</div>
+<div class="comp__tags"><span class="comp__tag">Visual</span><span class="comp__tag">Touchable</span></div>
+</div>
+</div>
+
+</div>
+
+<!-- ============ COMPONENTE · NOTICIAS ============ -->
+<div class="sect-h">
+<div><div class="sect-h__k">Paso 8 · Noticias del Mundial</div><h2>Cómo presentar el feed editorial</h2></div>
+<div style="font-size:12px;color:var(--color-text-muted)">3 estilos</div>
+</div>
+
+<div class="comp-grid">
+
+<div class="comp">
+<div class="comp__pic" style="background:#fafaf6">
+<div style="width:100%;background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;gap:8px"><div style="width:48px;height:48px;border-radius:6px;background:linear-gradient(135deg,#0a3d20,#067a4a);flex-shrink:0"></div><div style="font-size:11px;line-height:1.3"><div style="color:var(--color-primary-green);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px">Hoy</div><strong style="font-family:var(--font-display);font-size:13px">Caicedo confirmado capitán</strong></div></div>
+<div style="display:flex;gap:8px"><div style="width:48px;height:48px;border-radius:6px;background:linear-gradient(135deg,#0a3d20,#067a4a);flex-shrink:0"></div><div style="font-size:11px;line-height:1.3"><div style="color:var(--color-text-muted);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px">Ayer</div><strong style="font-family:var(--font-display);font-size:13px">Argentina llega como favorito</strong></div></div>
+</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">Noticias A · Lista con thumb</div>
+<div class="comp__d">Stack de filas con thumbnail cuadrado a la izq + título corto. Estilo Twitter/RSS.</div>
+<div class="comp__tags"><span class="comp__tag">Denso</span><span class="comp__tag">Sidebar</span></div>
+</div>
+</div>
+
+<div class="comp">
+<div class="comp__pic" style="background:#fafaf6">
+<div style="width:100%">
+<div style="position:relative;width:100%;aspect-ratio:5/3;border-radius:10px;background:linear-gradient(135deg,#0a3d20,#067a4a);overflow:hidden;display:flex;align-items:end;color:#fff;padding:12px">
+<div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.8),transparent 60%)"></div>
+<div style="position:relative">
+<div style="font-size:9px;letter-spacing:0.14em;color:var(--color-primary-green);text-transform:uppercase;margin-bottom:4px">Destacada · 5 min</div>
+<strong style="font-family:var(--font-display);font-size:15px;line-height:1.1">Caicedo confirmado capitán antes del debut</strong>
+</div>
+</div>
+</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">Noticias B · Hero card grande</div>
+<div class="comp__d">Una sola nota destacada con foto grande + overlay. Editorial fuerte. Una nota = una decisión.</div>
+<div class="comp__tags"><span class="comp__tag">Editorial</span><span class="comp__tag">Foto fuerte</span></div>
+</div>
+</div>
+
+<div class="comp">
+<div class="comp__pic" style="background:#fafaf6">
+<div style="width:100%;display:grid;grid-template-columns:1fr 1fr;gap:6px">
+<div style="aspect-ratio:1;border-radius:8px;background:linear-gradient(135deg,#0a3d20,#067a4a);padding:8px;color:#fff;display:flex;align-items:end;font-family:var(--font-display);font-size:11px;line-height:1.1">Caicedo capitán</div>
+<div style="aspect-ratio:1;border-radius:8px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);padding:8px;color:#fff;display:flex;align-items:end;font-family:var(--font-display);font-size:11px;line-height:1.1">Argentina favorito</div>
+<div style="aspect-ratio:1;border-radius:8px;background:linear-gradient(135deg,#f59e0b,#b45309);padding:8px;color:#fff;display:flex;align-items:end;font-family:var(--font-display);font-size:11px;line-height:1.1">Sedes guía</div>
+<div style="aspect-ratio:1;border-radius:8px;background:linear-gradient(135deg,#dc2626,#7f1d1d);padding:8px;color:#fff;display:flex;align-items:end;font-family:var(--font-display);font-size:11px;line-height:1.1">Brasil sin Vini</div>
+</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">Noticias C · Grid 2×2 mosaico</div>
+<div class="comp__d">4 cards cuadradas tipo mosaico con título encima. Más visual, menos texto, ideal para sidebar.</div>
+<div class="comp__tags"><span class="comp__tag">Visual</span><span class="comp__tag">4 notas</span></div>
+</div>
+</div>
+
+</div>
+
+<!-- ============ COMPONENTE · COMODINES ============ -->
+<div class="sect-h">
+<div><div class="sect-h__k">Paso 9 · Comodines</div><h2>Cómo mostrar los power-ups disponibles</h2></div>
+<div style="font-size:12px;color:var(--color-text-muted)">3 estilos</div>
+</div>
+
+<div class="comp-grid">
+
+<div class="comp">
+<div class="comp__pic" style="background:#fafaf6">
+<div style="width:100%;display:flex;gap:8px;justify-content:center">
+<div style="aspect-ratio:1;width:60px;border-radius:10px;background:linear-gradient(135deg,#02cc74,#016b3d);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;text-align:center;padding:4px"><span style="font-size:20px">×2</span><span>DOBLE</span></div>
+<div style="aspect-ratio:1;width:60px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#b45309);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;text-align:center;padding:4px"><span style="font-size:20px">🛡</span><span>ESCUDO</span></div>
+<div style="aspect-ratio:1;width:60px;border-radius:10px;background:rgba(0,0,0,0.08);color:rgba(0,0,0,0.3);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;text-align:center;padding:4px;border:1px dashed rgba(0,0,0,0.2)"><span style="font-size:20px">?</span><span>USAR</span></div>
+</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">Comodines A · 3 chips cuadrados</div>
+<div class="comp__d">3 tarjetas pequeñas con icono y nombre. Lo vacío en gris dashed. Cabe en una fila.</div>
+<div class="comp__tags"><span class="comp__tag">Compacto</span><span class="comp__tag">Visual</span></div>
+</div>
+</div>
+
+<div class="comp">
+<div class="comp__pic" style="background:#fafaf6">
+<div style="width:100%;background:linear-gradient(135deg,#02cc74,#016b3d);color:#fff;border-radius:10px;padding:14px;display:flex;justify-content:space-between;align-items:center">
+<div><div style="font-size:9px;letter-spacing:0.14em;text-transform:uppercase;opacity:0.85;margin-bottom:4px">Comodines</div><div style="font-family:var(--font-display);font-size:28px;line-height:1">2/3</div></div>
+<div style="text-align:right;font-size:10px;opacity:0.85">Doble ·<br>Escudo</div>
+</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">Comodines B · KPI sintético</div>
+<div class="comp__d">Solo "2/3" con sus tipos abajo. Va al hero como una métrica más.</div>
+<div class="comp__tags"><span class="comp__tag">Para hero</span><span class="comp__tag">Minimal</span></div>
+</div>
+</div>
+
+<div class="comp">
+<div class="comp__pic" style="background:#fafaf6">
+<div style="width:100%;background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:10px;padding:14px">
+<div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:10px">⚡ Comodines</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(2,204,116,0.06);border-radius:6px;font-size:11px"><span><strong>×2 Doble punto</strong><div style="font-size:9px;color:var(--color-text-muted)">Vale el doble en 1 pick</div></span><span style="background:var(--color-primary-green);color:#fff;padding:3px 8px;border-radius:4px;font-size:9px;font-weight:600">USAR</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(245,158,11,0.06);border-radius:6px;font-size:11px"><span><strong>🛡 Escudo</strong><div style="font-size:9px;color:var(--color-text-muted)">Protege de 1 error</div></span><span style="background:#f59e0b;color:#fff;padding:3px 8px;border-radius:4px;font-size:9px;font-weight:600">USAR</span></div>
+</div>
+</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">Comodines C · Lista accionable</div>
+<div class="comp__d">Lista vertical con descripción + botón USAR. Más explicativo y operativo.</div>
+<div class="comp__tags"><span class="comp__tag">Accionable</span><span class="comp__tag">Educativo</span></div>
+</div>
+</div>
+
+</div>
+
+<!-- ============ COMPONENTE · TRIVIA / FAB ============ -->
+<div class="sect-h">
+<div><div class="sect-h__k">Paso 10 · Trivia y elementos flotantes</div><h2>Botones flotantes / notificaciones</h2></div>
+<div style="font-size:12px;color:var(--color-text-muted)">3 estilos</div>
+</div>
+
+<div class="comp-grid">
+
+<div class="comp">
+<div class="comp__pic" style="background:#fafaf6;position:relative;min-height:200px">
+<div style="position:absolute;bottom:14px;right:14px;background:linear-gradient(135deg,#02cc74,#016b3d);color:#fff;padding:10px 16px;border-radius:999px;display:flex;align-items:center;gap:8px;font-size:11px;font-weight:600;box-shadow:0 8px 24px rgba(2,204,116,0.4)">
+<span style="background:#fff;color:var(--color-primary-green);border-radius:50%;width:18px;height:18px;display:grid;place-items:center;font-size:10px">⚡</span>
+TRIVIA · GANAR COMODÍN
+</div>
+<div style="position:absolute;top:14px;left:14px;font-size:10px;color:var(--color-text-muted);letter-spacing:0.1em;text-transform:uppercase">↘ esquina inferior</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">FAB A · Pill verde pulsante</div>
+<div class="comp__d">Botón pill grande en bottom-right con animación pulse. Muy visible, llama a la acción.</div>
+<div class="comp__tags"><span class="comp__tag">Alto contraste</span><span class="comp__tag">Llamativo</span></div>
+</div>
+</div>
+
+<div class="comp">
+<div class="comp__pic" style="background:#fafaf6;position:relative;min-height:200px">
+<div style="position:absolute;top:14px;left:50%;transform:translateX(-50%);background:#0a0a0a;color:#fff;padding:8px 16px;border-radius:999px;display:flex;align-items:center;gap:8px;font-size:11px;border:1px solid rgba(2,204,116,0.5)">
+<span style="background:var(--color-primary-green);width:8px;height:8px;border-radius:50%"></span>
+<span>Nueva trivia disponible · <strong style="color:var(--color-primary-green)">Responder ahora</strong></span>
+</div>
+<div style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--color-text-muted);letter-spacing:0.1em;text-transform:uppercase">↑ tope de la home, inline</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">FAB B · Banner toast arriba</div>
+<div class="comp__d">Notificación toast en el top, centrada, con punto verde. Menos intrusiva que un FAB.</div>
+<div class="comp__tags"><span class="comp__tag">Sutil</span><span class="comp__tag">Posición top</span></div>
+</div>
+</div>
+
+<div class="comp">
+<div class="comp__pic" style="background:#fafaf6;position:relative;min-height:200px;display:flex;align-items:center;justify-content:center">
+<div style="background:linear-gradient(135deg,#fde047,#f59e0b);color:#7c2d12;padding:16px;border-radius:14px;text-align:center;width:80%;max-width:200px">
+<div style="font-size:24px">🎁</div>
+<div style="font-family:var(--font-display);font-size:14px;margin-top:4px">Trivia diaria</div>
+<div style="font-size:10px;margin-top:4px">Gana comodín × punto</div>
+<div style="margin-top:8px;background:#7c2d12;color:#fde047;padding:6px;border-radius:6px;font-size:10px;font-weight:600">Empezar →</div>
+</div>
+</div>
+<div class="comp__body">
+<div class="comp__t">FAB C · Card inline (no flotante)</div>
+<div class="comp__d">Card amarilla dentro del flujo normal de la home, en una sección de "Bonus". Sin overlay.</div>
+<div class="comp__tags"><span class="comp__tag">No intrusivo</span><span class="comp__tag">Inline</span></div>
+</div>
+</div>
+
+</div>
+
+<!-- ============ DECISIÓN ============ -->
+<div style="margin-top:64px;background:#0a0a0a;color:#fff;border-radius:16px;padding:36px;display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center">
+<div>
+<div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--color-primary-green);font-weight:700;margin-bottom:8px">Cuando decidas</div>
+<h2 style="font-family:var(--font-display);font-size:32px;line-height:1.05;margin-bottom:8px">¿Qué combinación te gusta?</h2>
+<p style="color:rgba(255,255,255,0.7);font-size:14px;max-width:60ch;line-height:1.6">Decime qué layout (A, B, C o D) y qué componentes de cada sección (Hero, Partido, Picks, Ranking, Especiales). Con eso armo el HTML final aplicado a toda la polla.</p>
+</div>
+<div>
+<a href="./polla-inicio.html" style="display:inline-block;background:#fff;color:#0a0a0a;padding:14px 24px;border-radius:8px;font-weight:600;text-decoration:none;font-size:13px;letter-spacing:0.04em;text-transform:uppercase">Ver versión actual</a>
+</div>
+</div>
+
+</div>
+</body></html>

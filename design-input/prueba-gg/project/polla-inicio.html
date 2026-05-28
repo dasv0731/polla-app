@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="es-EC"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Polla Mundialista · Inicio — Golgana</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./styles/tokens.css"><link rel="stylesheet" href="./styles/base.css"><link rel="stylesheet" href="./styles/components.css"><link rel="stylesheet" href="./styles/golgana-pro.css">
+<link rel="icon" type="image/png" href="./assets/logo-golgana.png">
+<style>
+/* === TOP NAV === */
+body{background:#f5f4f0}
+.tn{background:#0a0a0a;color:#fff;border-bottom:1px solid rgba(255,255,255,0.08);position:sticky;top:0;z-index:50}
+.tn__inner{max-width:1440px;margin:0 auto;padding:14px 24px;display:grid;grid-template-columns:auto 1fr auto;gap:32px;align-items:center}
+.tn__logo{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none}
+.tn__logo img{height:32px}
+.tn__nav{display:flex;gap:4px}
+.tn__nav a{font-size:13px;letter-spacing:0.06em;text-transform:uppercase;font-weight:500;padding:10px 14px;border-radius:8px;color:rgba(255,255,255,0.7);text-decoration:none;transition:all 0.2s}
+.tn__nav a:hover{color:#fff;background:rgba(255,255,255,0.06)}
+.tn__nav a.active{color:#fff;background:rgba(2,204,116,0.18);border:1px solid rgba(2,204,116,0.5)}
+.tn__right{display:flex;align-items:center;gap:14px}
+.tn__bell{position:relative;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:50%;width:38px;height:38px;display:grid;place-items:center;font-size:16px;cursor:pointer}
+.tn__bell::after{content:"3";position:absolute;top:-4px;right:-4px;background:var(--color-primary-green);color:#fff;font-family:var(--font-primary);font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;border:2px solid #0a0a0a}
+.tn__user{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:30px;padding:4px 14px 4px 4px;cursor:pointer}
+.tn__avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#067a4a,#02cc74);display:grid;place-items:center;color:#fff;font-weight:600;font-size:13px}
+.tn__user span{font-size:13px}
+@media (max-width:880px){.tn__nav{display:none}}
+
+/* === HERO USUARIO === */
+.uhero{background:linear-gradient(135deg,#0a0a0a 0%,#0a3d20 60%,#067a4a 100%);color:#fff;padding:36px 0 48px;position:relative;overflow:hidden}
+.uhero::before{content:"";position:absolute;inset:0;background:radial-gradient(60% 80% at 80% 30%,rgba(2,204,116,0.25),transparent 60%);z-index:0}
+.uhero__inner{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:0 24px}
+.uhero__greeting{font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-bottom:8px}
+.uhero__name{font-family:var(--font-display);font-size:clamp(40px,5vw,64px);line-height:0.95;margin-bottom:8px}
+.uhero__sub{font-size:15px;color:rgba(255,255,255,0.7);margin-bottom:24px;max-width:60ch}
+.uhero__sub strong{color:var(--color-primary-green)}
+
+.uhero__kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.12);border-radius:14px;overflow:hidden}
+.uhero__kpi{background:rgba(0,0,0,0.4);padding:18px 20px}
+.uhero__kpi--accent{background:linear-gradient(135deg,var(--color-primary-green),#016b3d)}
+.uhero__kpi-l{font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-bottom:6px}
+.uhero__kpi--accent .uhero__kpi-l{color:rgba(255,255,255,0.85)}
+.uhero__kpi-v{font-family:var(--font-display);font-size:32px;line-height:1;color:#fff}
+.uhero__kpi-s{font-size:11px;color:rgba(255,255,255,0.6);margin-top:4px}
+.uhero__kpi--accent .uhero__kpi-s{color:rgba(255,255,255,0.85)}
+.uhero__delta{display:inline-flex;align-items:center;gap:4px;background:rgba(2,204,116,0.18);border:1px solid rgba(2,204,116,0.4);color:var(--color-primary-green);padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;margin-top:4px}
+
+/* === SECCIONES === */
+.psection{max-width:1440px;margin:0 auto;padding:32px 24px 0}
+.psec-h{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+.psec-h h2{font-family:var(--font-display);font-size:28px;letter-spacing:0.01em;color:var(--color-primary-black)}
+.psec-h__cta{font-size:12px;letter-spacing:0.06em;text-transform:uppercase;font-weight:600;color:var(--color-primary-green);text-decoration:none}
+.psec-h__cta:hover{text-decoration:underline}
+
+/* === PICKS PENDIENTES === */
+.pend{background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:16px;padding:24px;display:grid;grid-template-columns:1fr auto;align-items:center;gap:20px;border-left:5px solid var(--color-primary-green)}
+.pend__t{font-family:var(--font-display);font-size:24px}
+.pend__t strong{color:var(--color-primary-green)}
+.pend__s{font-size:13px;color:var(--color-text-muted);margin-top:4px}
+.pend__b{background:var(--color-primary-green);color:#fff;padding:12px 22px;border-radius:8px;font-weight:600;text-decoration:none;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;white-space:nowrap}
+.pend__b:hover{background:#016b3d}
+@media (max-width:520px){.pend{grid-template-columns:1fr}}
+
+/* === BENTO POLLA === */
+.bento-p{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+@media (max-width:1024px){.bento-p{grid-template-columns:repeat(6,1fr)}.bento-p > *{grid-column:span 6 !important}}
+@media (max-width:600px){.bento-p{grid-template-columns:1fr}.bento-p > *{grid-column:span 1 !important}}
+
+/* === MATCH CARD CON PICK === */
+.mcard{background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:14px;text-decoration:none;color:inherit;transition:all 0.2s}
+.mcard:hover{border-color:rgba(2,204,116,0.4);box-shadow:0 8px 24px rgba(0,0,0,0.06);transform:translateY(-1px)}
+.mcard__h{display:flex;justify-content:space-between;align-items:center;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-text-muted)}
+.mcard__h .grp{background:rgba(0,0,0,0.06);padding:3px 8px;border-radius:999px;color:var(--color-primary-black)}
+.mcard__t{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center}
+.mcard__team{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.mcard__team strong{font-size:13px}
+.mcard__flag{font-size:32px}
+.mcard__vs{font-family:var(--font-display);color:var(--color-text-muted);font-size:16px}
+.mcard__pick{padding:10px 12px;border-radius:8px;border:1px dashed rgba(0,0,0,0.15);text-align:center;font-size:12px;color:var(--color-text-muted)}
+.mcard__pick--set{background:rgba(2,204,116,0.06);border:1px solid rgba(2,204,116,0.4);color:var(--color-primary-black)}
+.mcard__pick--set strong{color:var(--color-primary-green);font-family:var(--font-display);font-size:18px;margin:0 4px}
+.mcard__deadline{font-size:11px;color:#dc2626;font-weight:600;letter-spacing:0.04em}
+
+/* === GROUP CARD === */
+.gcard{background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px;text-decoration:none;color:inherit;transition:all 0.2s}
+.gcard:hover{border-color:rgba(2,204,116,0.4);transform:translateY(-1px)}
+.gcard__h{display:flex;justify-content:space-between;align-items:flex-start}
+.gcard__avi{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#067a4a,#02cc74);display:grid;place-items:center;color:#fff;font-family:var(--font-display);font-size:22px}
+.gcard__rank{background:rgba(2,204,116,0.15);color:var(--color-primary-green);padding:4px 10px;border-radius:6px;font-family:var(--font-display);font-size:16px}
+.gcard__rank--gold{background:rgba(245,158,11,0.18);color:#b45309}
+.gcard__rank--silver{background:rgba(156,163,175,0.18);color:#4b5563}
+.gcard__rank--bronze{background:rgba(180,83,9,0.18);color:#92400e}
+.gcard__name{font-family:var(--font-display);font-size:22px;line-height:1}
+.gcard__sub{font-size:12px;color:var(--color-text-muted);margin-top:4px;display:flex;gap:12px}
+.gcard__bar{height:4px;background:#f3f4f6;border-radius:999px;overflow:hidden}
+.gcard__bar__f{height:100%;background:var(--color-primary-green)}
+.gcard__prize{font-size:12px;color:var(--color-text-muted)}
+.gcard__prize strong{color:var(--color-primary-black);font-family:var(--font-display);font-size:14px}
+
+.gcard--add{background:linear-gradient(135deg,rgba(2,204,116,0.05),transparent);border:2px dashed rgba(2,204,116,0.3);display:grid;place-items:center;text-align:center;color:var(--color-primary-green);font-weight:600;text-decoration:none;min-height:200px;font-family:var(--font-display);font-size:18px;letter-spacing:0.02em}
+.gcard--add:hover{border-color:var(--color-primary-green);background:linear-gradient(135deg,rgba(2,204,116,0.1),transparent)}
+.gcard--add small{display:block;margin-top:4px;font-size:11px;color:var(--color-text-muted);letter-spacing:0.1em;text-transform:uppercase;font-family:var(--font-primary);font-weight:600}
+
+/* === SPECIAL PICKS === */
+.spk{background:linear-gradient(160deg,#fff,#fafaf6);border:1px solid rgba(0,0,0,0.08);border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:14px;text-decoration:none;color:inherit;transition:all 0.2s}
+.spk:hover{border-color:rgba(2,204,116,0.4)}
+.spk__l{font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-text-muted);display:flex;align-items:center;gap:8px}
+.spk__l::before{content:"";width:6px;height:6px;border-radius:50%}
+.spk--c .spk__l::before{background:#f59e0b}
+.spk--s .spk__l::before{background:#9ca3af}
+.spk--r .spk__l::before{background:#02cc74}
+.spk__pick{display:flex;align-items:center;gap:10px}
+.spk__flag{font-size:36px}
+.spk__name{font-family:var(--font-display);font-size:24px}
+.spk__empty{color:var(--color-text-muted);font-style:italic;font-size:14px}
+.spk__points{font-size:12px;color:var(--color-text-muted)}
+
+/* === RANKING WIDGET === */
+.rank-w{background:#0a0a0a;color:#fff;border-radius:14px;padding:24px;position:relative;overflow:hidden}
+.rank-w::before{content:"";position:absolute;inset:0;background:radial-gradient(50% 60% at 50% 0%,rgba(2,204,116,0.18),transparent 70%);z-index:0}
+.rank-w__inner{position:relative;z-index:1}
+.rank-w__h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px}
+.rank-w__t{font-family:var(--font-display);font-size:24px}
+.rank-w__row{display:grid;grid-template-columns:30px 1fr auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06)}
+.rank-w__row:last-of-type{border-bottom:0}
+.rank-w__row--me{background:rgba(2,204,116,0.12);border-radius:8px;padding:10px 12px;margin:8px -12px 0;border:1px solid rgba(2,204,116,0.3)}
+.rank-w__pos{font-family:var(--font-display);font-size:18px;color:rgba(255,255,255,0.5);text-align:center}
+.rank-w__pos--top{color:#fde047}
+.rank-w__pos--me{color:var(--color-primary-green)}
+.rank-w__name{display:flex;align-items:center;gap:10px;font-size:13px;min-width:0}
+.rank-w__name strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rank-w__av{width:28px;height:28px;border-radius:50%;background:#222;flex-shrink:0;display:grid;place-items:center;font-size:11px;color:#fff;font-weight:600}
+.rank-w__pts{font-family:var(--font-display);font-size:20px;color:#fff}
+.rank-w__pts--me{color:var(--color-primary-green)}
+
+/* === NEWS === */
+.news-row{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid rgba(0,0,0,0.06);text-decoration:none;color:inherit}
+.news-row:last-child{border-bottom:0}
+.news-row__img{width:64px;height:64px;border-radius:8px;flex-shrink:0;background:linear-gradient(135deg,#0a3d20,#067a4a)}
+.news-row__b{flex:1;min-width:0}
+.news-row__k{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-primary-green);font-weight:600;margin-bottom:4px}
+.news-row__t{font-family:var(--font-display);font-size:16px;line-height:1.15;color:var(--color-primary-black);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.news-row__m{font-size:11px;color:var(--color-text-muted);margin-top:4px}
+
+/* === GROUP TABLE WIDGET === */
+.gtbl{font-size:13px;width:100%;border-collapse:collapse;margin-top:8px}
+.gtbl th{text-align:left;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--color-text-muted);padding:6px 4px;font-weight:500}
+.gtbl td{padding:8px 4px;border-bottom:1px solid rgba(0,0,0,0.05);font-variant-numeric:tabular-nums}
+.gtbl tr:last-child td{border-bottom:0}
+.gtbl tr.me td{background:rgba(2,204,116,0.06);font-weight:600}
+.gtbl td.pos{font-family:var(--font-display);font-size:16px;width:30px;color:var(--color-text-muted)}
+.gtbl td.pos--me{color:var(--color-primary-green)}
+.gtbl td.pts{font-family:var(--font-display);font-size:16px;text-align:right;width:44px}
+
+/* === FAB · TRIVIA === */
+.fab{position:fixed;bottom:24px;right:24px;z-index:60;display:flex;flex-direction:column;gap:10px;align-items:flex-end}
+.fab__btn{background:linear-gradient(135deg,#02cc74,#016b3d);color:#fff;border:none;cursor:pointer;padding:14px 22px;border-radius:999px;box-shadow:0 12px 30px rgba(2,204,116,0.4);display:flex;align-items:center;gap:10px;font-family:var(--font-primary);font-weight:600;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;animation:pulse 2.5s infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+.fab__icon{display:grid;place-items:center;width:24px;height:24px;background:#fff;color:var(--color-primary-green);border-radius:50%;font-size:14px}
+.fab__sec{background:#fff;color:var(--color-primary-black);border:1px solid rgba(0,0,0,0.1);padding:10px 18px;border-radius:999px;font-family:var(--font-primary);font-weight:600;font-size:12px;letter-spacing:0.04em;text-transform:uppercase;box-shadow:0 6px 16px rgba(0,0,0,0.08);cursor:pointer;display:flex;align-items:center;gap:8px}
+
+/* === MODAL === */
+.modal-bg{position:fixed;inset:0;background:rgba(10,10,10,0.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+.modal-bg.is-open{display:flex}
+.modal{background:#fff;border-radius:16px;padding:32px;max-width:480px;width:100%;max-height:90vh;overflow:auto;position:relative}
+.modal--lg{max-width:640px}
+.modal__close{position:absolute;top:14px;right:14px;background:#f3f4f6;border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;display:grid;place-items:center}
+.modal__h{margin-bottom:8px;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-primary-green);font-weight:600}
+.modal__t{font-family:var(--font-display);font-size:32px;line-height:1;margin-bottom:8px}
+.modal__sub{font-size:13px;color:var(--color-text-muted);margin-bottom:24px;line-height:1.5}
+.modal__field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.modal__field label{font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-text-muted);font-weight:600}
+.modal__field input{padding:12px 14px;border:1px solid rgba(0,0,0,0.12);border-radius:8px;font-size:15px;font-family:inherit;outline:none}
+.modal__field input:focus{border-color:var(--color-primary-green);box-shadow:0 0 0 3px rgba(2,204,116,0.15)}
+.modal__action{display:flex;gap:10px;margin-top:20px}
+.modal__btn{flex:1;padding:14px;border:none;border-radius:8px;font-family:inherit;font-weight:600;cursor:pointer;font-size:13px;letter-spacing:0.04em;text-transform:uppercase}
+.modal__btn--p{background:var(--color-primary-green);color:#fff}
+.modal__btn--s{background:#f3f4f6;color:var(--color-primary-black)}
+
+/* TRIVIA MODAL */
+.tq{margin-bottom:24px}
+.tq__count{font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-primary-green);font-weight:600;margin-bottom:8px}
+.tq__q{font-family:var(--font-display);font-size:26px;line-height:1.1;margin-bottom:18px}
+.tq__opts{display:flex;flex-direction:column;gap:8px}
+.tq__opt{padding:14px 18px;border:1px solid rgba(0,0,0,0.12);border-radius:10px;background:#fff;text-align:left;cursor:pointer;font-size:14px;font-family:inherit;transition:all 0.15s}
+.tq__opt:hover{border-color:var(--color-primary-green);background:rgba(2,204,116,0.05)}
+.tq__opt.selected{border-color:var(--color-primary-green);background:rgba(2,204,116,0.1);font-weight:600}
+.tq__prize{background:linear-gradient(135deg,rgba(245,158,11,0.1),rgba(245,158,11,0.02));border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;margin-top:14px}
+.tq__prize-i{font-size:28px}
+.tq__prize-t{font-family:var(--font-display);font-size:18px;line-height:1;color:#b45309}
+.tq__prize-s{font-size:12px;color:var(--color-text-muted);margin-top:2px}
+
+footer{background:#0a0a0a;color:rgba(255,255,255,0.5);padding:24px;text-align:center;font-size:12px;margin-top:40px}
+</style>
+</head>
+<body>
+
+<!-- ============ TOP NAV ============ -->
+<nav class="tn">
+<div class="tn__inner">
+<a href="#" class="tn__logo"><img src="./assets/logo-golgana.png" alt="Golgana"><strong style="font-family:var(--font-display);font-size:22px;letter-spacing:0.04em">POLLA</strong></a>
+<div class="tn__nav">
+<a href="#" class="active">Inicio</a>
+<a href="./polla-picks.html">Mis picks</a>
+<a href="./polla-grupos.html">Grupos</a>
+<a href="#">Ranking</a>
+<a href="./mundial-2026.html">Mundial</a>
+</div>
+<div class="tn__right">
+<div class="tn__bell" title="Notificaciones">🔔</div>
+<div class="tn__user"><div class="tn__avatar">DS</div><span>@dasv0731</span></div>
+</div>
+</div>
+</nav>
+
+<!-- ============ HERO USUARIO ============ -->
+<section class="uhero">
+<div class="uhero__inner">
+<div style="display:grid;grid-template-columns:1fr auto;gap:32px;align-items:end">
+<div>
+<div class="uhero__greeting">Hola, @dasv0731</div>
+<h1 class="uhero__name">Estás en posición <span style="color:var(--color-primary-green)">#147</span></h1>
+<p class="uhero__sub">Te quedan <strong>3 picks pendientes</strong> antes del inicio del Mundial. La inauguración es en <strong>15 días y 4 horas</strong>. Si aciertas los picks especiales, podrías subir hasta el top 50.</p>
+</div>
+<div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:14px;padding:16px;text-align:center;min-width:200px">
+<div style="font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-primary-green);margin-bottom:6px">Inicio del Mundial</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
+<div><div style="font-family:var(--font-display);font-size:22px;line-height:1" data-cd="d">15</div><div style="font-size:9px;color:rgba(255,255,255,0.55);letter-spacing:0.1em;text-transform:uppercase;margin-top:2px">D</div></div>
+<div><div style="font-family:var(--font-display);font-size:22px;line-height:1" data-cd="h">04</div><div style="font-size:9px;color:rgba(255,255,255,0.55);letter-spacing:0.1em;text-transform:uppercase;margin-top:2px">H</div></div>
+<div><div style="font-family:var(--font-display);font-size:22px;line-height:1" data-cd="m">22</div><div style="font-size:9px;color:rgba(255,255,255,0.55);letter-spacing:0.1em;text-transform:uppercase;margin-top:2px">M</div></div>
+<div><div style="font-family:var(--font-display);font-size:22px;line-height:1" data-cd="s">10</div><div style="font-size:9px;color:rgba(255,255,255,0.55);letter-spacing:0.1em;text-transform:uppercase;margin-top:2px">S</div></div>
+</div>
+</div>
+</div>
+
+<div class="uhero__kpis" style="margin-top:28px">
+<div class="uhero__kpi uhero__kpi--accent">
+<div class="uhero__kpi-l">Ranking global</div>
+<div class="uhero__kpi-v">#147</div>
+<div class="uhero__kpi-s"><span class="uhero__delta">▲ 23 esta semana</span></div>
+</div>
+<div class="uhero__kpi">
+<div class="uhero__kpi-l">Puntos totales</div>
+<div class="uhero__kpi-v">128</div>
+<div class="uhero__kpi-s">de 350 posibles</div>
+</div>
+<div class="uhero__kpi">
+<div class="uhero__kpi-l">Comodines</div>
+<div class="uhero__kpi-v">2 <span style="font-size:14px;color:rgba(255,255,255,0.5);font-family:var(--font-primary)">/3</span></div>
+<div class="uhero__kpi-s">Doble punto · 2× pick</div>
+</div>
+<div class="uhero__kpi">
+<div class="uhero__kpi-l">Grupos activos</div>
+<div class="uhero__kpi-v">3</div>
+<div class="uhero__kpi-s">1° en Prueba1</div>
+</div>
+<div class="uhero__kpi">
+<div class="uhero__kpi-l">Picks acertados</div>
+<div class="uhero__kpi-v">68%</div>
+<div class="uhero__kpi-s">17 de 25</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- ============ PICKS PENDIENTES (urgente) ============ -->
+<div class="psection">
+<div class="pend">
+<div>
+<div class="pend__t">Tienes <strong>3 picks pendientes</strong> para hoy</div>
+<div class="pend__s">Cierran en <strong style="color:#dc2626">2h 14min</strong> · Si no los envías pierdes 30 puntos potenciales</div>
+</div>
+<a href="./polla-picks.html" class="pend__b">Hacer mis picks →</a>
+</div>
+</div>
+
+<!-- ============ PRÓXIMOS PARTIDOS CON PICK INLINE ============ -->
+<div class="psection">
+<div class="psec-h">
+<h2>Próximos partidos · tus picks</h2>
+<a href="./polla-picks.html" class="psec-h__cta">Ver todos →</a>
+</div>
+
+<div class="bento-p" style="grid-template-columns:repeat(8,1fr)">
+<a href="./polla-picks.html" class="mcard" style="grid-column:span 4">
+<div class="mcard__h"><span>11/06 · 14:00 ET</span><span class="grp">Grupo A</span></div>
+<div class="mcard__t">
+<div class="mcard__team"><span class="mcard__flag">🇲🇽</span><strong>México</strong></div>
+<div class="mcard__vs">VS</div>
+<div class="mcard__team"><span class="mcard__flag">🇲🇦</span><strong>Marruecos</strong></div>
+</div>
+<div class="mcard__pick mcard__pick--set">Tu pick: <strong>2</strong>-<strong>1</strong> a favor de México</div>
+<div class="mcard__deadline">⚠ Cierra en 15d · podés editar</div>
+</a>
+
+<a href="./polla-picks.html" class="mcard" style="grid-column:span 4">
+<div class="mcard__h"><span>11/06 · 17:00 ET</span><span class="grp">Grupo B</span></div>
+<div class="mcard__t">
+<div class="mcard__team"><span class="mcard__flag">🇪🇸</span><strong>España</strong></div>
+<div class="mcard__vs">VS</div>
+<div class="mcard__team"><span class="mcard__flag">🇸🇳</span><strong>Senegal</strong></div>
+</div>
+<div class="mcard__pick" style="background:rgba(220,38,38,0.05);border-color:rgba(220,38,38,0.3);color:#dc2626">Pick pendiente · cierra pronto</div>
+<div class="mcard__deadline">⚠ 3 picks pendientes en esta jornada</div>
+</a>
+
+<a href="./polla-picks.html" class="mcard" style="grid-column:span 4">
+<div class="mcard__h"><span>12/06 · 19:00 ET</span><span class="grp" style="background:rgba(2,204,116,0.15);color:var(--color-primary-green)">Grupo D · LA TRI</span></div>
+<div class="mcard__t">
+<div class="mcard__team"><span class="mcard__flag">🇪🇨</span><strong>Ecuador</strong></div>
+<div class="mcard__vs">VS</div>
+<div class="mcard__team"><span class="mcard__flag">🇺🇿</span><strong>Uzbekistán</strong></div>
+</div>
+<div class="mcard__pick mcard__pick--set">Tu pick: <strong>3</strong>-<strong>0</strong> a favor de Ecuador</div>
+<div class="mcard__deadline" style="color:var(--color-primary-green)">✓ Pick enviado · podés editar</div>
+</a>
+
+<a href="./polla-picks.html" class="mcard" style="grid-column:span 4">
+<div class="mcard__h"><span>12/06 · 21:00 ET</span><span class="grp">Grupo C</span></div>
+<div class="mcard__t">
+<div class="mcard__team"><span class="mcard__flag">🇺🇸</span><strong>USA</strong></div>
+<div class="mcard__vs">VS</div>
+<div class="mcard__team"><span class="mcard__flag">🇯🇵</span><strong>Japón</strong></div>
+</div>
+<div class="mcard__pick" style="background:rgba(220,38,38,0.05);border-color:rgba(220,38,38,0.3);color:#dc2626">Pick pendiente · sin enviar</div>
+<div class="mcard__deadline">⚠ Cierra mañana</div>
+</a>
+</div>
+</div>
+
+<!-- ============ TUS GRUPOS + PICKS ESPECIALES ============ -->
+<div class="psection">
+<div class="bento-p">
+
+<!-- Tus grupos -->
+<div style="grid-column:span 8">
+<div class="psec-h">
+<h2>Tus grupos · 3 activos</h2>
+<a href="./polla-grupos.html" class="psec-h__cta">Ver todos →</a>
+</div>
+<div class="bento-p" style="grid-template-columns:repeat(3,1fr);gap:12px">
+
+<a href="#" class="gcard">
+<div class="gcard__h">
+<div class="gcard__avi">P1</div>
+<div class="gcard__rank gcard__rank--gold">#1</div>
+</div>
+<div>
+<div class="gcard__name">Prueba1</div>
+<div class="gcard__sub"><span>👥 12 jugadores</span><span>· $50 premio</span></div>
+</div>
+<div class="gcard__bar"><div class="gcard__bar__f" style="width:92%"></div></div>
+<div class="gcard__prize">Premio: <strong>$50 + trofeo</strong></div>
+</a>
+
+<a href="#" class="gcard">
+<div class="gcard__h">
+<div class="gcard__avi" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8)">OF</div>
+<div class="gcard__rank gcard__rank--bronze">#3</div>
+</div>
+<div>
+<div class="gcard__name">Oficina FC</div>
+<div class="gcard__sub"><span>👥 24 jugadores</span><span>· $200 premio</span></div>
+</div>
+<div class="gcard__bar"><div class="gcard__bar__f" style="width:74%"></div></div>
+<div class="gcard__prize">Premio: <strong>$200 + cena</strong></div>
+</a>
+
+<a href="#" class="gcard">
+<div class="gcard__h">
+<div class="gcard__avi" style="background:linear-gradient(135deg,#f59e0b,#b45309)">FA</div>
+<div class="gcard__rank">#23</div>
+</div>
+<div>
+<div class="gcard__name">Familia</div>
+<div class="gcard__sub"><span>👥 8 jugadores</span><span>· Orgullo</span></div>
+</div>
+<div class="gcard__bar"><div class="gcard__bar__f" style="width:38%"></div></div>
+<div class="gcard__prize">Premio: <strong>Bragging rights</strong></div>
+</a>
+
+</div>
+
+<!-- Acciones grupos -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px">
+<button onclick="openModal('m-create')" class="gcard--add">+ Crear grupo<small>Invita a tus amigos</small></button>
+<button onclick="openModal('m-join')" class="gcard--add">→ Unirme con código<small>Usa un código de invitación</small></button>
+</div>
+</div>
+
+<!-- Picks especiales -->
+<div style="grid-column:span 4">
+<div class="psec-h">
+<h2>Picks especiales</h2>
+<a href="#" class="psec-h__cta">Editar →</a>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px">
+
+<a href="#" class="spk spk--c">
+<div class="spk__l">🏆 Campeón · vale 30 pts</div>
+<div class="spk__pick">
+<span class="spk__flag">🇦🇷</span>
+<div><div class="spk__name">Argentina</div><div class="spk__points">Cuota Golgana: 7.5</div></div>
+</div>
+</a>
+
+<a href="#" class="spk spk--s">
+<div class="spk__l">🥈 Subcampeón · vale 15 pts</div>
+<div class="spk__pick">
+<span class="spk__flag">🇧🇷</span>
+<div><div class="spk__name">Brasil</div><div class="spk__points">Cuota Golgana: 4.2</div></div>
+</div>
+</a>
+
+<a href="#" class="spk spk--r">
+<div class="spk__l">⚡ Revelación · vale 20 pts</div>
+<div class="spk__pick">
+<div class="spk__empty" style="font-style:normal">
+<div style="font-family:var(--font-display);font-size:18px;color:var(--color-primary-green)">+ Elegir</div>
+<div style="font-size:11px;color:var(--color-text-muted)">Sin definir todavía</div>
+</div>
+</div>
+</a>
+
+</div>
+</div>
+</div>
+</div>
+
+<!-- ============ RANKING + NOTICIAS ============ -->
+<div class="psection">
+<div class="bento-p">
+
+<!-- Ranking widget -->
+<div style="grid-column:span 5">
+<div class="psec-h">
+<h2>Ranking global</h2>
+<a href="#" class="psec-h__cta">Ver completo →</a>
+</div>
+<div class="rank-w">
+<div class="rank-w__inner">
+<div class="rank-w__h">
+<div class="rank-w__t">Top 5</div>
+<div style="font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:0.06em">DE 14.892 JUGADORES</div>
+</div>
+<div class="rank-w__row"><div class="rank-w__pos rank-w__pos--top">1</div><div class="rank-w__name"><div class="rank-w__av" style="background:#fde047;color:#000">JM</div><strong>@juanmacedo</strong></div><div class="rank-w__pts">312</div></div>
+<div class="rank-w__row"><div class="rank-w__pos rank-w__pos--top">2</div><div class="rank-w__name"><div class="rank-w__av">MR</div><strong>@martinrivas</strong></div><div class="rank-w__pts">298</div></div>
+<div class="rank-w__row"><div class="rank-w__pos rank-w__pos--top">3</div><div class="rank-w__name"><div class="rank-w__av">CA</div><strong>@carolinaa</strong></div><div class="rank-w__pts">287</div></div>
+<div class="rank-w__row"><div class="rank-w__pos">4</div><div class="rank-w__name"><div class="rank-w__av">SE</div><strong>@sergioest</strong></div><div class="rank-w__pts">281</div></div>
+<div class="rank-w__row"><div class="rank-w__pos">5</div><div class="rank-w__name"><div class="rank-w__av">PA</div><strong>@pamela</strong></div><div class="rank-w__pts">276</div></div>
+<div class="rank-w__row rank-w__row--me">
+<div class="rank-w__pos rank-w__pos--me">147</div>
+<div class="rank-w__name"><div class="rank-w__av" style="background:var(--color-primary-green)">DS</div><strong>@dasv0731 (tú)</strong></div>
+<div class="rank-w__pts rank-w__pts--me">128</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Cómo va mi mejor grupo -->
+<div style="grid-column:span 4">
+<div class="psec-h">
+<h2>Prueba1 · tu grupo</h2>
+<a href="#" class="psec-h__cta">Ver grupo →</a>
+</div>
+<div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:14px;padding:20px">
+<div style="display:flex;align-items:center;gap:12px;padding-bottom:14px;border-bottom:1px solid rgba(0,0,0,0.06);margin-bottom:4px">
+<div class="gcard__avi">P1</div>
+<div style="flex:1">
+<div style="font-family:var(--font-display);font-size:18px">Prueba1</div>
+<div style="font-size:12px;color:var(--color-text-muted)">12 jugadores · Premio $50</div>
+</div>
+<div class="gcard__rank gcard__rank--gold">#1</div>
+</div>
+<table class="gtbl">
+<thead><tr><th>#</th><th>Jugador</th><th style="text-align:right">Pts</th></tr></thead>
+<tbody>
+<tr class="me"><td class="pos pos--me">1</td><td>@dasv0731 (tú)</td><td class="pts">128</td></tr>
+<tr><td class="pos">2</td><td>@andrea_m</td><td class="pts">119</td></tr>
+<tr><td class="pos">3</td><td>@carlos23</td><td class="pts">114</td></tr>
+<tr><td class="pos">4</td><td>@maria.f</td><td class="pts">102</td></tr>
+<tr><td class="pos">5</td><td>@pedro.l</td><td class="pts">98</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<!-- Noticias Mundial -->
+<div style="grid-column:span 3">
+<div class="psec-h">
+<h2>Mundial hoy</h2>
+<a href="./mundial-2026.html" class="psec-h__cta">Ver más →</a>
+</div>
+<div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:14px;padding:18px">
+<a href="#" class="news-row">
+<div class="news-row__img"></div>
+<div class="news-row__b">
+<div class="news-row__k">Hoy</div>
+<div class="news-row__t">Beccacece confirma a Caicedo como capitán</div>
+<div class="news-row__m">3 min · La Tri</div>
+</div>
+</a>
+<a href="#" class="news-row">
+<div class="news-row__img"></div>
+<div class="news-row__b">
+<div class="news-row__k">Ayer</div>
+<div class="news-row__t">Argentina llega como favorito #1</div>
+<div class="news-row__m">5 min · Análisis</div>
+</div>
+</a>
+<a href="#" class="news-row">
+<div class="news-row__img"></div>
+<div class="news-row__b">
+<div class="news-row__k">Hace 2d</div>
+<div class="news-row__t">Las sedes del Mundial: guía completa</div>
+<div class="news-row__m">12 min · Reportaje</div>
+</div>
+</a>
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- ============ FAB · TRIVIA / NOTIFICATIONS ============ -->
+<div class="fab">
+<button class="fab__sec" onclick="alert('Ver tour rápido')">▶ Tour rápido</button>
+<button class="fab__btn" onclick="openModal('m-trivia')">
+<span class="fab__icon">⚡</span>
+Trivia disponible · Gana comodín
+</button>
+</div>
+
+<!-- ============ MODAL · CREAR GRUPO ============ -->
+<div class="modal-bg" id="m-create">
+<div class="modal">
+<button class="modal__close" onclick="closeModal('m-create')">×</button>
+<div class="modal__h">Polla Mundialista</div>
+<h3 class="modal__t">Crear nuevo grupo</h3>
+<p class="modal__sub">Invita a tus amigos a competir. Tendrás un código único para que se unan.</p>
+
+<div class="modal__field">
+<label>Nombre del grupo</label>
+<input type="text" placeholder="Ej: Amigos del barrio">
+</div>
+<div class="modal__field">
+<label>Premio (opcional)</label>
+<input type="text" placeholder="Ej: $100 al ganador">
+</div>
+<div class="modal__field">
+<label>Foto del grupo (opcional)</label>
+<input type="file" accept="image/*">
+</div>
+<div style="background:#fafaf6;border:1px solid rgba(0,0,0,0.06);border-radius:8px;padding:14px;font-size:12px;color:var(--color-text-muted);margin-top:8px">
+ℹ Una vez creado, recibirás un código de 6 dígitos para compartir con tus amigos.
+</div>
+<div class="modal__action">
+<button class="modal__btn modal__btn--s" onclick="closeModal('m-create')">Cancelar</button>
+<button class="modal__btn modal__btn--p" onclick="closeModal('m-create')">Crear grupo</button>
+</div>
+</div>
+</div>
+
+<!-- ============ MODAL · UNIRSE CON CÓDIGO ============ -->
+<div class="modal-bg" id="m-join">
+<div class="modal">
+<button class="modal__close" onclick="closeModal('m-join')">×</button>
+<div class="modal__h">Polla Mundialista</div>
+<h3 class="modal__t">Unirme con código</h3>
+<p class="modal__sub">Pídele al creador del grupo el código de 6 dígitos para unirte.</p>
+
+<div class="modal__field">
+<label>Código del grupo</label>
+<input type="text" placeholder="A1B2C3" maxlength="6" style="text-transform:uppercase;letter-spacing:0.18em;font-family:var(--font-display);font-size:24px;text-align:center">
+</div>
+<div style="background:#fafaf6;border:1px solid rgba(0,0,0,0.06);border-radius:8px;padding:14px;font-size:12px;color:var(--color-text-muted);margin-top:8px">
+ℹ Una vez ingreses el código, podrás ver el grupo, sus jugadores y empezar a competir.
+</div>
+<div class="modal__action">
+<button class="modal__btn modal__btn--s" onclick="closeModal('m-join')">Cancelar</button>
+<button class="modal__btn modal__btn--p" onclick="closeModal('m-join')">Unirme</button>
+</div>
+</div>
+</div>
+
+<!-- ============ MODAL · TRIVIA ============ -->
+<div class="modal-bg" id="m-trivia">
+<div class="modal modal--lg">
+<button class="modal__close" onclick="closeModal('m-trivia')">×</button>
+<div class="modal__h">⚡ Trivia diaria · 1 de 3</div>
+<h3 class="modal__t">Demuestra que sabes</h3>
+<p class="modal__sub">Responde 3 preguntas seguidas y gana un comodín de "Doble punto" para el partido que elijas.</p>
+
+<div class="tq">
+<div class="tq__count">Pregunta 1 de 3</div>
+<div class="tq__q">¿Cuántos goles anotó Argentina en el Mundial 2022?</div>
+<div class="tq__opts">
+<button class="tq__opt" onclick="this.parentElement.querySelectorAll('.tq__opt').forEach(b=>b.classList.remove('selected'));this.classList.add('selected')">12 goles</button>
+<button class="tq__opt" onclick="this.parentElement.querySelectorAll('.tq__opt').forEach(b=>b.classList.remove('selected'));this.classList.add('selected')">15 goles</button>
+<button class="tq__opt" onclick="this.parentElement.querySelectorAll('.tq__opt').forEach(b=>b.classList.remove('selected'));this.classList.add('selected')">9 goles</button>
+<button class="tq__opt" onclick="this.parentElement.querySelectorAll('.tq__opt').forEach(b=>b.classList.remove('selected'));this.classList.add('selected')">14 goles</button>
+</div>
+</div>
+
+<div class="tq__prize">
+<div class="tq__prize-i">🎁</div>
+<div>
+<div class="tq__prize-t">Premio: 1 Comodín "Doble Punto"</div>
+<div class="tq__prize-s">Vale doble en cualquier pick que elijas · expira en 24h</div>
+</div>
+</div>
+
+<div class="modal__action">
+<button class="modal__btn modal__btn--s" onclick="closeModal('m-trivia')">Después</button>
+<button class="modal__btn modal__btn--p" onclick="closeModal('m-trivia')">Siguiente pregunta →</button>
+</div>
+</div>
+</div>
+
+<footer>© 2026 Golgana — Polla Mundialista 2026</footer>
+
+<script>
+function openModal(id){document.getElementById(id).classList.add('is-open');document.body.style.overflow='hidden'}
+function closeModal(id){document.getElementById(id).classList.remove('is-open');document.body.style.overflow=''}
+document.querySelectorAll('.modal-bg').forEach(m=>{m.addEventListener('click',e=>{if(e.target===m)closeModal(m.id)})});
+
+// Countdown
+(function(){var k=new Date('2026-06-11T18:00:00Z').getTime();function p(n){return n<10?'0'+n:''+n}function t(){var d=k-Date.now();if(d<=0)return;var dd=Math.floor(d/86400000),hh=Math.floor((d%86400000)/3600000),mm=Math.floor((d%3600000)/60000),ss=Math.floor((d%60000)/1000);var eD=document.querySelector('[data-cd="d"]'),eH=document.querySelector('[data-cd="h"]'),eM=document.querySelector('[data-cd="m"]'),eS=document.querySelector('[data-cd="s"]');if(eD){eD.textContent=p(dd);eH.textContent=p(hh);eM.textContent=p(mm);eS.textContent=p(ss)}}t();setInterval(t,1000);})();
+</script>
+</body></html>
