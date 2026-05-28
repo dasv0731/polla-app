@@ -4,6 +4,7 @@ import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService, type UserGroup } from '../../core/user/user-modes.service';
 import { PicksSyncService } from '../../core/sync/picks-sync.service';
+import { ConfirmDialogService } from '../ui/confirm-dialog.service';
 import { UserAvatarComponent } from '../user-avatar/user-avatar.component';
 
 type DropdownKey = 'user' | 'ranking' | null;
@@ -17,7 +18,7 @@ type DropdownKey = 'user' | 'ranking' | null;
     <header class="app-topnav">
       <div class="app-topnav__left">
         <a routerLink="/home" class="app-topnav__brand" aria-label="Golgana" (click)="closeAll()">
-          <img src="assets/logo-golgana.png" alt="Golgana" class="app-topnav__logo-img">
+          <img src="assets/logo-golgana.png" alt="Golgana" width="199" height="98" class="app-topnav__logo-img">
         </a>
         <nav class="app-topnav__menu" aria-label="Principal">
           @if (isAdmin()) {
@@ -85,13 +86,14 @@ type DropdownKey = 'user' | 'ranking' | null;
                   [class.sync-pill--pending]="sync.status() === 'pending'"
                   [class.sync-pill--error]="sync.status() === 'error'"
                   [title]="sync.status() === 'error' ? (sync.errorMessage() ?? 'Error de sincronización') : 'Click para sincronizar ya'"
+                  aria-live="polite"
                   (click)="sync.syncNow()">
             @if (sync.status() === 'syncing') {
-              ⏳ Sincronizando…
+              <span aria-hidden="true">⏳ </span>Sincronizando…
             } @else if (sync.status() === 'pending') {
-              ● {{ sync.pending() }} pendiente{{ sync.pending() === 1 ? '' : 's' }}
+              <span aria-hidden="true">● </span>{{ sync.pending() }} pendiente{{ sync.pending() === 1 ? '' : 's' }}
             } @else if (sync.status() === 'error') {
-              ⚠ Reintentando
+              <span aria-hidden="true">⚠ </span>Reintentando…
             }
           </button>
         }
@@ -113,7 +115,7 @@ type DropdownKey = 'user' | 'ranking' | null;
               [handle]="handle() ?? ''"
               [avatarKey]="avatarKey()"
               size="sm" />
-            <span class="name">{{ '@' + (handle() ?? '') }}</span>
+            <span class="name" translate="no">{{ '@' + (handle() ?? '') }}</span>
             <span aria-hidden="true">▾</span>
           </button>
           @if (open() === 'user') {
@@ -145,7 +147,7 @@ type DropdownKey = 'user' | 'ranking' | null;
     <!-- ============ MOBILE TOPBAR (<992px) ============ -->
     <header class="app-topbar">
       <a routerLink="/home" class="app-topbar__brand" aria-label="Golgana" (click)="closeAll()">
-        <img src="assets/logo-golgana.png" alt="Golgana" class="app-topbar__logo-img">
+        <img src="assets/logo-golgana.png" alt="Golgana" width="199" height="98" class="app-topbar__logo-img">
       </a>
       <div class="app-topbar__actions">
         @if (sync.status() !== 'idle') {
@@ -234,6 +236,11 @@ type DropdownKey = 'user' | 'ranking' | null;
       gap: 4px;
     }
     .app-topnav__item--has-dropdown:hover { background: rgba(255, 255, 255, 0.10); }
+    .app-topnav__item--has-dropdown:focus-visible {
+      outline: 2px solid var(--color-primary-green);
+      outline-offset: 2px;
+      background: rgba(255, 255, 255, 0.10);
+    }
     .app-topnav__item--has-dropdown.is-active {
       background: rgba(2, 204, 116, 0.20);
       color: #4dffa0;
@@ -280,6 +287,11 @@ type DropdownKey = 'user' | 'ranking' | null;
       text-align: left;
     }
     .app-topnav__panel-item:hover { background: var(--wf-fill); }
+    .app-topnav__panel-item:focus-visible {
+      outline: 2px solid var(--color-primary-green);
+      outline-offset: -2px;
+      background: var(--wf-fill);
+    }
     .app-topnav__panel-item--danger { color: var(--wf-danger); }
     .app-topnav__panel-kicker {
       font-size: 9px;
@@ -319,6 +331,7 @@ export class NavComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private router = inject(Router);
   private userModes = inject(UserModesService);
+  private confirmDialog = inject(ConfirmDialogService);
   sync = inject(PicksSyncService);
 
   open = signal<DropdownKey>(null);
@@ -366,6 +379,13 @@ export class NavComponent implements OnInit, OnDestroy {
 
   async logout() {
     this.closeAll();
+    const ok = await this.confirmDialog.ask({
+      title: 'Cerrar sesión',
+      message: '¿Querés cerrar sesión? Vas a salir de tu cuenta y regresarás al login.',
+      confirmLabel: 'Cerrar sesión',
+      cancelLabel: 'Cancelar',
+    });
+    if (!ok) return;
     await this.auth.logout();
     void this.router.navigate(['/login']);
   }

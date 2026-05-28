@@ -1,17 +1,20 @@
 import { Component, inject } from '@angular/core';
+import { A11yModule } from '@angular/cdk/a11y';
 import { RedeemModalService } from '../../core/sponsors/redeem-modal.service';
 import { SponsorRedeemComponent } from '../../features/picks/sponsor-redeem.component';
 
 @Component({
   standalone: true,
   selector: 'app-redeem-modal',
-  imports: [SponsorRedeemComponent],
+  imports: [SponsorRedeemComponent, A11yModule],
   template: `
     @if (svc.isOpen()) {
       <div class="picks-modal is-open" role="dialog" aria-modal="true"
-           aria-labelledby="redeem-modal-title">
-        <button type="button" class="picks-modal__close-overlay"
-                aria-label="Cerrar" (click)="svc.close()"></button>
+           aria-labelledby="redeem-modal-title"
+           cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
+           (keydown.escape)="svc.close()">
+        <div class="picks-modal__close-overlay" role="presentation"
+             (click)="svc.close()"></div>
         <div class="picks-modal__card" style="max-width:520px;">
           <header class="picks-modal__head">
             <div>

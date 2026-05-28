@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
+import { ConfirmDialogService } from '../../shared/ui/confirm-dialog.service';
 
 const TOURNAMENT_ID = 'mundial-2026';
 
@@ -274,6 +275,7 @@ export class AdminTriviaComponent implements OnInit {
 
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  private confirmDialog = inject(ConfirmDialogService);
 
   options: ('A' | 'B' | 'C' | 'D')[] = ['A', 'B', 'C', 'D'];
 
@@ -463,7 +465,14 @@ export class AdminTriviaComponent implements OnInit {
   }
 
   async runScoreTrivia() {
-    if (!confirm('¿Calcular puntos de trivia para este partido? Solo usuarios con grupo modo completo que hayan respondido durante la ventana LIVE suman 1 pt por correcta. Idempotente.')) return;
+    const ok = await this.confirmDialog.ask({
+      title: 'Calcular puntos de trivia',
+      message:
+        'Solo usuarios con grupo modo completo que hayan respondido durante la ventana LIVE ' +
+        'suman 1 pt por correcta. Idempotente.',
+      confirmLabel: 'Calcular puntos',
+    });
+    if (!ok) return;
     this.scoring.set(true);
     this.scoringMsg.set(null);
     try {
@@ -487,7 +496,13 @@ export class AdminTriviaComponent implements OnInit {
   }
 
   async del(q: TriviaQuestion) {
-    if (!confirm(`¿Borrar la pregunta "${q.prompt.slice(0, 60)}..."?`)) return;
+    const ok = await this.confirmDialog.ask({
+      title: 'Borrar pregunta',
+      message: `Vas a borrar la pregunta "${q.prompt.slice(0, 60)}…". No se puede deshacer.`,
+      confirmLabel: 'Borrar pregunta',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await this.api.deleteTriviaQuestion(q.id);
       this.toast.success('Pregunta borrada');

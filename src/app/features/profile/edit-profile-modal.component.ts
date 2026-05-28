@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Input, OnInit, Output, computed, inject, signal } from '@angular/core';
+import { A11yModule } from '@angular/cdk/a11y';
 import { FormsModule } from '@angular/forms';
 import { uploadData } from 'aws-amplify/storage';
 import { AuthService } from '../../core/auth/auth.service';
@@ -19,11 +20,13 @@ import { COUNTRY_OPTIONS, flagFromCountryCode } from '../../shared/util/countrie
 @Component({
   standalone: true,
   selector: 'app-edit-profile-modal',
-  imports: [FormsModule, UserAvatarComponent],
+  imports: [FormsModule, UserAvatarComponent, A11yModule],
   template: `
-    <div class="edit-profile-overlay" role="dialog" aria-modal="true" aria-labelledby="ep-title">
-      <button type="button" class="edit-profile-overlay__close-area"
-              aria-label="Cerrar" (click)="close()"></button>
+    <div class="edit-profile-overlay" role="dialog" aria-modal="true" aria-labelledby="ep-title"
+         cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
+         (keydown.escape)="close()">
+      <div class="edit-profile-overlay__close-area" role="presentation"
+           (click)="close()"></div>
       <div class="edit-profile-modal">
         <header class="edit-profile-modal__head">
           <h2 id="ep-title">Editar perfil</h2>
@@ -106,18 +109,23 @@ import { COUNTRY_OPTIONS, flagFromCountryCode } from '../../shared/util/countrie
             <div class="ep-pwd-form">
               <label class="ep-field">
                 <span>Contraseña actual</span>
-                <input type="password" [(ngModel)]="pwdOld" autocomplete="current-password">
+                <input type="password" name="ep-pwd-old" [(ngModel)]="pwdOld"
+                       autocomplete="current-password" spellcheck="false" autocapitalize="off">
               </label>
               <label class="ep-field">
                 <span>Nueva contraseña</span>
-                <input type="password" [(ngModel)]="pwdNew" autocomplete="new-password" minlength="8">
+                <input type="password" name="ep-pwd-new" [(ngModel)]="pwdNew"
+                       autocomplete="new-password" spellcheck="false" autocapitalize="off"
+                       minlength="8">
               </label>
               <label class="ep-field">
                 <span>Repetir nueva contraseña</span>
-                <input type="password" [(ngModel)]="pwdConfirm" autocomplete="new-password" minlength="8">
+                <input type="password" name="ep-pwd-confirm" [(ngModel)]="pwdConfirm"
+                       autocomplete="new-password" spellcheck="false" autocapitalize="off"
+                       minlength="8">
               </label>
               @if (pwdError()) {
-                <p class="ep-err">{{ pwdError() }}</p>
+                <p class="ep-err" role="alert">{{ pwdError() }}</p>
               }
               <div class="ep-pwd-actions">
                 <button type="button" class="btn-wf btn-wf--sm"

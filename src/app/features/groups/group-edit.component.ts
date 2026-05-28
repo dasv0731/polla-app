@@ -170,6 +170,10 @@ export class GroupEditComponent implements OnInit {
       || this.imageKey() !== (g.imageKey ?? '');
   });
 
+  /** DirtyAware contract — usado por `dirtyFormGuard` para confirmar
+   *  antes de navegar si quedan cambios sin guardar. */
+  isDirty(): boolean { return this.dirty(); }
+
   async ngOnInit() {
     try {
       const res = await this.api.getGroup(this.id);
@@ -262,6 +266,16 @@ export class GroupEditComponent implements OnInit {
         return;
       }
       this.toast.success('Grupo actualizado');
+      // Tras save exitoso forzamos el snapshot al estado nuevo para que
+      // el guard CanDeactivate no pida confirmación en la navegación
+      // siguiente. Sin esto, `dirty()` queda true hasta que el siguiente
+      // ngOnChanges/ngOnInit reescriba `group()`.
+      this.group.set({
+        ...this.group()!,
+        name: this.name.trim(),
+        description: this.description.trim() || null,
+        imageKey: this.imageKey().trim() || null,
+      });
       void this.router.navigate(['/groups', this.id]);
     } catch (e) {
       this.error.set(humanizeError(e));

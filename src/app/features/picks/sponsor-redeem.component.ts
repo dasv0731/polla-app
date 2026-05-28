@@ -96,7 +96,7 @@ const COMODIN_IMPACT: Record<string, string> = {
           @for (r of redemptions(); track r.id) {
             <li class="sr__history-item">
               <div style="flex: 1;">
-                <strong>{{ r.codeText }}</strong>
+                <strong translate="no">{{ r.codeText }}</strong>
                 @if (r.comodinName) {
                   <small style="display: block; color: var(--color-primary-green); font-weight: var(--fw-semibold); margin-top: 2px;">
                     🃏 {{ r.comodinName }}
@@ -112,7 +112,7 @@ const COMODIN_IMPACT: Record<string, string> = {
                   </small>
                 }
                 <small style="display: block; color: var(--color-text-muted); margin-top: 2px;">
-                  {{ r.sponsorName }} · {{ formatDate(r.redeemedAt) }}
+                  <span translate="no">{{ r.sponsorName }}</span> · {{ formatDate(r.redeemedAt) }}
                 </small>
               </div>
             </li>
@@ -171,9 +171,10 @@ const COMODIN_IMPACT: Record<string, string> = {
       font-weight: 600;
       background: var(--wf-paper);
     }
-    .sr__input:focus {
+    .sr__input:focus-visible {
       outline: none;
       border-color: var(--color-primary-green);
+      box-shadow: 0 0 0 3px rgba(2, 204, 116, 0.18);
     }
     .sr__banner {
       display: grid;

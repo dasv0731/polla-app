@@ -18,7 +18,7 @@ import { passwordPassesAllRules } from '../../shared/util/password-rules';
       <!-- Panel de marca (solo desktop) -->
       <aside class="auth-brand">
         <div class="auth-brand__top">
-          <img src="assets/logo-golgana.png" alt="" class="auth-brand__logo-img" style="height:32px;width:auto;">
+          <img src="assets/logo-golgana.png" alt="" width="199" height="98" class="auth-brand__logo-img" style="height:32px;width:auto;">
           <span class="auth-brand__title">GOLGANA · MUNDIAL 2026</span>
         </div>
         <div>
@@ -74,12 +74,15 @@ import { passwordPassesAllRules } from '../../shared/util/password-rules';
                   class="auth-input"
                   placeholder="tu@correo.com"
                   autocomplete="email"
+                  inputmode="email"
+                  spellcheck="false"
+                  autocapitalize="off"
                   required
                   [(ngModel)]="email">
               </div>
 
               @if (requestError()) {
-                <p class="auth-error">{{ requestError() }}</p>
+                <p class="auth-error" role="alert">{{ requestError() }}</p>
               }
 
               <button
@@ -98,7 +101,7 @@ import { passwordPassesAllRules } from '../../shared/util/password-rules';
 
           } @else {
 
-            <a href="#" (click)="goBackToEmail($event)" class="auth-back">‹ Volver</a>
+            <button type="button" (click)="goBackToEmail($event)" class="auth-back"><span aria-hidden="true">‹ </span>Volver</button>
 
             <div class="auth-step-head">
               <div class="kicker">PASO 2 DE 2</div>
@@ -116,6 +119,8 @@ import { passwordPassesAllRules } from '../../shared/util/password-rules';
                   class="otp__d"
                   maxlength="1"
                   inputmode="numeric"
+                  autocomplete="one-time-code"
+                  [attr.name]="'otp-' + (i + 1)"
                   placeholder="—"
                   [attr.aria-label]="'Dígito ' + (i + 1)"
                   [value]="otpDigits()[i]"
@@ -131,7 +136,7 @@ import { passwordPassesAllRules } from '../../shared/util/password-rules';
                 <span class="text-green text-bold">Reenviar ({{ formatCooldown() }})</span>
               } @else {
                 <span class="text-mute">¿No te llegó? </span>
-                <a href="#" (click)="resend($event)" class="auth-bottom__link">Reenviar</a>
+                <button type="button" (click)="resend($event)" class="auth-bottom__link">Reenviar</button>
               }
             </div>
 
@@ -145,6 +150,8 @@ import { passwordPassesAllRules } from '../../shared/util/password-rules';
                   class="auth-input"
                   placeholder="••••••••"
                   autocomplete="new-password"
+                  spellcheck="false"
+                  autocapitalize="off"
                   minlength="8"
                   required
                   [(ngModel)]="newPassword">
@@ -152,10 +159,10 @@ import { passwordPassesAllRules } from '../../shared/util/password-rules';
               </div>
 
               @if (resetError()) {
-                <p class="auth-error">{{ resetError() }}</p>
+                <p class="auth-error" role="alert">{{ resetError() }}</p>
               }
               @if (resendInfo()) {
-                <p class="auth-success">✓ {{ resendInfo() }}</p>
+                <p class="auth-success" role="status"><span aria-hidden="true">✓ </span>{{ resendInfo() }}</p>
               }
 
               <button
@@ -291,7 +298,16 @@ export class ForgotPasswordComponent {
     this.resetting.set(true);
     try {
       await this.auth.confirmForgot(this.email, this.code(), this.newPassword);
-      void this.router.navigate(['/login']);
+      // El user acaba de probar email + nueva password — autenticarlo
+      // directo es la UX correcta. Si el auto-login falla por algún edge
+      // case (race condition con Cognito propagation, p.ej.), cae al
+      // /login normal con el email pre-llenado por la query.
+      try {
+        await this.auth.login(this.email, this.newPassword);
+        void this.router.navigate(['/home']);
+      } catch {
+        void this.router.navigate(['/login'], { queryParams: { email: this.email } });
+      }
     } catch (e) {
       this.resetError.set((e as Error).message ?? 'Código inválido o password muy débil');
     } finally {

@@ -1,8 +1,10 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
+import { ConfirmDialogService } from '../../shared/ui/confirm-dialog.service';
 
 const TOURNAMENT_ID = 'mundial-2026';
 
@@ -41,14 +43,19 @@ interface UserRow {
       <p>Cargando usuarios…</p>
     } @else {
       <div class="admin-filters">
-        <input type="search" placeholder="Buscar por handle o email..."
+        <input type="search" name="search"
+               placeholder="Buscar por handle o email…"
+               aria-label="Buscar usuario por handle o email"
+               autocomplete="off" spellcheck="false" autocapitalize="off"
                [(ngModel)]="search" (ngModelChange)="onSearch($event)">
-        <select [(ngModel)]="status" (ngModelChange)="onStatusChange($event)">
+        <select [(ngModel)]="status" (ngModelChange)="onStatusChange($event)"
+                name="statusFilter" aria-label="Filtrar por estado de usuario">
           <option value="all">Todos</option>
           <option value="bounced">Email bounced</option>
           <option value="no_picks">Sin picks</option>
         </select>
-        <select [(ngModel)]="sort" (ngModelChange)="onSortChange($event)">
+        <select [(ngModel)]="sort" (ngModelChange)="onSortChange($event)"
+                name="sortBy" aria-label="Ordenar usuarios">
           <option value="points">Ordenar por puntos</option>
           <option value="created">Ordenar por fecha registro</option>
           <option value="handle">Ordenar por handle</option>
@@ -113,6 +120,8 @@ interface UserRow {
 export class AdminUsersComponent implements OnInit {
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  private confirmDialog = inject(ConfirmDialogService);
+  private route = inject(ActivatedRoute);
 
   loading = signal(true);
   users = signal<UserRow[]>([]);
@@ -153,6 +162,21 @@ export class AdminUsersComponent implements OnInit {
   onSortChange(v: SortKey) { this.sortSig.set(v); }
 
   async ngOnInit() {
+    // Hidratar filtros desde query params: permite deeplinks tipo
+    // `/admin/users?status=bounced` (usado por el KPI de bounces del
+    // dashboard). Solo aceptamos valores del whitelist; cualquier otro
+    // se ignora y queda en el default 'all'.
+    const qStatus = this.route.snapshot.queryParamMap.get('status');
+    if (qStatus === 'bounced' || qStatus === 'no_picks') {
+      this.status = qStatus;
+      this.statusSig.set(qStatus);
+    }
+    const qSearch = this.route.snapshot.queryParamMap.get('q');
+    if (qSearch) {
+      this.search = qSearch;
+      this.searchSig.set(qSearch);
+    }
+
     try {
       const [usersRes, totalsRes, picksRes] = await Promise.all([
         this.api.listUsers(1000),
@@ -218,12 +242,24 @@ export class AdminUsersComponent implements OnInit {
   }
 
   async actionResetPwd(u: UserRow) {
-    if (!confirm(`¿Enviar email de reset a @${u.handle} (${u.email})?`)) return;
+    const ok = await this.confirmDialog.ask({
+      title: 'Resetear contraseña',
+      message: `Vas a enviar un email de reset a @${u.handle} (${u.email}).`,
+      confirmLabel: 'Enviar reset',
+    });
+    if (!ok) return;
     await this.runAction(u, 'reset_password');
   }
 
   async actionSuspend(u: UserRow) {
-    if (!confirm(`¿Suspender a @${u.handle}? No podrá iniciar sesión hasta que lo reactives.`)) return;
+    const ok = await this.confirmDialog.ask({
+      title: 'Suspender usuario',
+      message:
+        `Vas a suspender a @${u.handle}. No podrá iniciar sesión hasta que lo reactives.`,
+      confirmLabel: 'Suspender',
+      danger: true,
+    });
+    if (!ok) return;
     await this.runAction(u, 'disable');
   }
 

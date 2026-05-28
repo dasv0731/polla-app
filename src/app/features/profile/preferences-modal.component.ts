@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Output, computed, inject } from '@angular/core';
+import { A11yModule } from '@angular/cdk/a11y';
 import { PreferencesService } from '../../core/preferences/preferences.service';
 
 /**
@@ -11,10 +12,13 @@ import { PreferencesService } from '../../core/preferences/preferences.service';
 @Component({
   standalone: true,
   selector: 'app-preferences-modal',
+  imports: [A11yModule],
   template: `
-    <div class="prefs-overlay" role="dialog" aria-modal="true" aria-labelledby="prefs-title">
-      <button type="button" class="prefs-overlay__close-area"
-              aria-label="Cerrar" (click)="close()"></button>
+    <div class="prefs-overlay" role="dialog" aria-modal="true" aria-labelledby="prefs-title"
+         cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
+         (keydown.escape)="close()">
+      <div class="prefs-overlay__close-area" role="presentation"
+           (click)="close()"></div>
       <div class="prefs-modal">
         <header class="prefs-modal__head">
           <h2 id="prefs-title">Preferencias</h2>

@@ -1,4 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
+import { A11yModule } from '@angular/cdk/a11y';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
@@ -14,14 +15,16 @@ type GameMode = 'SIMPLE' | 'COMPLETE';
 @Component({
   standalone: true,
   selector: 'app-group-actions-modals',
-  imports: [FormsModule],
+  imports: [FormsModule, A11yModule],
   template: `
     <!-- ============== MODAL · CREAR GRUPO ============== -->
     @if (svc.createOpen()) {
       <div class="picks-modal is-open" role="dialog" aria-modal="true"
-           aria-labelledby="create-group-title">
-        <button type="button" class="picks-modal__close-overlay"
-                aria-label="Cerrar" (click)="closeCreate()"></button>
+           aria-labelledby="create-group-title"
+           cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
+           (keydown.escape)="closeCreate()">
+        <div class="picks-modal__close-overlay" role="presentation"
+             (click)="closeCreate()"></div>
         <div class="picks-modal__card" style="max-width:520px;">
           <header class="picks-modal__head">
             <div>
@@ -40,7 +43,21 @@ type GameMode = 'SIMPLE' | 'COMPLETE';
                      placeholder="Oficina Q1 2026"
                      [(ngModel)]="name"
                      [disabled]="loading()"
+                     autocomplete="off"
                      required maxlength="50">
+            </div>
+
+            <div class="auth-field" style="margin:0;">
+              <label class="auth-label" for="grp-desc">
+                Descripción <span class="text-mute">(opcional)</span>
+              </label>
+              <textarea id="grp-desc" name="description" class="auth-input"
+                        rows="2" maxlength="500"
+                        placeholder="Reglas extra, premios, info…"
+                        [(ngModel)]="description"
+                        [disabled]="loading()"
+                        style="resize: vertical; min-height: 56px;"></textarea>
+              <div class="auth-helper">Hasta 500 caracteres. Visible para todos los miembros.</div>
             </div>
 
             <div>
@@ -76,8 +93,26 @@ type GameMode = 'SIMPLE' | 'COMPLETE';
               </div>
             </div>
 
+            @if (mode() === 'COMPLETE') {
+              <div class="auth-field" style="margin:0;">
+                <label class="check-row">
+                  <input type="checkbox" name="comodines"
+                         [checked]="comodinesEnabled()"
+                         (change)="comodinesEnabled.set($any($event.target).checked)">
+                  <div>
+                    <div class="text-bold">Activar comodines</div>
+                    <div class="text-mute" style="font-size:11px;line-height:1.4;margin-top:2px;">
+                      Los miembros pueden ganar comodines vía sponsors/sweeps
+                      y aplicarlos en este grupo. Si está OFF, el grupo es
+                      modo completo pero sin comodines.
+                    </div>
+                  </div>
+                </label>
+              </div>
+            }
+
             @if (error()) {
-              <p class="modal-error">{{ error() }}</p>
+              <p class="modal-error" role="alert">{{ error() }}</p>
             }
           </form>
 
@@ -102,9 +137,11 @@ type GameMode = 'SIMPLE' | 'COMPLETE';
     <!-- ============== MODAL · UNIRME CON CÓDIGO ============== -->
     @if (svc.joinOpen()) {
       <div class="picks-modal is-open" role="dialog" aria-modal="true"
-           aria-labelledby="join-group-title">
-        <button type="button" class="picks-modal__close-overlay"
-                aria-label="Cerrar" (click)="closeJoin()"></button>
+           aria-labelledby="join-group-title"
+           cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
+           (keydown.escape)="closeJoin()">
+        <div class="picks-modal__close-overlay" role="presentation"
+             (click)="closeJoin()"></div>
         <div class="picks-modal__card" style="max-width:480px;">
           <header class="picks-modal__head">
             <div>
@@ -233,6 +270,25 @@ type GameMode = 'SIMPLE' | 'COMPLETE';
       border: 1px solid rgba(220, 38, 38, 0.2);
       margin: 0;
     }
+
+    .check-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--color-line);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    .check-row:hover { border-color: rgba(2, 204, 116, 0.5); }
+    .check-row input[type="checkbox"] {
+      margin: 3px 0 0;
+      accent-color: var(--color-primary-green);
+      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+    }
   `],
 })
 export class GroupActionsModalsComponent {
@@ -245,7 +301,9 @@ export class GroupActionsModalsComponent {
 
   // Crear
   name = '';
+  description = '';
   mode = signal<GameMode>('COMPLETE');
+  comodinesEnabled = signal(true);
   // Unirse
   code = '';
 
@@ -263,7 +321,13 @@ export class GroupActionsModalsComponent {
     this.resetJoin();
   }
 
-  private resetCreate() { this.name = ''; this.mode.set('COMPLETE'); this.error.set(null); }
+  private resetCreate() {
+    this.name = '';
+    this.description = '';
+    this.mode.set('COMPLETE');
+    this.comodinesEnabled.set(true);
+    this.error.set(null);
+  }
   private resetJoin()   { this.code = '';                            this.error.set(null); }
 
   onCodeInput(event: Event) {
@@ -278,7 +342,16 @@ export class GroupActionsModalsComponent {
     this.error.set(null);
     this.loading.set(true);
     try {
-      const res = await this.api.createGroup(name, TOURNAMENT_ID, this.mode());
+      const mode = this.mode();
+      const res = await this.api.createGroup({
+        name,
+        tournamentId: TOURNAMENT_ID,
+        mode,
+        description: this.description.trim() || undefined,
+        // comodinesEnabled solo tiene sentido en COMPLETE — en SIMPLE el
+        // backend lo ignora, pero evitamos enviar payload contradictorio.
+        ...(mode === 'COMPLETE' ? { comodinesEnabled: this.comodinesEnabled() } : {}),
+      });
       const data = (res as { data?: { id?: string } | null })?.data;
       if (!data?.id) {
         this.error.set('No se pudo crear el grupo. Intenta de nuevo.');

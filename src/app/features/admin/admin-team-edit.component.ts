@@ -118,7 +118,26 @@ export class AdminTeamEditComponent implements OnInit {
   groupLetter = '';
   crestUrl = '';
 
+  /** Snapshot del estado al cargar el form. Usado por `dirtyFormGuard`. */
+  private snapshot = '';
+  private saved = signal(false);
+
   flagPreviewClass = computed(() => `flag--${(this.flagCode || '').toLowerCase()}`);
+
+  private serialize(): string {
+    return JSON.stringify({
+      name: this.name.trim(),
+      flagCode: this.flagCode.trim().toUpperCase(),
+      groupLetter: this.groupLetter,
+      crestUrl: this.crestUrl.trim(),
+    });
+  }
+
+  /** DirtyAware contract. */
+  isDirty(): boolean {
+    if (this.saved() || this.loading() || this.notFound()) return false;
+    return this.serialize() !== this.snapshot;
+  }
 
   async ngOnInit() {
     try {
@@ -133,6 +152,7 @@ export class AdminTeamEditComponent implements OnInit {
       this.crestUrl = res.data.crestUrl ?? '';
     } finally {
       this.loading.set(false);
+      this.snapshot = this.serialize();
     }
   }
 
@@ -152,6 +172,7 @@ export class AdminTeamEditComponent implements OnInit {
         crestUrl: this.crestUrl.trim() || null,
       });
       this.toast.success('Equipo actualizado');
+      this.saved.set(true);
       void this.router.navigate(['/admin/teams']);
     } catch (e) {
       this.error.set(humanizeError(e));

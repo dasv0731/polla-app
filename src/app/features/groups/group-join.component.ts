@@ -23,7 +23,7 @@ interface GroupSummary {
       <header class="auth-header">
         <div class="auth-header__inner">
           <a routerLink="/picks" class="auth-header__logo" aria-label="Polla Mundial 2026">
-            <img src="assets/logo-golgana.png" alt="Golgana">
+            <img src="assets/logo-golgana.png" alt="Golgana" width="199" height="98">
           </a>
           <a routerLink="/groups" class="auth-header__back">← Mis grupos</a>
         </div>
@@ -69,7 +69,15 @@ interface GroupSummary {
               Al unirte verás el ranking interno del grupo, podrás compararte con los otros miembros y compartir bullying sano. Tus picks aparecen anónimos hasta el cierre del partido.
             </p>
 
-            @if (err !== null) {
+            @if (isGroupFull()) {
+              <div class="join-error">
+                <h4>Grupo lleno</h4>
+                <p>
+                  Este grupo ya alcanzó su límite de {{ MAX_MEMBERS }} miembros.
+                  Pedile al admin que elimine a alguien inactivo o creá un grupo nuevo.
+                </p>
+              </div>
+            } @else if (err !== null) {
               <div class="join-error">
                 <h4>No pudimos unirte</h4>
                 <p>{{ err }}</p>
@@ -77,10 +85,12 @@ interface GroupSummary {
             }
 
             <div class="join-card__actions">
-              <button class="btn btn--primary btn--lg" type="button" (click)="confirm()" [disabled]="joining()">
+              <button class="btn btn--primary btn--lg" type="button"
+                      (click)="confirm()"
+                      [disabled]="joining() || isGroupFull()">
                 {{ joining() ? 'Uniendo…' : 'Unirme al grupo' }}
               </button>
-              <a class="btn btn--ghost" routerLink="/groups">Rechazar</a>
+              <a class="btn btn--ghost" routerLink="/groups">Más tarde</a>
             </div>
           </article>
         } @else {
@@ -105,6 +115,11 @@ interface GroupSummary {
 export class GroupJoinComponent implements OnInit {
   @Input() code!: string;
 
+  /** Tope hard del backend para miembros por grupo. Si lo cambian, también
+   *  actualizar este número (idealmente vendría del preview pero hoy el
+   *  preview no lo expone). */
+  readonly MAX_MEMBERS = 30;
+
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private userModes = inject(UserModesService);
@@ -117,10 +132,23 @@ export class GroupJoinComponent implements OnInit {
   alreadyMember = signal(false);
   group = signal<GroupSummary | null>(null);
 
+  /** Bloquea el CTA si el grupo ya alcanzó el límite. Solo aplica cuando
+   *  no sos miembro todavía — si ya estás dentro y el grupo está full,
+   *  no es bloqueante (el "Ir al grupo" branch atrapa primero). */
+  isGroupFull = computed(() => {
+    const g = this.group();
+    return !!g && !this.alreadyMember() && g.members >= this.MAX_MEMBERS;
+  });
+
   ngOnInit() {
+    // El authGuard ya redirige a `/login?returnUrl=/groups/join/CODE` si no
+    // hay sesión, y login/register propagan returnUrl al onboarding. Cuando
+    // llegamos acá garantizado hay user — un branch de fallback paranoico
+    // por si el guard fallara en SSR o en un edge case.
     if (!this.auth.user()) {
-      sessionStorage.setItem('pendingJoin', this.code);
-      void this.router.navigate(['/register']);
+      void this.router.navigate(['/login'], {
+        queryParams: { returnUrl: '/groups/join/' + this.code },
+      });
       return;
     }
     void this.loadGroup();

@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 
@@ -111,6 +112,7 @@ const KIND_BADGE: Record<NotificationKind, { label: string; color: string }> = {
 export class NotificationsListComponent implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  private router = inject(Router);
 
   loading = signal(true);
   notifs = signal<Notif[]>([]);
@@ -143,14 +145,36 @@ export class NotificationsListComponent implements OnInit {
   }
 
   async onClick(n: Notif) {
-    if (n.readAt) return;
-    try {
-      await this.api.markNotificationRead(n.id);
+    // Marca como leída en paralelo a navegar — no bloqueamos la nav por
+    // un fire-and-forget de markRead.
+    if (!n.readAt) {
       this.notifs.update((arr) => arr.map((x) =>
         x.id === n.id ? { ...x, readAt: new Date().toISOString() } : x,
       ));
-    } catch {
-      /* ignore */
+      this.api.markNotificationRead(n.id).catch(() => { /* ignore */ });
+    }
+    const target = this.resolveTarget(n);
+    if (target) void this.router.navigateByUrl(target);
+  }
+
+  /** Mapea kind → ruta destino. Todas las notifs actuales son de comodines
+   *  (OBTAINED/ASSIGNED/ACTIVATED/EXPIRED/REMINDER_24H). Cuando agreguemos
+   *  MATCH_LIVE / RANK_CHANGED, este resolver crece. Si no hay match, el
+   *  click solo marca como leído sin navegar. */
+  private resolveTarget(n: Notif): string | null {
+    switch (n.kind) {
+      case 'OBTAINED':
+      case 'ASSIGNED':
+      case 'ACTIVATED':
+      case 'EXPIRED':
+      case 'REMINDER_24H':
+        // El fragment apunta al card del comodín específico cuando el id
+        // existe; sino, scroll natural al hub de comodines.
+        return n.comodinId
+          ? `/mis-comodines#card-${n.comodinId}`
+          : '/mis-comodines';
+      default:
+        return null;
     }
   }
 

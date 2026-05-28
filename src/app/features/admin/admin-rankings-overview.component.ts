@@ -68,7 +68,7 @@ interface Row {
             @for (r of pagedRows(); track r.userId; let i = $index) {
               <tr>
                 <td class="pos">{{ pageStart() + i + 1 }}</td>
-                <td>&#64;{{ r.handle }}</td>
+                <td translate="no">&#64;{{ r.handle }}</td>
                 <td><strong>{{ r.totalPts }}</strong></td>
                 <td>{{ r.matchPts }}</td>
                 <td>{{ r.matchExact }}</td>

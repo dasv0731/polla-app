@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { ConfirmDialogService } from '../ui/confirm-dialog.service';
 
 /**
  * Footer global de la app autenticada. Mismo HTML/CSS que el footer
@@ -16,7 +17,7 @@ import { AuthService } from '../../core/auth/auth.service';
     <footer class="site-footer">
       <div class="site-footer__grid">
         <div class="site-footer__brand">
-          <img src="assets/logo-golgana.png" alt="Golgana">
+          <img src="assets/logo-golgana.png" alt="Golgana" width="199" height="98">
           <p>
             Polla Mundialista — sub-módulo de
             <a href="https://golgana.net" style="color: var(--color-primary-green);">Golgana</a>
@@ -35,7 +36,7 @@ import { AuthService } from '../../core/auth/auth.service';
           <h4>Cuenta</h4>
           <a routerLink="/profile">Editar perfil</a>
           <a routerLink="/groups">Mis grupos</a>
-          <a (click)="logout()" style="cursor: pointer;">Cerrar sesión</a>
+          <button type="button" class="site-footer__logout" (click)="logout()">Cerrar sesión</button>
         </div>
         <div class="site-footer__col">
           <h4>Legal</h4>
@@ -52,10 +53,18 @@ import { AuthService } from '../../core/auth/auth.service';
 export class FooterComponent {
   private auth = inject(AuthService);
   private router = inject(Router);
+  private confirmDialog = inject(ConfirmDialogService);
 
   year = new Date().getFullYear();
 
   async logout() {
+    const ok = await this.confirmDialog.ask({
+      title: 'Cerrar sesión',
+      message: '¿Querés cerrar sesión? Vas a salir de tu cuenta y regresarás al login.',
+      confirmLabel: 'Cerrar sesión',
+      cancelLabel: 'Cancelar',
+    });
+    if (!ok) return;
     await this.auth.logout();
     void this.router.navigate(['/login']);
   }

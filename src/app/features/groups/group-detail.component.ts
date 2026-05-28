@@ -1,9 +1,11 @@
 import { Component, Input, OnChanges, OnInit, SimpleChanges, computed, inject, signal } from '@angular/core';
+import { A11yModule } from '@angular/cdk/a11y';
 import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
+import { ConfirmDialogService } from '../../shared/ui/confirm-dialog.service';
 import { UserAvatarComponent } from '../../shared/user-avatar/user-avatar.component';
 import { getUrl } from 'aws-amplify/storage';
 
@@ -37,7 +39,7 @@ interface RankRow {
 @Component({
   standalone: true,
   selector: 'app-group-detail',
-  imports: [RouterLink, UserAvatarComponent],
+  imports: [RouterLink, UserAvatarComponent, A11yModule],
   template: `
     <section class="page">
 
@@ -182,9 +184,10 @@ interface RankRow {
             <h2 class="group-section__title">
               Ranking interno · {{ rows().length }} {{ rows().length === 1 ? 'miembro' : 'miembros' }}
             </h2>
-            <div class="seg" aria-label="Vista del ranking">
-              <button type="button" class="seg__item is-active">General</button>
-              <button type="button" class="seg__item" disabled
+            <div class="seg" role="group" aria-label="Vista del ranking">
+              <button type="button" class="seg__item is-active" aria-pressed="true">General</button>
+              <button type="button" class="seg__item" disabled aria-pressed="false"
+                      aria-label="Por jornada (próximamente)"
                       title="Próximamente">Por jornada</button>
             </div>
           </header>
@@ -243,7 +246,7 @@ interface RankRow {
                                   [disabled]="removingUserId() === r.userId"
                                   (click)="confirmRemoveMember(r.userId, r.handle)"
                                   aria-label="Eliminar miembro">
-                            {{ removingUserId() === r.userId ? '...' : '🗑' }}
+                            {{ removingUserId() === r.userId ? '…' : '🗑' }}
                           </button>
                         }
                       </td>
@@ -265,25 +268,98 @@ interface RankRow {
           </p>
         </section>
 
-        <!-- Acciones admin -->
+        <!-- Acciones admin · solo las que no tienen un CTA contextual
+             arriba (invitar email y editar premios ya viven en group-pair). -->
         @if (isAdminOfGroup()) {
           <section class="group-section" #adminAnchor>
             <h2 class="group-section__title" style="margin-bottom:10px;">Acciones de admin</h2>
             <div class="group-admin-actions">
               <a class="btn-wf btn-wf--block" [routerLink]="['/groups', g.id, 'edit']">
-                ✏ Editar grupo (nombre · descripción · imagen)
+                <span aria-hidden="true">✏ </span>Editar grupo (nombre · descripción · imagen)
               </a>
-              <a class="btn-wf btn-wf--block" [routerLink]="['/groups', g.id, 'prizes']">
-                ⚙ Editar premios
-              </a>
-              <a class="btn-wf btn-wf--block" [routerLink]="['/groups', g.id, 'invite']">
-                ✉ Invitar por email
-              </a>
+              <button class="btn-wf btn-wf--block" type="button"
+                      [disabled]="rows().length <= 1"
+                      (click)="openTransferAdmin()">
+                <span aria-hidden="true">👑 </span>Transferir admin
+              </button>
               <button class="btn-wf btn-wf--block btn-wf--danger" type="button" (click)="del()">
-                🗑 Eliminar grupo
+                <span aria-hidden="true">🗑 </span>Eliminar grupo
               </button>
             </div>
           </section>
+        } @else {
+          <!-- Acciones miembro (no-admin): abandonar grupo -->
+          <section class="group-section">
+            <h2 class="group-section__title" style="margin-bottom:10px;">Tu membresía</h2>
+            <div class="group-admin-actions">
+              <button class="btn-wf btn-wf--block btn-wf--danger" type="button"
+                      (click)="leave()">
+                <span aria-hidden="true">🚪 </span>Abandonar grupo
+              </button>
+              <p class="text-mute" style="font-size:11px;line-height:1.4;margin:6px 0 0;">
+                Si abandonás, tu score acumulado en este grupo se borra.
+                Tus picks del torneo no se ven afectados.
+              </p>
+            </div>
+          </section>
+        }
+
+        <!-- Transferir admin · modal con lista de members -->
+        @if (transferring()) {
+          <div class="picks-modal is-open" role="dialog" aria-modal="true"
+               aria-labelledby="transfer-admin-title"
+               cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
+               (keydown.escape)="closeTransferAdmin()">
+            <div class="picks-modal__close-overlay" role="presentation"
+                 (click)="closeTransferAdmin()"></div>
+            <div class="picks-modal__card" style="max-width:480px;">
+              <header class="picks-modal__head">
+                <div>
+                  <div class="title" id="transfer-admin-title">Transferir admin</div>
+                  <div class="meta">El nuevo admin podrá editar, invitar y eliminar el grupo. Vos pasás a ser miembro normal.</div>
+                </div>
+                <button type="button" class="close" aria-label="Cerrar"
+                        (click)="closeTransferAdmin()">
+                  <span aria-hidden="true">✕</span>
+                </button>
+              </header>
+
+              <div class="picks-modal__body" style="display:flex;flex-direction:column;gap:8px;">
+                @for (m of nonAdminMembers(); track m.userId) {
+                  <label class="transfer-row" [class.is-selected]="newAdminId() === m.userId">
+                    <input type="radio" name="newAdmin"
+                           [value]="m.userId"
+                           [checked]="newAdminId() === m.userId"
+                           (change)="newAdminId.set(m.userId)">
+                    <div style="flex:1;">
+                      <div class="text-bold" translate="no">{{ '@' + m.handle }}</div>
+                    </div>
+                  </label>
+                }
+                @if (nonAdminMembers().length === 0) {
+                  <p class="text-mute" style="font-size:13px;">
+                    No hay otros miembros en el grupo. Invitá a alguien primero
+                    o eliminá el grupo.
+                  </p>
+                }
+              </div>
+
+              <footer class="picks-modal__foot">
+                <span class="meta"></span>
+                <div style="display:flex;gap:8px;">
+                  <button type="button" class="btn-wf btn-wf--sm"
+                          (click)="closeTransferAdmin()" [disabled]="transferring() === 'submitting'">
+                    Cancelar
+                  </button>
+                  <button type="button" class="btn-wf btn-wf--sm btn-wf--primary"
+                          (click)="submitTransferAdmin()"
+                          [disabled]="!newAdminId() || transferring() === 'submitting'">
+                    {{ transferring() === 'submitting' ? 'Transfiriendo…' : 'Transferir' }}
+                  </button>
+                </div>
+              </footer>
+            </div>
+          </div>
         }
 
       }
@@ -305,6 +381,28 @@ interface RankRow {
       color: var(--wf-ink-3);
       line-height: 1.4;
     }
+
+    /* Transfer admin modal · row de selección */
+    .transfer-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--color-line);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    .transfer-row:hover { border-color: rgba(2, 204, 116, 0.5); }
+    .transfer-row.is-selected {
+      border-color: var(--color-primary-green);
+      background: rgba(2, 204, 116, 0.08);
+    }
+    .transfer-row input[type="radio"] {
+      margin: 0;
+      accent-color: var(--color-primary-green);
+      flex-shrink: 0;
+    }
   `],
 })
 export class GroupDetailComponent implements OnInit, OnChanges {
@@ -314,6 +412,12 @@ export class GroupDetailComponent implements OnInit, OnChanges {
   private auth = inject(AuthService);
   private toast = inject(ToastService);
   private router = inject(Router);
+  private confirmDialog = inject(ConfirmDialogService);
+
+  /** Estado del modal de transferir admin.
+   *  null = cerrado; 'open' = elegir destinatario; 'submitting' = enviando. */
+  transferring = signal<null | 'open' | 'submitting'>(null);
+  newAdminId = signal<string | null>(null);
 
   /** Cuando el user navega de /groups/A → /groups/B, Angular reutiliza
    *  esta misma component instance y solo cambia el @Input id. ngOnInit
@@ -473,9 +577,14 @@ export class GroupDetailComponent implements OnInit, OnChanges {
   }
 
   async del() {
-    if (!confirm(
-      '¿Eliminar el grupo? Todos los miembros perderán el acceso. Esta acción no se puede deshacer.',
-    )) return;
+    const ok = await this.confirmDialog.ask({
+      title: 'Eliminar grupo',
+      message: 'Esta acción borra el grupo para todos los miembros y no se puede deshacer.',
+      confirmLabel: 'Eliminar grupo',
+      cancelLabel: 'Cancelar',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await this.api.deleteGroup(this.id);
       this.toast.success('Grupo eliminado');
@@ -486,10 +595,15 @@ export class GroupDetailComponent implements OnInit, OnChanges {
   }
 
   async confirmRemoveMember(userId: string, handle: string): Promise<void> {
-    const confirmed = window.confirm(
-      `¿Eliminar a @${handle} del grupo? Su score acumulado en este grupo se borra. ` +
-      `Sus picks del torneo no se ven afectados.`,
-    );
+    const confirmed = await this.confirmDialog.ask({
+      title: 'Eliminar miembro',
+      message:
+        `Quitar a @${handle} del grupo borra su score acumulado en este grupo. ` +
+        'Sus picks del torneo no se ven afectados.',
+      confirmLabel: 'Eliminar miembro',
+      cancelLabel: 'Cancelar',
+      danger: true,
+    });
     if (!confirmed) return;
     const groupId = this.group()?.id;
     if (!groupId) return;
@@ -508,6 +622,84 @@ export class GroupDetailComponent implements OnInit, OnChanges {
       this.toast.error(humanizeError(e));
     } finally {
       this.removingUserId.set(null);
+    }
+  }
+
+  // ---------- Abandonar grupo (no-admin) ----------
+
+  async leave(): Promise<void> {
+    const g = this.group();
+    if (!g) return;
+    const ok = await this.confirmDialog.ask({
+      title: 'Abandonar grupo',
+      message:
+        `Vas a abandonar "${g.name}". Tu score acumulado en este grupo ` +
+        'se borra. Tus picks del torneo no se ven afectados. Esta acción ' +
+        'no se puede deshacer.',
+      confirmLabel: 'Abandonar grupo',
+      cancelLabel: 'Cancelar',
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await this.api.leaveGroup(g.id);
+      this.toast.success('Abandonaste el grupo');
+      void this.router.navigate(['/groups']);
+    } catch (e) {
+      this.toast.error(humanizeError(e));
+    }
+  }
+
+  // ---------- Transferir admin ----------
+
+  /** Lista de miembros del grupo que NO son el admin actual. Candidatos
+   *  válidos para recibir el rol. Usado por el modal de transferir. */
+  nonAdminMembers = computed(() => {
+    const g = this.group();
+    if (!g) return [];
+    return this.rows().filter((r) => r.userId !== g.adminUserId);
+  });
+
+  openTransferAdmin(): void {
+    this.newAdminId.set(null);
+    this.transferring.set('open');
+  }
+
+  closeTransferAdmin(): void {
+    if (this.transferring() === 'submitting') return;
+    this.transferring.set(null);
+    this.newAdminId.set(null);
+  }
+
+  async submitTransferAdmin(): Promise<void> {
+    const newAdminId = this.newAdminId();
+    const g = this.group();
+    if (!newAdminId || !g) return;
+    const target = this.rows().find((r) => r.userId === newAdminId);
+    if (!target) return;
+
+    const ok = await this.confirmDialog.ask({
+      title: 'Transferir admin',
+      message:
+        `Vas a transferir el rol de admin de "${g.name}" a @${target.handle}. ` +
+        'Vas a perder los privilegios de admin: no podrás editar el grupo, ' +
+        'invitar miembros ni eliminarlo. Esta acción no se puede deshacer.',
+      confirmLabel: 'Transferir admin',
+      cancelLabel: 'Cancelar',
+      danger: true,
+    });
+    if (!ok) return;
+
+    this.transferring.set('submitting');
+    try {
+      await this.api.transferGroupAdmin({ groupId: g.id, newAdminUserId: newAdminId });
+      this.toast.success(`@${target.handle} es el nuevo admin de "${g.name}"`);
+      this.transferring.set(null);
+      this.newAdminId.set(null);
+      await this.load();
+    } catch (e) {
+      this.toast.error(humanizeError(e));
+      this.transferring.set('open');
     }
   }
 }

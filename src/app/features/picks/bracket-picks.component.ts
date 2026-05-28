@@ -115,15 +115,15 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
             <br><span class="text-mute">Cierra al kickoff de la 1ª llave · {{ bracketLockFormatted() }}.</span>
           }
         </p>
-        <div class="bracket-intro__actions">
+        <div class="bracket-intro__actions" aria-live="polite">
           @if (saveStatus() === 'saving') {
-            <span class="pill">⏳ Guardando…</span>
+            <span class="pill"><span aria-hidden="true">⏳ </span>Guardando…</span>
           } @else if (saveStatus() === 'saved') {
-            <span class="pill pill--green">✓ Bracket guardado</span>
+            <span class="pill pill--green"><span aria-hidden="true">✓ </span>Bracket guardado</span>
           } @else if (saveStatus() === 'dirty') {
-            <span class="pill pill--warn">● Cambios sin guardar</span>
+            <span class="pill pill--warn"><span aria-hidden="true">● </span>Cambios sin guardar</span>
           } @else if (saveStatus() === 'error') {
-            <span class="pill" style="background:rgba(195,51,51,0.1);color:#c33;border-color:rgba(195,51,51,0.3);">⚠ Error</span>
+            <span class="pill" role="alert" style="background:rgba(195,51,51,0.1);color:#c33;border-color:rgba(195,51,51,0.3);"><span aria-hidden="true">⚠ </span>Error</span>
           }
           <span class="text-mute" style="font-size:11px;">
             {{ pickedCount() }} / {{ totalKnockoutMatches() }}
@@ -132,11 +132,13 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
       </div>
 
       <!-- Filter pills (visual; "Tu camino" hace dim al resto) -->
-      <div class="bracket-filter">
+      <div class="bracket-filter" role="group" aria-label="Filtro del bracket">
         <button type="button" class="bracket-filter__pill"
+                [attr.aria-pressed]="filter() === 'mine'"
                 [class.is-active]="filter() === 'mine'"
                 (click)="filter.set('mine')">Tu camino</button>
         <button type="button" class="bracket-filter__pill"
+                [attr.aria-pressed]="filter() === 'all'"
                 [class.is-active]="filter() === 'all'"
                 (click)="filter.set('all')">Todos</button>
       </div>
@@ -156,31 +158,31 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
           <ul class="check-list">
             @if (miss.groupsWithoutFullStanding.length > 0) {
               <li>
-                ⚠ Faltan posiciones en {{ miss.groupsWithoutFullStanding.length }} grupo(s):
+                <span aria-hidden="true">⚠ </span>Faltan posiciones en {{ miss.groupsWithoutFullStanding.length }} grupo(s):
                 {{ miss.groupsWithoutFullStanding.join(', ') }}
                 <a routerLink="/picks/group-stage/predict" class="btn-wf btn-wf--sm">
-                  Ir a tabla de grupos →
+                  Ir a tabla de grupos <span aria-hidden="true">→</span>
                 </a>
               </li>
             } @else {
-              <li>✓ Tablas de grupos completas</li>
+              <li><span aria-hidden="true">✓ </span>Tablas de grupos completas</li>
             }
             @if (miss.thirdsCount !== 8) {
               <li>
-                ⚠ Marca exactamente 8 mejores 3.os (tienes {{ miss.thirdsCount }})
+                <span aria-hidden="true">⚠ </span>Marca exactamente 8 mejores 3.os (tienes {{ miss.thirdsCount }})
                 <a routerLink="/profile/special-picks" class="btn-wf btn-wf--sm">
-                  Ir a mis terceros →
+                  Ir a mis terceros <span aria-hidden="true">→</span>
                 </a>
               </li>
             } @else {
-              <li>✓ 8 mejores 3.os marcados</li>
+              <li><span aria-hidden="true">✓ </span>8 mejores 3.os marcados</li>
             }
           </ul>
         </div>
       } @else {
         @if (isProjected()) {
           <div class="info-banner" style="margin-bottom:14px;padding:10px 12px;background:rgba(0,200,100,0.08);border:1px solid rgba(0,200,100,0.25);border-radius:8px;font-size:13px;color:var(--wf-ink-2);">
-            🔮 Bracket armado desde tus predicciones de grupos.
+            <span aria-hidden="true">🔮 </span>Bracket armado desde tus predicciones de grupos.
             Tus elecciones aquí se quedan fijas — los resultados reales
             del Mundial puntúan tu BracketPick comparando equipos por fase.
           </div>
@@ -235,19 +237,19 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
               @let fm = finalMatch();
               @if (fm) {
                 <div class="bracket-final-card">
-                  <div class="bracket-final-card__title">🏆 FINAL</div>
+                  <div class="bracket-final-card__title"><span aria-hidden="true">🏆 </span>FINAL</div>
                   <ng-container *ngTemplateOutlet="slotTpl; context: {match: fm, side: 'home'}"></ng-container>
                   <ng-container *ngTemplateOutlet="slotTpl; context: {match: fm, side: 'away'}"></ng-container>
                   @let champ = champion();
                   @if (champ) {
                     <div class="bracket-final-card__champion">
-                      CAMPEÓN · {{ champ }}
+                      CAMPEÓN · <span translate="no">{{ champ }}</span>
                     </div>
                   }
                 </div>
               } @else {
                 <div class="bracket-final-card">
-                  <div class="bracket-final-card__title">🏆 FINAL</div>
+                  <div class="bracket-final-card__title"><span aria-hidden="true">🏆 </span>FINAL</div>
                   <div class="text-mute" style="text-align:center;font-size:11px;padding:8px 4px;">
                     Aún sin definir
                   </div>

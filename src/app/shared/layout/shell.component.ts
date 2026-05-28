@@ -5,7 +5,6 @@ import { SidebarComponent } from './sidebar.component';
 import { TriviaToastComponent } from './trivia-toast.component';
 import { RightRailComponent } from './right-rail.component';
 import { FooterComponent } from './footer.component';
-import { PicksPendingBannerComponent } from '../../features/picks/picks-pending-banner.component';
 import { ToastHostComponent } from '../../core/notifications/toast-host.component';
 import { TriviaPopupComponent } from '../../features/trivia/trivia-popup.component';
 import { GroupActionsModalsComponent } from './group-actions-modals.component';
@@ -29,7 +28,7 @@ import { RedeemModalComponent } from './redeem-modal.component';
   selector: 'app-shell',
   imports: [
     RouterOutlet, NavComponent, SidebarComponent, TriviaToastComponent,
-    RightRailComponent, FooterComponent, PicksPendingBannerComponent,
+    RightRailComponent, FooterComponent,
     ToastHostComponent, TriviaPopupComponent,
     GroupActionsModalsComponent, RedeemModalComponent,
   ],
@@ -40,7 +39,6 @@ import { RedeemModalComponent } from './redeem-modal.component';
       <app-trivia-toast />
       <div class="shell">
         <main class="main">
-          <app-picks-pending-banner />
           <router-outlet />
         </main>
         <app-right-rail />

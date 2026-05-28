@@ -44,9 +44,9 @@ interface Totals {
                 }
                 @if (u.name) {
                   <span>{{ u.name }}</span>
-                  <span style="color: var(--wf-ink-3); font-weight: normal;">(&#64;{{ u.handle }})</span>
+                  <span style="color: var(--wf-ink-3); font-weight: normal;" translate="no">(&#64;{{ u.handle }})</span>
                 } @else {
-                  <span>{{ '@' + u.handle }}</span>
+                  <span translate="no">{{ '@' + u.handle }}</span>
                 }
               </h1>
               <div class="profile-hero__meta">
@@ -91,7 +91,7 @@ interface Totals {
               <div class="profile-list">
 
                 <a routerLink="/mis-comodines" class="profile-list-item">
-                  <span class="profile-list-item__icon">🎁</span>
+                  <span class="profile-list-item__icon" aria-hidden="true">🎁</span>
                   <div class="profile-list-item__body">
                     <div class="profile-list-item__title">Mis comodines</div>
                     <div class="profile-list-item__sub">{{ comodinesSub() }}</div>
@@ -104,7 +104,7 @@ interface Totals {
                 </a>
 
                 <a routerLink="/profile/special-picks" class="profile-list-item">
-                  <span class="profile-list-item__icon">⭐</span>
+                  <span class="profile-list-item__icon" aria-hidden="true">⭐</span>
                   <div class="profile-list-item__body">
                     <div class="profile-list-item__title">Picks especiales</div>
                     <div class="profile-list-item__sub">Campeón, subcampeón, revelación</div>
@@ -113,7 +113,7 @@ interface Totals {
                 </a>
 
                 <a routerLink="/notificaciones" class="profile-list-item">
-                  <span class="profile-list-item__icon">🔔</span>
+                  <span class="profile-list-item__icon" aria-hidden="true">🔔</span>
                   <div class="profile-list-item__body">
                     <div class="profile-list-item__title">Notificaciones</div>
                     <div class="profile-list-item__sub">
@@ -136,7 +136,7 @@ interface Totals {
               <a routerLink="/mis-comodines" class="profile-sponsor"
                  style="text-decoration:none;color:inherit;">
                 <div class="profile-sponsor__body">
-                  <div class="profile-sponsor__title">🎁 Canjear código</div>
+                  <div class="profile-sponsor__title"><span aria-hidden="true">🎁 </span>Canjear código</div>
                   <div class="profile-sponsor__sub">¿Tienes código de sponsor?</div>
                 </div>
                 <span class="btn-wf btn-wf--sm btn-wf--ink" style="text-decoration:none;">
@@ -163,15 +163,6 @@ interface Totals {
                   <span class="profile-list-item__icon">⚙</span>
                   <div class="profile-list-item__body">
                     <div class="profile-list-item__title">Preferencias</div>
-                  </div>
-                  <span class="profile-list-item__chev">›</span>
-                </button>
-
-                <button type="button" class="profile-list-item"
-                        (click)="comingSoon('Ayuda')">
-                  <span class="profile-list-item__icon">❓</span>
-                  <div class="profile-list-item__body">
-                    <div class="profile-list-item__title">Ayuda</div>
                   </div>
                   <span class="profile-list-item__chev">›</span>
                 </button>
@@ -371,10 +362,6 @@ export class ProfileComponent implements OnInit {
 
   closePreferences() {
     this.preferencesOpen.set(false);
-  }
-
-  comingSoon(label: string) {
-    this.toast.info(`${label} — próximamente`);
   }
 
   async logout() {

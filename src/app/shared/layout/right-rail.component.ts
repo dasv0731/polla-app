@@ -292,6 +292,13 @@ interface NewsItemVm {
       background: rgba(2,204,116,0.15);
       border: 1px solid rgba(2,204,116,0.3);
       border-radius: 6px;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .np__pk__e:hover { background: rgba(2,204,116,0.25); border-color: rgba(2,204,116,0.5); }
+    .np__pk__e:focus-visible {
+      outline: 2px solid var(--color-primary-green);
+      outline-offset: 2px;
+      background: rgba(2,204,116,0.25);
     }
     .np__cta {
       display: flex; align-items: center; justify-content: center; gap: 6px;
@@ -306,6 +313,13 @@ interface NewsItemVm {
       text-transform: uppercase;
       font-weight: 600;
       box-sizing: border-box;
+      transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+    }
+    .np__cta:hover { border-color: rgba(255,255,255,0.35); background: rgba(255,255,255,0.05); color: #fff; }
+    .np__cta:focus-visible {
+      outline: 2px solid var(--color-primary-green);
+      outline-offset: 2px;
+      color: #fff;
     }
 
     /* Upcoming picks */
@@ -633,10 +647,24 @@ export class RightRailComponent implements OnInit, OnDestroy {
     return { d: String(d), h: p2(h), m: p2(m), s: p2(s) };
   }
 
+  private static readonly shortDateFmt = new Intl.DateTimeFormat('es-EC', {
+    timeZone: 'America/Guayaquil',
+    day: '2-digit',
+    month: '2-digit',
+  });
+  private static readonly fallbackDateFmt = new Intl.DateTimeFormat('es-EC', {
+    timeZone: 'America/Guayaquil',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+  private static readonly relativeFmt = new Intl.RelativeTimeFormat('es-EC', {
+    numeric: 'auto',
+    style: 'long',
+  });
+
   private formatShortDate(d: Date): string {
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    return `${day}/${month}`;
+    return RightRailComponent.shortDateFmt.format(d);
   }
 
   /** 3-letter uppercase shortcode (used in "ARG vs BRA" labels). */
@@ -646,19 +674,21 @@ export class RightRailComponent implements OnInit, OnDestroy {
 
   private formatCountdownLabel(diffMs: number): string {
     if (diffMs < 0) return 'cerrado';
-    const h = Math.round(diffMs / 3_600_000);
-    if (h < 1) return `${Math.round(diffMs / 60_000)}m`;
-    if (h < 24) return `${h}h`;
-    return `${Math.round(h / 24)}d`;
+    const minutes = Math.round(diffMs / 60_000);
+    if (minutes < 60) return RightRailComponent.relativeFmt.format(minutes, 'minute');
+    const hours = Math.round(diffMs / 3_600_000);
+    if (hours < 24) return RightRailComponent.relativeFmt.format(hours, 'hour');
+    return RightRailComponent.relativeFmt.format(Math.round(hours / 24), 'day');
   }
 
   private formatRelative(iso: string): string {
-    const diff = Date.now() - new Date(iso).getTime();
-    const h = Math.round(diff / 3_600_000);
-    if (h < 1) return 'hace minutos';
-    if (h < 24) return `hace ${h}h`;
-    const d = Math.round(h / 24);
-    if (d < 7) return d === 1 ? 'hace 1 día' : `hace ${d} días`;
-    return new Date(iso).toLocaleDateString();
+    const diff = new Date(iso).getTime() - Date.now();
+    const minutes = Math.round(diff / 60_000);
+    if (Math.abs(minutes) < 60) return RightRailComponent.relativeFmt.format(minutes, 'minute');
+    const hours = Math.round(diff / 3_600_000);
+    if (Math.abs(hours) < 24) return RightRailComponent.relativeFmt.format(hours, 'hour');
+    const days = Math.round(hours / 24);
+    if (Math.abs(days) < 7) return RightRailComponent.relativeFmt.format(days, 'day');
+    return RightRailComponent.fallbackDateFmt.format(new Date(iso));
   }
 }

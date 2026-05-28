@@ -10,7 +10,7 @@ import { RouterLink } from '@angular/router';
       <header class="auth-header">
         <div class="auth-header__inner">
           <a routerLink="/login" class="auth-header__logo" aria-label="Polla Mundial 2026">
-            <img src="assets/logo-golgana.png" alt="Golgana">
+            <img src="assets/logo-golgana.png" alt="Golgana" width="199" height="98">
           </a>
           <a routerLink="/login" class="auth-header__back">← Volver al inicio</a>
         </div>
@@ -21,7 +21,7 @@ import { RouterLink } from '@angular/router';
       </main>
 
       <footer class="auth-footer">
-        © 2026 Golgana
+        © 2026 <span translate="no">Golgana</span>
       </footer>
     </div>
   `,

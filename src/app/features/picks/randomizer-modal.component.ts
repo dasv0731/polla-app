@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Input, Output, computed, inject, signal } from '@angular/core';
+import { A11yModule } from '@angular/cdk/a11y';
 import { FormsModule } from '@angular/forms';
 import { PicksSyncService } from '../../core/sync/picks-sync.service';
 import { ToastService } from '../../core/notifications/toast.service';
@@ -34,16 +35,19 @@ interface DateGroup {
 @Component({
   standalone: true,
   selector: 'app-randomizer-modal',
-  imports: [FormsModule],
+  imports: [FormsModule, A11yModule],
   template: `
     @if (open()) {
-      <div class="picks-modal is-open" role="dialog" aria-modal="true">
-        <button type="button" class="picks-modal__close-overlay"
-                (click)="close()" aria-label="Cerrar"></button>
+      <div class="picks-modal is-open" role="dialog" aria-modal="true"
+           aria-labelledby="randomizer-modal-title"
+           cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
+           (keydown.escape)="close()">
+        <div class="picks-modal__close-overlay" role="presentation"
+             (click)="close()"></div>
         <div class="picks-modal__card">
           <header class="picks-modal__head">
             <div>
-              <div class="title">🎲 Picks aleatorios</div>
+              <div class="title" id="randomizer-modal-title"><span aria-hidden="true">🎲 </span>Picks aleatorios</div>
               <div class="meta">{{ selectedCount() }} partido{{ selectedCount() === 1 ? '' : 's' }} · rango {{ minVal() }}–{{ maxVal() }}</div>
             </div>
             <button type="button" class="close" (click)="close()" aria-label="Cerrar">✕</button>
@@ -53,9 +57,10 @@ interface DateGroup {
             <!-- Selector de partidos -->
             <div class="rnd-section">
               <h4 class="rnd-section__title">¿Para qué partidos?</h4>
-              <div class="rnd-options">
+              <div class="rnd-options" role="group" aria-label="Filtro de partidos">
                 @for (opt of options(); track opt.key) {
                   <button type="button" class="rnd-option"
+                          [attr.aria-pressed]="filter() === opt.key"
                           [class.is-active]="filter() === opt.key"
                           [disabled]="opt.count === 0"
                           (click)="filter.set(opt.key)">
@@ -210,6 +215,11 @@ interface DateGroup {
     }
     .rnd-stepper__btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .rnd-stepper__btn:hover:not(:disabled) { background: var(--wf-fill-2, var(--wf-line-2)); }
+    .rnd-stepper__btn:focus-visible {
+      outline: 2px solid var(--color-primary-green);
+      outline-offset: 2px;
+      background: var(--wf-fill-2, var(--wf-line-2));
+    }
     .rnd-stepper__val {
       width: 44px;
       text-align: center;

@@ -390,6 +390,51 @@ export class ApiService {
   removeMember(input: { groupId: string; userId: string }) {
     return apiClient.mutations.removeMember(input);
   }
+
+  /**
+   * Abandona un grupo del que sos miembro (no-admin).
+   *
+   * **BACKEND TODO**: la mutation `leaveGroup` aún no existe en el schema
+   * Amplify. Necesita: un mutation con argumento `groupId`, retorna
+   * `{ ok: boolean, message?: string }`. Reglas:
+   *   - El user no puede ser admin del grupo (usar `transferGroupAdmin`
+   *     primero o `deleteGroup`).
+   *   - Score acumulado del user en el grupo se borra.
+   *   - Picks del torneo no se ven afectados.
+   *
+   * Mientras backend no lo expone, la llamada falla con un mensaje claro
+   * vía el catch del componente que lo invoca.
+   */
+  leaveGroup(groupId: string) {
+    const m = (apiClient.mutations as Record<string, (input: unknown) => Promise<unknown>>)['leaveGroup'];
+    if (typeof m !== 'function') {
+      return Promise.reject(new Error(
+        'BACKEND_PENDING: la mutation leaveGroup aún no está desplegada. ' +
+        'Pedile al admin del torneo que te elimine.',
+      ));
+    }
+    return m({ groupId });
+  }
+
+  /**
+   * Transfiere el rol de admin del grupo a otro miembro existente.
+   *
+   * **BACKEND TODO**: mutation `transferGroupAdmin` con args
+   * `{ groupId, newAdminUserId }`, retorna `{ ok, message? }`. Reglas:
+   *   - Solo el admin actual puede llamarla.
+   *   - `newAdminUserId` debe ser miembro del grupo.
+   *   - Al confirmarse, el `Group.adminUserId` cambia y el caller pierde
+   *     todos los privilegios admin sobre el grupo.
+   */
+  transferGroupAdmin(input: { groupId: string; newAdminUserId: string }) {
+    const m = (apiClient.mutations as Record<string, (input: unknown) => Promise<unknown>>)['transferGroupAdmin'];
+    if (typeof m !== 'function') {
+      return Promise.reject(new Error(
+        'BACKEND_PENDING: la mutation transferGroupAdmin aún no está desplegada.',
+      ));
+    }
+    return m(input);
+  }
   emailGroupInvite(groupId: string, emails: string[]) {
     return apiClient.mutations.emailGroupInvite({ groupId, emails });
   }

@@ -10,6 +10,7 @@ import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
 import { TriviaModalService } from '../../core/trivia/trivia-modal.service';
 import { RailModalsService } from '../../core/layout/rail-modals.service';
 import { PicksSyncService } from '../../core/sync/picks-sync.service';
+import { RedeemModalService } from '../../core/sponsors/redeem-modal.service';
 import { RandomizerModalComponent } from './randomizer-modal.component';
 
 /** Payload del sync para picks de marcador. Tracking explícito de
@@ -115,7 +116,7 @@ interface TriviaInfo {
       <div class="picks-actions">
         <button type="button" class="btn-wf btn-wf--ink"
                 (click)="openRandomizer()">
-          🎲 Aleatorio
+          <span aria-hidden="true">🎲 </span>Aleatorio
         </button>
       </div>
 
@@ -141,13 +142,15 @@ interface TriviaInfo {
 
           <!-- Sub seg (Próximos / Jugados) -->
           <div class="picks-sub">
-            <div class="seg" style="max-width:300px;" role="tablist">
-              <button type="button" class="seg__item"
+            <div class="seg" style="max-width:300px;" role="tablist" aria-label="Filtro de partidos">
+              <button type="button" class="seg__item" role="tab"
+                      [attr.aria-selected]="tab() === 'upcoming'"
                       [class.is-active]="tab() === 'upcoming'"
                       (click)="tab.set('upcoming')">
                 Próximos · {{ upcomingCount() }}
               </button>
-              <button type="button" class="seg__item"
+              <button type="button" class="seg__item" role="tab"
+                      [attr.aria-selected]="tab() === 'played'"
                       [class.is-active]="tab() === 'played'"
                       (click)="tab.set('played')">
                 Jugados · {{ playedCount() }}
@@ -284,6 +287,7 @@ interface TriviaInfo {
                     @if (upcoming) {
                       <input type="text" inputmode="numeric" maxlength="1"
                              class="score__input"
+                             autocomplete="off" spellcheck="false"
                              [value]="scoreInputValue(m, 'home')"
                              placeholder="0"
                              [attr.aria-label]="'Goles ' + m.homeTeamName"
@@ -292,6 +296,7 @@ interface TriviaInfo {
                       <span>—</span>
                       <input type="text" inputmode="numeric" maxlength="1"
                              class="score__input"
+                             autocomplete="off" spellcheck="false"
                              [value]="scoreInputValue(m, 'away')"
                              placeholder="0"
                              [attr.aria-label]="'Goles ' + m.awayTeamName"
@@ -399,9 +404,10 @@ interface TriviaInfo {
     </section>
 
     <!-- FAB de canjear código (mobile) -->
-    <button type="button" class="canjear-fab" (click)="scrollToCanjear()"
+    <button type="button" class="canjear-fab" (click)="openRedeemModal()"
+            aria-label="Canjear código de sponsor"
             title="Canjear código de sponsor">
-      🎁 <span>Canjear código</span>
+      <span aria-hidden="true">🎁 </span><span>Canjear código</span>
     </button>
 
     <!-- Modal de "Picks aleatorios" (oculto hasta que openRandomizer fire) -->
@@ -543,6 +549,7 @@ export class PicksListComponent implements OnInit, OnDestroy {
     if (this.triviaTickTimer) clearInterval(this.triviaTickTimer);
   }
   private api = inject(ApiService);
+  private redeemModal = inject(RedeemModalService);
   private auth = inject(AuthService);
   private userModes = inject(UserModesService);
   private time = inject(TimeService);
@@ -632,10 +639,11 @@ export class PicksListComponent implements OnInit, OnDestroy {
     return this.banners()[slot] ?? [];
   }
 
-  scrollToCanjear() {
-    // El canjear inline vive ahora en /mis-comodines (slot al final del
-    // grid). Navegamos allá; el form ya está visible en esa página.
-    void this.router.navigate(['/mis-comodines'], { fragment: 'card-canjear' });
+  openRedeemModal() {
+    // FAB del rail: abre el modal global de canjear. Antes navegaba a
+    // /mis-comodines#card-canjear via router — inconsistente con el resto
+    // de la app (desktop usa el modal del shell). Ahora ambos usan modal.
+    this.redeemModal.open();
   }
 
   // ---------- Helpers para el match-card inline ----------

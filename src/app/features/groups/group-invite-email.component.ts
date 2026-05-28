@@ -50,7 +50,7 @@ import { humanizeError } from '../../core/notifications/domain-errors';
                      (keydown.,)="onSubmitChip($event)"
                      (keydown.space)="onSubmitChip($event)"
                      (blur)="commitDraft()"
-                     placeholder="agregar otro email...">
+                     placeholder="agregar otro email…">
             </div>
             <span class="form-card__hint">Máx. 20 emails por invitación.</span>
           </div>
@@ -58,7 +58,7 @@ import { humanizeError } from '../../core/notifications/domain-errors';
           <div class="form-card__field">
             <label class="form-card__label" for="message">Mensaje opcional</label>
             <textarea class="form-card__textarea" id="message" name="message"
-                      rows="3" placeholder="Hey, armé un grupo para la polla del Mundial..."
+                      rows="3" placeholder="Hey, armé un grupo para la polla del Mundial…"
                       [(ngModel)]="message" maxlength="200"
                       style="min-height: 80px; padding: 12px 14px; resize: vertical;"></textarea>
             <span class="form-card__hint">Aparece debajo del CTA en el email. Máx 200 caracteres.</span>
@@ -89,7 +89,7 @@ import { humanizeError } from '../../core/notifications/domain-errors';
 
           <div class="email-preview">
             <div class="email-preview__head">
-              <img src="assets/logo-golgana.png" alt="Golgana">
+              <img src="assets/logo-golgana.png" alt="Golgana" width="199" height="98">
               <div class="email-preview__head-info">
                 <strong>Polla Mundialista</strong>
                 <small>polla&#64;golgana.net · Para: {{ emails()[0] ?? 'amigo@ejemplo.com' }}</small>

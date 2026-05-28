@@ -1,15 +1,15 @@
 import {
-  Component, ElementRef, QueryList, ViewChildren,
+  Component, ElementRef, OnInit, QueryList, ViewChildren,
   computed, inject, signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { apiClient } from '../../core/api/client';
 import { PasswordRulesListComponent } from '../../shared/ui/password-rules-list.component';
 import { passwordPassesAllRules } from '../../shared/util/password-rules';
 
-type Step = 'form' | 'confirm';
+type Step = 'form' | 'confirm' | 'handle-conflict';
 type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
 
 @Component({
@@ -22,7 +22,7 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
       <!-- Panel de marca (solo desktop) -->
       <aside class="auth-brand">
         <div class="auth-brand__top">
-          <img src="assets/logo-golgana.png" alt="Golgana" class="auth-brand__logo-img" style="height:40px;width:auto;">
+          <img src="assets/logo-golgana.png" alt="Golgana" width="199" height="98" class="auth-brand__logo-img" style="height:40px;width:auto;">
         </div>
         <div>
           <h1 class="auth-brand__h1">
@@ -61,19 +61,6 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
             <form (ngSubmit)="submitForm()">
 
               <div class="auth-field">
-                <label for="reg-name" class="auth-label">Nombre</label>
-                <input
-                  type="text"
-                  id="reg-name"
-                  name="name"
-                  class="auth-input"
-                  placeholder="Juan Pérez"
-                  autocomplete="name"
-                  required
-                  [(ngModel)]="name">
-              </div>
-
-              <div class="auth-field">
                 <label for="reg-handle" class="auth-label">Usuario</label>
                 <div class="auth-input-wrap">
                   <input
@@ -84,6 +71,9 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
                     [class.auth-input--has-pill]="handleStatus() !== 'idle'"
                     placeholder="tu_usuario"
                     autocomplete="username"
+                    spellcheck="false"
+                    autocapitalize="off"
+                    autocorrect="off"
                     required
                     pattern="[a-zA-Z0-9_]{3,20}"
                     [(ngModel)]="handle"
@@ -108,6 +98,9 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
                   class="auth-input"
                   placeholder="tu@correo.com"
                   autocomplete="email"
+                  inputmode="email"
+                  spellcheck="false"
+                  autocapitalize="off"
                   required
                   [(ngModel)]="email">
               </div>
@@ -122,6 +115,8 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
                     class="auth-input"
                     placeholder="••••••••"
                     autocomplete="new-password"
+                    spellcheck="false"
+                    autocapitalize="off"
                     required
                     minlength="8"
                     [(ngModel)]="password">
@@ -142,7 +137,7 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
               </label>
 
               @if (error()) {
-                <p class="auth-error">{{ error() }}</p>
+                <p class="auth-error" role="alert">{{ error() }}</p>
               }
 
               <button
@@ -159,9 +154,70 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
               <a routerLink="/login" class="auth-bottom__link">Entrar</a>
             </div>
 
+          } @else if (step() === 'handle-conflict') {
+
+            <div class="auth-step-head">
+              <div class="kicker">CASI LISTO</div>
+              <h1>Elige otro usuario</h1>
+              <p>
+                Tu cuenta está creada pero <strong>{{ '@' + handle }}</strong>
+                ya está en uso por otra persona. Pickeá uno distinto y
+                terminamos.
+              </p>
+            </div>
+
+            <form (ngSubmit)="retryHandle()" style="margin-top:14px;">
+              <div class="auth-field">
+                <label for="rh-handle" class="auth-label">Usuario</label>
+                <div class="auth-input-wrap">
+                  <input
+                    type="text"
+                    id="rh-handle"
+                    name="handle"
+                    class="auth-input"
+                    [class.auth-input--has-pill]="handleStatus() !== 'idle'"
+                    placeholder="tu_usuario"
+                    autocomplete="username"
+                    spellcheck="false"
+                    autocapitalize="off"
+                    autocorrect="off"
+                    required
+                    pattern="[a-zA-Z0-9_]{3,20}"
+                    [(ngModel)]="handle"
+                    (ngModelChange)="onHandleChange($event)">
+                  @if (handleStatus() === 'available') {
+                    <span class="auth-input-pill"><span aria-hidden="true">✓ </span>disponible</span>
+                  } @else if (handleStatus() === 'taken') {
+                    <span class="auth-input-pill pill-taken"><span aria-hidden="true">✗ </span>en uso</span>
+                  } @else if (handleStatus() === 'checking') {
+                    <span class="auth-input-pill pill-checking">verificando…</span>
+                  }
+                </div>
+                <div class="auth-helper">Sin &#64; — solo letras, números y guión bajo.</div>
+              </div>
+
+              @if (error()) {
+                <p class="auth-error" role="alert">{{ error() }}</p>
+              }
+
+              <button
+                type="submit"
+                class="btn-wf btn-wf--block btn-wf--primary"
+                style="padding:14px;font-size:14px;margin-top:14px;"
+                [disabled]="loading() || handleStatus() !== 'available'">
+                {{ loading() ? 'Guardando…' : 'Confirmar usuario' }}
+              </button>
+
+              <div class="auth-bottom" style="margin-top:10px;">
+                <button type="button" class="auth-bottom__link" (click)="restartRegistration()">
+                  Empezar de nuevo
+                </button>
+              </div>
+            </form>
+
           } @else {
 
-            <a href="#" (click)="goBackToForm($event)" class="auth-back">‹ Volver a tus datos</a>
+            <button type="button" (click)="goBackToForm($event)" class="auth-back"><span aria-hidden="true">‹ </span>Volver a tus datos</button>
 
             <div class="auth-step-head">
               <div class="kicker">PASO 2 DE 2</div>
@@ -179,6 +235,8 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
                   class="otp__d"
                   maxlength="1"
                   inputmode="numeric"
+                  autocomplete="one-time-code"
+                  [attr.name]="'otp-' + (i + 1)"
                   placeholder="—"
                   [attr.aria-label]="'Dígito ' + (i + 1)"
                   [value]="otpDigits()[i]"
@@ -194,15 +252,15 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
                 <span class="text-green text-bold">Reenviar ({{ formatCooldown() }})</span>
               } @else {
                 <span class="text-mute">¿No te llegó? </span>
-                <a href="#" (click)="resendCode($event)" class="auth-bottom__link">Reenviar</a>
+                <button type="button" (click)="resendCode($event)" class="auth-bottom__link">Reenviar</button>
               }
             </div>
 
             @if (error()) {
-              <p class="auth-error">{{ error() }}</p>
+              <p class="auth-error" role="alert">{{ error() }}</p>
             }
             @if (resendInfo()) {
-              <p class="auth-success">✓ {{ resendInfo() }}</p>
+              <p class="auth-success" role="status"><span aria-hidden="true">✓ </span>{{ resendInfo() }}</p>
             }
 
             <button
@@ -273,13 +331,27 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
     .auth-input-toggle:hover { color: var(--wf-ink); }
   `],
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit {
   private auth = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   step = signal<Step>('form');
 
-  name = '';
+  ngOnInit() {
+    // Soporte para deep-link desde login cuando Cognito reporta
+    // UserNotConfirmedException: `?email=foo@bar&confirm=1` aterriza
+    // directo en el step 'confirm' con email pre-llenado. El reenvío del
+    // código ya lo hizo login.component antes de redirigir.
+    const qp = this.route.snapshot.queryParamMap;
+    const qEmail = qp.get('email');
+    if (qEmail) this.email = qEmail;
+    if (qp.get('confirm') === '1' && qEmail) {
+      this.step.set('confirm');
+      this.startCooldown(60);
+    }
+  }
+
   handle = '';
   email = '';
   password = '';
@@ -303,7 +375,7 @@ export class RegisterComponent {
   @ViewChildren('otpInput') otpRefs?: QueryList<ElementRef<HTMLInputElement>>;
 
   canSubmit(): boolean {
-    return !!this.name && !!this.handle && !!this.email
+    return !!this.handle && !!this.email
       && passwordPassesAllRules(this.password) && this.acceptTerms
       && this.handleStatus() !== 'taken' && this.handleStatus() !== 'checking';
   }
@@ -393,7 +465,7 @@ export class RegisterComponent {
         this.loading.set(false);
         return;
       }
-      await this.auth.register(this.email, this.password, this.handle, this.name);
+      await this.auth.register(this.email, this.password, this.handle);
       this.step.set('confirm');
       this.otpDigits.set(['', '', '', '', '', '']);
       this.startCooldown(60);
@@ -426,7 +498,12 @@ export class RegisterComponent {
           return;
         }
       }
-      void this.router.navigate(['/onboarding']);
+      // Propaga returnUrl (si vino) para que el onboarding pueda redirigir
+      // al deep-link original (ej. /groups/join/:code) al terminar.
+      const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+      void this.router.navigate(['/onboarding'], {
+        queryParams: returnUrl ? { returnUrl } : undefined,
+      });
     } catch (e) {
       if (loggedIn) {
         // Cognito ya nos autenticó pero la creación del perfil falló (throw).
@@ -445,17 +522,48 @@ export class RegisterComponent {
     }
   }
 
-  /** Después de un fallo de createUserProfile, cierra sesión Cognito (si la hay)
-   *  y devuelve al user al step 'form' para que pueda elegir otro handle. */
+  /** Después de un fallo de createUserProfile mostramos un step focalizado
+   *  ("handle-conflict") con solo el campo handle + retry. La sesión Cognito
+   *  queda activa pero el User row falta — el user no puede salir hasta
+   *  pickear un handle válido (sino otras pantallas rompen). */
   private async bounceBackToForm(message: string): Promise<void> {
-    try {
-      await this.auth.logout();
-    } catch {
-      // Si el logout falla por alguna razón, igual mostramos el form;
-      // el siguiente intento de login va a forzar el refresh.
-    }
     this.error.set(message);
     this.handleStatus.set('taken');
+    this.step.set('handle-conflict');
+  }
+
+  /** Reintenta solo createUserProfile con el nuevo handle. Si funciona,
+   *  proceeds a onboarding como en el flow normal. Si falla otra vez,
+   *  queda en el mismo step esperando otro handle. */
+  async retryHandle() {
+    if (this.handleStatus() !== 'available' || this.loading()) return;
+    this.error.set(null);
+    this.loading.set(true);
+    try {
+      const res = await apiClient.mutations.createUserProfile({ handle: this.handle });
+      if (!res.data?.ok) {
+        this.error.set(res.data?.message ?? 'Ese usuario ya está en uso.');
+        this.handleStatus.set('taken');
+        return;
+      }
+      const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+      void this.router.navigate(['/onboarding'], {
+        queryParams: returnUrl ? { returnUrl } : undefined,
+      });
+    } catch (e) {
+      this.error.set((e as Error).message ?? 'No se pudo crear el perfil.');
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  /** Botón de escape del handle-conflict step: si el user prefiere
+   *  empezar de cero, lo logoutemos y reseteamos al step 'form'. */
+  async restartRegistration() {
+    try { await this.auth.logout(); } catch { /* ignore */ }
+    this.handle = '';
+    this.handleStatus.set('idle');
+    this.error.set(null);
     this.step.set('form');
   }
 

@@ -4,6 +4,7 @@ import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService } from '../../core/user/user-modes.service';
 import { GroupActionsService } from '../../core/groups/group-actions.service';
+import { PicksPendingBannerComponent } from '../picks/picks-pending-banner.component';
 
 const TOURNAMENT_ID = 'mundial-2026';
 const TOURNAMENT_START_ISO = '2026-06-12T19:00:00-04:00';   // primer kickoff Mundial 2026
@@ -47,16 +48,18 @@ interface ComodinSlotVm {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, PicksPendingBannerComponent],
   template: `
     <section class="home-page">
+
+      <app-picks-pending-banner />
 
       <!-- HERO compacto -->
       <section class="hero">
         <div class="hero__in">
           <div class="hero__av">{{ avatarInitials() }}</div>
           <div>
-            <div class="hero__k">Hola, {{ '@' + (handle() ?? 'jugador') }}</div>
+            <div class="hero__k">Hola, <span translate="no">{{ '@' + (handle() ?? 'jugador') }}</span></div>
             <div class="hero__t">
               Quedan <strong>{{ daysToTournament() }} días</strong>
               @if (totals().globalRank) {
@@ -68,10 +71,10 @@ interface ComodinSlotVm {
               @if (accuracyPct() !== null) { · {{ accuracyPct() }}% de aciertos }
             </div>
             @if (pendingPicksCount() > 0 && nextDeadlineLabel()) {
-              <div class="hero__alert">⚠ Cierra el primer pick en {{ nextDeadlineLabel() }}</div>
+              <div class="hero__alert" role="status"><span aria-hidden="true">⚠ </span>Cierra el primer pick en {{ nextDeadlineLabel() }}</div>
             }
           </div>
-          <a routerLink="/picks" class="hero__cta">Hacer picks →</a>
+          <a routerLink="/picks" class="hero__cta">Hacer picks <span aria-hidden="true">→</span></a>
         </div>
       </section>
 
@@ -118,7 +121,7 @@ interface ComodinSlotVm {
               @if (nextDeadlineLabel()) { El primero cierra en <em>{{ nextDeadlineLabel() }}</em>. }
             </small>
           </div>
-          <a routerLink="/picks" class="pp__b">Hacer picks →</a>
+          <a routerLink="/picks" class="pp__b">Hacer picks <span aria-hidden="true">→</span></a>
         </div>
       }
 
@@ -126,7 +129,7 @@ interface ComodinSlotVm {
       <div>
         <div class="sh">
           <h2>Mis grupos · {{ myGroupsList().length }} {{ myGroupsList().length === 1 ? 'activo' : 'activos' }}</h2>
-          <a routerLink="/groups">Ver todos →</a>
+          <a routerLink="/groups">Ver todos <span aria-hidden="true">→</span></a>
         </div>
         <div class="gr-list">
           @if (myGroupsList().length === 0) {
@@ -149,22 +152,22 @@ interface ComodinSlotVm {
           }
         </div>
         <div class="gr-act">
-          <button type="button" (click)="onCreateGroup()">＋ Crear grupo</button>
-          <button type="button" (click)="onJoinGroup()">→ Unirme con código</button>
+          <button type="button" (click)="onCreateGroup()"><span aria-hidden="true">＋ </span>Crear grupo</button>
+          <button type="button" (click)="onJoinGroup()"><span aria-hidden="true">→ </span>Unirme con código</button>
         </div>
       </div>
 
       <!-- Row: especiales + ranking -->
       <div class="row2">
         <div class="spk">
-          <div class="spk__h"><span>🏆 Picks especiales · hasta 65 pts</span></div>
+          <div class="spk__h"><span><span aria-hidden="true">🏆 </span>Picks especiales · hasta 65 pts</span></div>
           <div class="spk__row">
             @for (s of specialPicks(); track s.type) {
               <a routerLink="/profile/special-picks" class="spk__c"
                  [class.spk__c--g]="s.type === 'CHAMPION'"
                  [class.spk__c--s]="s.type === 'RUNNER_UP'"
                  [class.spk__c--e]="s.type === 'DARK_HORSE'">
-                <div class="spk__big">
+                <div class="spk__big" aria-hidden="true">
                   @if (s.flag) {
                     <span class="fi fi-{{ s.flag.toLowerCase() }}"></span>
                   } @else {
@@ -204,8 +207,8 @@ interface ComodinSlotVm {
       @if (totals().hasComplete) {
         <div class="com">
           <div class="com__h">
-            <span>⚡ Comodines · {{ comodinesActive() }} de {{ comodinesCap() }} disponibles</span>
-            <a routerLink="/mis-comodines">Detalles →</a>
+            <span><span aria-hidden="true">⚡ </span>Comodines · {{ comodinesActive() }} de {{ comodinesCap() }} disponibles</span>
+            <a routerLink="/mis-comodines">Detalles <span aria-hidden="true">→</span></a>
           </div>
           <div class="com__row">
             @for (slot of comodinSlots(); track slot.idx) {
@@ -367,8 +370,9 @@ interface ComodinSlotVm {
 
     /* Grupos */
     .gr-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-    .gr { background: #fff; border: 1px solid var(--color-line); border-radius: 10px; padding: 12px; display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; transition: all 0.15s; }
+    .gr { background: #fff; border: 1px solid var(--color-line); border-radius: 10px; padding: 12px; display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease; }
     .gr:hover { border-color: rgba(2,204,116,0.4); background: rgba(2,204,116,0.02); }
+    .gr:focus-visible { outline: 2px solid var(--color-primary-green); outline-offset: 2px; border-color: rgba(2,204,116,0.4); }
     .gr__av { width: 38px; height: 38px; border-radius: 9px; display: grid; place-items: center; color: #fff; font-family: var(--font-display); font-size: 15px; flex-shrink: 0; }
     .gr__b { flex: 1; min-width: 0; }
     .gr__n { font-family: var(--font-display); font-size: 16px; line-height: 1; }
@@ -380,6 +384,7 @@ interface ComodinSlotVm {
     .gr-act { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
     .gr-act button { background: transparent; border: 1px dashed rgba(2,204,116,0.4); border-radius: 9px; padding: 9px; color: var(--color-primary-green); font-family: inherit; font-weight: 600; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
     .gr-act button:hover { background: rgba(2,204,116,0.05); border-style: solid; }
+    .gr-act button:focus-visible { outline: 2px solid var(--color-primary-green); outline-offset: 2px; border-style: solid; }
     @media (max-width: 480px) { .gr-act { grid-template-columns: 1fr; } }
 
     /* Row 2-col */
@@ -390,8 +395,9 @@ interface ComodinSlotVm {
     .spk { background: #fff; border: 1px solid var(--color-line); border-radius: 12px; padding: 12px 14px; }
     .spk__h { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
     .spk__row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-    .spk__c { text-align: center; padding: 6px 4px; border-radius: 7px; text-decoration: none; color: inherit; transition: all 0.2s; display: flex; align-items: center; gap: 6px; justify-content: center; }
+    .spk__c { text-align: center; padding: 6px 4px; border-radius: 7px; text-decoration: none; color: inherit; transition: transform 0.2s ease, box-shadow 0.2s ease; display: flex; align-items: center; gap: 6px; justify-content: center; }
     .spk__c:hover { transform: translateY(-1px); }
+    .spk__c:focus-visible { outline: 2px solid var(--color-primary-green); outline-offset: 3px; }
     .spk__c--g { background: linear-gradient(135deg, #fde047, #f59e0b); color: #7c2d12; }
     .spk__c--s { background: linear-gradient(135deg, #e5e7eb, #9ca3af); color: #1f2937; }
     .spk__c--e { background: #f3f4f6; border: 1px dashed var(--color-primary-green); color: var(--color-primary-green); }

@@ -97,6 +97,7 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
                   <div class="mh__pick-inputs">
                     <input type="text" inputmode="numeric" maxlength="1"
                            class="mh__pick-input"
+                           autocomplete="off" spellcheck="false"
                            [value]="home() ?? ''"
                            [disabled]="isPast()"
                            [attr.aria-label]="'Goles ' + teamName(m.homeTeamId)"
@@ -104,6 +105,7 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
                     <span class="mh__pick-sep">—</span>
                     <input type="text" inputmode="numeric" maxlength="1"
                            class="mh__pick-input"
+                           autocomplete="off" spellcheck="false"
                            [value]="away() ?? ''"
                            [disabled]="isPast()"
                            [attr.aria-label]="'Goles ' + teamName(m.awayTeamId)"
@@ -328,10 +330,11 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
       -webkit-appearance: none;
       margin: 0;
     }
-    .mh__pick-input:focus {
+    .mh__pick-input:focus-visible {
       outline: none;
       border-color: white;
       background: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
     }
     .mh__pick-input:disabled {
       opacity: 0.5;

@@ -1500,7 +1500,7 @@ a.btn-wf { text-decoration: none; }
   -webkit-appearance: none;
   margin: 0;
 }
-.score__input:focus {
+.score__input:focus-visible {
   outline: none;
   border-color: var(--wf-green);
   box-shadow: 0 0 0 3px var(--wf-green-soft);
@@ -3278,7 +3278,7 @@ a.btn-wf { text-decoration: none; }
   background: var(--wf-paper);
   color: var(--wf-ink);
 }
-.auth-input:focus {
+.auth-input:focus-visible {
   outline: none;
   border-color: var(--wf-green);
   box-shadow: 0 0 0 3px var(--wf-green-soft);
@@ -3560,7 +3560,7 @@ a.btn-wf { text-decoration: none; }
   text-align: center;
   color: var(--wf-ink-3);
 }
-.otp__d:focus {
+.otp__d:focus-visible {
   outline: none;
   border: 2px solid var(--wf-green);
   background: var(--wf-paper);

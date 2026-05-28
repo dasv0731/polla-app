@@ -6,6 +6,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
 import { apiClient } from '../../core/api/client';
 import { effectiveStatus } from '../../shared/util/match-status';
+import { ConfirmDialogService } from '../../shared/ui/confirm-dialog.service';
 
 const TOURNAMENT_ID = 'mundial-2026';
 const DAY_MS = 86_400_000;
@@ -53,19 +54,25 @@ interface MatchRow {
       <p>Cargando partidos…</p>
     } @else {
       <div class="admin-filters">
-        <select [(ngModel)]="phaseFilter">
+        <select [(ngModel)]="phaseFilter" name="phaseFilter"
+                aria-label="Filtrar por fase">
           <option value="">Todas las fases</option>
           @for (p of phases(); track p.id) {
             <option [value]="p.id">{{ p.name }}</option>
           }
         </select>
-        <select [(ngModel)]="statusFilter">
+        <select [(ngModel)]="statusFilter" name="statusFilter"
+                aria-label="Filtrar por estado">
           <option value="">Todos los status</option>
           <option value="SCHEDULED">SCHEDULED</option>
           <option value="LIVE">LIVE</option>
           <option value="FINAL">FINAL</option>
         </select>
-        <input type="text" [(ngModel)]="search" placeholder="Buscar equipo..." style="flex: 1; min-width: 200px;">
+        <input type="search" [(ngModel)]="search" name="search"
+               placeholder="Buscar equipo…"
+               aria-label="Buscar partido por equipo"
+               autocomplete="off" spellcheck="false"
+               style="flex: 1; min-width: 200px;">
         <span style="font-size: var(--fs-xs); color: var(--color-text-muted); margin-left: auto; text-transform: uppercase; letter-spacing: 0.08em;">
           Mostrando {{ visible().length }} de {{ matches().length }}
         </span>
@@ -155,6 +162,7 @@ interface MatchRow {
 export class AdminFixturesComponent implements OnInit {
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  private confirmDialog = inject(ConfirmDialogService);
 
   loading = signal(true);
   finalizingId = signal<string | null>(null);
@@ -295,10 +303,15 @@ export class AdminFixturesComponent implements OnInit {
 
   async finalize(m: MatchRow) {
     if (!this.canFinalize(m)) return;
-    if (!confirm(
-      `¿Marcar como finalizado?\n\n${this.teamName(m.homeTeamId)} vs ${this.teamName(m.awayTeamId)}\n\n` +
-      `El partido pasará a /admin/results para que ingreses el marcador y publiques los puntos.`,
-    )) return;
+    const ok = await this.confirmDialog.ask({
+      title: 'Marcar partido como finalizado',
+      message:
+        `${this.teamName(m.homeTeamId)} vs ${this.teamName(m.awayTeamId)} pasará a /admin/results ` +
+        'para que ingreses el marcador final y publiques los puntos.',
+      confirmLabel: 'Finalizar partido',
+      cancelLabel: 'Cancelar',
+    });
+    if (!ok) return;
     this.finalizingId.set(m.id);
     try {
       const res = await this.api.markMatchFinished(m.id, m.version);
@@ -319,7 +332,16 @@ export class AdminFixturesComponent implements OnInit {
 
   async del(m: MatchRow, event: Event) {
     event.preventDefault();
-    if (!confirm(`¿Borrar el partido ${this.teamName(m.homeTeamId)} vs ${this.teamName(m.awayTeamId)}? También se borran los picks.`)) return;
+    const ok = await this.confirmDialog.ask({
+      title: 'Borrar partido',
+      message:
+        `Borrar ${this.teamName(m.homeTeamId)} vs ${this.teamName(m.awayTeamId)} también ` +
+        'borra todos los picks asociados. No se puede deshacer.',
+      confirmLabel: 'Borrar partido',
+      cancelLabel: 'Cancelar',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await apiClient.models.Match.delete({ id: m.id });
       this.toast.success('Partido borrado');

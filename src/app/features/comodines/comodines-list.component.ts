@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { A11yModule } from '@angular/cdk/a11y';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
@@ -133,7 +134,7 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
 @Component({
   standalone: true,
   selector: 'app-comodines-list',
-  imports: [RouterLink, FormsModule],
+  imports: [RouterLink, FormsModule, A11yModule],
   template: `
     <section class="page">
 
@@ -170,7 +171,7 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
 
       @if (pendingCount() > 0) {
         <div class="com-pending-banner">
-          <span class="com-pending-banner__icon">⚠</span>
+          <span class="com-pending-banner__icon" aria-hidden="true">⚠</span>
           <div class="com-pending-banner__body">
             <div class="com-pending-banner__title">
               {{ pendingCount() === 1
@@ -188,18 +189,21 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
 
       <!-- Filtros + canjear -->
       <div class="com-filters">
-        <div class="seg">
+        <div class="seg" role="group" aria-label="Filtro de comodines">
           <button type="button" class="seg__item"
+                  [attr.aria-pressed]="filter() === 'all'"
                   [class.is-active]="filter() === 'all'"
                   (click)="filter.set('all')">
             Todos · {{ totalCount() }}
           </button>
           <button type="button" class="seg__item"
+                  [attr.aria-pressed]="filter() === 'available'"
                   [class.is-active]="filter() === 'available'"
                   (click)="filter.set('available')">
             Disponibles · {{ availableCount() }}
           </button>
           <button type="button" class="seg__item"
+                  [attr.aria-pressed]="filter() === 'used'"
                   [class.is-active]="filter() === 'used'"
                   (click)="filter.set('used')">
             Usados · {{ usedCount() }}
@@ -211,7 +215,7 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
           </button>
         </div>
         <button type="button" class="btn-wf btn-wf--sm" (click)="scrollToCanjear()">
-          🎁 Canjear código
+          <span aria-hidden="true">🎁 </span>Canjear código
         </button>
       </div>
 
@@ -275,11 +279,11 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
               }
 
               @if (c.status === 'PENDING_TYPE_CHOICE') {
-                <div class="com-card__status">⚠ Elige el tipo antes que caduque</div>
+                <div class="com-card__status" role="status"><span aria-hidden="true">⚠ </span>Elige el tipo antes que caduque</div>
                 <button type="button"
                         class="btn-wf btn-wf--block btn-wf--primary btn-wf--sm com-card__cta"
                         (click)="openClaimModal(c)">
-                  Configurar comodín →
+                  Configurar comodín <span aria-hidden="true">→</span>
                 </button>
               } @else if (c.status === 'UNASSIGNED' && canAssign(c.type)) {
                 <button type="button"
@@ -314,7 +318,7 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
           <!-- Slot de canjear código (siempre visible al final) -->
           <form id="card-canjear" class="com-card com-card--code"
                 (ngSubmit)="redeemCode(); $event.preventDefault()">
-            <div class="icon">🎁</div>
+            <div class="icon" aria-hidden="true">🎁</div>
             <div class="tit">¿Tienes un código?</div>
             <div class="sub">Canjea códigos de sponsors para conseguir más comodines.</div>
             <div class="form-row">
@@ -328,10 +332,10 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
               </button>
             </div>
             @if (redeemError()) {
-              <p style="font-size:11px;color:var(--wf-danger);margin-top:4px;">{{ redeemError() }}</p>
+              <p role="alert" style="font-size:11px;color:var(--wf-danger);margin-top:4px;">{{ redeemError() }}</p>
             }
             @if (redeemSuccess()) {
-              <p style="font-size:11px;color:var(--wf-green-ink);margin-top:4px;">✓ {{ redeemSuccess() }}</p>
+              <p role="status" style="font-size:11px;color:var(--wf-green-ink);margin-top:4px;"><span aria-hidden="true">✓ </span>{{ redeemSuccess() }}</p>
             }
           </form>
 
@@ -365,11 +369,11 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
               <header class="com-catalog__card-head">
                 <h3 class="com-catalog__card-title">{{ typeInfo(t).name }}</h3>
                 @if (owned) {
-                  <span class="com-catalog__owned">✓ tienes</span>
+                  <span class="com-catalog__owned"><span aria-hidden="true">✓ </span>tienes</span>
                 }
               </header>
               <p class="com-catalog__impact">{{ typeInfo(t).impact }}</p>
-              <p class="com-catalog__window">⏱ {{ typeInfo(t).window }}</p>
+              <p class="com-catalog__window"><span aria-hidden="true">⏱ </span>{{ typeInfo(t).window }}</p>
             </article>
           }
         </div>
@@ -409,15 +413,18 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
     @if (assigning()) {
       @let comodin = assigning()!;
       <div class="claim-overlay" role="dialog" aria-modal="true"
+           aria-labelledby="comodin-assign-title"
+           cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
+           (keydown.escape)="closeAssignModal()"
            (click)="closeAssignModal()">
         <div class="claim-modal" (click)="$event.stopPropagation()">
           <header class="claim-modal__head">
-            <h2>Asignar: {{ comodin.type ? typeInfo(comodin.type).name : '' }}</h2>
+            <h2 id="comodin-assign-title">Asignar: {{ comodin.type ? typeInfo(comodin.type).name : '' }}</h2>
             <button type="button" class="claim-modal__x" (click)="closeAssignModal()">×</button>
           </header>
           <p class="form-card__hint">{{ comodin.type ? typeInfo(comodin.type).impact : '' }}</p>
           <p class="form-card__hint" style="margin-top: var(--space-xs);">
-            ⚠ La asignación es <strong>vinculante</strong>: una vez confirmada
+            <span aria-hidden="true">⚠ </span>La asignación es <strong>vinculante</strong>: una vez confirmada
             no se puede mover ni cancelar.
           </p>
 
@@ -557,15 +564,18 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
     @if (using()) {
       @let comodin = using()!;
       <div class="claim-overlay" role="dialog" aria-modal="true"
+           aria-labelledby="comodin-use-title"
+           cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
+           (keydown.escape)="closeUseModal()"
            (click)="closeUseModal()">
         <div class="claim-modal" (click)="$event.stopPropagation()">
           <header class="claim-modal__head">
-            <h2>Usar: {{ comodin.type ? typeInfo(comodin.type).name : '' }}</h2>
+            <h2 id="comodin-use-title">Usar: {{ comodin.type ? typeInfo(comodin.type).name : '' }}</h2>
             <button type="button" class="claim-modal__x" (click)="closeUseModal()">×</button>
           </header>
           <p class="form-card__hint">{{ comodin.type ? typeInfo(comodin.type).impact : '' }}</p>
           <p class="form-card__hint" style="margin-top: var(--space-xs);">
-            ⚠ Una vez ejercido, no se puede revertir. El comodín queda
+            <span aria-hidden="true">⚠ </span>Una vez ejercido, no se puede revertir. El comodín queda
             <strong>ACTIVATED</strong> y modifica tu pick correspondiente.
           </p>
 
@@ -730,10 +740,13 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
     @if (claiming()) {
       @let pending = claiming()!;
       <div class="claim-overlay" role="dialog" aria-modal="true"
+           aria-labelledby="comodin-claim-title"
+           cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
+           (keydown.escape)="closeClaimModal()"
            (click)="closeClaimModal()">
         <div class="claim-modal" (click)="$event.stopPropagation()">
           <header class="claim-modal__head">
-            <h2>Elegir tipo de comodín</h2>
+            <h2 id="comodin-claim-title">Elegir tipo de comodín</h2>
             <button type="button" class="claim-modal__x" (click)="closeClaimModal()">×</button>
           </header>
           <p class="form-card__hint">

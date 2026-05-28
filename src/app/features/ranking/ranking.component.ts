@@ -93,7 +93,7 @@ const SNAPSHOT_KEY = (userId: string, scope: Scope) => `polla-rank-snapshot-${sc
             @let md = myDelta();
             @if (md !== null && md !== 0) {
               <div class="delta">
-                {{ md > 0 ? '▲ subiste ' + md : '▼ bajaste ' + (-md) }}
+                <span aria-hidden="true">{{ md > 0 ? '▲ ' : '▼ ' }}</span>{{ md > 0 ? 'subiste ' + md : 'bajaste ' + (-md) }}
                 {{ Math.abs(md) === 1 ? 'puesto' : 'puestos' }}
               </div>
             } @else {
@@ -113,7 +113,7 @@ const SNAPSHOT_KEY = (userId: string, scope: Scope) => `polla-rank-snapshot-${sc
               @let mdh = myDelta();
               @if (mdh !== null && mdh !== 0) {
                 <div class="rank-hero__delta">
-                  {{ mdh > 0 ? '▲ subiste ' + mdh : '▼ bajaste ' + (-mdh) }}
+                  <span aria-hidden="true">{{ mdh > 0 ? '▲ ' : '▼ ' }}</span>{{ mdh > 0 ? 'subiste ' + mdh : 'bajaste ' + (-mdh) }}
                   {{ Math.abs(mdh) === 1 ? 'puesto' : 'puestos' }} esta semana
                 </div>
               }
@@ -139,11 +139,13 @@ const SNAPSHOT_KEY = (userId: string, scope: Scope) => `polla-rank-snapshot-${sc
 
       <!-- Filtros: Global / Mis grupos -->
       <div class="rank-filters">
-        <div class="seg" role="tablist">
-          <button type="button" class="seg__item"
+        <div class="seg" role="tablist" aria-label="Alcance del ranking">
+          <button type="button" class="seg__item" role="tab"
+                  [attr.aria-selected]="scope() === 'global'"
                   [class.is-active]="scope() === 'global'"
                   (click)="setScope('global')">Global</button>
-          <button type="button" class="seg__item"
+          <button type="button" class="seg__item" role="tab"
+                  [attr.aria-selected]="scope() === 'mis-grupos'"
                   [class.is-active]="scope() === 'mis-grupos'"
                   (click)="setScope('mis-grupos')">Mis grupos</button>
         </div>
@@ -172,31 +174,31 @@ const SNAPSHOT_KEY = (userId: string, scope: Scope) => `polla-rank-snapshot-${sc
 
         <!-- Podio top 3 -->
         @if (top3().length >= 3) {
-          <section class="rank-podium-section">
-            <h2 class="rank-podium-section__kicker">🏆 Top 3</h2>
+          <section class="rank-podium-section rank-only-mobile">
+            <h2 class="rank-podium-section__kicker"><span aria-hidden="true">🏆 </span>Top 3</h2>
             <div class="rank-podium">
               @let p2 = top3()[1];
               @let p1 = top3()[0];
               @let p3 = top3()[2];
               <!-- Plata -->
-              <div class="rank-podium__card rank-podium__card--silver">
-                <span class="medal">🥈</span>
+              <div class="rank-podium__card rank-podium__card--silver" aria-label="2.º puesto">
+                <span class="medal" aria-hidden="true">🥈</span>
                 <span class="avatar">{{ initial(p2.handle) }}</span>
                 <div class="handle">{{ '@' + p2.handle }}</div>
                 <div class="group">{{ p2.groupsLabel ?? '' }}</div>
                 <div class="pts">{{ p2.points }} pts</div>
               </div>
               <!-- Oro -->
-              <div class="rank-podium__card rank-podium__card--gold">
-                <span class="medal">🥇</span>
+              <div class="rank-podium__card rank-podium__card--gold" aria-label="1.er puesto">
+                <span class="medal" aria-hidden="true">🥇</span>
                 <span class="avatar">{{ initial(p1.handle) }}</span>
                 <div class="handle">{{ '@' + p1.handle }}</div>
                 <div class="group">{{ p1.groupsLabel ?? '' }}</div>
                 <div class="pts">{{ p1.points }} pts</div>
               </div>
               <!-- Bronce -->
-              <div class="rank-podium__card rank-podium__card--bronze">
-                <span class="medal">🥉</span>
+              <div class="rank-podium__card rank-podium__card--bronze" aria-label="3.er puesto">
+                <span class="medal" aria-hidden="true">🥉</span>
                 <span class="avatar">{{ initial(p3.handle) }}</span>
                 <div class="handle">{{ '@' + p3.handle }}</div>
                 <div class="group">{{ p3.groupsLabel ?? '' }}</div>
@@ -226,8 +228,9 @@ const SNAPSHOT_KEY = (userId: string, scope: Scope) => `polla-rank-snapshot-${sc
                       @if (r.deltaPosition !== null && r.deltaPosition !== 0) {
                         <span class="rank-row__delta"
                               [class.rank-row__delta--up]="r.deltaPosition > 0"
-                              [class.rank-row__delta--down]="r.deltaPosition < 0">
-                          {{ r.deltaPosition > 0 ? '▲' + r.deltaPosition : '▼' + (-r.deltaPosition) }}
+                              [class.rank-row__delta--down]="r.deltaPosition < 0"
+                              [attr.aria-label]="(r.deltaPosition > 0 ? 'Subió ' : 'Bajó ') + Math.abs(r.deltaPosition) + ' puestos'">
+                          <span aria-hidden="true">{{ r.deltaPosition > 0 ? '▲' + r.deltaPosition : '▼' + (-r.deltaPosition) }}</span>
                         </span>
                       }
                     </div>
@@ -267,8 +270,9 @@ const SNAPSHOT_KEY = (userId: string, scope: Scope) => `polla-rank-snapshot-${sc
                     @if (r.deltaPosition !== null && r.deltaPosition !== 0) {
                       <span class="rank-row__delta"
                             [class.rank-row__delta--up]="r.deltaPosition > 0"
-                            [class.rank-row__delta--down]="r.deltaPosition < 0">
-                        {{ r.deltaPosition > 0 ? '▲' + r.deltaPosition : '▼' + (-r.deltaPosition) }}
+                            [class.rank-row__delta--down]="r.deltaPosition < 0"
+                            [attr.aria-label]="(r.deltaPosition > 0 ? 'Subió ' : 'Bajó ') + Math.abs(r.deltaPosition) + ' puestos'">
+                        <span aria-hidden="true">{{ r.deltaPosition > 0 ? '▲' + r.deltaPosition : '▼' + (-r.deltaPosition) }}</span>
                       </span>
                     }
                   </div>

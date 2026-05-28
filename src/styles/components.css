@@ -418,13 +418,27 @@
   color: var(--color-primary-green);
   margin-bottom: var(--space-md);
 }
-.site-footer__col a {
+.site-footer__col a,
+.site-footer__col .site-footer__logout {
   display: block;
   padding: 6px 0;
   color: var(--color-on-dark-muted);
   font-size: var(--fs-sm);
 }
-.site-footer__col a:hover { color: var(--color-primary-green); }
+.site-footer__col .site-footer__logout {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  padding-inline: 0;
+}
+.site-footer__col a:hover,
+.site-footer__col .site-footer__logout:hover { color: var(--color-primary-green); }
+.site-footer__col .site-footer__logout:focus-visible {
+  outline: 2px solid var(--color-primary-green);
+  outline-offset: 2px;
+}
 
 .site-footer__socials {
   display: flex;

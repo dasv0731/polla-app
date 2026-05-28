@@ -41,9 +41,10 @@ interface TeamItem {
       </div>
 
       @if (availableModes().length > 1) {
-        <div class="wf-seg" role="tablist" style="max-width: 320px; margin-top: var(--space-md);">
+        <div class="wf-seg" role="tablist" aria-label="Modo de predicción" style="max-width: 320px; margin-top: var(--space-md);">
           @for (m of availableModes(); track m) {
-            <button type="button" class="wf-seg__item"
+            <button type="button" class="wf-seg__item" role="tab"
+                    [attr.aria-selected]="mode() === m"
                     [class.is-active]="mode() === m"
                     (click)="switchMode(m)">
               {{ m === 'COMPLETE' ? 'Modo completo' : 'Modo simple' }}

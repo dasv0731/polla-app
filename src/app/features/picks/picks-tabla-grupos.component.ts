@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { A11yModule } from '@angular/cdk/a11y';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -75,7 +76,7 @@ interface Totals {
 @Component({
   standalone: true,
   selector: 'app-picks-tabla-grupos',
-  imports: [RouterLink, RouterLinkActive, TeamFlagComponent, GroupStagePicksComponent],
+  imports: [RouterLink, RouterLinkActive, TeamFlagComponent, GroupStagePicksComponent, A11yModule],
   template: `
     <section class="page">
 
@@ -119,11 +120,13 @@ interface Totals {
         <div class="picks-tabla-intro__text">
           {{ groups().length }} grupos · clasifican los <b>2 primeros</b> de cada grupo a octavos.
         </div>
-        <div class="seg" style="min-width:240px;">
+        <div class="seg" style="min-width:240px;" role="group" aria-label="Vista de la tabla">
           <button type="button" class="seg__item"
+                  [attr.aria-pressed]="view() === 'real'"
                   [class.is-active]="view() === 'real'"
                   (click)="view.set('real')">Tabla real</button>
           <button type="button" class="seg__item"
+                  [attr.aria-pressed]="view() === 'pred'"
                   [class.is-active]="view() === 'pred'"
                   (click)="view.set('pred')">Mi predicción</button>
         </div>
@@ -136,13 +139,6 @@ interface Totals {
       } @else if (loading()) {
         <p class="loading-msg">Cargando tabla…</p>
       } @else {
-        @if (view() === 'pred') {
-          <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
-            <a class="btn-wf btn-wf--sm" routerLink="/picks/group-stage/predict">
-              ✏ Editar mi predicción →
-            </a>
-          </div>
-        }
         <div class="standings-grid">
           @for (g of groups(); track g.letter) {
             <div class="standings-card">
@@ -214,7 +210,7 @@ interface Totals {
                 <button type="button" class="btn-wf btn-wf--block btn-wf--sm"
                         style="justify-content:center;"
                         (click)="openGroupModal(g.letter)">
-                  ⚽ Hacer picks del Grupo {{ g.letter }} · {{ g.matches.length }} partidos →
+                  <span aria-hidden="true">⚽ </span>Hacer picks del Grupo {{ g.letter }} · {{ g.matches.length }} partidos <span aria-hidden="true">→</span>
                 </button>
               </div>
             </div>
@@ -240,19 +236,22 @@ interface Totals {
     @if (openGroup(); as gLetter) {
       @let modalGroup = groupByLetter(gLetter);
       @if (modalGroup) {
-        <div class="picks-modal is-open" role="dialog" aria-modal="true">
-          <button type="button" class="picks-modal__close-overlay"
-                  (click)="closeModal()" aria-label="Cerrar"></button>
+        <div class="picks-modal is-open" role="dialog" aria-modal="true"
+             aria-labelledby="picks-group-modal-title"
+             cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
+             (keydown.escape)="closeModal()">
+          <div class="picks-modal__close-overlay" role="presentation"
+               (click)="closeModal()"></div>
           <div class="picks-modal__card">
             <header class="picks-modal__head">
               <div>
-                <div class="title">Hacer picks · Grupo {{ modalGroup.letter }}</div>
+                <div class="title" id="picks-group-modal-title">Hacer picks · Grupo {{ modalGroup.letter }}</div>
                 <div class="meta">
                   {{ modalGroup.played }} / {{ modalGroup.matches.length }} jugados
                   @if (modalGroup.myPoints > 0) { · +{{ modalGroup.myPoints }} pts }
                 </div>
               </div>
-              <button type="button" class="close" (click)="closeModal()" aria-label="Cerrar">✕</button>
+              <button type="button" class="close" (click)="closeModal()" aria-label="Cerrar"><span aria-hidden="true">✕</span></button>
             </header>
 
             <div class="picks-modal__body">
@@ -273,9 +272,9 @@ interface Totals {
                       <span>{{ formatKickoff(m.kickoffAt) }}</span>
                       @if (isPlayed) {
                         @if (pick?.exactScore) {
-                          <span class="pill pill--green">✓ Exacto · +{{ pick?.pointsEarned ?? 0 }}</span>
+                          <span class="pill pill--green"><span aria-hidden="true">✓ </span>Exacto · +{{ pick?.pointsEarned ?? 0 }}</span>
                         } @else if (pick?.correctResult) {
-                          <span class="pill pill--green">✓ Resultado · +{{ pick?.pointsEarned ?? 0 }}</span>
+                          <span class="pill pill--green"><span aria-hidden="true">✓ </span>Resultado · +{{ pick?.pointsEarned ?? 0 }}</span>
                         } @else if (pick) {
                           <span class="pill">Sin pts</span>
                         } @else {
@@ -302,6 +301,7 @@ interface Totals {
                         @if (isUpcoming) {
                           <input type="text" inputmode="numeric" maxlength="1"
                                  class="score__input"
+                                 autocomplete="off" spellcheck="false"
                                  [value]="bannerScore(m.id, 'home')"
                                  placeholder="0"
                                  (input)="onScoreInput(m.id, 'home', $event)"
@@ -309,6 +309,7 @@ interface Totals {
                           <span>—</span>
                           <input type="text" inputmode="numeric" maxlength="1"
                                  class="score__input"
+                                 autocomplete="off" spellcheck="false"
                                  [value]="bannerScore(m.id, 'away')"
                                  placeholder="0"
                                  (input)="onScoreInput(m.id, 'away', $event)"
@@ -336,9 +337,9 @@ interface Totals {
                     @if (isUpcoming && hasAnyPick) {
                       <div class="match-card__pills">
                         @if (pickPending) {
-                          <span class="pill" style="background:rgba(212,165,0,0.15);color:#7a5d00;border-color:rgba(212,165,0,0.3);">● Pendiente</span>
+                          <span class="pill" style="background:rgba(212,165,0,0.15);color:#7a5d00;border-color:rgba(212,165,0,0.3);"><span aria-hidden="true">● </span>Pendiente</span>
                         } @else {
-                          <span class="pill pill--green">✓ Guardado</span>
+                          <span class="pill pill--green"><span aria-hidden="true">✓ </span>Guardado</span>
                         }
                       </div>
                     } @else if (isLive && pick) {

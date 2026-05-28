@@ -1,5 +1,6 @@
 import type { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
+import { dirtyFormGuard } from './shared/util/dirty-form.guard';
 import { ShellComponent } from './shared/layout/shell.component';
 
 export const routes: Routes = [
@@ -43,10 +44,6 @@ export const routes: Routes = [
         loadComponent: () => import('./features/picks/picks-list.component').then((m) => m.PicksListComponent),
       },
       {
-        path: 'picks/by-group',
-        loadComponent: () => import('./features/picks/picks-grupo.component').then((m) => m.PicksGrupoComponent),
-      },
-      {
         path: 'picks/group-stage',
         loadComponent: () => import('./features/picks/picks-tabla-grupos.component').then((m) => m.PicksTablaGruposComponent),
       },
@@ -61,10 +58,6 @@ export const routes: Routes = [
       {
         path: 'picks/match/:id',
         loadComponent: () => import('./features/picks/pick-detail.component').then((m) => m.PickDetailComponent),
-      },
-      {
-        path: 'picks/trivia/:matchId',
-        loadComponent: () => import('./features/picks/trivia.component').then((m) => m.TriviaComponent),
       },
       {
         path: 'groups',
@@ -84,6 +77,7 @@ export const routes: Routes = [
       },
       {
         path: 'groups/:id/edit',
+        canDeactivate: [dirtyFormGuard],
         loadComponent: () => import('./features/groups/group-edit.component').then((m) => m.GroupEditComponent),
       },
       {

@@ -23,7 +23,7 @@ const TOURNAMENT_ID = 'mundial-2026';
   template: `
     <aside class="lsb" aria-label="Navegación principal">
       <a class="lsb__logo" routerLink="/home" aria-label="Inicio">
-        <img src="assets/logo-golgana.png" alt="">
+        <img src="assets/logo-golgana.png" alt="" width="199" height="98">
         <strong>POLLA</strong>
       </a>
 
@@ -54,7 +54,7 @@ const TOURNAMENT_ID = 'mundial-2026';
         </a>
         <a routerLink="/profile" class="lsb__usr">
           <div class="lsb__av">{{ avatarInitials() }}</div>
-          <span class="lsb__t">{{ '@' + (handle() ?? 'jugador') }}</span>
+          <span class="lsb__t" translate="no">{{ '@' + (handle() ?? 'jugador') }}</span>
         </a>
       </div>
     </aside>
@@ -106,7 +106,7 @@ const TOURNAMENT_ID = 'mundial-2026';
       justify-content: center;
       border-radius: 8px;
       font-size: 18px;
-      transition: all 0.15s;
+      transition: width 0.15s ease, background 0.15s ease, color 0.15s ease, padding 0.15s ease;
       flex-shrink: 0;
       white-space: nowrap;
     }
@@ -118,6 +118,14 @@ const TOURNAMENT_ID = 'mundial-2026';
     .lsb:hover .lsb__t { display: inline; }
     .lsb a:hover, .lsb a.active {
       background: rgba(2,204,116,0.18);
+      color: #fff;
+    }
+    .lsb a:focus-visible {
+      /* La sidebar tiene overflow:hidden cuando está colapsada —
+       * outline se recorta. Box-shadow inset queda dentro del elemento
+       * y siempre visible. */
+      outline: none;
+      box-shadow: inset 0 0 0 2px var(--color-primary-green);
       color: #fff;
     }
 

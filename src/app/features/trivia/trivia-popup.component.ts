@@ -1,4 +1,5 @@
 import { Component, OnDestroy, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
+import { A11yModule } from '@angular/cdk/a11y';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService } from '../../core/user/user-modes.service';
@@ -56,6 +57,7 @@ interface ActiveQuestion {
 @Component({
   standalone: true,
   selector: 'app-trivia-popup',
+  imports: [A11yModule],
   template: `
     @if (showFab()) {
       <button type="button" class="trivia-fab"
@@ -73,9 +75,12 @@ interface ActiveQuestion {
       <div class="trivia-modal is-open"
            [class.trivia-modal--marca]="q.sponsor !== null"
            [class.trivia-modal--sinad]="q.sponsor === null"
-           role="dialog" aria-modal="true">
-        <button type="button" class="trivia-modal__close-overlay"
-                aria-label="Cerrar" (click)="closeModal()"></button>
+           role="dialog" aria-modal="true"
+           aria-labelledby="trivia-modal-title"
+           cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
+           (keydown.escape)="closeModal()">
+        <div class="trivia-modal__close-overlay" role="presentation"
+             (click)="closeModal()"></div>
         <div class="trivia-modal__card">
 
           @if (q.sponsor; as s) {
@@ -84,7 +89,7 @@ interface ActiveQuestion {
                 <div class="trivia-sponsor__logo">{{ s.icon }}</div>
                 <div>
                   <div class="trivia-sponsor__kicker">PRESENTADA POR</div>
-                  <div class="trivia-sponsor__name">{{ s.name }}</div>
+                  <div class="trivia-sponsor__name" translate="no">{{ s.name }}</div>
                 </div>
               </div>
               <span class="trivia-sponsor__ad">PUBLICIDAD</span>
@@ -95,15 +100,16 @@ interface ActiveQuestion {
             <div class="trivia-head__left">
               <span class="trivia-head__icon">⚡</span>
               <div>
-                <div class="trivia-head__title">TRIVIA · {{ q.homeTeam }} vs {{ q.awayTeam }}</div>
+                <div class="trivia-head__title" id="trivia-modal-title">TRIVIA · {{ q.homeTeam }} vs {{ q.awayTeam }}</div>
                 <div class="trivia-head__sub">+10 pts si aciertas</div>
               </div>
             </div>
             <div class="trivia-head__right">
               @if (!revealed() && secondsLeft() > 0) {
-                <span class="trivia-timer"
-                      [class.trivia-timer--low]="secondsLeft() <= 15">
-                  ⏱ {{ formatTimer(secondsLeft()) }}
+                <span class="trivia-timer" role="timer" aria-live="off"
+                      [class.trivia-timer--low]="secondsLeft() <= 15"
+                      [attr.aria-label]="'Tiempo restante: ' + formatTimer(secondsLeft())">
+                  <span aria-hidden="true">⏱ {{ formatTimer(secondsLeft()) }}</span>
                 </span>
               }
               <button type="button" class="trivia-head__close"
