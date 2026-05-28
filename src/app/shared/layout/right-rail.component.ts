@@ -189,6 +189,11 @@ interface NewsItemVm {
       max-height: calc(100vh - 48px);
       overflow-y: auto;
     }
+    /* Sin esto los hijos heredan flex-shrink:1 y la dark card .np se
+       aplasta a 1px de alto cuando todos los bloques juntos exceden
+       max-height. Con shrink:0 mantienen su alto natural y .side
+       scrollea internamente. */
+    .side > * { flex-shrink: 0; }
     .side::-webkit-scrollbar { width: 4px; }
     .side::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 99px; }
 

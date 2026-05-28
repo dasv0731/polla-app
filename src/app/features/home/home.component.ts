@@ -229,7 +229,8 @@ interface ComodinSlotVm {
 
     .text-mute { color: var(--color-text-muted); font-size: 13px; }
 
-    /* Hero compacto */
+    /* Hero compacto · override min-height del .hero editorial global
+       (components.css:573 aplica min-height: 640px en ≥992px) */
     .hero {
       background: linear-gradient(135deg, #0a0a0a 0%, #0a3d20 60%, #067a4a 100%);
       color: #fff;
@@ -237,6 +238,9 @@ interface ComodinSlotVm {
       padding: 22px 26px;
       position: relative;
       overflow: hidden;
+      min-height: 0;
+      display: block;
+      align-items: initial;
     }
     .hero::before {
       content: ""; position: absolute; inset: 0; z-index: 0;
