@@ -30,7 +30,6 @@
   --font-display:   "Bebas Neue", system-ui, sans-serif;   /* hero, H1/H2 grandes */
   --font-primary:   "Inter", "Montserrat", system-ui, sans-serif;   /* body, nav, H3, CTA — Inter prioritario, Montserrat fallback */
   --font-secondary: Arial, sans-serif;
-  --font-icons:     "Material Symbols Outlined";
 
   /* Escala tipográfica */
   --fs-xs:   12px;
