@@ -66,6 +66,7 @@ export const routes: Routes = [
       },
       {
         path: 'groups/:id/invite',
+        canDeactivate: [dirtyFormGuard],
         loadComponent: () => import('./features/groups/group-invite-email.component').then((m) => m.GroupInviteEmailComponent),
       },
       {

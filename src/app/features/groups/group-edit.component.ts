@@ -113,13 +113,13 @@ interface GroupEdit {
                   <button type="button" class="btn btn--ghost btn--sm btn--danger"
                           [disabled]="uploading()"
                           (click)="removeImage()">
-                    <app-icon name="trash" size="sm" decorative />
+                    <app-icon name="trash" size="sm" [decorative]="true" />
                     Eliminar imagen
                   </button>
                 </div>
               } @else {
                 <div class="image-dropzone__empty">
-                  <app-icon name="plus" size="lg" decorative />
+                  <app-icon name="plus" size="lg" [decorative]="true" />
                   <p class="image-dropzone__hint">
                     Arrastra una imagen aquí, o
                     <label for="edit-image" class="image-dropzone__cta">elegila desde tu dispositivo</label>.
@@ -153,13 +153,13 @@ interface GroupEdit {
                 @if (group()!.comodinesEnabled !== false) {
                   <span class="pill pill--accent"
                         style="display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 10px;border-radius:999px;background:rgba(0,200,100,0.15);color:var(--color-primary-green);border:1px solid rgba(0,200,100,0.4);">
-                    <app-icon name="dice" size="sm" decorative />
+                    <app-icon name="dice" size="sm" [decorative]="true" />
                     Activados
                   </span>
                 } @else {
                   <span class="pill pill--mute"
                         style="display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 10px;border-radius:999px;background:rgba(160,160,160,0.12);color:var(--wf-ink-2);border:1px solid rgba(160,160,160,0.35);">
-                    <app-icon name="dice" size="sm" decorative />
+                    <app-icon name="dice" size="sm" [decorative]="true" />
                     Desactivados
                   </span>
                 }

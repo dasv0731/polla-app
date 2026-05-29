@@ -101,13 +101,13 @@ interface RankRow {
                     @if (g.comodinesEnabled !== false) {
                       <span class="pill pill--accent"
                             style="display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;border-radius:999px;background:rgba(0,200,100,0.18);color:#fff;border:1px solid rgba(255,255,255,0.35);">
-                        <app-icon name="dice" size="sm" decorative />
+                        <app-icon name="dice" size="sm" [decorative]="true" />
                         Comodines activos
                       </span>
                     } @else {
                       <span class="pill pill--mute"
                             style="display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,0.12);color:#fff;border:1px solid rgba(255,255,255,0.25);">
-                        <app-icon name="dice" size="sm" decorative />
+                        <app-icon name="dice" size="sm" [decorative]="true" />
                         Sin comodines
                       </span>
                     }
@@ -139,21 +139,21 @@ interface RankRow {
             <div class="group-invitar__actions">
               <button class="btn-wf btn-wf--sm" type="button" (click)="copyLink()">
                 @if (copied()) {
-                  <app-icon name="check" size="sm" decorative />
+                  <app-icon name="check" size="sm" [decorative]="true" />
                   Copiado
                 } @else {
-                  <app-icon name="clipboard" size="sm" decorative />
+                  <app-icon name="clipboard" size="sm" [decorative]="true" />
                   Copiar link
                 }
               </button>
               <button class="btn-wf btn-wf--sm" type="button" (click)="shareGroup()">
-                <app-icon name="arrow-right" size="sm" decorative />
+                <app-icon name="arrow-right" size="sm" [decorative]="true" />
                 Compartir / QR
               </button>
               @if (isAdminOfGroup()) {
                 <a class="btn-wf btn-wf--sm btn-wf--primary"
                    [routerLink]="['/groups', g.id, 'invite']">
-                  <app-icon name="mail" size="sm" decorative />
+                  <app-icon name="mail" size="sm" [decorative]="true" />
                   Invitar por email
                 </a>
               }
@@ -164,7 +164,7 @@ interface RankRow {
             <header class="group-premios__head">
               <div class="left">
                 <span class="group-premios__icon" aria-hidden="true">
-                  <app-icon name="trophy" size="lg" decorative />
+                  <app-icon name="trophy" size="lg" [decorative]="true" />
                 </span>
                 <div>
                   <div class="kicker" style="color:#7a5d00;">EN JUEGO</div>
@@ -316,7 +316,7 @@ interface RankRow {
                             @if (removingUserId() === r.userId) {
                               <span aria-hidden="true">…</span>
                             } @else {
-                              <app-icon name="trash" size="sm" decorative />
+                              <app-icon name="trash" size="sm" [decorative]="true" />
                             }
                           </button>
                         }
@@ -346,22 +346,22 @@ interface RankRow {
             <h2 class="group-section__title" style="margin-bottom:10px;">Acciones de admin</h2>
             <div class="group-admin-actions">
               <a class="btn-wf btn-wf--block" [routerLink]="['/groups', g.id, 'edit']">
-                <app-icon name="pencil" size="sm" decorative />
+                <app-icon name="pencil" size="sm" [decorative]="true" />
                 Editar grupo (nombre · descripción · imagen)
               </a>
               <button class="btn-wf btn-wf--block" type="button"
                       [disabled]="rows().length <= 1"
                       (click)="openTransferAdmin()">
-                <app-icon name="crown" size="sm" decorative />
+                <app-icon name="crown" size="sm" [decorative]="true" />
                 Transferir admin
               </button>
               <button class="btn-wf btn-wf--block" type="button"
                       (click)="shareGroup()">
-                <app-icon name="clipboard" size="sm" decorative />
+                <app-icon name="clipboard" size="sm" [decorative]="true" />
                 Compartir grupo (link / QR)
               </button>
               <button class="btn-wf btn-wf--block btn-wf--danger" type="button" (click)="del()">
-                <app-icon name="trash" size="sm" decorative />
+                <app-icon name="trash" size="sm" [decorative]="true" />
                 Eliminar grupo
               </button>
             </div>
@@ -372,7 +372,7 @@ interface RankRow {
             <h2 class="group-section__title" style="margin-bottom:10px;">Tu membresía</h2>
             <div class="group-admin-actions">
               <button class="btn-wf btn-wf--block" type="button" (click)="shareGroup()">
-                <app-icon name="clipboard" size="sm" decorative />
+                <app-icon name="clipboard" size="sm" [decorative]="true" />
                 Compartir grupo (link / QR)
               </button>
               <!-- TODO(A6): "Silenciar notif del grupo" — requiere endpoint
@@ -380,12 +380,12 @@ interface RankRow {
                    tabla MembershipPrefs (no existe). Wireado UI-only por ahora. -->
               <button class="btn-wf btn-wf--block" type="button" disabled
                       title="Próximamente · A6 backend">
-                <app-icon name="bell" size="sm" decorative />
+                <app-icon name="bell" size="sm" [decorative]="true" />
                 Silenciar notif del grupo
               </button>
               <button class="btn-wf btn-wf--block btn-wf--danger" type="button"
                       (click)="leave()">
-                <app-icon name="logout" size="sm" decorative />
+                <app-icon name="logout" size="sm" [decorative]="true" />
                 Abandonar grupo
               </button>
               <p class="text-mute" style="font-size:11px;line-height:1.4;margin:6px 0 0;">
@@ -426,10 +426,10 @@ interface RankRow {
               <button type="button" class="btn-wf btn-wf--sm btn-wf--primary"
                       (click)="copyLink()">
                 @if (copied()) {
-                  <app-icon name="check" size="sm" decorative />
+                  <app-icon name="check" size="sm" [decorative]="true" />
                   Copiado
                 } @else {
-                  <app-icon name="clipboard" size="sm" decorative />
+                  <app-icon name="clipboard" size="sm" [decorative]="true" />
                   Copiar link
                 }
               </button>

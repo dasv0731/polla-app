@@ -96,7 +96,7 @@ interface GroupRow {
           <div class="groups-list__controls">
             @if (showSearch()) {
               <label class="groups-list__search">
-                <app-icon name="search" size="sm" decorative />
+                <app-icon name="search" size="sm" [decorative]="true" />
                 <input
                   type="search"
                   placeholder="Buscar grupo…"
