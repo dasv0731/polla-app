@@ -1,8 +1,13 @@
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { GroupActionsService } from '../../core/groups/group-actions.service';
 import { compareRankable } from '../../shared/util/tiebreakers';
+import { EmptyBlockComponent } from '../../shared/ui/empty-block/empty-block.component';
+import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
+import { IconComponent } from '../../shared/ui/icon/icon.component';
+import { Router } from '@angular/router';
 
 const TOURNAMENT_ID = 'mundial-2026';
 
@@ -18,15 +23,17 @@ interface RankRow {
    * Delta de posición vs el snapshot anterior (positivo = subió, negativo = bajó).
    * null si no hay snapshot previo / aún no se ejecutó el job semanal.
    *
-   * BACKEND TODO (ver comentario `RANK_SNAPSHOT_DESIGN` abajo).
+   * BACKEND TODO(A6) — ver comentario `RANK_SNAPSHOT_DESIGN` abajo.
    */
   deltaPosition: number | null;
 }
 
 type Scope = 'global' | 'mis-grupos';
+type SortField = 'rank' | 'totalPoints' | 'exactos' | 'aciertos' | 'delta';
+type SortDir = 'asc' | 'desc';
 
 /**
- * RANK_SNAPSHOT_DESIGN — pendiente de implementar en el backend.
+ * RANK_SNAPSHOT_DESIGN — TODO(A6) pendiente de implementar en el backend.
  *
  * Para mostrar deltas (▲/▼ N) reales en el ranking necesitamos guardar
  * snapshots periódicos de la posición de cada usuario.
@@ -70,10 +77,13 @@ type Scope = 'global' | 'mis-grupos';
  */
 const SNAPSHOT_KEY = (userId: string, scope: Scope) => `polla-rank-snapshot-${scope}-${userId}`;
 
+/** Intl.RelativeTimeFormat shared instance for "updated X ago" labels. */
+const RELATIVE_FMT = new Intl.RelativeTimeFormat('es-EC', { numeric: 'auto' });
+
 @Component({
   standalone: true,
   selector: 'app-ranking',
-  imports: [RouterLink],
+  imports: [EmptyBlockComponent, SkeletonComponent, IconComponent],
   template: `
     <section class="page">
 
@@ -83,17 +93,17 @@ const SNAPSHOT_KEY = (userId: string, scope: Scope) => `polla-rank-snapshot-${sc
           <div class="kicker">MUNDIAL 2026 · {{ scopeLabelHeader() }}</div>
           <h1 class="page__title">Ranking</h1>
           <p class="text-sm text-mute" style="margin:4px 0 0;">
-            {{ totalPlayers() }} jugadores · actualizado {{ updatedAgo() }}
+            {{ totalPlayers() }} jugadores · actualizado {{ updatedAgoLabel() }}
           </p>
         </div>
         @if (myRank() !== null) {
-          <div class="rank-pos-badge">
+          <div class="rank-pos-badge rank-only-desk">
             <div class="kicker">TU POSICIÓN</div>
             <div class="num">#{{ myRank() }}</div>
             @let md = myDelta();
             @if (md !== null && md !== 0) {
               <div class="delta">
-                {{ md > 0 ? '▲ subiste ' + md : '▼ bajaste ' + (-md) }}
+                <span aria-hidden="true">{{ md > 0 ? '▲ ' : '▼ ' }}</span>{{ md > 0 ? 'subiste ' + md : 'bajaste ' + (-md) }}
                 {{ Math.abs(md) === 1 ? 'puesto' : 'puestos' }}
               </div>
             } @else {
@@ -105,7 +115,7 @@ const SNAPSHOT_KEY = (userId: string, scope: Scope) => `polla-rank-snapshot-${sc
 
       <!-- Hero card (mobile only) -->
       @if (myRank() !== null) {
-        <div class="rank-hero">
+        <div class="rank-hero rank-only-mobile">
           <div class="rank-hero__top">
             <div>
               <div class="rank-hero__kicker">Tu posición {{ scope() === 'global' ? 'global' : 'en tus grupos' }}</div>
@@ -113,7 +123,7 @@ const SNAPSHOT_KEY = (userId: string, scope: Scope) => `polla-rank-snapshot-${sc
               @let mdh = myDelta();
               @if (mdh !== null && mdh !== 0) {
                 <div class="rank-hero__delta">
-                  {{ mdh > 0 ? '▲ subiste ' + mdh : '▼ bajaste ' + (-mdh) }}
+                  <span aria-hidden="true">{{ mdh > 0 ? '▲ ' : '▼ ' }}</span>{{ mdh > 0 ? 'subiste ' + mdh : 'bajaste ' + (-mdh) }}
                   {{ Math.abs(mdh) === 1 ? 'puesto' : 'puestos' }} esta semana
                 </div>
               }
@@ -139,64 +149,70 @@ const SNAPSHOT_KEY = (userId: string, scope: Scope) => `polla-rank-snapshot-${sc
 
       <!-- Filtros: Global / Mis grupos -->
       <div class="rank-filters">
-        <div class="seg" role="tablist">
-          <button type="button" class="seg__item"
+        <div class="seg" role="tablist" aria-label="Alcance del ranking">
+          <button type="button" class="seg__item" role="tab"
+                  [attr.aria-selected]="scope() === 'global'"
                   [class.is-active]="scope() === 'global'"
                   (click)="setScope('global')">Global</button>
-          <button type="button" class="seg__item"
+          <button type="button" class="seg__item" role="tab"
+                  [attr.aria-selected]="scope() === 'mis-grupos'"
                   [class.is-active]="scope() === 'mis-grupos'"
                   (click)="setScope('mis-grupos')">Mis grupos</button>
         </div>
       </div>
 
       @if (loading()) {
-        <p class="loading-msg">Cargando ranking…</p>
+        <app-skeleton variant="list" [count]="10" />
       } @else if (currentList().length === 0) {
-        <div class="empty-block">
-          <h3>
-            @if (scope() === 'mis-grupos') { Sin grupos privados }
-            @else { Aún no hay datos de ranking }
-          </h3>
-          <p>
-            @if (scope() === 'mis-grupos') {
-              Únete a un grupo o crea uno para ver tu ranking interno.
-            } @else {
-              El ranking se actualiza cuando se publican los resultados de los partidos.
-            }
-          </p>
-          @if (scope() === 'mis-grupos') {
-            <a class="btn-wf btn-wf--primary" routerLink="/groups/new">Crear un grupo →</a>
-          }
-        </div>
+        @if (scope() === 'mis-grupos') {
+          <app-empty-block iconName="users"
+                           title="Sin grupos privados"
+                           sub="Únete a un grupo o crea uno para ver tu ranking interno.">
+            <button type="button" class="btn-wf btn-wf--primary"
+                    (click)="groupActions.openCreate()">Crear un grupo</button>
+            <button type="button" class="btn-wf btn-wf--ghost"
+                    (click)="groupActions.openJoin()">Unirme con código</button>
+          </app-empty-block>
+        } @else {
+          <app-empty-block iconName="trophy"
+                           title="Aún no hay datos de ranking"
+                           sub="El ranking se actualiza cuando se publican los resultados de los partidos. Asegurate de tener tus picks listos.">
+            <button type="button" class="btn-wf btn-wf--primary"
+                    (click)="goToPicks()">Hacé tus picks</button>
+            <button type="button" class="btn-wf btn-wf--ghost"
+                    (click)="groupActions.openJoin()">Unirme con código</button>
+          </app-empty-block>
+        }
       } @else {
 
-        <!-- Podio top 3 -->
+        <!-- Podio top 3 (mobile only) — fuente primaria del top en mobile;
+             el header badge "TU POSICIÓN" cumple ese rol en desktop. -->
         @if (top3().length >= 3) {
-          <section class="rank-podium-section">
-            <h2 class="rank-podium-section__kicker">🏆 Top 3</h2>
+          <section class="rank-podium-section rank-only-mobile">
+            <h2 class="rank-podium-section__kicker">Top 3</h2>
             <div class="rank-podium">
               @let p2 = top3()[1];
               @let p1 = top3()[0];
               @let p3 = top3()[2];
               <!-- Plata -->
-              <div class="rank-podium__card rank-podium__card--silver">
-                <span class="medal">🥈</span>
+              <div class="rank-podium__card rank-podium__card--silver" aria-label="2.º puesto">
+                <span class="medal" aria-hidden="true">2º</span>
                 <span class="avatar">{{ initial(p2.handle) }}</span>
                 <div class="handle">{{ '@' + p2.handle }}</div>
                 <div class="group">{{ p2.groupsLabel ?? '' }}</div>
                 <div class="pts">{{ p2.points }} pts</div>
               </div>
               <!-- Oro -->
-              <div class="rank-podium__card rank-podium__card--gold">
-                <span class="medal">🥇</span>
+              <div class="rank-podium__card rank-podium__card--gold" aria-label="1.er puesto">
+                <span class="medal" aria-hidden="true">1º</span>
                 <span class="avatar">{{ initial(p1.handle) }}</span>
                 <div class="handle">{{ '@' + p1.handle }}</div>
                 <div class="group">{{ p1.groupsLabel ?? '' }}</div>
                 <div class="pts">{{ p1.points }} pts</div>
               </div>
               <!-- Bronce -->
-              <div class="rank-podium__card rank-podium__card--bronze">
-                <span class="medal">🥉</span>
+              <div class="rank-podium__card rank-podium__card--bronze" aria-label="3.er puesto">
+                <span class="medal" aria-hidden="true">3º</span>
                 <span class="avatar">{{ initial(p3.handle) }}</span>
                 <div class="handle">{{ '@' + p3.handle }}</div>
                 <div class="group">{{ p3.groupsLabel ?? '' }}</div>
@@ -206,44 +222,8 @@ const SNAPSHOT_KEY = (userId: string, scope: Scope) => `polla-rank-snapshot-${sc
           </section>
         }
 
-        <!-- ============== MOBILE: secciones separadas ============== -->
-
-        @if (nearMeRows().length > 0 && myRank() !== null) {
-          <section class="rank-section rank-only-mobile">
-            <div class="rank-section__head">
-              <h2 class="rank-section__title">Cerca de ti</h2>
-            </div>
-            <div class="rank-list">
-              @for (r of nearMeRows(); track r.userId) {
-                <div class="rank-row" [class.is-me]="r.userId === currentUserId">
-                  <div class="rank-row__pos">{{ positionOf(r) }}</div>
-                  <div class="rank-row__avatar">{{ initial(r.handle) }}</div>
-                  <div class="rank-row__body">
-                    <div class="rank-row__top">
-                      <span class="rank-row__handle">
-                        {{ '@' + r.handle }}@if (r.userId === currentUserId) { <span class="text-mute"> · tú</span> }
-                      </span>
-                      @if (r.deltaPosition !== null && r.deltaPosition !== 0) {
-                        <span class="rank-row__delta"
-                              [class.rank-row__delta--up]="r.deltaPosition > 0"
-                              [class.rank-row__delta--down]="r.deltaPosition < 0">
-                          {{ r.deltaPosition > 0 ? '▲' + r.deltaPosition : '▼' + (-r.deltaPosition) }}
-                        </span>
-                      }
-                    </div>
-                    @if (r.groupsLabel) {
-                      <div class="rank-row__group">{{ r.groupsLabel }}</div>
-                    }
-                  </div>
-                  <div class="rank-row__pts">
-                    <div class="num">{{ r.points }}</div>
-                    <div class="lbl">pts</div>
-                  </div>
-                </div>
-              }
-            </div>
-          </section>
-        }
+        <!-- ============== MOBILE: solo top general (sin cerca-de-ti duplicado).
+             La hero card arriba ya es la fuente primaria de "tú" en mobile. -->
 
         <section class="rank-section rank-only-mobile">
           <div class="rank-section__head">
@@ -258,7 +238,7 @@ const SNAPSHOT_KEY = (userId: string, scope: Scope) => `polla-rank-snapshot-${sc
               <div class="rank-row" [class.is-me]="r.userId === currentUserId">
                 <div class="rank-row__pos"
                      [class.rank-row__pos--medal]="i < 3">
-                  {{ i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1) }}
+                  {{ i === 0 ? '1º' : i === 1 ? '2º' : i === 2 ? '3º' : (i + 1) }}
                 </div>
                 <div class="rank-row__avatar">{{ initial(r.handle) }}</div>
                 <div class="rank-row__body">
@@ -267,8 +247,9 @@ const SNAPSHOT_KEY = (userId: string, scope: Scope) => `polla-rank-snapshot-${sc
                     @if (r.deltaPosition !== null && r.deltaPosition !== 0) {
                       <span class="rank-row__delta"
                             [class.rank-row__delta--up]="r.deltaPosition > 0"
-                            [class.rank-row__delta--down]="r.deltaPosition < 0">
-                        {{ r.deltaPosition > 0 ? '▲' + r.deltaPosition : '▼' + (-r.deltaPosition) }}
+                            [class.rank-row__delta--down]="r.deltaPosition < 0"
+                            [attr.aria-label]="(r.deltaPosition > 0 ? 'Subió ' : 'Bajó ') + Math.abs(r.deltaPosition) + ' puestos'">
+                        <span aria-hidden="true">{{ r.deltaPosition > 0 ? '▲' + r.deltaPosition : '▼' + (-r.deltaPosition) }}</span>
                       </span>
                     }
                   </div>
@@ -285,67 +266,126 @@ const SNAPSHOT_KEY = (userId: string, scope: Scope) => `polla-rank-snapshot-${sc
           </div>
         </section>
 
-        <!-- ============== DESKTOP: tabla completa ============== -->
+        <!-- ============== DESKTOP: tabla completa con sort por columnas ============== -->
 
         <div class="rank-table-wrap rank-only-desk">
           <table class="rank-table-full">
             <thead>
               <tr>
-                <th>#</th>
+                <th>
+                  <button type="button" class="rank-sort-btn"
+                          [attr.aria-sort]="ariaSortFor('rank')"
+                          (click)="toggleSort('rank')">
+                    # {{ sortIndicator('rank') }}
+                  </button>
+                </th>
                 <th>Jugador</th>
-                <th class="center">Pts</th>
-                <th class="center">Exactos</th>
-                <th class="center">Result.</th>
+                <th class="center">
+                  <button type="button" class="rank-sort-btn"
+                          [attr.aria-sort]="ariaSortFor('totalPoints')"
+                          (click)="toggleSort('totalPoints')">
+                    Pts {{ sortIndicator('totalPoints') }}
+                  </button>
+                </th>
+                <th class="center">
+                  <button type="button" class="rank-sort-btn"
+                          [attr.aria-sort]="ariaSortFor('exactos')"
+                          (click)="toggleSort('exactos')">
+                    Exactos {{ sortIndicator('exactos') }}
+                  </button>
+                </th>
+                <th class="center">
+                  <button type="button" class="rank-sort-btn"
+                          [attr.aria-sort]="ariaSortFor('aciertos')"
+                          (click)="toggleSort('aciertos')">
+                    Result. {{ sortIndicator('aciertos') }}
+                  </button>
+                </th>
               </tr>
             </thead>
             <tbody>
-              <!-- Top 7 -->
-              @for (r of desktopTopRows(); track r.userId; let i = $index) {
-                <tr [class.top3]="i < 3" [class.is-me]="r.userId === currentUserId">
-                  <td>
-                    <div class="rank-table-full__pos-content">
-                      @if (i < 3) {
-                        <span class="medal">{{ i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉' }}</span>
-                      } @else {
-                        <span class="num">{{ i + 1 }}</span>
-                      }
-                      @if (r.deltaPosition !== null && r.deltaPosition !== 0) {
-                        <span class="delta"
-                              [class.delta--up]="r.deltaPosition > 0"
-                              [class.delta--down]="r.deltaPosition < 0">
-                          {{ r.deltaPosition > 0 ? '▲' + r.deltaPosition : '▼' + (-r.deltaPosition) }}
-                        </span>
-                      }
-                    </div>
-                  </td>
-                  <td>
-                    <div class="rank-table-full__player">
-                      <span class="av">{{ initial(r.handle) }}</span>
-                      <div>
-                        <div class="name">
-                          {{ '@' + r.handle }}@if (r.userId === currentUserId) { <span class="you"> · tú</span> }
-                        </div>
-                        @if (r.groupsLabel) {
-                          <div class="group">{{ r.groupsLabel }}</div>
+              <!-- Cuando sort != rank, mostrar lista completa ordenada;
+                   en sort por rank mantener el flujo top + cerca-de-ti. -->
+              @if (sortBy() === 'rank') {
+                <!-- Top 7 -->
+                @for (r of desktopTopRows(); track r.userId; let i = $index) {
+                  <tr [class.top3]="i < 3" [class.is-me]="r.userId === currentUserId">
+                    <td>
+                      <div class="rank-table-full__pos-content">
+                        <span class="num">{{ i < 3 ? (i + 1) + 'º' : (i + 1) }}</span>
+                        @if (r.deltaPosition !== null && r.deltaPosition !== 0) {
+                          <span class="delta"
+                                [class.delta--up]="r.deltaPosition > 0"
+                                [class.delta--down]="r.deltaPosition < 0">
+                            {{ r.deltaPosition > 0 ? '▲' + r.deltaPosition : '▼' + (-r.deltaPosition) }}
+                          </span>
                         }
                       </div>
-                    </div>
-                  </td>
-                  <td class="pts-cell">{{ r.points }}</td>
-                  <td class="num-cell">{{ r.exactCount }}</td>
-                  <td class="num-cell">{{ r.resultCount }}</td>
-                </tr>
-              }
+                    </td>
+                    <td>
+                      <div class="rank-table-full__player">
+                        <span class="av">{{ initial(r.handle) }}</span>
+                        <div>
+                          <div class="name">
+                            {{ '@' + r.handle }}@if (r.userId === currentUserId) { <span class="you"> · tú</span> }
+                          </div>
+                          @if (r.groupsLabel) {
+                            <div class="group">{{ r.groupsLabel }}</div>
+                          }
+                        </div>
+                      </div>
+                    </td>
+                    <td class="pts-cell">{{ r.points }}</td>
+                    <td class="num-cell">{{ r.exactCount }}</td>
+                    <td class="num-cell">{{ r.resultCount }}</td>
+                  </tr>
+                }
 
-              @if (showGapRow()) {
-                <tr class="gap-row">
-                  <td colspan="5">· · · {{ gapCount() }} jugadores más · · ·</td>
-                </tr>
-              }
+                @if (showGapRow()) {
+                  <tr class="gap-row">
+                    <td colspan="5">· · · {{ gapCount() }} jugadores más · · ·</td>
+                  </tr>
+                }
 
-              <!-- Posiciones cercanas a ti (desktop) -->
-              @if (myRank() !== null && !meInTop7()) {
-                @for (r of desktopNearMeRows(); track r.userId) {
+                <!-- Posiciones cercanas a ti (desktop) — solo aparecen en sort=rank
+                     porque dependen del orden por puesto. -->
+                @if (myRank() !== null && !meInTop7()) {
+                  @for (r of desktopNearMeRows(); track r.userId) {
+                    <tr [class.is-me]="r.userId === currentUserId">
+                      <td>
+                        <div class="rank-table-full__pos-content">
+                          <span class="num">{{ positionOf(r) }}</span>
+                          @if (r.deltaPosition !== null && r.deltaPosition !== 0) {
+                            <span class="delta"
+                                  [class.delta--up]="r.deltaPosition > 0"
+                                  [class.delta--down]="r.deltaPosition < 0">
+                              {{ r.deltaPosition > 0 ? '▲' + r.deltaPosition : '▼' + (-r.deltaPosition) }}
+                            </span>
+                          }
+                        </div>
+                      </td>
+                      <td>
+                        <div class="rank-table-full__player">
+                          <span class="av">{{ initial(r.handle) }}</span>
+                          <div>
+                            <div class="name">
+                              {{ '@' + r.handle }}@if (r.userId === currentUserId) { <span class="you"> · tú</span> }
+                            </div>
+                            @if (r.groupsLabel) {
+                              <div class="group">{{ r.groupsLabel }}</div>
+                            }
+                          </div>
+                        </div>
+                      </td>
+                      <td class="pts-cell">{{ r.points }}</td>
+                      <td class="num-cell">{{ r.exactCount }}</td>
+                      <td class="num-cell">{{ r.resultCount }}</td>
+                    </tr>
+                  }
+                }
+              } @else {
+                <!-- Sort por columna != rank: lista completa ordenada. -->
+                @for (r of sortedDesktopRows(); track r.userId) {
                   <tr [class.is-me]="r.userId === currentUserId">
                     <td>
                       <div class="rank-table-full__pos-content">
@@ -382,13 +422,19 @@ const SNAPSHOT_KEY = (userId: string, scope: Scope) => `polla-rank-snapshot-${sc
           </table>
           <div class="rank-table-foot">
             <span>
-              Mostrando 1–{{ desktopTopRows().length }}
-              @if (myRank() !== null && !meInTop7()) { + posiciones cercanas a ti }
-              · {{ totalPlayers() }} total
+              @if (sortBy() === 'rank') {
+                Mostrando 1–{{ desktopTopRows().length }}
+                @if (myRank() !== null && !meInTop7()) { + posiciones cercanas a ti }
+                · {{ totalPlayers() }} total
+              } @else {
+                Mostrando {{ sortedDesktopRows().length }} jugadores
+              }
             </span>
             <div class="rank-table-foot__pagi">
               <button type="button" class="btn-wf btn-wf--sm"
-                      (click)="scrollToTop()">Ir al top →</button>
+                      (click)="scrollToTop()">
+                <app-icon name="arrow-left" size="sm" /> Ir al top
+              </button>
             </div>
           </div>
         </div>
@@ -400,37 +446,28 @@ const SNAPSHOT_KEY = (userId: string, scope: Scope) => `polla-rank-snapshot-${sc
   styles: [`
     :host { display: block; }
 
-    .empty-block {
-      padding: 24px;
-      text-align: center;
-      background: var(--wf-paper);
-      border: 1px dashed var(--wf-line);
-      border-radius: 10px;
+    .rank-sort-btn {
+      background: transparent;
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+      font: inherit;
+      color: inherit;
+      letter-spacing: inherit;
     }
-    .empty-block h3 {
-      font-family: var(--wf-display);
-      font-size: 18px;
-      letter-spacing: .04em;
-      margin: 0 0 8px;
-    }
-    .empty-block p {
-      color: var(--wf-ink-3);
-      font-size: 13px;
-      margin: 0 0 12px;
-      line-height: 1.5;
-    }
-    .loading-msg {
-      padding: 32px;
-      text-align: center;
-      color: var(--wf-ink-3);
-      font-size: 14px;
+    .rank-sort-btn:hover { color: var(--color-primary-black); }
+    .rank-sort-btn:focus-visible {
+      outline: 2px solid var(--color-primary-green);
+      outline-offset: 2px;
     }
   `],
 })
 export class RankingComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  groupActions = inject(GroupActionsService);
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
 
   /** Math expuesto al template para Math.abs() en pluralización de deltas. */
   protected readonly Math = Math;
@@ -438,6 +475,10 @@ export class RankingComponent implements OnInit, OnDestroy {
   scope = signal<Scope>('global');
   loading = signal(true);
   loadedAt = signal<number>(Date.now());
+
+  /** Sort state for desktop table. */
+  sortBy = signal<SortField>('rank');
+  sortDir = signal<SortDir>('asc');
 
   /** Snapshot local "última vez que vi mi posición". Se hidrata en
    *  ngOnInit y se persiste cuando se cambia de scope o al destruir.
@@ -503,7 +544,8 @@ export class RankingComponent implements OnInit, OnDestroy {
     this.currentList().slice(0, this.mobileTopVisibleCount()),
   );
 
-  /** "Cerca de ti": 2 antes y 2 después de mi posición. */
+  /** "Cerca de ti": 2 antes y 2 después de mi posición.
+   *  Conservado para compat — en mobile ya no se renderea (hero card primary). */
   nearMeRows = computed<RankRow[]>(() => {
     const list = this.currentList();
     const rank = this.myRank();
@@ -539,9 +581,39 @@ export class RankingComponent implements OnInit, OnDestroy {
     return Math.max(0, start - 7);
   });
 
-  updatedAgo = computed(() => {
-    const minutes = Math.max(1, Math.floor((Date.now() - this.loadedAt()) / 60_000));
-    return minutes < 60 ? `hace ${minutes} min` : `hace ${Math.floor(minutes / 60)} h`;
+  /**
+   * Lista ordenada por la columna activa (solo cuando sortBy != 'rank').
+   * Para sort=rank usamos directamente currentList() que ya está sorted
+   * por puntos via compareRankable + posiciones top/near.
+   */
+  sortedDesktopRows = computed<RankRow[]>(() => {
+    const list = this.currentList();
+    const field = this.sortBy();
+    const dir = this.sortDir();
+    if (field === 'rank') return list;
+    const mul = dir === 'asc' ? 1 : -1;
+    const get = (r: RankRow): number => {
+      switch (field) {
+        case 'totalPoints': return r.points;
+        case 'exactos':     return r.exactCount;
+        case 'aciertos':    return r.resultCount;
+        case 'delta':       return r.deltaPosition ?? 0;
+        default:            return 0;
+      }
+    };
+    return [...list].sort((a, b) => (get(a) - get(b)) * mul);
+  });
+
+  /** Label "actualizado hace X" usando Intl.RelativeTimeFormat (es-EC). */
+  updatedAgoLabel = computed(() => {
+    const diffMs = Date.now() - this.loadedAt();
+    const minutes = Math.round(diffMs / 60_000);
+    if (Math.abs(minutes) < 1) return 'recién';
+    if (Math.abs(minutes) < 60) return RELATIVE_FMT.format(-minutes, 'minute');
+    const hours = Math.round(diffMs / 3_600_000);
+    if (Math.abs(hours) < 24) return RELATIVE_FMT.format(-hours, 'hour');
+    const days = Math.round(hours / 24);
+    return RELATIVE_FMT.format(-days, 'day');
   });
 
   scopeLabelHeader = computed(() =>
@@ -562,7 +634,33 @@ export class RankingComponent implements OnInit, OnDestroy {
   }
 
   scrollToTop() {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const prefersReduced = typeof window !== 'undefined'
+      && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: 0, behavior: prefersReduced ? 'auto' : 'smooth' });
+  }
+
+  /** Toggle column sort: same col → flip dir; new col → asc. */
+  toggleSort(field: SortField) {
+    if (this.sortBy() === field) {
+      this.sortDir.update((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      this.sortBy.set(field);
+      this.sortDir.set(field === 'rank' ? 'asc' : 'desc');
+    }
+  }
+
+  sortIndicator(field: SortField): string {
+    if (this.sortBy() !== field) return '';
+    return this.sortDir() === 'asc' ? '▲' : '▼';
+  }
+
+  ariaSortFor(field: SortField): 'ascending' | 'descending' | 'none' {
+    if (this.sortBy() !== field) return 'none';
+    return this.sortDir() === 'asc' ? 'ascending' : 'descending';
+  }
+
+  goToPicks() {
+    this.router.navigate(['/picks']);
   }
 
   /** Cambio de scope: persiste el snapshot del scope actual antes de saltar. */
@@ -632,7 +730,7 @@ export class RankingComponent implements OnInit, OnDestroy {
         exactCount: t.exactCount ?? 0,
         resultCount: t.resultCount ?? 0,
         groupsLabel: null,
-        // BACKEND TODO (RANK_SNAPSHOT_DESIGN): cuando RankSnapshot esté
+        // TODO(A6) RANK_SNAPSHOT_DESIGN: cuando RankSnapshot esté
         // poblado, plug-in acá `previousPosition - currentPosition` por user.
         // Mientras tanto null → el front cae al fallback localStorage para
         // el delta del usuario actual (los demás quedan sin delta).

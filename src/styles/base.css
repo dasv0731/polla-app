@@ -16,6 +16,7 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  color-scheme: light;
 }
 
 body {
@@ -29,6 +30,19 @@ body {
   min-height: 100vh;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 h1, h2, h3, h4, h5, h6, p, ul, ol, dl, figure, blockquote {
@@ -199,6 +213,57 @@ small, .caption {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* Skip link: oculto hasta focus por teclado */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 8px;
+  z-index: 9999;
+  padding: 10px 14px;
+  background: var(--color-primary-black);
+  color: var(--color-primary-white);
+  font-weight: 600;
+  border-radius: 8px;
+  text-decoration: none;
+}
+.skip-link:focus-visible {
+  left: 8px;
+  outline: 2px solid var(--color-primary-green);
+  outline-offset: 2px;
+}
+
+/* Tabular nums utility para columnas numéricas (rankings, scores, contadores).
+   La clase explícita .tabular-nums + selectores conocidos del proyecto: scores,
+   timers, KPIs y countdowns no deben "saltar" en cada tick (los dígitos
+   proporcionales hacen jiggle visible cada segundo). */
+.tabular-nums,
+.np__cd__n,
+.trivia-timer,
+.qcard__timer,
+.score__input,
+.score__num,
+.mh__pick-input,
+.mh__pick,
+.gm-score,
+.score-stepper__value,
+.kpi__num,
+.kpi__delta,
+.kpi-card__value,
+.sync-pill,
+/* Tablas y celdas numéricas (rankings, leaderboards, admin tables) */
+td.numeric,
+th.numeric,
+td.pts,
+th.pts,
+.num,
+.pts,
+.rank-row__pos,
+.rank-row__pts,
+.rank-podium__card .pts,
+.rank-hero__pos {
+  font-variant-numeric: tabular-nums;
 }
 
 /* ============================================================

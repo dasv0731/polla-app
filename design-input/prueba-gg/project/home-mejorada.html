@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es-EC">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Home — Golgana Pro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles/tokens.css">
+  <link rel="stylesheet" href="./styles/base.css">
+  <link rel="stylesheet" href="./styles/components.css">
+  <link rel="stylesheet" href="./styles/golgana-pro.css">
+  <link rel="icon" type="image/png" href="./assets/logo-golgana.png">
+</head>
+<body data-variant="bento" data-density="normal" data-accent="muted">
+
+  <input type="checkbox" id="drawer" class="drawer-toggle sr-only">
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a href="./home-mejorada.html" class="site-header__logo"><img src="./assets/logo-golgana.png" alt="Golgana"></a>
+      <nav class="site-header__nav">
+        <a href="./home-mejorada.html" class="is-active">Inicio</a>
+        <a href="./torneo-mejorado.html">Torneos</a>
+        <a href="./equipo-mejorado.html">Equipos</a>
+        <a href="./jugador-mejorado.html">Jugadores</a>
+        <a href="#">Noticias</a>
+      </nav>
+      <label for="drawer" class="drawer-btn"><span></span><span></span><span></span></label>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ===== HERO ===== -->
+    <section class="pro-hero">
+      <div class="pro-hero__inner">
+        <div class="pro-hero__main">
+          <div class="pro-hero__bg" aria-hidden="true"><img src="./assets/hero-placeholder.svg" alt=""></div>
+          <span class="pro-hero__kicker">Reportaje · Independiente del Valle</span>
+          <h1 class="pro-hero__title">La fábrica de Sangolquí</h1>
+          <p class="pro-hero__lead">Cómo el club que nadie miraba pasó de ascender de Serie B en 2013 a ser campeón de Sudamericana, formador de la selección y referencia continental. Radiografía de una década sin precedentes.</p>
+          <div class="pro-hero__meta">
+            <span>Por Martín Sevilla</span>
+            <span>23 abr 2026</span>
+            <span>14 min</span>
+          </div>
+          <div style="margin-top: 8px;">
+            <a class="btn btn--primary" href="#">Leer reportaje</a>
+          </div>
+        </div>
+        <aside class="pro-hero__side">
+          <h3>En vivo · Jornada 15</h3>
+          <div class="pmatch" style="background: rgba(255,255,255,0.06); padding: 16px; border-radius: 12px;">
+            <div class="pmatch__head" style="color: rgba(255,255,255,0.7);"><span><span class="dot dot--live"></span>67'</span><span>LigaPro</span></div>
+            <div class="pmatch__teams">
+              <div class="pmatch__team"><img src="./assets/crest-placeholder.svg" alt=""><strong style="color:#fff">Ind. Valle</strong></div>
+              <div class="pmatch__center" style="color:#fff">2 — 0<small style="color: rgba(255,255,255,0.55)">Atahualpa</small></div>
+              <div class="pmatch__team"><img src="./assets/crest-placeholder.svg" alt=""><strong style="color:#fff">U. Católica</strong></div>
+            </div>
+          </div>
+          <h3 style="margin-top:8px">Próximo</h3>
+          <div class="pmatch" style="background: rgba(255,255,255,0.06); padding: 16px; border-radius: 12px;">
+            <div class="pmatch__head" style="color: rgba(255,255,255,0.7);"><span>Sáb 16:00</span><span>Clásico</span></div>
+            <div class="pmatch__teams">
+              <div class="pmatch__team"><img src="./assets/crest-placeholder.svg" alt=""><strong style="color:#fff">Emelec</strong></div>
+              <div class="pmatch__center" style="color:#fff;font-size:20px">VS<small style="color: rgba(255,255,255,0.55)">Capwell</small></div>
+              <div class="pmatch__team"><img src="./assets/crest-placeholder.svg" alt=""><strong style="color:#fff">Barcelona SC</strong></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ===== JORNADA BENTO ===== -->
+    <section class="pro-section pro-container">
+      <div class="pro-sec-head">
+        <div class="pro-sec-head__l">
+          <span class="pro-sec-head__kicker">Jornada 15 · LigaPro Serie A</span>
+          <h2 class="pro-sec-head__title">Lo que se juega este finde</h2>
+        </div>
+        <a href="#" class="pro-sec-head__cta">Toda la jornada →</a>
+      </div>
+
+      <div class="bento">
+        <article class="tile tile--dark b-c6">
+          <span class="tile__kicker">Partido estelar</span>
+          <h3 class="tile__title">Clásico del Astillero</h3>
+          <div class="pmatch">
+            <div class="pmatch__head"><span>Sáb 16:00</span><span>Capwell</span></div>
+            <div class="pmatch__teams">
+              <div class="pmatch__team"><img src="./assets/crest-placeholder.svg" alt=""><strong style="color:#fff">Emelec</strong></div>
+              <div class="pmatch__center">VS<small>Jornada 15</small></div>
+              <div class="pmatch__team"><img src="./assets/crest-placeholder.svg" alt=""><strong style="color:#fff">Barcelona SC</strong></div>
+            </div>
+            <div class="pmatch__foot">196° edición · 78 años</div>
+          </div>
+        </article>
+
+        <article class="tile b-c3">
+          <div class="pmatch__head"><span>Sáb 18:30</span><span>LigaPro</span></div>
+          <div class="pmatch__teams">
+            <div class="pmatch__team"><img src="./assets/crest-placeholder.svg" alt=""><strong>LDU</strong></div>
+            <div class="pmatch__center">VS<small>Casa Blanca</small></div>
+            <div class="pmatch__team"><img src="./assets/crest-placeholder.svg" alt=""><strong>Aucas</strong></div>
+          </div>
+        </article>
+
+        <article class="tile b-c3">
+          <div class="pmatch__head"><span style="color: var(--color-primary-green); font-weight:700">FINAL</span><span>LigaPro</span></div>
+          <div class="pmatch__teams">
+            <div class="pmatch__team"><img src="./assets/crest-placeholder.svg" alt=""><strong>IDV</strong></div>
+            <div class="pmatch__center">2 — 0<small>U. Católica</small></div>
+            <div class="pmatch__team"><img src="./assets/crest-placeholder.svg" alt=""><strong>U.Cat.</strong></div>
+          </div>
+        </article>
+
+        <article class="tile b-c3">
+          <div class="pmatch__head"><span>Dom 15:30</span><span>LigaPro</span></div>
+          <div class="pmatch__teams">
+            <div class="pmatch__team"><img src="./assets/crest-placeholder.svg" alt=""><strong>D. Cuenca</strong></div>
+            <div class="pmatch__center">VS<small>Serrano</small></div>
+            <div class="pmatch__team"><img src="./assets/crest-placeholder.svg" alt=""><strong>Delfín</strong></div>
+          </div>
+        </article>
+
+        <article class="tile b-c3">
+          <div class="pmatch__head"><span>Dom 17:45</span><span>LigaPro</span></div>
+          <div class="pmatch__teams">
+            <div class="pmatch__team"><img src="./assets/crest-placeholder.svg" alt=""><strong>Nacional</strong></div>
+            <div class="pmatch__center">VS<small>Atahualpa</small></div>
+            <div class="pmatch__team"><img src="./assets/crest-placeholder.svg" alt=""><strong>M. Runa</strong></div>
+          </div>
+        </article>
+
+        <article class="tile tile--green b-c3">
+          <span class="tile__kicker">Goleador</span>
+          <h3 class="tile__title" style="color:#fff">Bryan Angulo</h3>
+          <div class="tile__big-num">12</div>
+          <p class="tile__caption">Goles · LigaPro 2026</p>
+        </article>
+
+        <article class="tile b-c3">
+          <span class="tile__kicker">Líder</span>
+          <h3 class="tile__title">Ind. del Valle</h3>
+          <div style="display: flex; align-items: baseline; gap: 12px;">
+            <span class="tile__big-num" style="color:var(--color-primary-green)">32</span>
+            <span class="tile__caption">pts · 14 PJ</span>
+          </div>
+          <span class="streak">
+            <span class="streak__b streak__b--w">G</span>
+            <span class="streak__b streak__b--w">G</span>
+            <span class="streak__b streak__b--d">E</span>
+            <span class="streak__b streak__b--w">G</span>
+            <span class="streak__b streak__b--w">G</span>
+          </span>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ===== TABLA + GOLEADORES ===== -->
+    <section class="pro-section pro-container" style="background: #fafafa; border-radius: 24px;">
+      <div class="bento" style="padding: 32px 24px;">
+        <div class="b-c8">
+          <div class="pro-sec-head">
+            <div class="pro-sec-head__l">
+              <span class="pro-sec-head__kicker">Posiciones · Temporada 2026</span>
+              <h2 class="pro-sec-head__title">Tabla en vivo</h2>
+            </div>
+            <a href="./torneo-mejorado.html" class="pro-sec-head__cta">Tabla completa →</a>
+          </div>
+          <div class="ptable__wrap">
+            <table class="ptable">
+              <thead><tr><th>#</th><th>Equipo</th><th class="num">PJ</th><th class="num">DG</th><th class="num">Pts</th><th>Forma</th></tr></thead>
+              <tbody>
+                <tr><td class="pos pos--lib">1</td><td><div class="team-c"><img src="./assets/crest-placeholder.svg" alt="">Ind. del Valle</div></td><td class="num">14</td><td class="num">+18</td><td class="num"><strong>32</strong></td><td><span class="streak"><span class="streak__b streak__b--w">G</span><span class="streak__b streak__b--w">G</span><span class="streak__b streak__b--d">E</span><span class="streak__b streak__b--w">G</span><span class="streak__b streak__b--w">G</span></span></td></tr>
+                <tr><td class="pos pos--lib">2</td><td><div class="team-c"><img src="./assets/crest-placeholder.svg" alt="">LDU Quito</div></td><td class="num">14</td><td class="num">+14</td><td class="num"><strong>30</strong></td><td><span class="streak"><span class="streak__b streak__b--w">G</span><span class="streak__b streak__b--l">P</span><span class="streak__b streak__b--w">G</span><span class="streak__b streak__b--w">G</span><span class="streak__b streak__b--d">E</span></span></td></tr>
+                <tr><td class="pos pos--sud">3</td><td><div class="team-c"><img src="./assets/crest-placeholder.svg" alt="">Barcelona SC</div></td><td class="num">14</td><td class="num">+9</td><td class="num"><strong>27</strong></td><td><span class="streak"><span class="streak__b streak__b--w">G</span><span class="streak__b streak__b--w">G</span><span class="streak__b streak__b--d">E</span><span class="streak__b streak__b--l">P</span><span class="streak__b streak__b--w">G</span></span></td></tr>
+                <tr><td class="pos pos--sud">4</td><td><div class="team-c"><img src="./assets/crest-placeholder.svg" alt="">Emelec</div></td><td class="num">14</td><td class="num">+7</td><td class="num"><strong>25</strong></td><td><span class="streak"><span class="streak__b streak__b--d">E</span><span class="streak__b streak__b--w">G</span><span class="streak__b streak__b--w">G</span><span class="streak__b streak__b--d">E</span><span class="streak__b streak__b--w">G</span></span></td></tr>
+                <tr><td class="pos pos--sud">5</td><td><div class="team-c"><img src="./assets/crest-placeholder.svg" alt="">Aucas</div></td><td class="num">14</td><td class="num">+4</td><td class="num"><strong>23</strong></td><td><span class="streak"><span class="streak__b streak__b--w">G</span><span class="streak__b streak__b--d">E</span><span class="streak__b streak__b--w">G</span><span class="streak__b streak__b--l">P</span><span class="streak__b streak__b--w">G</span></span></td></tr>
+                <tr><td class="pos">6</td><td><div class="team-c"><img src="./assets/crest-placeholder.svg" alt="">Dep. Cuenca</div></td><td class="num">14</td><td class="num">+2</td><td class="num"><strong>21</strong></td><td><span class="streak"><span class="streak__b streak__b--d">E</span><span class="streak__b streak__b--w">G</span><span class="streak__b streak__b--l">P</span><span class="streak__b streak__b--w">G</span><span class="streak__b streak__b--d">E</span></span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <aside class="b-c4">
+          <article class="tile tile--dark" style="height: 100%;">
+            <span class="tile__kicker">Goleadores</span>
+            <h3 class="tile__title" style="color:#fff">Bota de oro</h3>
+            <div class="pminip"><span class="pminip__rank">1</span><div class="pminip__avatar"></div><div class="pminip__body"><strong style="color:#fff">B. Angulo</strong><small>Emelec</small></div><span class="pminip__num">12</span></div>
+            <div class="pminip"><span class="pminip__rank">2</span><div class="pminip__avatar"></div><div class="pminip__body"><strong style="color:#fff">M. Estupiñán</strong><small>LDU</small></div><span class="pminip__num">10</span></div>
+            <div class="pminip"><span class="pminip__rank">3</span><div class="pminip__avatar"></div><div class="pminip__body"><strong style="color:#fff">L. Ayrton</strong><small>IDV</small></div><span class="pminip__num">9</span></div>
+            <div class="pminip"><span class="pminip__rank">4</span><div class="pminip__avatar"></div><div class="pminip__body"><strong style="color:#fff">F. Rodríguez</strong><small>BSC</small></div><span class="pminip__num">8</span></div>
+            <div class="pminip"><span class="pminip__rank">5</span><div class="pminip__avatar"></div><div class="pminip__body"><strong style="color:#fff">A. Plata</strong><small>Aucas</small></div><span class="pminip__num">7</span></div>
+          </article>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ===== HISTORIAS BENTO ===== -->
+    <section class="pro-section pro-container">
+      <div class="pro-sec-head">
+        <div class="pro-sec-head__l">
+          <span class="pro-sec-head__kicker">Series editoriales</span>
+          <h2 class="pro-sec-head__title">Historias que valen la leída</h2>
+        </div>
+        <a href="#" class="pro-sec-head__cta">Ver todas →</a>
+      </div>
+
+      <div class="bento">
+        <a href="#" class="media-tile media-tile--tall b-c6 b-r2">
+          <img src="./assets/hero-placeholder.svg" alt="">
+          <div class="media-tile__body">
+            <span class="media-tile__kicker">Long-form · 22 min</span>
+            <h3 class="media-tile__title">Alberto Spencer: el cabeza mágica que Ecuador no supo celebrar</h3>
+            <span class="media-tile__meta">Por Eduardo Varas · 18 abr</span>
+          </div>
+        </a>
+
+        <a href="./tema-mejorado.html" class="media-tile b-c3">
+          <img src="./assets/hero-placeholder.svg" alt="">
+          <div class="media-tile__body">
+            <span class="media-tile__kicker">Clásicos · Serie</span>
+            <h3 class="media-tile__title">El Astillero en 10 momentos</h3>
+          </div>
+        </a>
+
+        <a href="#" class="media-tile b-c3">
+          <img src="./assets/stadium-placeholder.svg" alt="">
+          <div class="media-tile__body">
+            <span class="media-tile__kicker">Ranking · 15 min</span>
+            <h3 class="media-tile__title">10 estadios que cambiaron el fútbol ecuatoriano</h3>
+          </div>
+        </a>
+
+        <a href="#" class="media-tile b-c3">
+          <img src="./assets/player-placeholder.svg" alt="">
+          <div class="media-tile__body">
+            <span class="media-tile__kicker">Selección · 7 min</span>
+            <h3 class="media-tile__title">Caicedo, el líder silencioso</h3>
+          </div>
+        </a>
+
+        <a href="#" class="media-tile b-c3">
+          <img src="./assets/hero-placeholder.svg" alt="">
+          <div class="media-tile__body">
+            <span class="media-tile__kicker">Análisis · 9 min</span>
+            <h3 class="media-tile__title">Por qué IDV vuelve a ser favorito en Libertadores</h3>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <!-- ===== INFOGRAFÍA ===== -->
+    <section class="pro-section pro-container">
+      <div class="bento">
+        <article class="tile tile--green b-c5">
+          <span class="tile__kicker">Data viz del mes</span>
+          <h2 class="tile__title" style="color:#fff; font-size:clamp(28px,3.6vw,56px)">Campeones de LigaPro por equipo</h2>
+          <p class="tile__caption">Barcelona y Emelec dominaron los 60s y 80s. LDU e IDV reescriben el mapa desde 2005. 68 temporadas de campeonato ecuatoriano.</p>
+          <a href="#" class="btn btn--primary" style="background:#fff; color:var(--color-primary-green); border-color:#fff; align-self: start; margin-top: 12px;">Ver infografía completa</a>
+        </article>
+        <article class="tile b-c7">
+          <div class="bars">
+            <div class="bar"><span class="bar__label">Barcelona SC</span><div class="bar__track"><div class="bar__fill" style="width:100%"></div></div><span class="bar__val">16</span></div>
+            <div class="bar"><span class="bar__label">Emelec</span><div class="bar__track"><div class="bar__fill" style="width:88%"></div></div><span class="bar__val">14</span></div>
+            <div class="bar"><span class="bar__label">El Nacional</span><div class="bar__track"><div class="bar__fill" style="width:81%"></div></div><span class="bar__val">13</span></div>
+            <div class="bar"><span class="bar__label">LDU Quito</span><div class="bar__track"><div class="bar__fill" style="width:69%"></div></div><span class="bar__val">11</span></div>
+            <div class="bar"><span class="bar__label">Dep. Quito</span><div class="bar__track"><div class="bar__fill" style="width:31%"></div></div><span class="bar__val">5</span></div>
+            <div class="bar"><span class="bar__label">Ind. del Valle</span><div class="bar__track"><div class="bar__fill" style="width:19%"></div></div><span class="bar__val">3</span></div>
+            <div class="bar"><span class="bar__label">Aucas</span><div class="bar__track"><div class="bar__fill" style="width:13%"></div></div><span class="bar__val">2</span></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <p class="site-footer__copy">© 2026 Golgana — Layouts mejorados (proto). Original en <a style="color:var(--color-primary-green)" href="./mockups/index.html">mockups/</a></p>
+  </footer>
+
+  <script src="./scripts/tweaks.js"></script>
+</body>
+</html>

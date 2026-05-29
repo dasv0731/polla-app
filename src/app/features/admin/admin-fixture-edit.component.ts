@@ -132,6 +132,30 @@ export class AdminFixtureEditComponent implements OnInit {
   fromBracket = false;
   private version = 1;
 
+  /** Snapshot del estado al cargar el form. JSON-serializado para
+   *  comparar exact-equal sin tocar todos los fields uno por uno. */
+  private snapshot = '';
+  private saved = signal(false);
+
+  private serialize(): string {
+    return JSON.stringify({
+      phaseId: this.phaseId,
+      homeTeamId: this.homeTeamId,
+      awayTeamId: this.awayTeamId,
+      kickoffLocal: this.kickoffLocal,
+      status: this.status,
+      bracketPosition: this.bracketPosition,
+      venue: this.venue,
+    });
+  }
+
+  /** DirtyAware contract para `dirtyFormGuard`. Después de un save
+   *  exitoso, `saved` queda true y el guard salta la confirmación. */
+  isDirty(): boolean {
+    if (this.saved() || this.loading()) return false;
+    return this.serialize() !== this.snapshot;
+  }
+
   showBracketField = computed(() => {
     const p = this.phases().find((x) => x.id === this.phaseId);
     return p ? p.order >= 2 : false;
@@ -173,6 +197,10 @@ export class AdminFixtureEditComponent implements OnInit {
       }
     } finally {
       this.loading.set(false);
+      // Snapshot inicial — toma valores cargados de DB (o defaults para
+      // "Nuevo partido") como baseline. Cualquier cambio posterior marca
+      // dirty.
+      this.snapshot = this.serialize();
     }
   }
 
@@ -215,6 +243,7 @@ export class AdminFixtureEditComponent implements OnInit {
           return;
         }
         this.toast.success('Partido actualizado');
+        this.saved.set(true);
       } else {
         const res = await apiClient.models.Match.create({
           tournamentId: TOURNAMENT_ID,
@@ -237,6 +266,7 @@ export class AdminFixtureEditComponent implements OnInit {
           return;
         }
         this.toast.success('Partido creado');
+        this.saved.set(true);
       }
       void this.router.navigate([this.fromBracket ? '/admin/bracket' : '/admin/fixtures']);
     } catch (e) {

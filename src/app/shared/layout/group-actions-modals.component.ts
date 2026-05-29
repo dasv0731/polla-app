@@ -7,6 +7,7 @@ import { GroupActionsService } from '../../core/groups/group-actions.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
 import { UserModesService } from '../../core/user/user-modes.service';
+import { ModalComponent } from '../ui/modal/modal.component';
 
 const TOURNAMENT_ID = 'mundial-2026';
 type GameMode = 'SIMPLE' | 'COMPLETE';
@@ -14,25 +15,17 @@ type GameMode = 'SIMPLE' | 'COMPLETE';
 @Component({
   standalone: true,
   selector: 'app-group-actions-modals',
-  imports: [FormsModule],
+  imports: [FormsModule, ModalComponent],
   template: `
     <!-- ============== MODAL · CREAR GRUPO ============== -->
     @if (svc.createOpen()) {
-      <div class="picks-modal is-open" role="dialog" aria-modal="true"
-           aria-labelledby="create-group-title">
-        <button type="button" class="picks-modal__close-overlay"
-                aria-label="Cerrar" (click)="closeCreate()"></button>
-        <div class="picks-modal__card" style="max-width:520px;">
-          <header class="picks-modal__head">
-            <div>
-              <div class="title" id="create-group-title">Crear grupo</div>
-              <div class="meta">Privado, con código de invitación de 6 caracteres</div>
-            </div>
-            <button type="button" class="close" aria-label="Cerrar"
-                    (click)="closeCreate()">✕</button>
-          </header>
-
-          <form class="picks-modal__body" (ngSubmit)="submitCreate()" style="display:flex;flex-direction:column;gap:14px;">
+      <app-modal
+        [open]="true"
+        title="Crear grupo"
+        description="Privado, con código de invitación de 6 caracteres"
+        size="md"
+        (close)="closeCreate()">
+        <form slot="body" (ngSubmit)="submitCreate()" style="display:flex;flex-direction:column;gap:14px;">
 
             <div class="auth-field" style="margin:0;">
               <label class="auth-label" for="grp-name">Nombre del grupo</label>
@@ -40,7 +33,21 @@ type GameMode = 'SIMPLE' | 'COMPLETE';
                      placeholder="Oficina Q1 2026"
                      [(ngModel)]="name"
                      [disabled]="loading()"
+                     autocomplete="off"
                      required maxlength="50">
+            </div>
+
+            <div class="auth-field" style="margin:0;">
+              <label class="auth-label" for="grp-desc">
+                Descripción <span class="text-mute">(opcional)</span>
+              </label>
+              <textarea id="grp-desc" name="description" class="auth-input"
+                        rows="2" maxlength="500"
+                        placeholder="Reglas extra, premios, info…"
+                        [(ngModel)]="description"
+                        [disabled]="loading()"
+                        style="resize: vertical; min-height: 56px;"></textarea>
+              <div class="auth-helper">Hasta 500 caracteres. Visible para todos los miembros.</div>
             </div>
 
             <div>
@@ -76,47 +83,56 @@ type GameMode = 'SIMPLE' | 'COMPLETE';
               </div>
             </div>
 
-            @if (error()) {
-              <p class="modal-error">{{ error() }}</p>
+            @if (mode() === 'COMPLETE') {
+              <div class="auth-field" style="margin:0;">
+                <label class="check-row">
+                  <input type="checkbox" name="comodines"
+                         [checked]="comodinesEnabled()"
+                         (change)="comodinesEnabled.set($any($event.target).checked)">
+                  <div>
+                    <div class="text-bold">Activar comodines</div>
+                    <div class="text-mute" style="font-size:11px;line-height:1.4;margin-top:2px;">
+                      Los miembros pueden ganar comodines vía sponsors/sweeps
+                      y aplicarlos en este grupo. Si está OFF, el grupo es
+                      modo completo pero sin comodines.
+                    </div>
+                  </div>
+                </label>
+              </div>
             }
-          </form>
 
-          <footer class="picks-modal__foot">
-            <span class="meta">Te asignamos como admin del grupo</span>
-            <div style="display:flex;gap:8px;">
-              <button type="button" class="btn-wf btn-wf--sm"
-                      (click)="closeCreate()" [disabled]="loading()">
-                Cancelar
-              </button>
-              <button type="button" class="btn-wf btn-wf--sm btn-wf--primary"
-                      (click)="submitCreate()"
-                      [disabled]="loading() || !name.trim()">
-                {{ loading() ? 'Creando…' : 'Crear grupo' }}
-              </button>
-            </div>
-          </footer>
+            @if (error()) {
+              <p class="modal-error" role="alert">{{ error() }}</p>
+            }
+        </form>
+
+        <div slot="footer" style="display:flex;align-items:center;gap:8px;justify-content:space-between;width:100%;flex-wrap:wrap;">
+          <span class="meta">Te asignamos como admin del grupo</span>
+          <div style="display:flex;gap:8px;">
+            <button type="button" class="btn-wf btn-wf--sm"
+                    (click)="closeCreate()" [disabled]="loading()">
+              Cancelar
+            </button>
+            <button type="button" class="btn-wf btn-wf--sm btn-wf--primary"
+                    (click)="submitCreate()"
+                    [disabled]="loading() || !name.trim()">
+              {{ loading() ? 'Creando…' : 'Crear grupo' }}
+            </button>
+          </div>
         </div>
-      </div>
+      </app-modal>
     }
 
     <!-- ============== MODAL · UNIRME CON CÓDIGO ============== -->
     @if (svc.joinOpen()) {
-      <div class="picks-modal is-open" role="dialog" aria-modal="true"
-           aria-labelledby="join-group-title">
-        <button type="button" class="picks-modal__close-overlay"
-                aria-label="Cerrar" (click)="closeJoin()"></button>
-        <div class="picks-modal__card" style="max-width:480px;">
-          <header class="picks-modal__head">
-            <div>
-              <div class="title" id="join-group-title">Unirme con código</div>
-              <div class="meta">Pegá el código de 6 caracteres que te compartieron</div>
-            </div>
-            <button type="button" class="close" aria-label="Cerrar"
-                    (click)="closeJoin()">✕</button>
-          </header>
-
-          <form class="picks-modal__body" (ngSubmit)="submitJoin()"
-                style="display:flex;flex-direction:column;gap:14px;">
+      <app-modal
+        [open]="true"
+        title="Unirme con código"
+        description="Pega el código de 6 caracteres que te compartieron"
+        size="sm"
+        (close)="closeJoin()">
+        <form slot="body" (ngSubmit)="submitJoin()"
+              style="display:flex;flex-direction:column;gap:14px;">
             <div class="auth-field" style="margin:0;">
               <label class="auth-label" for="join-code">Código de invitación</label>
               <input type="text" id="join-code" name="code" class="auth-input"
@@ -130,62 +146,30 @@ type GameMode = 'SIMPLE' | 'COMPLETE';
                      [disabled]="loading()"
                      autocomplete="off"
                      required>
-              <div class="auth-helper">El código se lo das a un admin de grupo.</div>
+              <div class="auth-helper">El código te lo da un admin de grupo.</div>
             </div>
 
             @if (error()) {
-              <p class="modal-error">{{ error() }}</p>
+              <p class="modal-error" role="alert">{{ error() }}</p>
             }
-          </form>
+        </form>
 
-          <footer class="picks-modal__foot">
-            <span class="meta"></span>
-            <div style="display:flex;gap:8px;">
-              <button type="button" class="btn-wf btn-wf--sm"
-                      (click)="closeJoin()" [disabled]="loading()">
-                Cancelar
-              </button>
-              <button type="button" class="btn-wf btn-wf--sm btn-wf--primary"
-                      (click)="submitJoin()"
-                      [disabled]="loading() || code.length !== 6">
-                {{ loading() ? 'Validando…' : 'Unirme' }}
-              </button>
-            </div>
-          </footer>
+        <div slot="footer">
+          <button type="button" class="btn-wf btn-wf--sm"
+                  (click)="closeJoin()" [disabled]="loading()">
+            Cancelar
+          </button>
+          <button type="button" class="btn-wf btn-wf--sm btn-wf--primary"
+                  (click)="submitJoin()"
+                  [disabled]="loading() || code.length !== 6">
+            {{ loading() ? 'Validando…' : 'Unirme' }}
+          </button>
         </div>
-      </div>
+      </app-modal>
     }
   `,
   styles: [`
-    /* design-v3 re-skin overrides (scoped — only afecta los modales que
-       este componente renderiza). El backdrop usa fondo negro con blur,
-       cards con border-radius 16 + padding 28, y el header tipográfico
-       en Bebas Neue. */
-    .picks-modal {
-      background: rgba(10, 10, 10, 0.75) !important;
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-    }
-    .picks-modal__card {
-      border-radius: 16px !important;
-      padding: 28px !important;
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
-      border: 1px solid var(--color-line);
-    }
-    .picks-modal__head .title {
-      font-family: var(--font-display);
-      font-size: 28px !important;
-      line-height: 1 !important;
-      letter-spacing: 0.02em;
-    }
-    .picks-modal__head .meta {
-      font-size: 11px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--color-primary-green);
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
+    :host { display: contents; }
 
     .auth-input:focus {
       border-color: var(--color-primary-green);
@@ -233,6 +217,25 @@ type GameMode = 'SIMPLE' | 'COMPLETE';
       border: 1px solid rgba(220, 38, 38, 0.2);
       margin: 0;
     }
+
+    .check-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--color-line);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    .check-row:hover { border-color: rgba(2, 204, 116, 0.5); }
+    .check-row input[type="checkbox"] {
+      margin: 3px 0 0;
+      accent-color: var(--color-primary-green);
+      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+    }
   `],
 })
 export class GroupActionsModalsComponent {
@@ -245,7 +248,9 @@ export class GroupActionsModalsComponent {
 
   // Crear
   name = '';
+  description = '';
   mode = signal<GameMode>('COMPLETE');
+  comodinesEnabled = signal(true);
   // Unirse
   code = '';
 
@@ -263,7 +268,13 @@ export class GroupActionsModalsComponent {
     this.resetJoin();
   }
 
-  private resetCreate() { this.name = ''; this.mode.set('COMPLETE'); this.error.set(null); }
+  private resetCreate() {
+    this.name = '';
+    this.description = '';
+    this.mode.set('COMPLETE');
+    this.comodinesEnabled.set(true);
+    this.error.set(null);
+  }
   private resetJoin()   { this.code = '';                            this.error.set(null); }
 
   onCodeInput(event: Event) {
@@ -278,7 +289,16 @@ export class GroupActionsModalsComponent {
     this.error.set(null);
     this.loading.set(true);
     try {
-      const res = await this.api.createGroup(name, TOURNAMENT_ID, this.mode());
+      const mode = this.mode();
+      const res = await this.api.createGroup({
+        name,
+        tournamentId: TOURNAMENT_ID,
+        mode,
+        description: this.description.trim() || undefined,
+        // comodinesEnabled solo tiene sentido en COMPLETE — en SIMPLE el
+        // backend lo ignora, pero evitamos enviar payload contradictorio.
+        ...(mode === 'COMPLETE' ? { comodinesEnabled: this.comodinesEnabled() } : {}),
+      });
       const data = (res as { data?: { id?: string } | null })?.data;
       if (!data?.id) {
         this.error.set('No se pudo crear el grupo. Intenta de nuevo.');

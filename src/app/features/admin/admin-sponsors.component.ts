@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
+import { ConfirmDialogService } from '../../shared/ui/confirm-dialog.service';
 
 interface SponsorRow {
   id: string;
@@ -81,6 +82,7 @@ interface SponsorRow {
 export class AdminSponsorsComponent implements OnInit {
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  private confirmDialog = inject(ConfirmDialogService);
 
   loading = signal(true);
   sponsors = signal<SponsorRow[]>([]);
@@ -125,7 +127,15 @@ export class AdminSponsorsComponent implements OnInit {
 
   async del(s: SponsorRow, ev: Event) {
     ev.preventDefault();
-    if (!confirm(`¿Borrar "${s.name}"? Sus ${s.codesCount} códigos quedarán huérfanos (no se borran auto).`)) return;
+    const ok = await this.confirmDialog.ask({
+      title: 'Borrar sponsor',
+      message:
+        `Vas a borrar "${s.name}". Sus ${s.codesCount} código${s.codesCount === 1 ? '' : 's'} ` +
+        'quedarán huérfanos (no se borran auto).',
+      confirmLabel: 'Borrar sponsor',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await this.api.deleteSponsor(s.id);
       this.toast.success('Sponsor borrado');

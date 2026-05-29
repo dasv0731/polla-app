@@ -6,6 +6,7 @@ import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
 import { apiClient } from '../../core/api/client';
 import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
+import { ConfirmDialogService } from '../../shared/ui/confirm-dialog.service';
 
 const TOURNAMENT_ID = 'mundial-2026';
 const GROUP_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
@@ -98,6 +99,7 @@ interface TeamRow { slug: string; name: string; flagCode: string; groupLetter: s
 export class AdminTeamsComponent implements OnInit {
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  private confirmDialog = inject(ConfirmDialogService);
 
   groupLetters = GROUP_LETTERS;
 
@@ -170,9 +172,14 @@ export class AdminTeamsComponent implements OnInit {
 
   async del(t: TeamRow, event: Event) {
     event.preventDefault();
-    if (!confirm(`¿Borrar el equipo "${t.name}"? Si está en algún partido, esos partidos quedarán inválidos.`)) {
-      return;
-    }
+    const ok = await this.confirmDialog.ask({
+      title: 'Borrar equipo',
+      message:
+        `Vas a borrar el equipo "${t.name}". Si está en algún partido, esos partidos quedarán inválidos.`,
+      confirmLabel: 'Borrar equipo',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await apiClient.models.Team.delete({ slug: t.slug });
       this.toast.success('Equipo borrado');

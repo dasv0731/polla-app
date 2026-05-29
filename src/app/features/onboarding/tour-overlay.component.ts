@@ -1,5 +1,6 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { A11yModule } from '@angular/cdk/a11y';
 
 const STORAGE_KEY = 'polla-tour-completed-v1';
 
@@ -25,9 +26,12 @@ interface TourStep {
 @Component({
   standalone: true,
   selector: 'app-tour-overlay',
+  imports: [A11yModule],
   template: `
     @if (visible()) {
-      <div class="tour-overlay" role="dialog" aria-modal="true">
+      <div class="tour-overlay" role="dialog" aria-modal="true" aria-labelledby="tour-card-title"
+           cdkTrapFocus
+           [cdkTrapFocusAutoCapture]="true">
         <!-- Backdrop oscuro con clip-path para crear el spotlight.
              Si no hay spotlight, es un backdrop opaco normal. -->
         <div class="tour-overlay__backdrop"
@@ -53,7 +57,7 @@ interface TourStep {
                     (click)="dismiss()">Saltar tour</button>
           </header>
 
-          <h2 class="tour-card__title">{{ currentStep().title }}</h2>
+          <h2 class="tour-card__title" id="tour-card-title">{{ currentStep().title }}</h2>
           <p class="tour-card__body">{{ currentStep().body }}</p>
 
           <div class="tour-card__dots">
@@ -100,7 +104,12 @@ interface TourStep {
       border-radius: 10px;
       box-shadow: 0 0 0 4px rgba(0, 200, 100, 0.25);
       pointer-events: none;
-      transition: top 0.2s, left 0.2s, width 0.2s, height 0.2s;
+      transition: top 0.2s ease, left 0.2s ease, width 0.2s ease, height 0.2s ease;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .tour-overlay__ring,
+      .tour-card,
+      .tour-card__dot { transition: none; }
     }
     .tour-card {
       position: absolute;
@@ -198,22 +207,23 @@ export class TourOverlayComponent {
       num: 1,
       title: 'Crea o únete a un grupo',
       body: 'Tu polla vive dentro de un grupo (panas, oficina, familia). ' +
-            'Usá los botones del menú lateral o la pantalla de Mis grupos.',
-      spotlight: '.app-sidebar__section:nth-of-type(1)',  // Mis grupos section
+            'Usa los botones del menú lateral o la pantalla de Mis grupos.',
+      // Targets [data-tour="groups"] en sidebar (desktop + mobile bottom-nav).
+      spotlight: '[data-tour="groups"]',
     },
     {
       num: 2,
       title: 'Predicciones de clasificados',
       body: 'Antes del Mundial: arma cómo crees que terminará cada grupo. ' +
-            'Aquí encontrás "Clasificados" y "Llaves".',
-      spotlight: '.app-sidebar a[href="/picks/group-stage/predict"]',
+            'Aquí encuentras "Clasificados" y "Llaves".',
+      spotlight: '[data-tour="mundial"]',
     },
     {
       num: 3,
       title: 'Marcadores partido a partido',
       body: 'Cuando arranque el torneo: predice marcadores antes de cada kickoff. ' +
             'Auto-guarda mientras tipeas.',
-      spotlight: '.app-topnav a[href="/picks"]',
+      spotlight: '[data-tour="picks"]',
     },
   ];
 
@@ -258,7 +268,10 @@ export class TourOverlayComponent {
    *  espacio, sino bottom-right por default. */
   cardPos = computed<{ top: number; left: number }>(() => {
     const r = this.spotlightRect();
-    if (!r || typeof window === 'undefined') {
+    if (typeof window === 'undefined') {
+      return { top: 0, left: 0 };
+    }
+    if (!r) {
       return { top: window.innerHeight - 280, left: window.innerWidth - 400 };
     }
     const cardWidth = 380;
@@ -290,23 +303,36 @@ export class TourOverlayComponent {
       /* no-op */
     }
 
-    // Re-posicionar spotlight en scroll/resize
+    // Re-posicionar spotlight en scroll/resize + ESC para cerrar el tour.
     if (typeof window !== 'undefined') {
       const tick = () => this.positionTick.update((n) => n + 1);
+      const onKey = (e: KeyboardEvent) => {
+        if (e.key === 'Escape' && this.visible()) this.dismiss();
+      };
       window.addEventListener('scroll', tick, { passive: true });
       window.addEventListener('resize', tick);
+      window.addEventListener('keydown', onKey);
+
+      const destroyRef = inject(DestroyRef);
+      destroyRef.onDestroy(() => {
+        window.removeEventListener('scroll', tick);
+        window.removeEventListener('resize', tick);
+        window.removeEventListener('keydown', onKey);
+      });
     }
 
     // Cuando el step cambia, scroll para que el spotlight target esté
-    // visible (si no lo está).
+    // visible (si no lo está). Respeta prefers-reduced-motion.
     effect(() => {
       const sel = this.currentStep().spotlight;
       if (!sel || !this.visible()) return;
       const el = document.querySelector(sel) as HTMLElement | null;
       if (!el) return;
+      const prefersReduced = typeof window !== 'undefined'
+        && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
       // requestAnimationFrame para esperar que CD termine de renderizar.
       requestAnimationFrame(() => {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.scrollIntoView({ behavior: prefersReduced ? 'auto' : 'smooth', block: 'center' });
       });
     });
   }

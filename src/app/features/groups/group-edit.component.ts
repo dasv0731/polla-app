@@ -6,6 +6,8 @@ import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
+import { IconComponent } from '../../shared/ui/icon/icon.component';
+import { DirtyAware } from '../../shared/util/dirty-form.guard';
 
 interface GroupEdit {
   id: string;
@@ -30,7 +32,7 @@ interface GroupEdit {
 @Component({
   standalone: true,
   selector: 'app-group-edit',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, IconComponent],
   template: `
     <header class="page-header">
       <div class="page-header__title">
@@ -62,31 +64,86 @@ interface GroupEdit {
             <label class="form-card__label" for="edit-name">Nombre</label>
             <input class="form-card__input" id="edit-name" name="name" type="text"
                    [(ngModel)]="name" required minlength="3" maxlength="40">
-            <span class="form-card__hint">3-40 caracteres.</span>
+            <div class="form-card__hint-row">
+              <span class="form-card__hint">3-40 caracteres.</span>
+              <span class="form-card__counter" [class.is-near-limit]="name.length >= 36">
+                {{ name.length }}/40
+              </span>
+            </div>
           </div>
 
           <div class="form-card__field">
             <label class="form-card__label" for="edit-desc">Descripción</label>
+            <!-- Markdown completo se difiere. Hoy preservamos line breaks
+                 via white-space: pre-line en la surface que renderiza
+                 (group-detail .group-hero__description). -->
             <textarea class="form-card__input" id="edit-desc" name="description"
                       [(ngModel)]="description" maxlength="500" rows="4"
-                      placeholder="Reglas extra, premios, info del grupo…"></textarea>
-            <span class="form-card__hint">Hasta 500 caracteres. Visible para todos los miembros.</span>
+                      placeholder="Reglas extra, premios, info del grupo… (saltos de línea se preservan)"></textarea>
+            <div class="form-card__hint-row">
+              <span class="form-card__hint">
+                Hasta 500 caracteres. Visible para todos los miembros.
+                Los saltos de línea se respetan.
+              </span>
+              <span class="form-card__counter" [class.is-near-limit]="description.length >= 450">
+                {{ description.length }}/500
+              </span>
+            </div>
           </div>
 
-          <!-- Imagen del grupo: upload desde dispositivo. Storage path
-               groups/{groupId}/avatar.{ext}. Preview muestra signed URL. -->
+          <!-- Imagen del grupo: drag/drop + click. Storage path
+               groups/{groupId}/avatar.{ext}. Preview muestra signed URL.
+               TODO(A6): progress real desde el upload op (Amplify expone
+               un transferProgressCallback; hoy mostramos indeterminado). -->
           <div class="form-card__field">
-            <label class="form-card__label">Imagen del grupo</label>
-            @if (previewUrl()) {
-              <img [src]="previewUrl()" alt="Preview"
-                   style="width:120px;height:120px;object-fit:cover;border-radius:10px;border:1px solid var(--wf-line);display:block;margin-bottom:8px;">
-            }
-            <input type="file" accept="image/*"
-                   [disabled]="uploading()"
-                   (change)="onFileSelected($event)">
-            <span class="form-card__hint">
-              {{ uploading() ? 'Subiendo…' : (imageKey() ? 'Imagen cargada · podés cambiarla' : 'Imagen opcional · JPG/PNG hasta 5 MB') }}
-            </span>
+            <label class="form-card__label" for="edit-image">Imagen del grupo</label>
+            <div class="image-dropzone"
+                 [class.is-dragging]="isDragging()"
+                 [class.is-disabled]="uploading()"
+                 (dragover)="onDragOver($event)"
+                 (dragleave)="onDragLeave($event)"
+                 (drop)="onDrop($event)">
+              @if (previewUrl()) {
+                <img [src]="previewUrl()" alt="Preview de la imagen del grupo"
+                     class="image-dropzone__preview" />
+                <div class="image-dropzone__actions">
+                  <label class="btn btn--ghost btn--sm" for="edit-image">
+                    Reemplazar
+                  </label>
+                  <button type="button" class="btn btn--ghost btn--sm btn--danger"
+                          [disabled]="uploading()"
+                          (click)="removeImage()">
+                    <app-icon name="trash" size="sm" [decorative]="true" />
+                    Eliminar imagen
+                  </button>
+                </div>
+              } @else {
+                <div class="image-dropzone__empty">
+                  <app-icon name="plus" size="lg" [decorative]="true" />
+                  <p class="image-dropzone__hint">
+                    Arrastra una imagen aquí, o
+                    <label for="edit-image" class="image-dropzone__cta">elegila desde tu dispositivo</label>.
+                  </p>
+                  <p class="image-dropzone__sub">JPG/PNG hasta 5 MB. Opcional.</p>
+                </div>
+              }
+              <input id="edit-image" type="file" accept="image/*"
+                     class="image-dropzone__input"
+                     [disabled]="uploading()"
+                     (change)="onFileSelected($event)">
+              @if (uploading()) {
+                <div class="image-dropzone__progress"
+                     role="progressbar"
+                     aria-label="Subiendo imagen"
+                     [attr.aria-valuenow]="uploadProgress()"
+                     aria-valuemin="0" aria-valuemax="100">
+                  <div class="image-dropzone__bar" [style.width.%]="uploadProgress()"></div>
+                  <span class="image-dropzone__progress-label">
+                    Subiendo… {{ uploadProgress() }}%
+                  </span>
+                </div>
+              }
+            </div>
           </div>
 
           @if (group()?.adminUserId && modeIsComplete()) {
@@ -95,13 +152,15 @@ interface GroupEdit {
               <div>
                 @if (group()!.comodinesEnabled !== false) {
                   <span class="pill pill--accent"
-                        style="display:inline-block;font-size:12px;padding:4px 10px;border-radius:999px;background:rgba(0,200,100,0.15);color:var(--color-primary-green);border:1px solid rgba(0,200,100,0.4);">
-                    🃏 Activados
+                        style="display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 10px;border-radius:999px;background:rgba(0,200,100,0.15);color:var(--color-primary-green);border:1px solid rgba(0,200,100,0.4);">
+                    <app-icon name="dice" size="sm" [decorative]="true" />
+                    Activados
                   </span>
                 } @else {
                   <span class="pill pill--mute"
-                        style="display:inline-block;font-size:12px;padding:4px 10px;border-radius:999px;background:rgba(160,160,160,0.12);color:var(--wf-ink-2);border:1px solid rgba(160,160,160,0.35);">
-                    🃏 Desactivados
+                        style="display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 10px;border-radius:999px;background:rgba(160,160,160,0.12);color:var(--wf-ink-2);border:1px solid rgba(160,160,160,0.35);">
+                    <app-icon name="dice" size="sm" [decorative]="true" />
+                    Desactivados
                   </span>
                 }
                 <p class="text-mute" style="font-size:11px;margin-top:6px;color:var(--color-text-muted);">
@@ -125,8 +184,100 @@ interface GroupEdit {
       }
     </main>
   `,
+  styles: [`
+    .form-card__hint-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin-top: 4px;
+    }
+    .form-card__counter {
+      font-size: 11px;
+      color: var(--color-text-muted, var(--wf-ink-3));
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+    }
+    .form-card__counter.is-near-limit {
+      color: var(--color-warn, #c97a00);
+      font-weight: 600;
+    }
+
+    /* Image dropzone: zona única para drag/drop + click para elegir.
+       Si ya hay imagen muestra preview + acciones (reemplazar / eliminar). */
+    .image-dropzone {
+      position: relative;
+      border: 2px dashed var(--wf-line, #d4d4d8);
+      border-radius: 12px;
+      padding: 16px;
+      transition: border-color .15s, background .15s;
+      background: var(--wf-paper, #fff);
+    }
+    .image-dropzone.is-dragging {
+      border-color: var(--color-primary-green, #00c864);
+      background: rgba(0, 200, 100, 0.06);
+    }
+    .image-dropzone.is-disabled { opacity: 0.7; pointer-events: none; }
+    .image-dropzone__input {
+      position: absolute;
+      width: 0.1px; height: 0.1px;
+      opacity: 0;
+      overflow: hidden;
+      z-index: -1;
+    }
+    .image-dropzone__preview {
+      width: 120px;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 10px;
+      display: block;
+      margin: 0 auto 12px;
+      border: 1px solid var(--wf-line);
+    }
+    .image-dropzone__actions {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .image-dropzone__empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 16px 0;
+      color: var(--wf-ink-3);
+    }
+    .image-dropzone__hint { margin: 0; font-size: 13px; text-align: center; }
+    .image-dropzone__sub { margin: 0; font-size: 11px; opacity: 0.85; }
+    .image-dropzone__cta {
+      color: var(--color-primary-green, #00c864);
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    .image-dropzone__progress {
+      position: relative;
+      margin-top: 12px;
+      height: 8px;
+      background: rgba(0,0,0,0.08);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .image-dropzone__bar {
+      height: 100%;
+      background: var(--color-primary-green, #00c864);
+      transition: width 0.2s ease;
+    }
+    .image-dropzone__progress-label {
+      display: block;
+      margin-top: 6px;
+      font-size: 11px;
+      color: var(--wf-ink-3);
+      text-align: center;
+    }
+  `],
 })
-export class GroupEditComponent implements OnInit {
+export class GroupEditComponent implements OnInit, DirtyAware {
   @Input() id!: string;
 
   private api = inject(ApiService);
@@ -138,6 +289,11 @@ export class GroupEditComponent implements OnInit {
   loading = signal(true);
   saving = signal(false);
   uploading = signal(false);
+  /** 0-100. Amplify expone transferProgressCallback con `transferredBytes /
+   *  totalBytes`; mapeamos a porcentaje. Si no llegan eventos, deja 0
+   *  como indeterminate hasta que sube algo. */
+  uploadProgress = signal(0);
+  isDragging = signal(false);
   error = signal<string | null>(null);
   previewUrl = signal<string | null>(null);
 
@@ -169,6 +325,10 @@ export class GroupEditComponent implements OnInit {
       || this.description !== (g.description ?? '')
       || this.imageKey() !== (g.imageKey ?? '');
   });
+
+  /** DirtyAware contract — usado por `dirtyFormGuard` para confirmar
+   *  antes de navegar si quedan cambios sin guardar. */
+  isDirty(): boolean { return this.dirty(); }
 
   async ngOnInit() {
     try {
@@ -210,39 +370,85 @@ export class GroupEditComponent implements OnInit {
     }
   }
 
-  /** File picker handler: sube la imagen a Storage y guarda la key.
-   *  La key se persiste cuando el user haga click en "Guardar cambios". */
+  /** File picker handler: extrae el File y delega a uploadFile. */
   async onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
+    if (file) await this.uploadFile(file);
+    input.value = '';
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    if (this.uploading()) return;
+    this.isDragging.set(true);
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    this.isDragging.set(false);
+  }
+
+  async onDrop(event: DragEvent): Promise<void> {
+    event.preventDefault();
+    this.isDragging.set(false);
+    if (this.uploading()) return;
+    const file = event.dataTransfer?.files?.[0];
     if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      this.toast.error('El archivo debe ser una imagen');
+      return;
+    }
+    await this.uploadFile(file);
+  }
+
+  /** Sube `file` a Storage. La key se guarda en `imageKey` pero la
+   *  mutación updateGroup ocurre cuando el user da click en Guardar. */
+  private async uploadFile(file: File): Promise<void> {
     if (file.size > 5 * 1024 * 1024) {
       this.toast.error('La imagen excede 5 MB');
-      input.value = '';
       return;
     }
     this.uploading.set(true);
+    this.uploadProgress.set(0);
     try {
       const ext = file.name.split('.').pop()?.toLowerCase() ?? 'png';
       const key = `groups/${this.id}/avatar-${Date.now()}.${ext}`;
       const op = uploadData({
         path: key,
         data: file,
-        options: { contentType: file.type || 'image/png' },
+        options: {
+          contentType: file.type || 'image/png',
+          onProgress: ({ transferredBytes, totalBytes }) => {
+            if (totalBytes && totalBytes > 0) {
+              this.uploadProgress.set(
+                Math.min(100, Math.round((transferredBytes / totalBytes) * 100)),
+              );
+            }
+          },
+        },
       });
       await op.result;
+      this.uploadProgress.set(100);
       this.imageKey.set(key);
       const out = await getUrl({ path: key, options: { expiresIn: 3600 } });
       this.previewUrl.set(out.url.toString());
-      this.toast.success('Imagen subida — guardá los cambios para aplicar');
+      this.toast.success('Imagen subida — guarda los cambios para aplicar');
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error('[group-edit upload] failed', e);
       this.toast.error('No se pudo subir la imagen');
     } finally {
       this.uploading.set(false);
-      input.value = '';
     }
+  }
+
+  /** Marca la imagen para eliminar. La mutación efectiva sucede en save()
+   *  con imageKey=null. Mantenemos UI inmediata (preview vacío). */
+  removeImage(): void {
+    this.imageKey.set('');
+    this.previewUrl.set(null);
+    this.uploadProgress.set(0);
   }
 
   async save() {
@@ -262,6 +468,16 @@ export class GroupEditComponent implements OnInit {
         return;
       }
       this.toast.success('Grupo actualizado');
+      // Tras save exitoso forzamos el snapshot al estado nuevo para que
+      // el guard CanDeactivate no pida confirmación en la navegación
+      // siguiente. Sin esto, `dirty()` queda true hasta que el siguiente
+      // ngOnChanges/ngOnInit reescriba `group()`.
+      this.group.set({
+        ...this.group()!,
+        name: this.name.trim(),
+        description: this.description.trim() || null,
+        imageKey: this.imageKey().trim() || null,
+      });
       void this.router.navigate(['/groups', this.id]);
     } catch (e) {
       this.error.set(humanizeError(e));

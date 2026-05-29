@@ -4,9 +4,14 @@ import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService } from '../../core/user/user-modes.service';
 import { GroupActionsService } from '../../core/groups/group-actions.service';
+import { PicksPendingBannerComponent } from '../picks/picks-pending-banner.component';
+import { EmptyBlockComponent } from '../../shared/ui/empty-block/empty-block.component';
+import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
+import { IconComponent } from '../../shared/ui/icon/icon.component';
 
 const TOURNAMENT_ID = 'mundial-2026';
 const TOURNAMENT_START_ISO = '2026-06-12T19:00:00-04:00';   // primer kickoff Mundial 2026
+const TOURNAMENT_END_ISO = '2026-07-19T20:00:00-04:00';     // final Mundial 2026
 
 interface GroupRow {
   id: string;
@@ -33,34 +38,69 @@ interface ComodinSlotVm {
   label: string;
 }
 
+type TournamentPhase = 'pre' | 'live' | 'post';
+
+interface ContextualCta {
+  label: string;
+  routerLink: string | (string | number)[];
+  queryParams?: Record<string, string>;
+}
+
 /**
  * Pantalla principal design-v3. Diseño content-priority:
- *   1. Hero gradient compacto (avatar + greeting + días al torneo + alert).
- *   2. KPI strip 5-up (Ranking · Puntos · Aciertos · Grupos · Comodines).
- *   3. Picks pendientes dark block (sólo cuando hay picks por enviar en 48h).
- *   4. Mis grupos (list con rank pill + CTAs create/join).
- *   5. Row de Especiales (3 chips) + Ranking gradient card.
- *   6. Comodines slots (sólo para users con grupo modo COMPLETE).
+ *   1. Hero gradient compacto (avatar + greeting + stats canónicos + CTA contextual).
+ *   2. Picks pendientes dark block (sólo cuando hay picks por enviar en 48h).
+ *   3. Mis grupos (list con rank pill + CTAs create/join, empty-block si 0).
+ *   4. Row de Especiales (3 chips con progress) + Ranking gradient card.
+ *   5. Comodines slots (sólo para users con grupo modo COMPLETE y count > 0).
+ *
+ * **A8b consolidation**: Stats antes triplicaban (hero + KPI strip + ranking card).
+ * Ahora hero es la única fuente. KPI strip eliminado. Ranking card mantiene rank
+ * único + percentil visual (sin duplicar puntos/aciertos del hero).
+ *
+ * **CTA contextual**: el hero CTA es uno solo y varía según phase:
+ * - Pre-torneo: "Predecí clasificados →" → /picks/group-stage?view=pred
+ * - Durante: "Hacé pick del próximo partido →" → /picks/match/:id (o /picks fallback)
+ * - Post-final: "Ver mi ranking final →" → /ranking
  *
  * Source visual: polla-app/design-input/prueba-gg/project/polla-v3.html
  */
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink],
+  imports: [
+    RouterLink,
+    PicksPendingBannerComponent,
+    EmptyBlockComponent,
+    SkeletonComponent,
+    IconComponent,
+  ],
   template: `
     <section class="home-page">
 
-      <!-- HERO compacto -->
+      <app-picks-pending-banner />
+
+      <!-- HERO compacto (única fuente de stats canónicos) -->
       <section class="hero">
         <div class="hero__in">
           <div class="hero__av">{{ avatarInitials() }}</div>
           <div>
-            <div class="hero__k">Hola, {{ '@' + (handle() ?? 'jugador') }}</div>
+            <div class="hero__k">Hola, <span translate="no">{{ '@' + (handle() ?? 'jugador') }}</span></div>
             <div class="hero__t">
-              Quedan <strong>{{ daysToTournament() }} días</strong>
-              @if (totals().globalRank) {
-                · estás en <strong>#{{ totals().globalRank }}</strong>
+              @if (tournamentPhase() === 'pre') {
+                Quedan <strong>{{ daysToTournament() }} días</strong>
+              } @else if (tournamentPhase() === 'live') {
+                @if (totals().globalRank) {
+                  Estás en <strong>#{{ totals().globalRank }}</strong>
+                } @else {
+                  Vamos por el primer pick
+                }
+              } @else {
+                @if (totals().globalRank) {
+                  Final: <strong>#{{ totals().globalRank }}</strong>
+                } @else {
+                  El Mundial terminó
+                }
               }
             </div>
             <div class="hero__s">
@@ -68,45 +108,17 @@ interface ComodinSlotVm {
               @if (accuracyPct() !== null) { · {{ accuracyPct() }}% de aciertos }
             </div>
             @if (pendingPicksCount() > 0 && nextDeadlineLabel()) {
-              <div class="hero__alert">⚠ Cierra el primer pick en {{ nextDeadlineLabel() }}</div>
+              <div class="hero__alert" role="status">
+                <app-icon name="alert" size="sm" />
+                Cierra el primer pick en {{ nextDeadlineLabel() }}
+              </div>
             }
           </div>
-          <a routerLink="/picks" class="hero__cta">Hacer picks →</a>
+          <a [routerLink]="contextualCta().routerLink" [queryParams]="contextualCta().queryParams ?? null" class="hero__cta">
+            {{ contextualCta().label }} <span aria-hidden="true">→</span>
+          </a>
         </div>
       </section>
-
-      <!-- KPI strip -->
-      <div class="kpis">
-        <div class="kpi kpi--g">
-          <div class="kpi__l">Ranking global</div>
-          <div class="kpi__v">{{ totals().globalRank ? '#' + totals().globalRank : '—' }}</div>
-          <div class="kpi__d">&nbsp;</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi__l">Puntos</div>
-          <div class="kpi__v">{{ totals().points }}</div>
-          <div class="kpi__d">&nbsp;</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi__l">Aciertos</div>
-          <div class="kpi__v">{{ accuracyPct() !== null ? accuracyPct() + '%' : '—' }}
-            @if (accuracyCount() !== null) { <small>{{ accuracyCount() }}</small> }
-          </div>
-          <div class="kpi__d">&nbsp;</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi__l">Grupos</div>
-          <div class="kpi__v">{{ myGroupsCount() }}
-            @if (bestPosition() !== null) { <small>{{ bestPositionLabel() }}</small> }
-          </div>
-          <div class="kpi__d">&nbsp;</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi__l">Comodines</div>
-          <div class="kpi__v">{{ comodinesActive() }} <small>/{{ comodinesCap() }}</small></div>
-          <div class="kpi__d">&nbsp;</div>
-        </div>
-      </div>
 
       <!-- Picks pendientes dark -->
       @if (pendingPicksCount() > 0) {
@@ -118,7 +130,7 @@ interface ComodinSlotVm {
               @if (nextDeadlineLabel()) { El primero cierra en <em>{{ nextDeadlineLabel() }}</em>. }
             </small>
           </div>
-          <a routerLink="/picks" class="pp__b">Hacer picks →</a>
+          <a routerLink="/picks" class="pp__b">Hacer picks <span aria-hidden="true">→</span></a>
         </div>
       }
 
@@ -126,45 +138,60 @@ interface ComodinSlotVm {
       <div>
         <div class="sh">
           <h2>Mis grupos · {{ myGroupsList().length }} {{ myGroupsList().length === 1 ? 'activo' : 'activos' }}</h2>
-          <a routerLink="/groups">Ver todos →</a>
+          <a routerLink="/groups">Ver todos <span aria-hidden="true">→</span></a>
         </div>
-        <div class="gr-list">
-          @if (myGroupsList().length === 0) {
-            <p class="text-mute">Aún no estás en ningún grupo.</p>
-          }
-          @for (g of myGroupsList(); track g.id) {
-            <a [routerLink]="['/groups', g.id]" class="gr">
-              <div class="gr__av" [style.background]="g.avatarBg">{{ g.initials }}</div>
-              <div class="gr__b">
-                <div class="gr__n">{{ g.name }}</div>
-                <div class="gr__m">{{ g.members }} jugadores · {{ g.prizeLine }}</div>
-              </div>
-              <span class="gr__r"
-                    [class.gr__r--g]="g.position === 1"
-                    [class.gr__r--b]="!!g.position && g.position <= 3 && g.position !== 1"
-                    [class.gr__r--n]="!g.position || g.position > 3">
-                {{ g.position ? '#' + g.position : '—' }}
-              </span>
-            </a>
-          }
-        </div>
-        <div class="gr-act">
-          <button type="button" (click)="onCreateGroup()">＋ Crear grupo</button>
-          <button type="button" (click)="onJoinGroup()">→ Unirme con código</button>
-        </div>
+        @if (groupsLoading()) {
+          <app-skeleton variant="list" [count]="3" />
+        } @else if (myGroupsList().length === 0) {
+          <app-empty-block iconName="users"
+                           title="Aún no estás en ningún grupo"
+                           sub="Crea tu propio grupo o únete con un código de invitación.">
+            <button type="button" class="empty-cta empty-cta--primary" (click)="onCreateGroup()">
+              <app-icon name="plus" size="sm" />Crear grupo
+            </button>
+            <button type="button" class="empty-cta" (click)="onJoinGroup()">
+              <app-icon name="arrow-right" size="sm" />Unirme con código
+            </button>
+          </app-empty-block>
+        } @else {
+          <div class="gr-list">
+            @for (g of myGroupsList(); track g.id) {
+              <a [routerLink]="['/groups', g.id]" class="gr">
+                <div class="gr__av" [style.background]="g.avatarBg">{{ g.initials }}</div>
+                <div class="gr__b">
+                  <div class="gr__n">{{ g.name }}</div>
+                  <div class="gr__m">{{ g.members }} jugadores · {{ g.prizeLine }}</div>
+                </div>
+                <span class="gr__r"
+                      [class.gr__r--g]="g.position === 1"
+                      [class.gr__r--b]="!!g.position && g.position <= 3 && g.position !== 1"
+                      [class.gr__r--n]="!g.position || g.position > 3">
+                  {{ g.position ? '#' + g.position : '—' }}
+                </span>
+              </a>
+            }
+          </div>
+          <div class="gr-act">
+            <button type="button" (click)="onCreateGroup()"><span aria-hidden="true">＋ </span>Crear grupo</button>
+            <button type="button" (click)="onJoinGroup()"><span aria-hidden="true">→ </span>Unirme con código</button>
+          </div>
+        }
       </div>
 
       <!-- Row: especiales + ranking -->
       <div class="row2">
         <div class="spk">
-          <div class="spk__h"><span>🏆 Picks especiales · hasta 65 pts</span></div>
+          <div class="spk__h">
+            <span><app-icon name="trophy" size="sm" /> Picks especiales · hasta 65 pts</span>
+            <span class="spk__progress">{{ especialesProgress() }}/3</span>
+          </div>
           <div class="spk__row">
             @for (s of specialPicks(); track s.type) {
               <a routerLink="/profile/special-picks" class="spk__c"
                  [class.spk__c--g]="s.type === 'CHAMPION'"
                  [class.spk__c--s]="s.type === 'RUNNER_UP'"
                  [class.spk__c--e]="s.type === 'DARK_HORSE'">
-                <div class="spk__big">
+                <div class="spk__big" aria-hidden="true">
                   @if (s.flag) {
                     <span class="fi fi-{{ s.flag.toLowerCase() }}"></span>
                   } @else {
@@ -186,7 +213,9 @@ interface ComodinSlotVm {
             @if (bestPosition() !== null) {
               <div class="rk__r2">
                 <div class="rk__big">#{{ bestPosition() }}</div>
-                <div class="rk__l">{{ bestPositionGroupName() }}</div>
+                <div class="rk__l">
+                  <span class="rk__best-group">{{ bestPositionGroupName() }}</span>
+                </div>
               </div>
             }
           </div>
@@ -194,18 +223,18 @@ interface ComodinSlotVm {
             <div class="rk__bar__f" [style.width.%]="rankPercentile()"></div>
           </div>
           <div class="rk__s">
-            <span>{{ totals().points }} pts · {{ accuracyPct() ?? 0 }}% acierto</span>
-            <span>&nbsp;</span>
+            <span>Percentil {{ rankPercentile() }}</span>
+            <a routerLink="/ranking" class="rk__link">Ver ranking <span aria-hidden="true">→</span></a>
           </div>
         </div>
       </div>
 
-      <!-- Comodines (solo COMPLETE) -->
-      @if (totals().hasComplete) {
+      <!-- Comodines (solo COMPLETE y si tiene comodines o cap > 0) -->
+      @if (totals().hasComplete && comodinesCap() > 0) {
         <div class="com">
           <div class="com__h">
-            <span>⚡ Comodines · {{ comodinesActive() }} de {{ comodinesCap() }} disponibles</span>
-            <a routerLink="/mis-comodines">Detalles →</a>
+            <span><app-icon name="zap" size="sm" /> Comodines · {{ comodinesActive() }} de {{ comodinesCap() }} disponibles</span>
+            <a routerLink="/mis-comodines">Detalles <span aria-hidden="true">→</span></a>
           </div>
           <div class="com__row">
             @for (slot of comodinSlots(); track slot.idx) {
@@ -229,8 +258,7 @@ interface ComodinSlotVm {
 
     .text-mute { color: var(--color-text-muted); font-size: 13px; }
 
-    /* Hero compacto · override min-height del .hero editorial global
-       (components.css:573 aplica min-height: 640px en ≥992px) */
+    /* Hero compacto · override min-height del .hero editorial global */
     .hero {
       background: linear-gradient(135deg, #0a0a0a 0%, #0a3d20 60%, #067a4a 100%);
       color: #fff;
@@ -297,26 +325,6 @@ interface ComodinSlotVm {
       .hero__cta { grid-column: 1 / -1; text-align: center; padding: 10px; font-size: 11px; }
     }
 
-    /* KPI strip */
-    .kpis {
-      display: grid; grid-template-columns: repeat(5, 1fr);
-      gap: 1px;
-      background: rgba(0,0,0,0.08);
-      border: 1px solid rgba(0,0,0,0.08);
-      border-radius: 12px;
-      overflow: hidden;
-    }
-    .kpi { background: #fff; padding: 14px 16px; }
-    .kpi--g { background: linear-gradient(135deg, #02cc74, #016b3d); color: #fff; }
-    .kpi__l { font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 4px; }
-    .kpi--g .kpi__l { color: rgba(255,255,255,0.85); }
-    .kpi__v { font-family: var(--font-display); font-size: 24px; line-height: 1; }
-    .kpi__v small { font-size: 11px; color: var(--color-text-muted); font-family: var(--font-primary); }
-    .kpi--g .kpi__v small { color: rgba(255,255,255,0.7); }
-    .kpi__d { font-size: 10px; color: var(--color-primary-green); font-weight: 600; margin-top: 3px; }
-    .kpi--g .kpi__d { color: rgba(255,255,255,0.85); }
-    @media (max-width: 780px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
-
     /* Picks pendientes dark */
     .pp {
       background: #0a0a0a;
@@ -367,8 +375,9 @@ interface ComodinSlotVm {
 
     /* Grupos */
     .gr-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-    .gr { background: #fff; border: 1px solid var(--color-line); border-radius: 10px; padding: 12px; display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; transition: all 0.15s; }
+    .gr { background: #fff; border: 1px solid var(--color-line); border-radius: 10px; padding: 12px; display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease; }
     .gr:hover { border-color: rgba(2,204,116,0.4); background: rgba(2,204,116,0.02); }
+    .gr:focus-visible { outline: 2px solid var(--color-primary-green); outline-offset: 2px; border-color: rgba(2,204,116,0.4); }
     .gr__av { width: 38px; height: 38px; border-radius: 9px; display: grid; place-items: center; color: #fff; font-family: var(--font-display); font-size: 15px; flex-shrink: 0; }
     .gr__b { flex: 1; min-width: 0; }
     .gr__n { font-family: var(--font-display); font-size: 16px; line-height: 1; }
@@ -380,7 +389,30 @@ interface ComodinSlotVm {
     .gr-act { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
     .gr-act button { background: transparent; border: 1px dashed rgba(2,204,116,0.4); border-radius: 9px; padding: 9px; color: var(--color-primary-green); font-family: inherit; font-weight: 600; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
     .gr-act button:hover { background: rgba(2,204,116,0.05); border-style: solid; }
+    .gr-act button:focus-visible { outline: 2px solid var(--color-primary-green); outline-offset: 2px; border-style: solid; }
     @media (max-width: 480px) { .gr-act { grid-template-columns: 1fr; } }
+
+    /* Empty CTAs en empty-block (no toman .gr-act styles) */
+    .empty-cta {
+      background: transparent;
+      border: 1px solid var(--color-primary-green);
+      border-radius: 9px;
+      padding: 9px 14px;
+      color: var(--color-primary-green);
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .empty-cta:hover { background: rgba(2,204,116,0.05); }
+    .empty-cta:focus-visible { outline: 2px solid var(--color-primary-green); outline-offset: 2px; }
+    .empty-cta--primary { background: var(--color-primary-green); color: #fff; border-color: var(--color-primary-green); }
+    .empty-cta--primary:hover { background: var(--color-primary-green); filter: brightness(0.95); }
 
     /* Row 2-col */
     .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -388,10 +420,21 @@ interface ComodinSlotVm {
 
     /* Especiales */
     .spk { background: #fff; border: 1px solid var(--color-line); border-radius: 12px; padding: 12px 14px; }
-    .spk__h { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .spk__h { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .spk__h > span:first-child { display: inline-flex; align-items: center; gap: 6px; }
+    .spk__progress {
+      background: rgba(2,204,116,0.1);
+      color: var(--color-primary-green);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-family: var(--font-display);
+      font-size: 11px;
+      letter-spacing: 0.04em;
+    }
     .spk__row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-    .spk__c { text-align: center; padding: 6px 4px; border-radius: 7px; text-decoration: none; color: inherit; transition: all 0.2s; display: flex; align-items: center; gap: 6px; justify-content: center; }
+    .spk__c { text-align: center; padding: 6px 4px; border-radius: 7px; text-decoration: none; color: inherit; transition: transform 0.2s ease, box-shadow 0.2s ease; display: flex; align-items: center; gap: 6px; justify-content: center; }
     .spk__c:hover { transform: translateY(-1px); }
+    .spk__c:focus-visible { outline: 2px solid var(--color-primary-green); outline-offset: 3px; }
     .spk__c--g { background: linear-gradient(135deg, #fde047, #f59e0b); color: #7c2d12; }
     .spk__c--s { background: linear-gradient(135deg, #e5e7eb, #9ca3af); color: #1f2937; }
     .spk__c--e { background: #f3f4f6; border: 1px dashed var(--color-primary-green); color: var(--color-primary-green); }
@@ -400,18 +443,29 @@ interface ComodinSlotVm {
 
     /* Ranking */
     .rk { background: linear-gradient(135deg, #02cc74, #016b3d); color: #fff; border-radius: 14px; padding: 18px; }
-    .rk__r { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+    .rk__r { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; gap: 12px; }
     .rk__big { font-family: var(--font-display); font-size: 32px; line-height: 1; }
     .rk__l { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.85; margin-top: 3px; }
-    .rk__r2 { text-align: right; }
+    .rk__r2 { text-align: right; min-width: 0; flex: 0 1 auto; max-width: 50%; }
     .rk__r2 .rk__big { font-size: 24px; }
+    .rk__best-group {
+      display: inline-block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      vertical-align: bottom;
+    }
     .rk__bar { height: 4px; background: rgba(255,255,255,0.25); border-radius: 999px; overflow: hidden; }
     .rk__bar__f { height: 100%; background: #fff; transition: width 0.3s; }
-    .rk__s { font-size: 10px; opacity: 0.85; margin-top: 4px; display: flex; justify-content: space-between; }
+    .rk__s { font-size: 10px; opacity: 0.85; margin-top: 4px; display: flex; justify-content: space-between; align-items: center; }
+    .rk__link { color: #fff; text-decoration: none; font-weight: 600; opacity: 0.95; }
+    .rk__link:hover { opacity: 1; text-decoration: underline; }
 
     /* Comodines */
     .com { background: #fff; border: 1px solid var(--color-line); border-radius: 12px; padding: 12px 14px; }
     .com__h { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .com__h > span:first-child { display: inline-flex; align-items: center; gap: 6px; }
     .com__h a { color: var(--color-primary-green); text-decoration: none; font-weight: 600; }
     .com__row { display: flex; gap: 6px; }
     .com__c { flex: 1; height: 48px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; color: #fff; text-align: center; font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; transition: transform 0.2s; }
@@ -435,6 +489,36 @@ export class HomeComponent implements OnInit {
     return Math.max(0, Math.ceil(diff / 86_400_000));
   });
 
+  /** Phase del torneo derivado de fechas — drives CTA contextual + hero copy. */
+  tournamentPhase = computed<TournamentPhase>(() => {
+    const now = Date.now();
+    const startMs = new Date(TOURNAMENT_START_ISO).getTime();
+    const endMs = new Date(TOURNAMENT_END_ISO).getTime();
+    if (now < startMs) return 'pre';
+    if (now > endMs) return 'post';
+    return 'live';
+  });
+
+  /** ID del próximo partido sin pick (para CTA durante torneo). */
+  private nextMatchId = signal<string | null>(null);
+
+  /** CTA contextual única según phase del torneo. */
+  contextualCta = computed<ContextualCta>(() => {
+    const phase = this.tournamentPhase();
+    if (phase === 'pre') {
+      return { label: 'Predecí clasificados', routerLink: '/picks/group-stage', queryParams: { view: 'pred' } };
+    }
+    if (phase === 'post') {
+      return { label: 'Ver mi ranking final', routerLink: '/ranking' };
+    }
+    // live: si tenemos next match, link específico; sino /picks como fallback
+    const next = this.nextMatchId();
+    if (next) {
+      return { label: 'Hacé pick del próximo partido', routerLink: ['/picks/match', next] };
+    }
+    return { label: 'Hacer picks', routerLink: '/picks' };
+  });
+
   totals = signal<{ points: number; globalRank: number | null; hasComplete: boolean }>({
     points: 0, globalRank: null, hasComplete: false,
   });
@@ -443,6 +527,7 @@ export class HomeComponent implements OnInit {
   accuracyPct = signal<number | null>(null);
   accuracyCount = signal<string | null>(null);
   myGroupsList = signal<GroupRow[]>([]);
+  groupsLoading = signal(true);
   bestPosition = signal<number | null>(null);
   bestPositionGroupName = signal<string>('');
   rankPercentile = signal<number>(0);
@@ -451,6 +536,9 @@ export class HomeComponent implements OnInit {
     { type: 'RUNNER_UP', label: 'Sub', teamName: null, flag: null },
     { type: 'DARK_HORSE', label: 'Revelación', teamName: null, flag: null },
   ]);
+  /** Cuántos de los 3 especiales tienen pick (visible en header). */
+  especialesProgress = computed(() => this.specialPicks().filter((s) => !!s.teamName).length);
+
   comodinesActive = signal(0);
   comodinesCap = signal(5);
   comodinSlots = computed<ComodinSlotVm[]>(() => {
@@ -530,6 +618,14 @@ export class HomeComponent implements OnInit {
         this.nextDeadlineLabel.set(h > 0 ? `${h}h ${m}min` : `${m} min`);
       }
 
+      // Next match overall (futuro más próximo, con o sin pick) — drives CTA durante torneo
+      const futureMatches = allMatches
+        .filter((m) => new Date(m.kickoffAt).getTime() > now)
+        .sort((a, b) => new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime());
+      // Prioriza el primer pending sin pick; si todos tienen pick, usa el próximo a jugarse
+      const candidateMatchId = pending[0]?.id ?? futureMatches[0]?.id ?? null;
+      this.nextMatchId.set(candidateMatchId);
+
       const finalPicks = ((picksRes.data ?? []) as ReadonlyArray<{ matchId: string; pointsEarned?: number | null }>)
         .filter((p) => {
           const match = allMatches.find((m) => m.id === p.matchId);
@@ -548,7 +644,10 @@ export class HomeComponent implements OnInit {
 
   private async loadGroups() {
     const userId = this.auth.user()?.sub ?? '';
-    if (!userId) return;
+    if (!userId) {
+      this.groupsLoading.set(false);
+      return;
+    }
     try {
       const groups = this.userModes.groups().slice(0, 5);
       const palette = [
@@ -597,6 +696,8 @@ export class HomeComponent implements OnInit {
       }
     } catch (e) {
       console.warn('[home] load groups failed', e);
+    } finally {
+      this.groupsLoading.set(false);
     }
   }
 }

@@ -1,11 +1,16 @@
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService } from '../../core/user/user-modes.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
 import { PicksSyncService } from '../../core/sync/picks-sync.service';
+import { GroupActionsService } from '../../core/groups/group-actions.service';
+import { ConfirmDialogService } from '../../shared/ui/confirm-dialog.service';
+import { IconComponent } from '../../shared/ui/icon/icon.component';
+import { EmptyBlockComponent } from '../../shared/ui/empty-block/empty-block.component';
 
 type GameMode = 'SIMPLE' | 'COMPLETE';
 
@@ -29,7 +34,7 @@ interface TeamItem {
 @Component({
   standalone: true,
   selector: 'app-special-picks',
-  imports: [RouterLink, TeamFlagComponent],
+  imports: [RouterLink, FormsModule, TeamFlagComponent, IconComponent, EmptyBlockComponent],
   template: `
     <header class="page-header">
       <div class="page-header__title">
@@ -41,9 +46,10 @@ interface TeamItem {
       </div>
 
       @if (availableModes().length > 1) {
-        <div class="wf-seg" role="tablist" style="max-width: 320px; margin-top: var(--space-md);">
+        <div class="wf-seg" role="tablist" aria-label="Modo de predicción" style="max-width: 320px; margin-top: var(--space-md);">
           @for (m of availableModes(); track m) {
-            <button type="button" class="wf-seg__item"
+            <button type="button" class="wf-seg__item" role="tab"
+                    [attr.aria-selected]="mode() === m"
                     [class.is-active]="mode() === m"
                     (click)="switchMode(m)">
               {{ m === 'COMPLETE' ? 'Modo completo' : 'Modo simple' }}
@@ -64,16 +70,19 @@ interface TeamItem {
 
     <main class="container-app">
       @if (availableModes().length === 0) {
-        <div class="empty-state">
-          <h3>Necesitas un grupo primero</h3>
-          <p>
-            Crea o únete a un grupo para empezar tus picks especiales.
-            <a class="link-green" routerLink="/groups/new">Crear un grupo →</a>
-          </p>
-        </div>
+        <app-empty-block iconName="users"
+                         title="Necesitas un grupo primero"
+                         sub="Crea o únete a un grupo para empezar tus picks especiales.">
+          <button type="button" class="btn-wf btn-wf--primary"
+                  (click)="groupActions.openCreate()">Crear un grupo</button>
+          <button type="button" class="btn-wf btn-wf--ghost"
+                  (click)="groupActions.openJoin()">Unirme con código</button>
+        </app-empty-block>
       } @else {
       <div class="lock-banner">
-        <span class="lock-banner__icon">⏰</span>
+        <span class="lock-banner__icon" aria-hidden="true">
+          <app-icon name="clock" size="md" />
+        </span>
         <div class="lock-banner__body">
           @if (locked()) {
             <h3>Bloqueados — el torneo ya empezó</h3>
@@ -97,6 +106,11 @@ interface TeamItem {
               <div class="special-pick__header">
                 <h3 class="special-pick__type">{{ t.label }}</h3>
                 <span class="special-pick__points">{{ t.points }} pts</span>
+                @if (saving()[t.key]) {
+                  <span class="special-pick__saving" aria-live="polite">
+                    <app-icon name="clock" size="sm" /> Guardando…
+                  </span>
+                }
               </div>
 
               @let selected = picksByType()[t.key];
@@ -105,6 +119,14 @@ interface TeamItem {
                   <app-team-flag [flagCode]="teamFlagFromSlug(selected)" [crestUrl]="teamCrestFromSlug(selected)"
                                  [name]="teamName(selected)" [size]="32" />
                   <span class="special-pick__current-name">{{ teamName(selected) }}</span>
+                  @if (!locked()) {
+                    <button type="button" class="special-pick__deselect"
+                            [disabled]="saving()[t.key]"
+                            (click)="deselect(t.key)"
+                            aria-label="Quitar selección">
+                      <app-icon name="close" size="sm" /> Quitar
+                    </button>
+                  }
                 </div>
               } @else {
                 <div class="special-pick__current special-pick__current--empty">
@@ -112,15 +134,45 @@ interface TeamItem {
                 </div>
               }
 
+              @if (t.key === 'DARK_HORSE') {
+                @let dh = picksByType()['DARK_HORSE'];
+                @if (dh && (picksByType()['CHAMPION'] === dh || picksByType()['RUNNER_UP'] === dh)) {
+                  <p class="special-pick__hint" role="status">
+                    <app-icon name="alert" size="sm" /> Ya seleccionado como
+                    {{ picksByType()['CHAMPION'] === dh ? 'Campeón' : 'Subcampeón' }}
+                    — el bonus de Revelación NO se acumula si coincide.
+                  </p>
+                }
+              }
+
+              <!-- Search input para filtrar 32 equipos (UX gap doc 15) -->
+              <label class="special-pick__search">
+                <span class="visually-hidden">Buscar equipo en {{ t.label }}</span>
+                <app-icon name="search" size="sm" />
+                <input type="search"
+                       [placeholder]="'Buscar equipo en ' + t.label"
+                       [ngModel]="searchTerms()[t.key] ?? ''"
+                       (ngModelChange)="setSearchTerm(t.key, $event)">
+              </label>
+
               <div class="special-pick__teams">
-                @for (team of teams(); track team.slug) {
+                @for (team of filteredTeams(t.key); track team.slug) {
+                  @let invalid = !isValidPick(t.key, team.slug);
                   <button class="special-pick__team" type="button"
                           [class.is-selected]="picksByType()[t.key] === team.slug"
-                          [disabled]="locked() || saving()[t.key]"
+                          [class.is-invalid]="invalid"
+                          [disabled]="locked() || saving()[t.key] || invalid"
+                          [attr.title]="invalid ? 'Ya elegido como ' + invalidReason(t.key, team.slug) : null"
+                          [attr.aria-label]="team.name + (invalid ? ' (no disponible: ' + invalidReason(t.key, team.slug) + ')' : '')"
                           (click)="setPick(t.key, team.slug)">
-                    <app-team-flag [flagCode]="team.flagCode" [crestUrl]="team.crestUrl" [name]="team.name" [size]="28" />
+                    <app-team-flag [flagCode]="team.flagCode" [crestUrl]="team.crestUrl" [name]="team.name" [size]="32" />
                     <span class="special-pick__team-name">{{ team.name }}</span>
                   </button>
+                }
+                @if (filteredTeams(t.key).length === 0) {
+                  <p class="special-pick__no-results">
+                    Sin coincidencias para "{{ searchTerms()[t.key] }}".
+                  </p>
                 }
               </div>
             </article>
@@ -140,21 +192,112 @@ interface TeamItem {
       }
     </main>
   `,
+  styles: [`
+    :host { display: block; }
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .special-pick__saving {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: var(--fs-xs);
+      color: var(--color-text-muted);
+      margin-left: var(--space-sm);
+    }
+    .special-pick__deselect {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: auto;
+      background: transparent;
+      border: 1px solid var(--color-line);
+      color: var(--color-text-muted);
+      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: var(--fs-xs);
+    }
+    .special-pick__deselect:hover:not(:disabled) {
+      border-color: var(--color-danger, #c33);
+      color: var(--color-danger, #c33);
+    }
+    .special-pick__deselect:focus-visible {
+      outline: 2px solid var(--color-primary-green);
+      outline-offset: 2px;
+    }
+    .special-pick__hint {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: var(--fs-xs);
+      color: var(--color-text-muted);
+      background: var(--wf-warn-soft, rgba(255, 200, 0, 0.08));
+      padding: 6px 10px;
+      border-radius: 8px;
+      margin: var(--space-xs) 0;
+    }
+    .special-pick__search {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border: 1px solid var(--color-line);
+      border-radius: 8px;
+      margin: var(--space-sm) 0;
+      background: var(--color-primary-white);
+    }
+    .special-pick__search input {
+      flex: 1;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      font-size: var(--fs-sm);
+    }
+    .special-pick__search:focus-within {
+      border-color: var(--color-primary-green);
+      box-shadow: 0 0 0 2px rgba(2, 204, 116, 0.18);
+    }
+    .special-pick__team.is-invalid {
+      opacity: 0.4;
+      text-decoration: line-through;
+      cursor: not-allowed;
+    }
+    .special-pick__no-results {
+      grid-column: 1 / -1;
+      text-align: center;
+      color: var(--color-text-muted);
+      font-size: var(--fs-sm);
+      padding: var(--space-md);
+    }
+  `],
 })
 export class SpecialPicksComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  groupActions = inject(GroupActionsService);
   private userModes = inject(UserModesService);
   private toast = inject(ToastService);
   private sync = inject(PicksSyncService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private confirmDialog = inject(ConfirmDialogService);
 
   types = TYPES;
   teams = signal<TeamItem[]>([]);
   teamMap = signal<Map<string, TeamItem>>(new Map());
   picksByType = signal<Partial<Record<SpecialKey, string>>>({});
   saving = signal<Partial<Record<SpecialKey, boolean>>>({});
+  /** Per-category search terms for the team grid filter. */
+  searchTerms = signal<Partial<Record<SpecialKey, string>>>({});
   tournamentLockAt = signal<string | null>(null);
   loading = signal(true);
   lastSavedAt = signal<string | null>(null);
@@ -189,6 +332,9 @@ export class SpecialPicksComponent implements OnInit, OnDestroy {
     });
   });
 
+  /** True iff the user has at least one pick set (used for mode-switch warning). */
+  hasPicks = computed(() => Object.keys(this.picksByType()).length > 0);
+
   async ngOnInit() {
     this.tickTimer = setInterval(() => this.nowTick.set(Date.now()), 5000);
 
@@ -216,6 +362,17 @@ export class SpecialPicksComponent implements OnInit, OnDestroy {
 
   async switchMode(m: GameMode) {
     if (this.mode() === m) return;
+    // Warning when picks exist — cambiar de modo no destruye los picks, pero
+    // los del modo destino son una colección separada (puede sorprender).
+    if (this.hasPicks()) {
+      const ok = await this.confirmDialog.ask({
+        title: 'Cambiar modo',
+        message: 'Tus selecciones actuales NO se aplican al otro modo. Las picks del modo destino se cargan desde su propia colección — las podes recuperar volviendo al modo actual.',
+        confirmLabel: 'Cambiar modo',
+        cancelLabel: 'Cancelar',
+      });
+      if (!ok) return;
+    }
     this.mode.set(m);
     void this.router.navigate([], {
       relativeTo: this.route,
@@ -269,11 +426,6 @@ export class SpecialPicksComponent implements OnInit, OnDestroy {
     return this.teamMap().get(slug)?.name ?? slug;
   }
 
-  flagClassForSlug(slug: string): string {
-    const code = this.teamMap().get(slug)?.flagCode;
-    return code ? `flag--${code.toLowerCase()}` : 'flag';
-  }
-
   teamFlagFromSlug(slug: string): string {
     return this.teamMap().get(slug)?.flagCode ?? '';
   }
@@ -281,32 +433,42 @@ export class SpecialPicksComponent implements OnInit, OnDestroy {
     return this.teamMap().get(slug)?.crestUrl ?? null;
   }
 
-  flagClass(code: string): string {
-    return `flag--${code.toLowerCase()}`;
+  /** Filtra teams según el search term de cada categoría. */
+  filteredTeams(type: SpecialKey): TeamItem[] {
+    const term = (this.searchTerms()[type] ?? '').trim().toLowerCase();
+    if (!term) return this.teams();
+    return this.teams().filter((t) => t.name.toLowerCase().includes(term));
+  }
+
+  setSearchTerm(type: SpecialKey, value: string) {
+    this.searchTerms.update((s) => ({ ...s, [type]: value }));
+  }
+
+  /**
+   * Valida que la pick sea legal antes de permitirla:
+   *  - CHAMPION ≠ RUNNER_UP (lógicamente uno gana al otro).
+   *  - DARK_HORSE puede coincidir, pero se muestra un hint visual.
+   */
+  isValidPick(type: SpecialKey, teamId: string): boolean {
+    const picks = this.picksByType();
+    if (type === 'CHAMPION'  && picks.RUNNER_UP === teamId) return false;
+    if (type === 'RUNNER_UP' && picks.CHAMPION === teamId) return false;
+    return true;
+  }
+
+  invalidReason(type: SpecialKey, teamId: string): string {
+    const picks = this.picksByType();
+    if (type === 'CHAMPION'  && picks.RUNNER_UP === teamId) return 'Subcampeón';
+    if (type === 'RUNNER_UP' && picks.CHAMPION === teamId) return 'Campeón';
+    return '';
   }
 
   setPick(type: SpecialKey, teamId: string) {
     if (!teamId || this.locked()) return;
+    if (!this.isValidPick(type, teamId)) return;
     const userId = this.auth.user()?.sub;
     const m = this.mode();
     if (!userId || !m) return;
-
-    // Validación: el mismo equipo NO puede ser campeón Y subcampeón
-    // (lógicamente uno gana al otro). La revelación SÍ puede coincidir
-    // con campeón o subcampeón.
-    if (type !== 'DARK_HORSE') {
-      const others = this.picksByType();
-      for (const k of ['CHAMPION', 'RUNNER_UP'] as const) {
-        if (k === type) continue;
-        if (others[k] === teamId) {
-          const otherLabel = TYPES.find((t) => t.key === k)?.label ?? k;
-          this.toast.error(
-            `Ese equipo ya está elegido como ${otherLabel}. Cámbialo primero o elige otro.`,
-          );
-          return;
-        }
-      }
-    }
 
     // Optimistic UI: el signal local se actualiza al instante. El sync
     // service escribe a localStorage + manda al backend con su debounce
@@ -314,12 +476,38 @@ export class SpecialPicksComponent implements OnInit, OnDestroy {
     //
     // No mostramos toast de "actualizado" — el cambio visual es feedback
     // suficiente y los users reportaron que el toast spam (uno por cada
-    // cambio rápido) era molesto. Solo mantenemos el toast de error de
-    // arriba (conflicto campeón ↔ subcampeón) que sí es accionable.
+    // cambio rápido) era molesto. Solo dejamos el saving indicator inline.
     this.picksByType.update((p) => ({ ...p, [type]: teamId }));
+    this.saving.update((s) => ({ ...s, [type]: true }));
     this.lastSavedAt.set('justo ahora');
     this.sync.enqueue('special', `${userId}:${type}:${m}`, {
       userId, type, teamId, tournamentId: TOURNAMENT_ID, mode: m,
     });
+    // Best-effort: reset saving indicator after debounce window (1.5s sync + buffer).
+    setTimeout(() => {
+      this.saving.update((s) => ({ ...s, [type]: false }));
+    }, 2500);
+  }
+
+  /** Permite quitar la selección de una categoría (UX gap doc 15). */
+  deselect(type: SpecialKey) {
+    if (this.locked()) return;
+    const userId = this.auth.user()?.sub;
+    const m = this.mode();
+    if (!userId || !m) return;
+    this.picksByType.update((p) => {
+      const next = { ...p };
+      delete next[type];
+      return next;
+    });
+    this.saving.update((s) => ({ ...s, [type]: true }));
+    this.lastSavedAt.set('justo ahora');
+    // El sync service trata teamId vacío como "borrar el slot".
+    this.sync.enqueue('special', `${userId}:${type}:${m}`, {
+      userId, type, teamId: '', tournamentId: TOURNAMENT_ID, mode: m,
+    });
+    setTimeout(() => {
+      this.saving.update((s) => ({ ...s, [type]: false }));
+    }, 2500);
   }
 }

@@ -1,7 +1,7 @@
 /* ================================================================
    Polla App — production layout (extraído del mockup app.css).
    Tokens y fuentes ya viven en tokens.css. Este archivo agrega:
-   - Shell con grid: body.app + app-topbar/app-tabbar/app-topnav/app-sidebar/app-rail/app-main
+   - Shell con grid: body.app + app-topbar/app-sidebar/app-rail/app-main
    - Auth split-screen: .auth-shell + .auth-brand + .auth-form (override del legacy auth-shell.css)
    - Onboarding: .onb-shell + .onb-card + .onb-step + variants de hero
    - Home/hub: .home-greet, .hub-grid, .hub-tile, .home-section, .home-matches
@@ -142,38 +142,6 @@ a.btn-wf { text-decoration: none; }
   border: 0;
   cursor: pointer;
 }
-
-/* ---------- Tabbar (mobile fixed bottom) ---------- */
-.app-tabbar {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  background: var(--wf-paper);
-  border-top: 1px solid var(--wf-line);
-  z-index: 30;
-}
-.app-tabbar__item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 0 10px;
-  font-size: 10px;
-  color: var(--wf-ink-3);
-  font-weight: 600;
-  gap: 2px;
-  text-decoration: none;
-}
-.app-tabbar__item.is-active { color: var(--wf-green-ink); }
-.app-tabbar__item .icon {
-  font-size: 18px;
-  color: var(--wf-ink-3);
-}
-.app-tabbar__item.is-active .icon { color: var(--wf-green); }
-
-/* ---------- Top nav (desktop only — visible vía media query abajo) ---------- */
-.app-topnav { display: none; }
 
 /* ---------- Sidebar izquierdo (desktop only) ---------- */
 .app-sidebar { display: none; }
@@ -1500,7 +1468,7 @@ a.btn-wf { text-decoration: none; }
   -webkit-appearance: none;
   margin: 0;
 }
-.score__input:focus {
+.score__input:focus-visible {
   outline: none;
   border-color: var(--wf-green);
   box-shadow: 0 0 0 3px var(--wf-green-soft);
@@ -3278,7 +3246,7 @@ a.btn-wf { text-decoration: none; }
   background: var(--wf-paper);
   color: var(--wf-ink);
 }
-.auth-input:focus {
+.auth-input:focus-visible {
   outline: none;
   border-color: var(--wf-green);
   box-shadow: 0 0 0 3px var(--wf-green-soft);
@@ -3560,7 +3528,7 @@ a.btn-wf { text-decoration: none; }
   text-align: center;
   color: var(--wf-ink-3);
 }
-.otp__d:focus {
+.otp__d:focus-visible {
   outline: none;
   border: 2px solid var(--wf-green);
   background: var(--wf-paper);

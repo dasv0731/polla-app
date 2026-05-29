@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="es-EC"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Polla Mundialista · Variación Híbrida — Golgana</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./styles/tokens.css"><link rel="stylesheet" href="./styles/base.css"><link rel="stylesheet" href="./styles/golgana-pro.css">
+<link rel="icon" type="image/png" href="./assets/logo-golgana.png">
+<style>
+body{background:#f5f4f0;font-family:var(--font-primary)}
+
+/* LEFT SIDEBAR icons (G) */
+.lsb{position:fixed;top:0;left:0;bottom:0;width:64px;background:#0a0a0a;border-right:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:6px;z-index:50;transition:width 0.2s;overflow:hidden}
+.lsb:hover{width:200px;align-items:stretch}
+.lsb__logo{width:36px;height:36px;display:grid;place-items:center;margin-bottom:18px;flex-shrink:0}
+.lsb:hover .lsb__logo{width:auto;margin-left:14px;justify-content:flex-start;display:flex;align-items:center;gap:10px}
+.lsb__logo img{height:28px}
+.lsb__logo strong{display:none;color:#fff;font-family:var(--font-display);font-size:18px;letter-spacing:0.04em}
+.lsb:hover .lsb__logo strong{display:block}
+.lsb a{color:rgba(255,255,255,0.7);text-decoration:none;display:flex;align-items:center;gap:14px;width:48px;height:44px;justify-content:center;border-radius:8px;font-size:18px;transition:all 0.15s;flex-shrink:0;white-space:nowrap}
+.lsb:hover a{width:auto;justify-content:flex-start;padding:0 14px;margin:0 8px}
+.lsb a span{font-size:13px;font-weight:500;letter-spacing:0.04em;display:none}
+.lsb:hover a span{display:inline}
+.lsb a:hover,.lsb a.active{background:rgba(2,204,116,0.18);color:#fff}
+.lsb__bottom{margin-top:auto;display:flex;flex-direction:column;gap:6px;align-items:center;width:100%}
+.lsb:hover .lsb__bottom{align-items:stretch}
+.lsb__bell{position:relative}
+.lsb__bell::after{content:"3";position:absolute;top:6px;right:14px;background:var(--color-primary-green);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:8px}
+.lsb__usr{display:flex;align-items:center;gap:10px;width:48px;height:48px;justify-content:center;flex-shrink:0}
+.lsb:hover .lsb__usr{width:auto;justify-content:flex-start;padding:0 14px;margin:0 8px 8px}
+.lsb__av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#067a4a,#02cc74);display:grid;place-items:center;color:#fff;font-weight:600;font-size:12px;flex-shrink:0}
+.lsb__usr span{font-size:13px;color:#fff;display:none}
+.lsb:hover .lsb__usr span{display:inline}
+
+/* TOAST B */
+.toast{margin-left:64px;background:#0a0a0a;color:#fff;border-bottom:1px solid rgba(2,204,116,0.4);padding:8px 24px;text-align:center;font-size:12px;display:flex;align-items:center;justify-content:center;gap:10px}
+.toast::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--color-primary-green);animation:p 1.5s infinite}
+@keyframes p{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:0.6}}
+.toast a{color:var(--color-primary-green);font-weight:600;text-decoration:none}
+
+/* SHELL — triple column */
+.shell{margin-left:64px;display:grid;grid-template-columns:1fr 320px;gap:24px;padding:24px;max-width:1480px}
+@media(max-width:1100px){.shell{grid-template-columns:1fr}}
+.main{display:flex;flex-direction:column;gap:16px}
+.side{position:sticky;top:24px;align-self:start;display:flex;flex-direction:column;gap:14px;max-height:calc(100vh - 48px);overflow-y:auto}
+.side > *{flex-shrink:0}
+.side::-webkit-scrollbar{width:4px}
+.side::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.15);border-radius:99px}
+@media(max-width:1100px){.side{position:static;max-height:none;overflow:visible}}
+
+/* HERO compacto mix B+C */
+.hero{background:linear-gradient(135deg,#0a0a0a 0%,#0a3d20 60%,#067a4a 100%);color:#fff;border-radius:16px;padding:22px 26px;position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;background:radial-gradient(60% 80% at 80% 30%,rgba(2,204,116,0.22),transparent 60%);z-index:0}
+.hero__in{position:relative;z-index:1;display:grid;grid-template-columns:auto 1fr auto;gap:20px;align-items:center}
+.hero__av{width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#02cc74,#016b3d);display:grid;place-items:center;font-family:var(--font-display);font-size:20px;color:#fff}
+.hero__k{font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.55);margin-bottom:4px}
+.hero__t{font-family:var(--font-display);font-size:24px;line-height:1.05}
+.hero__t strong{color:var(--color-primary-green)}
+.hero__s{font-size:12px;color:rgba(255,255,255,0.7);margin-top:4px}
+.hero__alert{background:rgba(220,38,38,0.18);border:1px solid rgba(220,38,38,0.45);color:#fca5a5;padding:5px 10px;border-radius:6px;font-size:10px;display:inline-flex;align-items:center;gap:6px;margin-top:6px}
+.hero__cta{background:var(--color-primary-green);color:#fff;padding:11px 18px;border-radius:8px;font-weight:600;text-decoration:none;font-size:12px;letter-spacing:0.04em;text-transform:uppercase;white-space:nowrap}
+@media(max-width:640px){.hero__in{grid-template-columns:1fr;text-align:center}.hero__av{margin:0 auto}}
+
+/* KPI strip horizontal */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:rgba(0,0,0,0.08);border:1px solid rgba(0,0,0,0.08);border-radius:12px;overflow:hidden}
+.kpi{background:#fff;padding:14px 16px}
+.kpi--g{background:linear-gradient(135deg,#02cc74,#016b3d);color:#fff}
+.kpi__l{font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:4px}
+.kpi--g .kpi__l{color:rgba(255,255,255,0.85)}
+.kpi__v{font-family:var(--font-display);font-size:24px;line-height:1}
+.kpi__v small{font-size:11px;color:var(--color-text-muted);font-family:var(--font-primary)}
+.kpi--g .kpi__v small{color:rgba(255,255,255,0.7)}
+.kpi__d{font-size:10px;color:var(--color-primary-green);font-weight:600;margin-top:3px}
+.kpi--g .kpi__d{color:rgba(255,255,255,0.85)}
+@media(max-width:780px){.kpis{grid-template-columns:repeat(2,1fr)}}
+
+/* PICKS PENDIENTES C */
+.pp{background:#0a0a0a;color:#fff;border-radius:14px;padding:22px;display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:center;position:relative;overflow:hidden}
+.pp::before{content:"";position:absolute;top:-50%;right:-20%;width:280px;height:280px;background:radial-gradient(circle,rgba(2,204,116,0.18),transparent 70%)}
+.pp__n{font-family:var(--font-display);font-size:56px;color:var(--color-primary-green);line-height:1;position:relative}
+.pp__t{position:relative}
+.pp__t strong{font-family:var(--font-display);font-size:18px;display:block}
+.pp__t small{font-size:11px;color:rgba(255,255,255,0.6)}
+.pp__t small em{color:#fca5a5;font-style:normal}
+.pp__b{background:var(--color-primary-green);color:#fff;padding:11px 18px;border-radius:8px;font-weight:600;text-decoration:none;font-size:12px;letter-spacing:0.04em;text-transform:uppercase;position:relative;white-space:nowrap}
+@media(max-width:600px){.pp{grid-template-columns:1fr;text-align:center}}
+
+/* SECTION HEADER */
+.sh{display:flex;justify-content:space-between;align-items:baseline;margin-top:8px;flex-wrap:wrap;gap:10px}
+.sh h2{font-family:var(--font-display);font-size:20px}
+.sh a{font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-primary-green);font-weight:600;text-decoration:none}
+
+/* GRUPOS A */
+.gr-list{display:flex;flex-direction:column;gap:8px}
+.gr{background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:10px;padding:12px;display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;transition:all 0.15s}
+.gr:hover{border-color:rgba(2,204,116,0.4);background:rgba(2,204,116,0.02)}
+.gr__av{width:38px;height:38px;border-radius:9px;display:grid;place-items:center;color:#fff;font-family:var(--font-display);font-size:15px;flex-shrink:0}
+.gr__b{flex:1;min-width:0}
+.gr__n{font-family:var(--font-display);font-size:16px;line-height:1}
+.gr__m{font-size:11px;color:var(--color-text-muted);margin-top:3px}
+.gr__r{padding:3px 9px;border-radius:6px;font-family:var(--font-display);font-size:14px}
+.gr__r--g{background:rgba(245,158,11,0.18);color:#b45309}
+.gr__r--b{background:rgba(180,83,9,0.18);color:#92400e}
+.gr__r--n{background:rgba(0,0,0,0.06);color:var(--color-text-muted)}
+.gr-act{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.gr-act button{background:transparent;border:1px dashed rgba(2,204,116,0.4);border-radius:9px;padding:9px;color:var(--color-primary-green);font-family:inherit;font-weight:600;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer}
+.gr-act button:hover{background:rgba(2,204,116,0.05);border-style:solid}
+
+/* GRID row */
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:780px){.row2{grid-template-columns:1fr}}
+
+/* ESPECIALES mix B + C · compacto */
+.spk{background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:12px;padding:12px 14px}
+.spk__h{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.spk__h a{color:var(--color-primary-green);text-decoration:none;font-weight:600}
+.spk__row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.spk__c{text-align:center;padding:6px 4px;border-radius:7px;text-decoration:none;color:inherit;transition:all 0.2s;display:flex;align-items:center;gap:6px;justify-content:center}
+.spk__c:hover{transform:translateY(-1px)}
+.spk__c--g{background:linear-gradient(135deg,#fde047,#f59e0b);color:#7c2d12}
+.spk__c--s{background:linear-gradient(135deg,#e5e7eb,#9ca3af);color:#1f2937}
+.spk__c--e{background:#f3f4f6;border:1px dashed var(--color-primary-green);color:var(--color-primary-green)}
+.spk__big{font-size:16px;line-height:1}
+.spk__nm{font-family:var(--font-display);font-size:11px;line-height:1}
+.spk__l{display:none}
+
+/* RANKING C */
+.rk{background:linear-gradient(135deg,#02cc74,#016b3d);color:#fff;border-radius:14px;padding:18px}
+.rk__r{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.rk__big{font-family:var(--font-display);font-size:32px;line-height:1}
+.rk__l{font-size:9px;letter-spacing:0.14em;text-transform:uppercase;opacity:0.85;margin-top:3px}
+.rk__r2{text-align:right}
+.rk__r2 .rk__big{font-size:24px}
+.rk__bar{height:4px;background:rgba(255,255,255,0.25);border-radius:999px;overflow:hidden}
+.rk__bar__f{height:100%;background:#fff;width:78%}
+.rk__s{font-size:10px;opacity:0.85;margin-top:4px;display:flex;justify-content:space-between}
+
+/* COMODINES A · compacto */
+.com{background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:12px;padding:12px 14px}
+.com__h{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.com__h a{color:var(--color-primary-green);text-decoration:none;font-weight:600}
+.com__row{display:flex;gap:6px}
+.com__c{flex:1;height:48px;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:6px;color:#fff;text-align:center;font-size:10px;letter-spacing:0.04em;text-transform:uppercase;cursor:pointer;transition:transform 0.2s}
+.com__c:hover{transform:translateY(-1px)}
+.com__c__i{font-size:16px;line-height:1}
+.com__c--d{background:linear-gradient(135deg,#02cc74,#016b3d)}
+.com__c--s{background:linear-gradient(135deg,#f59e0b,#b45309)}
+.com__c--e{background:rgba(0,0,0,0.04);color:rgba(0,0,0,0.35);border:1px dashed rgba(0,0,0,0.2);cursor:default}
+
+/* PRÓXIMO PARTIDO · producción */
+.np{background:#0a0a0a;color:#fff;border-radius:18px;position:relative;overflow:hidden;border:1px solid rgba(2,204,116,0.3);box-shadow:0 12px 40px rgba(0,0,0,0.18)}
+.np__bg{position:absolute;inset:0;z-index:0;background:linear-gradient(160deg,#0a0a0a 0%,#0a3d20 55%,#067a4a 120%)}
+.np__bg::before{content:"";position:absolute;inset:0;background:radial-gradient(80% 50% at 50% 0%,rgba(2,204,116,0.5),transparent 65%),radial-gradient(60% 60% at 100% 100%,rgba(2,204,116,0.2),transparent 60%)}
+.np__in{position:relative;z-index:1;padding:22px}
+.np__top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.np__live{display:inline-flex;align-items:center;gap:8px;background:rgba(2,204,116,0.18);border:1px solid rgba(2,204,116,0.4);border-radius:999px;padding:5px 12px;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;color:var(--color-primary-green)}
+.np__live::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--color-primary-green);box-shadow:0 0 0 3px rgba(2,204,116,0.3);animation:pl 1.5s infinite}
+@keyframes pl{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:0.6}}
+.np__tag{font-size:10px;color:rgba(255,255,255,0.55);letter-spacing:0.08em}
+.np__hl{font-family:var(--font-display);font-size:20px;line-height:1.1;color:#fff;margin-bottom:4px}
+.np__hl em{font-style:normal;color:var(--color-primary-green)}
+.np__sub{font-size:11px;color:rgba(255,255,255,0.55);margin-bottom:16px}
+.np__cd{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:18px}
+.np__cd__c{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 0 8px;text-align:center;position:relative;overflow:hidden}
+.np__cd__c::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(2,204,116,0.5),transparent)}
+.np__cd__n{font-family:var(--font-display);font-size:26px;line-height:1;color:#fff}
+.np__cd__l{font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-top:4px;font-weight:600}
+.np__t{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:center;padding:18px 4px;border-top:1px solid rgba(255,255,255,0.08);border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:14px;background:rgba(255,255,255,0.02)}
+.np__tm{text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center}
+.np__fl{width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,0.08);display:grid;place-items:center;font-size:32px;border:2px solid rgba(255,255,255,0.18)}
+.np__tm--home .np__fl{border-color:rgba(2,204,116,0.5);box-shadow:0 0 0 4px rgba(2,204,116,0.12)}
+.np__n{font-family:var(--font-display);font-size:17px;line-height:1}
+.np__sb{font-size:9px;color:rgba(255,255,255,0.55);letter-spacing:0.1em;text-transform:uppercase;font-weight:600}
+.np__vs{display:flex;flex-direction:column;align-items:center;gap:3px}
+.np__vs__l{font-family:var(--font-display);font-size:20px;color:var(--color-primary-green);line-height:1}
+.np__vs__s{font-size:9px;color:rgba(255,255,255,0.45);letter-spacing:0.1em;text-transform:uppercase}
+.np__meta{display:flex;gap:8px;margin-bottom:14px}
+.np__meta__c{flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:9px 10px}
+.np__meta__l{font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:3px;font-weight:600}
+.np__meta__v{color:#fff;font-family:var(--font-display);font-size:13px;line-height:1.1}
+.np__pk{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:linear-gradient(90deg,rgba(2,204,116,0.22),rgba(2,204,116,0.08));border:1px solid rgba(2,204,116,0.45);border-radius:10px;margin-bottom:8px}
+.np__pk__l{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.7);font-weight:600;display:block;margin-bottom:2px}
+.np__pk strong{font-family:var(--font-display);font-size:22px;color:#fff;display:flex;align-items:center;gap:6px}
+.np__pk strong em{font-style:normal;color:#fff;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;font-family:var(--font-primary);font-weight:700;background:rgba(2,204,116,0.35);padding:3px 8px;border-radius:5px}
+.np__pk__e{color:var(--color-primary-green);font-size:11px;text-decoration:none;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:6px 10px;background:rgba(2,204,116,0.15);border:1px solid rgba(2,204,116,0.3);border-radius:6px;transition:all 0.15s}
+.np__pk__e:hover{background:var(--color-primary-green);color:#fff}
+.np__cta{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:10px;background:transparent;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:rgba(255,255,255,0.8);text-decoration:none;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;font-weight:600;transition:all 0.15s;box-sizing:border-box}
+.np__cta:hover{background:rgba(255,255,255,0.06);color:#fff;border-color:rgba(255,255,255,0.3)}
+
+.up{background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:14px;padding:16px}
+.up__h{font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:10px;display:flex;justify-content:space-between}
+.up__h a{color:var(--color-primary-green);font-weight:600;text-decoration:none}
+.up__r{padding:8px 0;border-bottom:1px solid rgba(0,0,0,0.06);text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:3px}
+.up__r:last-child{border-bottom:0}
+.up__r__h{display:flex;justify-content:space-between;font-size:10px;color:var(--color-text-muted)}
+.up__r__h .ok{color:var(--color-primary-green);font-weight:700}
+.up__r__h .pe{color:#dc2626;font-weight:700}
+.up__r__t{font-family:var(--font-display);font-size:13px}
+.up__r__t.m{color:var(--color-text-muted)}
+
+.news{display:flex;flex-direction:column;gap:10px}
+.news__hero{background:#0a0a0a;border-radius:12px;overflow:hidden;text-decoration:none;color:#fff;position:relative;aspect-ratio:5/3;display:flex;align-items:end}
+.news__hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.55}
+.news__hero::before{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.95) 0%,transparent 60%);z-index:1}
+.news__hero__b{position:relative;z-index:2;padding:14px}
+.news__hero__k{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-primary-green);font-weight:700;margin-bottom:5px}
+.news__hero__t{font-family:var(--font-display);font-size:16px;line-height:1.1}
+.news__list{background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:12px;padding:4px 14px}
+.news__row{display:flex;gap:10px;padding:11px 0;border-bottom:1px solid rgba(0,0,0,0.05);text-decoration:none;color:inherit}
+.news__row:last-child{border-bottom:0}
+.news__row__img{width:46px;height:46px;border-radius:7px;background:linear-gradient(135deg,#0a3d20,#067a4a);flex-shrink:0}
+.news__row__b{flex:1;min-width:0}
+.news__row__k{font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-primary-green);font-weight:700;margin-bottom:3px}
+.news__row__t{font-family:var(--font-display);font-size:13px;line-height:1.15}
+
+/* FAB */
+.fab{position:fixed;bottom:20px;right:20px;z-index:60}
+.fab button{background:linear-gradient(135deg,#02cc74,#016b3d);color:#fff;border:none;cursor:pointer;padding:13px 20px;border-radius:999px;box-shadow:0 12px 30px rgba(2,204,116,0.4);display:flex;align-items:center;gap:8px;font-family:inherit;font-weight:600;font-size:12px;letter-spacing:0.04em;text-transform:uppercase;animation:fp 2.5s infinite}
+@keyframes fp{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.fab__i{display:grid;place-items:center;width:22px;height:22px;background:#fff;color:var(--color-primary-green);border-radius:50%;font-size:12px}
+
+/* ============ MOBILE / TABLET ============ */
+@media (max-width:880px){
+  /* Left sidebar becomes BOTTOM NAV */
+  .lsb{top:auto;bottom:0;left:0;right:0;width:100%;height:60px;flex-direction:row;padding:0;border-right:0;border-top:1px solid rgba(255,255,255,0.08);justify-content:space-around;align-items:center;overflow:visible}
+  .lsb:hover{width:100%;align-items:center}
+  .lsb__logo{display:none}
+  .lsb a{width:auto;height:46px;flex-direction:column;gap:2px;padding:6px 10px;font-size:16px;margin:0}
+  .lsb:hover a{width:auto;justify-content:center;padding:6px 10px;margin:0}
+  .lsb a span{display:block;font-size:9px;letter-spacing:0.04em;text-transform:uppercase}
+  .lsb__bottom{display:none}
+  .toast,.shell{margin-left:0}
+  .shell{grid-template-columns:1fr;padding:14px;gap:14px;padding-bottom:74px}
+  .side{position:static;max-height:none;overflow:visible}
+  .hero{padding:18px 16px;border-radius:14px}
+  .hero__in{grid-template-columns:auto 1fr;gap:12px}
+  .hero__av{width:42px;height:42px;font-size:16px;align-self:start}
+  .hero__t{font-size:20px}
+  .hero__s{font-size:11px}
+  .hero__cta{grid-column:1/-1;text-align:center;padding:10px;font-size:11px}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .kpi{padding:10px 12px}
+  .kpi__v{font-size:20px}
+  .pp{grid-template-columns:auto 1fr;padding:16px}
+  .pp__n{font-size:42px}
+  .pp__t strong{font-size:14px}
+  .pp__b{grid-column:1/-1;text-align:center;padding:9px;font-size:10px}
+  .gr{padding:10px}
+  .gr__av{width:34px;height:34px;font-size:13px}
+  .gr__n{font-size:14px}
+  .row2{grid-template-columns:1fr;gap:12px}
+  .spk{padding:12px;margin-top:0}
+  .com{padding:12px;margin-top:0}
+  .toast{font-size:11px;padding:8px 14px}
+  .np,.up,.news__hero,.news__list{border-radius:12px}
+  .np{padding:14px}
+  .np__cd__n{font-size:18px}
+  .np__flag{font-size:24px}
+  .np__n{font-size:13px}
+  .news__hero__t{font-size:14px}
+  .fab{bottom:74px;right:14px}
+  .fab button{padding:11px 14px;font-size:10px}
+  .fab .fab-text{display:none}
+}
+@media (max-width:480px){
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .gr-act{grid-template-columns:1fr}
+  .lsb a{padding:6px}
+  .lsb a span{font-size:8px}
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR IZQ ICONOS -->
+<aside class="lsb">
+<a class="lsb__logo" href="#"><img src="./assets/logo-golgana.png" alt=""><strong>POLLA</strong></a>
+<a href="#" class="active">🏠 <span>Inicio</span></a>
+<a href="#">⚽ <span>Mis picks</span></a>
+<a href="#">👥 <span>Grupos</span></a>
+<a href="#">🏆 <span>Ranking</span></a>
+<a href="./mundial-2026.html">🌎 <span>Mundial 2026</span></a>
+<div class="lsb__bottom">
+<a href="#" class="lsb__bell">🔔 <span>Notificaciones</span></a>
+<div class="lsb__usr"><div class="lsb__av">DS</div><span>@dasv0731</span></div>
+</div>
+</aside>
+
+<!-- TOAST B -->
+<div class="toast">Nueva trivia disponible · 3 preguntas para ganar comodín · <a href="#">Responder →</a></div>
+
+<!-- SHELL TRIPLE -->
+<div class="shell">
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- HERO compacto -->
+<section class="hero">
+<div class="hero__in">
+<div class="hero__av">DS</div>
+<div>
+<div class="hero__k">Hola, @dasv0731</div>
+<div class="hero__t">Quedan <strong>15 días</strong> · estás en <strong>#147</strong></div>
+<div class="hero__s">128 pts · 3 grupos activos · 68% de aciertos</div>
+<div class="hero__alert">⚠ Cierra el primer pick en 2h 14min</div>
+</div>
+<a href="#" class="hero__cta">Hacer picks →</a>
+</div>
+</section>
+
+<!-- KPI strip -->
+<div class="kpis">
+<div class="kpi kpi--g"><div class="kpi__l">Ranking global</div><div class="kpi__v">#147</div><div class="kpi__d">▲ 23 esta semana</div></div>
+<div class="kpi"><div class="kpi__l">Puntos</div><div class="kpi__v">128 <small>/350</small></div><div class="kpi__d">Top 1%</div></div>
+<div class="kpi"><div class="kpi__l">Aciertos</div><div class="kpi__v">68% <small>17/25</small></div><div class="kpi__d">Sobre promedio</div></div>
+<div class="kpi"><div class="kpi__l">Grupos</div><div class="kpi__v">3 <small>1°</small></div><div class="kpi__d">en Prueba1</div></div>
+<div class="kpi"><div class="kpi__l">Comodines</div><div class="kpi__v">2 <small>/3</small></div><div class="kpi__d">Doble · Escudo</div></div>
+</div>
+
+<!-- PICKS PENDIENTES -->
+<div class="pp">
+<div class="pp__n">3</div>
+<div class="pp__t">
+<strong>Picks pendientes para hoy</strong>
+<small>Si los enviás sumas hasta <em>30 pts</em>. El primero cierra en <em>2h 14min</em>.</small>
+</div>
+<a href="#" class="pp__b">Hacer picks →</a>
+</div>
+
+<!-- GRUPOS -->
+<div>
+<div class="sh"><h2>Mis grupos · 3 activos</h2><a href="#">Ver todos →</a></div>
+<div class="gr-list" style="margin-top:10px">
+<a href="#" class="gr"><div class="gr__av" style="background:linear-gradient(135deg,#067a4a,#02cc74)">P1</div><div class="gr__b"><div class="gr__n">Prueba1</div><div class="gr__m">12 jugadores · Premio $50 + trofeo</div></div><span class="gr__r gr__r--g">#1</span></a>
+<a href="#" class="gr"><div class="gr__av" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8)">OF</div><div class="gr__b"><div class="gr__n">Oficina FC</div><div class="gr__m">24 jugadores · Premio $200</div></div><span class="gr__r gr__r--b">#3</span></a>
+<a href="#" class="gr"><div class="gr__av" style="background:linear-gradient(135deg,#f59e0b,#b45309)">FA</div><div class="gr__b"><div class="gr__n">Familia</div><div class="gr__m">8 jugadores · Bragging rights</div></div><span class="gr__r gr__r--n">#23</span></a>
+</div>
+<div class="gr-act">
+<button>＋ Crear grupo</button>
+<button>→ Unirme con código</button>
+</div>
+</div>
+
+<!-- ROW: Especiales + Ranking -->
+<div class="row2">
+
+<div class="spk">
+<div class="spk__h">🏆 Picks especiales · hasta 65 pts</div>
+<div class="spk__row">
+<a href="#" class="spk__c spk__c--g"><div class="spk__big">🇦🇷</div><div class="spk__nm">Argentina</div><div class="spk__l">Campeón</div></a>
+<a href="#" class="spk__c spk__c--s"><div class="spk__big">🇧🇷</div><div class="spk__nm">Brasil</div><div class="spk__l">Sub</div></a>
+<a href="#" class="spk__c spk__c--e"><div class="spk__big" style="opacity:0.6">＋</div><div class="spk__nm">Elegir</div><div class="spk__l">Revelación</div></a>
+</div>
+</div>
+
+<div class="rk">
+<div class="rk__r"><div><div class="rk__big">#147</div><div class="rk__l">Global · 14.892</div></div><div class="rk__r2"><div class="rk__big">#1</div><div class="rk__l">En Prueba1</div></div></div>
+<div class="rk__bar"><div class="rk__bar__f"></div></div>
+<div class="rk__s"><span>128 pts · 68% acierto</span><span>▲ 23</span></div>
+</div>
+
+</div>
+
+<!-- COMODINES -->
+<div class="com">
+<div class="com__h"><span>⚡ Comodines · 2 de 3 disponibles</span><a href="#" style="color:var(--color-primary-green);text-decoration:none">Detalles →</a></div>
+<div class="com__row">
+<div class="com__c com__c--d"><div class="com__c__i">×2</div>Doble punto</div>
+<div class="com__c com__c--s"><div class="com__c__i">🛡</div>Escudo</div>
+<div class="com__c com__c--e"><div class="com__c__i">?</div>Usado</div>
+</div>
+</div>
+
+</div><!-- /main -->
+
+<!-- SIDEBAR DER -->
+<aside class="side">
+
+<div class="np" data-om-id="2c1dae27:147">
+<div class="np__bg"></div>
+<div class="np__in">
+  <div class="np__top">
+    <span class="np__live">En 15 días</span>
+    <span class="np__tag">J1 · Grupo D</span>
+  </div>
+  <div class="np__hl">El <em>debut</em> de la Tri</div>
+  <div class="np__sub">Mercedes-Benz Stadium · Atlanta · 12 jun 19:00 ET</div>
+
+  <div class="np__cd">
+    <div class="np__cd__c"><div class="np__cd__n" data-cd="d">15</div><div class="np__cd__l">Días</div></div>
+    <div class="np__cd__c"><div class="np__cd__n" data-cd="h">04</div><div class="np__cd__l">Hrs</div></div>
+    <div class="np__cd__c"><div class="np__cd__n" data-cd="m">22</div><div class="np__cd__l">Min</div></div>
+    <div class="np__cd__c"><div class="np__cd__n" data-cd="s">10</div><div class="np__cd__l">Seg</div></div>
+  </div>
+
+  <div class="np__t">
+    <div class="np__tm np__tm--home">
+      <div class="np__fl">🇪🇨</div>
+      <div class="np__n">Ecuador</div>
+      <div class="np__sb">25° · La Tri</div>
+    </div>
+    <div class="np__vs">
+      <div class="np__vs__l">VS</div>
+      <div class="np__vs__s">Cuota 1.55</div>
+    </div>
+    <div class="np__tm">
+      <div class="np__fl">🇺🇿</div>
+      <div class="np__n">Uzbekistán</div>
+      <div class="np__sb">58° · Debut</div>
+    </div>
+  </div>
+
+  <div class="np__meta">
+    <div class="np__meta__c"><div class="np__meta__l">Cierre</div><div class="np__meta__v">18:45 ET</div></div>
+    <div class="np__meta__c"><div class="np__meta__l">En juego</div><div class="np__meta__v">+30 pts</div></div>
+    <div class="np__meta__c"><div class="np__meta__l">Polla</div><div class="np__meta__v">71% ECU</div></div>
+  </div>
+
+  <div class="np__pk">
+    <div>
+      <span class="np__pk__l">Tu pick</span>
+      <strong>3 – 0 <em>Ecuador</em></strong>
+    </div>
+    <a href="#" class="np__pk__e">Editar</a>
+  </div>
+
+  <a href="./mundial-partido.html" class="np__cta">Ver previa completa →</a>
+</div>
+</div>
+
+<div class="up">
+<div class="up__h"><span>Siguientes picks</span><a href="#">Ver todos →</a></div>
+<a href="#" class="up__r"><div class="up__r__h"><span>13/06 · ESP vs SEN</span><span class="pe">⚠ 2h 14m</span></div><div class="up__r__t" style="color:#dc2626">Pendiente</div></a>
+<a href="#" class="up__r"><div class="up__r__h"><span>14/06 · USA vs JPN</span><span class="pe">⚠ 1d</span></div><div class="up__r__t" style="color:#dc2626">Pendiente</div></a>
+<a href="#" class="up__r"><div class="up__r__h"><span>14/06 · BRA vs CMR</span><span class="ok">✓ Pick</span></div><div class="up__r__t">2-1 Brasil</div></a>
+<a href="#" class="up__r"><div class="up__r__h"><span>15/06 · POR vs RSA</span><span class="ok">✓ Pick</span></div><div class="up__r__t">3-0 Portugal</div></a>
+</div>
+
+<div class="news">
+<a href="#" class="news__hero">
+<img src="./assets/hero-placeholder.svg" alt="">
+<div class="news__hero__b">
+<div class="news__hero__k">Destacada · 5 min</div>
+<div class="news__hero__t">Beccacece confirma a Caicedo como capitán</div>
+</div>
+</a>
+<div class="news__list">
+<a href="#" class="news__row"><div class="news__row__img"></div><div class="news__row__b"><div class="news__row__k">Análisis · Ayer</div><div class="news__row__t">Argentina llega favorito #1</div></div></a>
+<a href="#" class="news__row"><div class="news__row__img"></div><div class="news__row__b"><div class="news__row__k">Guía · 2d</div><div class="news__row__t">Las 16 sedes del Mundial</div></div></a>
+<a href="#" class="news__row"><div class="news__row__img"></div><div class="news__row__b"><div class="news__row__k">Datos · 3d</div><div class="news__row__t">5 cifras de la Tri</div></div></a>
+</div>
+</div>
+
+</aside>
+</div>
+
+<!-- FAB -->
+<div class="fab"><button onclick="openMd('m-trivia')"><span class="fab__i">⚡</span><span class="fab-text">Trivia · Comodín</span></button></div>
+
+<!-- ============ MODALES ============ -->
+<style>
+.md-bg{position:fixed;inset:0;background:rgba(10,10,10,0.75);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+.md-bg.is-open{display:flex}
+.md{background:#fff;border-radius:16px;padding:28px;max-width:480px;width:100%;max-height:90vh;overflow:auto;position:relative}
+.md--lg{max-width:600px}
+.md__x{position:absolute;top:12px;right:12px;background:#f3f4f6;border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;display:grid;place-items:center}
+.md__k{font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-primary-green);font-weight:700;margin-bottom:8px}
+.md__t{font-family:var(--font-display);font-size:28px;line-height:1;margin-bottom:8px}
+.md__s{font-size:13px;color:var(--color-text-muted);margin-bottom:20px;line-height:1.5}
+.md__f{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.md__f label{font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--color-text-muted);font-weight:600}
+.md__f input{padding:12px 14px;border:1px solid rgba(0,0,0,0.12);border-radius:8px;font-size:15px;font-family:inherit;outline:none}
+.md__f input:focus{border-color:var(--color-primary-green);box-shadow:0 0 0 3px rgba(2,204,116,0.15)}
+.md__info{background:#fafaf6;border:1px solid rgba(0,0,0,0.06);border-radius:8px;padding:12px;font-size:12px;color:var(--color-text-muted);margin-top:6px}
+.md__a{display:flex;gap:10px;margin-top:18px}
+.md__b{flex:1;padding:13px;border:none;border-radius:8px;font-family:inherit;font-weight:600;cursor:pointer;font-size:13px;letter-spacing:0.04em;text-transform:uppercase}
+.md__b--p{background:var(--color-primary-green);color:#fff}
+.md__b--s{background:#f3f4f6;color:var(--color-primary-black)}
+.tq__c{font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-primary-green);font-weight:600;margin-bottom:8px}
+.tq__q{font-family:var(--font-display);font-size:24px;line-height:1.1;margin-bottom:16px}
+.tq__opts{display:flex;flex-direction:column;gap:8px}
+.tq__opt{padding:13px 16px;border:1px solid rgba(0,0,0,0.12);border-radius:10px;background:#fff;text-align:left;cursor:pointer;font-size:14px;font-family:inherit;transition:all 0.15s}
+.tq__opt:hover{border-color:var(--color-primary-green);background:rgba(2,204,116,0.05)}
+.tq__opt.sel{border-color:var(--color-primary-green);background:rgba(2,204,116,0.1);font-weight:600}
+.tq__prize{background:linear-gradient(135deg,rgba(245,158,11,0.1),rgba(245,158,11,0.02));border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:12px;display:flex;align-items:center;gap:12px;margin-top:14px}
+.tq__prize-i{font-size:24px}
+.tq__prize-t{font-family:var(--font-display);font-size:16px;line-height:1;color:#b45309}
+.tq__prize-s{font-size:11px;color:var(--color-text-muted);margin-top:2px}
+</style>
+
+<div class="md-bg" id="m-create"><div class="md"><button class="md__x" onclick="closeMd('m-create')">×</button>
+<div class="md__k">Polla Mundialista</div><h3 class="md__t">Crear nuevo grupo</h3>
+<p class="md__s">Recibirás un código de 6 dígitos para compartir con tus amigos.</p>
+<div class="md__f"><label>Nombre del grupo</label><input type="text" placeholder="Ej: Amigos del barrio"></div>
+<div class="md__f"><label>Premio (opcional)</label><input type="text" placeholder="Ej: $100 al ganador"></div>
+<div class="md__info">ℹ Los grupos cierran al pitazo inicial del primer partido del Mundial.</div>
+<div class="md__a"><button class="md__b md__b--s" onclick="closeMd('m-create')">Cancelar</button><button class="md__b md__b--p" onclick="closeMd('m-create')">Crear grupo</button></div>
+</div></div>
+
+<div class="md-bg" id="m-join"><div class="md"><button class="md__x" onclick="closeMd('m-join')">×</button>
+<div class="md__k">Polla Mundialista</div><h3 class="md__t">Unirme con código</h3>
+<p class="md__s">Ingresa el código que te compartieron.</p>
+<div class="md__f"><label>Código del grupo</label><input type="text" placeholder="A1B2C3" maxlength="6" style="text-transform:uppercase;letter-spacing:0.18em;font-family:var(--font-display);font-size:22px;text-align:center"></div>
+<div class="md__a"><button class="md__b md__b--s" onclick="closeMd('m-join')">Cancelar</button><button class="md__b md__b--p" onclick="closeMd('m-join')">Unirme</button></div>
+</div></div>
+
+<div class="md-bg" id="m-trivia"><div class="md md--lg"><button class="md__x" onclick="closeMd('m-trivia')">×</button>
+<div class="tq__c">⚡ Trivia diaria · Pregunta 1 de 3</div>
+<div class="tq__q">¿Cuántos goles anotó Argentina en el Mundial 2022?</div>
+<div class="tq__opts">
+<button class="tq__opt" onclick="selOpt(this)">12 goles</button>
+<button class="tq__opt" onclick="selOpt(this)">15 goles</button>
+<button class="tq__opt" onclick="selOpt(this)">9 goles</button>
+<button class="tq__opt" onclick="selOpt(this)">14 goles</button>
+</div>
+<div class="tq__prize"><div class="tq__prize-i">🎁</div><div><div class="tq__prize-t">Premio: 1 Comodín "Doble Punto"</div><div class="tq__prize-s">Vale doble en cualquier pick · expira en 24h</div></div></div>
+<div class="md__a"><button class="md__b md__b--s" onclick="closeMd('m-trivia')">Después</button><button class="md__b md__b--p" onclick="closeMd('m-trivia')">Siguiente →</button></div>
+</div></div>
+
+<script>
+function openMd(id){document.getElementById(id).classList.add('is-open');document.body.style.overflow='hidden'}
+function closeMd(id){document.getElementById(id).classList.remove('is-open');document.body.style.overflow=''}
+function selOpt(b){b.parentElement.querySelectorAll('.tq__opt').forEach(x=>x.classList.remove('sel'));b.classList.add('sel')}
+document.querySelectorAll('.md-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeMd(m.id)}));
+document.querySelectorAll('.gr-act button').forEach((b,i)=>b.addEventListener('click',()=>openMd(i===0?'m-create':'m-join')));
+document.querySelector('.toast a').addEventListener('click',e=>{e.preventDefault();openMd('m-trivia')});
+</script>
+<script>
+(function(){var k=new Date('2026-06-12T23:00:00Z').getTime();function p(n){return n<10?'0'+n:''+n}function t(){var d=k-Date.now();if(d<=0)return;var e={d:Math.floor(d/86400000),h:Math.floor((d%86400000)/3600000),m:Math.floor((d%3600000)/60000),s:Math.floor((d%60000)/1000)};Object.keys(e).forEach(k=>{var el=document.querySelector('[data-cd="'+k+'"]');if(el)el.textContent=p(e[k])})}t();setInterval(t,1000)})();
+</script>
+</body></html>

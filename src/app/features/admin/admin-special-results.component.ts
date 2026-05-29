@@ -55,8 +55,11 @@ type SpecialKey = (typeof TYPES)[number]['key'];
             </p>
             <div style="display: grid; grid-template-columns: 1fr auto; gap: var(--space-md); align-items: end;">
               <div class="form-card__field" style="margin: 0;">
-                <label class="form-card__label">Equipo ganador</label>
+                <label class="form-card__label" [attr.for]="'sr-' + t.key">Equipo ganador</label>
                 <select class="form-card__select"
+                        [id]="'sr-' + t.key"
+                        [name]="'special-' + t.key"
+                        autocomplete="off"
                         [value]="selections()[t.key] ?? ''"
                         (change)="setSelection(t.key, $any($event.target).value)">
                   <option value="">— elegir —</option>
@@ -72,8 +75,8 @@ type SpecialKey = (typeof TYPES)[number]['key'];
               </button>
             </div>
             @if (lastResult()[t.key]; as r) {
-              <p class="form-card__hint" style="margin-top: var(--space-sm); color: var(--color-primary-green);">
-                ✓ {{ r.updated }} pick{{ r.updated === 1 ? '' : 's' }} actualizado{{ r.updated === 1 ? '' : 's' }}
+              <p class="form-card__hint" role="status" style="margin-top: var(--space-sm); color: var(--color-primary-green);">
+                <span aria-hidden="true">✓ </span>{{ r.updated }} pick{{ r.updated === 1 ? '' : 's' }} actualizado{{ r.updated === 1 ? '' : 's' }}
               </p>
             }
           </article>

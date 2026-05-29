@@ -1,5 +1,6 @@
-import { Component, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { getUrl } from 'aws-amplify/storage';
 import { ApiService } from '../../core/api/api.service';
@@ -10,7 +11,12 @@ import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
 import { TriviaModalService } from '../../core/trivia/trivia-modal.service';
 import { RailModalsService } from '../../core/layout/rail-modals.service';
 import { PicksSyncService } from '../../core/sync/picks-sync.service';
+import { RedeemModalService } from '../../core/sponsors/redeem-modal.service';
+import { GroupActionsService } from '../../core/groups/group-actions.service';
 import { RandomizerModalComponent } from './randomizer-modal.component';
+import { EmptyBlockComponent } from '../../shared/ui/empty-block/empty-block.component';
+import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
+import { IconComponent } from '../../shared/ui/icon/icon.component';
 
 /** Payload del sync para picks de marcador. Tracking explícito de
  *  `homeTouched/awayTouched` separa "valor que el user editó" de
@@ -80,34 +86,41 @@ interface TriviaInfo {
 @Component({
   standalone: true,
   selector: 'app-picks-list',
-  imports: [NgTemplateOutlet, RouterLink, RouterLinkActive, TeamFlagComponent, RandomizerModalComponent],
+  imports: [
+    NgTemplateOutlet,
+    FormsModule,
+    RouterLink,
+    RouterLinkActive,
+    TeamFlagComponent,
+    RandomizerModalComponent,
+    EmptyBlockComponent,
+    SkeletonComponent,
+    IconComponent,
+  ],
   template: `
     <section class="page">
 
-      <!-- Header con stats -->
+      <!-- Header simplificado · stats canónicos viven en Home (A8b) -->
       <header class="page__header">
         <div>
           <div class="kicker">MUNDIAL 2026 · GOLGANA</div>
           <h1 class="page__title">Mis picks</h1>
         </div>
-        <div class="page__stats">
-          <div class="page__stat">
-            <div class="num">{{ totals().points }}</div>
-            <div class="lbl">pts</div>
+        <!-- Auto-save status compacto a nivel de página (vs antes per-card) -->
+        @if (syncStatus(); as status) {
+          <div class="page__sync" role="status" aria-live="polite">
+            @if (status === 'pending') {
+              <span class="page__sync-dot page__sync-dot--pending" aria-hidden="true"></span>
+              Guardando…
+            } @else if (status === 'synced') {
+              <app-icon name="check" size="sm" />
+              Guardado
+            } @else {
+              <app-icon name="alert" size="sm" />
+              Sin sincronizar
+            }
           </div>
-          <div class="page__stat">
-            <div class="num">{{ totals().exactCount }}</div>
-            <div class="lbl">exactos</div>
-          </div>
-          <div class="page__stat">
-            <div class="num">{{ totals().resultCount }}</div>
-            <div class="lbl">resultados</div>
-          </div>
-          <div class="page__stat">
-            <div class="num">{{ totals().globalRank ? '#' + totals().globalRank : '—' }}</div>
-            <div class="lbl">global</div>
-          </div>
-        </div>
+        }
       </header>
 
       <!-- Botón Aleatorio: abre modal con selector de partidos + sliders
@@ -115,7 +128,7 @@ interface TriviaInfo {
       <div class="picks-actions">
         <button type="button" class="btn-wf btn-wf--ink"
                 (click)="openRandomizer()">
-          🎲 Aleatorio
+          <app-icon name="dice" size="sm" /> Aleatorio
         </button>
       </div>
 
@@ -139,93 +152,117 @@ interface TriviaInfo {
            globalmente en el shell, no acá. -->
       <div>
 
-          <!-- Sub seg (Próximos / Jugados) -->
+          <!-- Sub seg (Próximos / Jugados) · persiste en localStorage -->
           <div class="picks-sub">
-            <div class="seg" style="max-width:300px;" role="tablist">
-              <button type="button" class="seg__item"
+            <div class="seg" style="max-width:300px;" role="tablist" aria-label="Filtro de partidos">
+              <button type="button" class="seg__item" role="tab"
+                      [attr.aria-selected]="tab() === 'upcoming'"
                       [class.is-active]="tab() === 'upcoming'"
-                      (click)="tab.set('upcoming')">
+                      (click)="onSubSegChange('upcoming')">
                 Próximos · {{ upcomingCount() }}
               </button>
-              <button type="button" class="seg__item"
+              <button type="button" class="seg__item" role="tab"
+                      [attr.aria-selected]="tab() === 'played'"
                       [class.is-active]="tab() === 'played'"
-                      (click)="tab.set('played')">
+                      (click)="onSubSegChange('played')">
                 Jugados · {{ playedCount() }}
               </button>
             </div>
           </div>
 
+          <!-- Filtros · Solo pendientes (próximos) + Por grupo (si >1) -->
+          @if (tab() === 'upcoming' && !loading() && allUpcomingDays().length > 0) {
+            <div class="filter-bar">
+              <label class="filter-bar__item">
+                <input type="checkbox" [ngModel]="filterPending()" (ngModelChange)="filterPending.set($event)">
+                Solo pendientes
+              </label>
+              @if (myGroupsList().length > 1) {
+                <label class="filter-bar__item">
+                  Grupo:
+                  <select [ngModel]="filterGroup()" (ngModelChange)="filterGroup.set($event)">
+                    <option value="">Todos</option>
+                    @for (g of myGroupsList(); track g.id) {
+                      <option [value]="g.id">{{ g.name }}</option>
+                    }
+                  </select>
+                </label>
+              }
+            </div>
+          }
+
+          <!-- Resumen de aciertos en Jugados (página, no per-card) -->
+          @if (tab() === 'played' && !loading() && playedMatches().length > 0) {
+            <div class="jugados-summary" role="status">
+              {{ playedAggregations().exactos }}/{{ playedAggregations().total }} exactos ·
+              {{ playedAggregations().aciertos }}/{{ playedAggregations().total }} aciertos
+              @if (playedAggregations().pts > 0) {
+                · {{ playedAggregations().pts }} pts
+              }
+            </div>
+          }
+
           @if (!hasComplete()) {
             <div class="hint-banner">
               <strong>Modo completo no activo.</strong>
-              Podés ver el calendario, pero los marcadores que predigás
+              Puedes ver el calendario, pero los marcadores que predigas
               acá no contarán hasta que estés en un grupo modo completo.
-              <a routerLink="/groups/new" class="link-green">Crear grupo →</a>
+              <button type="button" class="link-green link-green--btn"
+                      (click)="groupActions.openCreate()">Crear grupo →</button>
+              <button type="button" class="link-green link-green--btn"
+                      (click)="groupActions.openJoin()">Unirme con código →</button>
             </div>
           }
           @if (loading()) {
-            <p class="loading-msg">Cargando partidos…</p>
+            <app-skeleton variant="card" [count]="3" />
           } @else if (tab() === 'upcoming') {
             @if (visibleDays().length === 0) {
-              <div class="empty-block">
-                <h3>No hay partidos próximos en este rango</h3>
-                <p>
-                  @if (allUpcomingDays().length > 0) {
-                    Probá cargando los próximos días.
-                  } @else {
-                    Ya jugaste todos los partidos del torneo o el admin no
-                    cargó más fixtures.
+              @if (allUpcomingDays().length > 0) {
+                <app-empty-block iconName="filter"
+                                 title="No hay partidos en este rango"
+                                 sub="Probá cargando los próximos días o ajustá los filtros.">
+                  @if (filterPending() || filterGroup()) {
+                    <button type="button" class="empty-cta" (click)="clearFilters()">
+                      Limpiar filtros
+                    </button>
                   }
-                </p>
-              </div>
-            }
-            @if (hasPrevDays() || hasNextDays()) {
-              <div class="days-pager days-pager--top">
-                <button class="btn-wf days-pager__btn days-pager__btn--icon" type="button"
-                        aria-label="Días anteriores"
-                        [disabled]="!hasPrevDays()"
-                        (click)="prevDays()">←</button>
-                <button class="btn-wf days-pager__btn days-pager__btn--icon" type="button"
-                        aria-label="Días siguientes"
-                        [disabled]="!hasNextDays()"
-                        (click)="nextDays()">→</button>
-              </div>
+                  @if (hasNextDays()) {
+                    <button type="button" class="empty-cta empty-cta--primary" (click)="nextDays()">
+                      Próximos días →
+                    </button>
+                  }
+                </app-empty-block>
+              } @else {
+                <app-empty-block iconName="clock"
+                                 title="Sin partidos próximos"
+                                 sub="Ya jugaste todos los partidos del torneo, o el admin aún no cargó más fixtures.">
+                  <a class="empty-cta" routerLink="/ranking">
+                    Ver mi ranking →
+                  </a>
+                </app-empty-block>
+              }
             }
             @for (day of visibleDays(); track day.dateKey; let dayIdx = $index) {
-              <div class="day-kicker">📅 {{ day.label }} · {{ day.matches.length }} {{ day.matches.length === 1 ? 'partido' : 'partidos' }}</div>
+              <div class="day-kicker">
+                <app-icon name="clock" size="sm" />
+                {{ day.label }} · {{ day.matches.length }} {{ day.matches.length === 1 ? 'partido' : 'partidos' }}
+              </div>
               @for (m of day.matches; track m.id) {
                 <ng-container *ngTemplateOutlet="cardTpl; context: {$implicit: m}"></ng-container>
               }
-              @if (dayIdx === 0 && visibleDays().length > 1) {
-                <div class="ad-feed ad-feed--coca">
-                  <span class="ad-feed__badge">AD</span>
-                  <span class="ad-feed__icon">🥤</span>
-                  <div class="ad-feed__body">
-                    <div class="ad-feed__title">Coca-Cola refresca tu Mundial</div>
-                    <div class="ad-feed__sponsor">COCA-COLA · Patrocinador oficial</div>
-                  </div>
-                  <a href="#" class="ad-feed__cta" (click)="$event.preventDefault()">Ver promo</a>
-                </div>
-              }
-              @if (dayIdx === 2) {
-                <div class="ad-feed ad-feed--adidas">
-                  <span class="ad-feed__badge">AD</span>
-                  <span class="ad-feed__icon">👟</span>
-                  <div class="ad-feed__body">
-                    <div class="ad-feed__title">adidas — Equípate para el Mundial</div>
-                    <div class="ad-feed__sponsor">ADIDAS · Sponsor oficial</div>
-                  </div>
-                  <a href="#" class="ad-feed__cta" (click)="$event.preventDefault()">Ver colección</a>
-                </div>
-              }
+              <!-- Sponsored content is served via SponsorBannerService post-Fase A consolidation -->
             }
-            @if (hasPrevDays() || hasNextDays()) {
+            <!-- Days pager bottom · solo si hay más de 1 ventana (totalDays > pageSize) -->
+            @if (needsPaging()) {
               <div class="days-pager">
                 <button class="btn-wf days-pager__btn" type="button"
                         [disabled]="!hasPrevDays()"
                         (click)="prevDays()">
                   ← Anteriores
                 </button>
+                <span class="days-pager__indicator" aria-live="polite">
+                  Ventana {{ currentWindowIndex() }}/{{ totalWindowsCount() }}
+                </span>
                 <button class="btn-wf days-pager__btn" type="button"
                         [disabled]="!hasNextDays()"
                         (click)="nextDays()">
@@ -236,10 +273,10 @@ interface TriviaInfo {
           } @else {
             <!-- Jugados: lista plana por fecha desc -->
             @if (playedMatches().length === 0) {
-              <div class="empty-block">
-                <h3>Aún no jugaste partidos</h3>
-                <p>Tus picks jugados aparecerán acá con el resultado y los puntos.</p>
-              </div>
+              <app-empty-block iconName="check"
+                               title="Aún no jugaste partidos"
+                               sub="Tus picks jugados aparecerán acá con el resultado y los puntos."
+                               />
             } @else {
               @for (m of playedMatches(); track m.id) {
                 <ng-container *ngTemplateOutlet="cardTpl; context: {$implicit: m}"></ng-container>
@@ -248,19 +285,27 @@ interface TriviaInfo {
           }
 
           <!-- Template del match-card · score editable inline para próximos
-               (auto-save con debounce); click en area no-input → detalle. -->
+               (auto-save con debounce); click en area no-input → detalle.
+               Próximos = "editor" (full inline). Jugados = "result" (compact). -->
           <ng-template #cardTpl let-m>
             @let trivia = triviaInfo(m.id);
             @let upcoming = m.status !== 'FINAL' && !isLive(m);
             @let pickPending = sync.isPending('pick', m.id);
             @let pickValue = sync.getPending('pick', m.id);
             @let hasAnyPick = !!m.pick || !!pickValue;
+            @let phaseMult = phaseMultiplier(m.phaseId);
             <article class="match-card"
                      [class.match-card--accent]="!!trivia"
+                     [class.match-card--result]="isPlayed(m)"
                      [class.match-card--dim]="m.pick === null && isPlayed(m)">
               <div class="match-card__body">
                 <div class="match-card__head">
                   <span>{{ formatKickoff(m.kickoffAt) }}@if (m.phaseLabel) { · {{ m.phaseLabel }} }</span>
+                  @if (phaseMult > 1) {
+                    <span class="phase-mult-badge" [title]="'x' + phaseMult + ' multiplicador en ' + m.phaseLabel">
+                      x{{ phaseMult }} PTS
+                    </span>
+                  }
                   @if (isLive(m)) {
                     <span class="live">EN VIVO</span>
                   } @else if (isAwaitingResult(m)) {
@@ -282,16 +327,18 @@ interface TriviaInfo {
                   </div>
                   <div class="score" (click)="$event.stopPropagation()">
                     @if (upcoming) {
-                      <input type="text" inputmode="numeric" maxlength="1"
+                      <input type="text" inputmode="numeric" maxlength="2"
                              class="score__input"
+                             autocomplete="off" spellcheck="false"
                              [value]="scoreInputValue(m, 'home')"
                              placeholder="0"
                              [attr.aria-label]="'Goles ' + m.homeTeamName"
                              (click)="$event.stopPropagation()"
                              (input)="onScoreInput(m.id, 'home', $event)">
                       <span>—</span>
-                      <input type="text" inputmode="numeric" maxlength="1"
+                      <input type="text" inputmode="numeric" maxlength="2"
                              class="score__input"
+                             autocomplete="off" spellcheck="false"
                              [value]="scoreInputValue(m, 'away')"
                              placeholder="0"
                              [attr.aria-label]="'Goles ' + m.awayTeamName"
@@ -330,21 +377,35 @@ interface TriviaInfo {
                 }
                 <div class="match-card__pills">
                   @if (m.pick && isPlayed(m) && m.pick.exactScore) {
-                    <span class="pill pill--green">✓ Exacto · +{{ m.pick.pointsEarned ?? 0 }}</span>
+                    <span class="pill pill--green">
+                      <app-icon name="check" size="sm" />Exacto · +{{ m.pick.pointsEarned ?? 0 }}
+                    </span>
                   } @else if (m.pick && isPlayed(m) && m.pick.correctResult) {
-                    <span class="pill pill--green">✓ Resultado · +{{ m.pick.pointsEarned ?? 0 }}</span>
+                    <span class="pill pill--green">
+                      <app-icon name="check" size="sm" />Resultado · +{{ m.pick.pointsEarned ?? 0 }}
+                    </span>
                   } @else if (m.pick && isPlayed(m)) {
-                    <span class="pill">Sin pts</span>
+                    <span class="pill pill--miss">
+                      <app-icon name="close" size="sm" />Sin pts
+                    </span>
                   } @else if (upcoming && hasAnyPick) {
                     @if (pickPending) {
                       <span class="pill" style="background:rgba(212,165,0,0.15);color:#7a5d00;border-color:rgba(212,165,0,0.3);">● Pendiente</span>
                     } @else {
-                      <span class="pill pill--green">✓ Guardado</span>
+                      <span class="pill pill--green">
+                        <app-icon name="check" size="sm" />Guardado
+                      </span>
                     }
-                  } @else if (upcoming) {
-                    <span class="pill">Sin pick</span>
                   }
                 </div>
+                <!-- "Sin pick" como CTA activo · más usable que el pill estático -->
+                @if (upcoming && !hasAnyPick) {
+                  <a class="match-card__pick-cta"
+                     [routerLink]="['/picks/match', m.id]"
+                     (click)="$event.stopPropagation()">
+                    Predecí <span aria-hidden="true">→</span>
+                  </a>
+                }
                 <!-- Botón "Ver detalles": navegar al partido. Antes el
                      click era en TODO el card body, lo cual generaba
                      mistakes (clicks en input no podían no propagar bien). -->
@@ -357,19 +418,19 @@ interface TriviaInfo {
               </div>
               @if (trivia) {
                 <div class="match-trivia">
-                  <span class="match-trivia__icon">⚡</span>
+                  <span class="match-trivia__icon" aria-hidden="true"><app-icon name="zap" size="sm" /></span>
                   <div class="match-trivia__body">
                     <div class="match-trivia__title">{{ trivia.title }}</div>
                     <div class="match-trivia__sub">{{ trivia.sub }}</div>
                   </div>
-                  <div class="match-trivia__chips">
-                    @for (q of triviaQuestionsFor(m.id); track q.id; let i = $index) {
-                      <button type="button" class="match-trivia__chip"
-                              (click)="openTrivia(m.id, q.id, $event)">
-                        Preg {{ i + 1 }}
-                      </button>
+                  <button type="button" class="match-trivia__cta"
+                          (click)="openTriviaFirst(m.id, $event)">
+                    Responder
+                    @if (triviaQuestionsFor(m.id).length > 1) {
+                      ({{ triviaQuestionsFor(m.id).length }})
                     }
-                  </div>
+                    <span aria-hidden="true">→</span>
+                  </button>
                 </div>
               }
             </article>
@@ -399,9 +460,10 @@ interface TriviaInfo {
     </section>
 
     <!-- FAB de canjear código (mobile) -->
-    <button type="button" class="canjear-fab" (click)="scrollToCanjear()"
+    <button type="button" class="canjear-fab" (click)="openRedeemModal()"
+            aria-label="Canjear código de sponsor"
             title="Canjear código de sponsor">
-      🎁 <span>Canjear código</span>
+      <app-icon name="gift" size="sm" /> <span>Canjear código</span>
     </button>
 
     <!-- Modal de "Picks aleatorios" (oculto hasta que openRandomizer fire) -->
@@ -410,57 +472,174 @@ interface TriviaInfo {
   styles: [`
     :host { display: block; }
 
-    /* Pager días: 2 botones inline 50/50 con gap. */
+    /* Pager días: 2 botones + indicador centro */
     .days-pager {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr auto 1fr;
       gap: 10px;
+      align-items: center;
       margin-top: 14px;
     }
     .days-pager__btn:disabled {
       opacity: .4;
       cursor: not-allowed;
     }
-    /* Variante "top": compacta, alineada a la derecha, solo flechas. */
-    .days-pager--top {
-      grid-template-columns: 40px 40px;
-      justify-content: flex-end;
-      margin-top: 0;
-      margin-bottom: 8px;
-    }
-    .days-pager__btn--icon {
-      padding: 6px 0;
-      font-size: 16px;
-      line-height: 1;
-      min-width: 0;
+    .days-pager__indicator {
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--wf-ink-3);
+      text-align: center;
     }
 
-    .empty-block {
-      padding: 24px;
-      text-align: center;
-      background: var(--wf-paper);
-      border: 1px dashed var(--wf-line);
-      border-radius: 10px;
-    }
-    .empty-block h3 {
-      font-family: var(--wf-display);
-      font-size: 18px;
-      letter-spacing: .04em;
-      margin: 0 0 8px;
-    }
-    .empty-block p {
+    /* Sync status pill a nivel de página */
+    .page__sync {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
       color: var(--wf-ink-3);
-      font-size: 13px;
-      margin: 0 0 12px;
-      line-height: 1.5;
+      background: rgba(0,0,0,0.03);
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+    .page__sync-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .page__sync-dot--pending {
+      background: var(--wf-warn, #d4a500);
+      animation: page-sync-pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes page-sync-pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .page__sync-dot--pending { animation: none; }
     }
 
-    .loading-msg {
-      padding: 32px;
-      text-align: center;
-      color: var(--wf-ink-3);
-      font-size: 14px;
+    /* Filter bar (Próximos) */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 8px 0;
+      font-size: 12px;
+      color: var(--wf-ink-2, #333);
     }
+    .filter-bar__item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .filter-bar__item input[type="checkbox"] { accent-color: var(--color-primary-green); }
+    .filter-bar__item select {
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--wf-line, var(--color-line));
+      background: #fff;
+    }
+
+    /* Resumen aciertos en Jugados */
+    .jugados-summary {
+      padding: 10px 14px;
+      background: rgba(2,204,116,0.06);
+      border: 1px solid rgba(2,204,116,0.2);
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--wf-ink-2, #333);
+      margin: 8px 0;
+    }
+
+    /* Phase multiplier badge */
+    .phase-mult-badge {
+      display: inline-flex;
+      align-items: center;
+      background: linear-gradient(135deg, #f59e0b, #b45309);
+      color: #fff;
+      font-family: var(--wf-display, var(--font-display));
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      padding: 2px 7px;
+      border-radius: 4px;
+      margin-left: 6px;
+    }
+
+    /* Sin pick CTA activo */
+    .match-card__pick-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--color-primary-green);
+      font-weight: 700;
+      font-size: 12px;
+      text-decoration: none;
+      padding: 4px 10px;
+      border: 1px solid var(--color-primary-green);
+      border-radius: 6px;
+      margin-top: 6px;
+    }
+    .match-card__pick-cta:hover { background: rgba(2,204,116,0.05); }
+    .match-card__pick-cta:focus-visible { outline: 2px solid var(--color-primary-green); outline-offset: 2px; }
+
+    /* Trivia CTA único (vs múltiples chips Preg 1, Preg 2 anteriores) */
+    .match-trivia__cta {
+      background: var(--color-primary-green);
+      color: #fff;
+      border: 0;
+      padding: 7px 14px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+    .match-trivia__cta:hover { filter: brightness(0.95); }
+    .match-trivia__cta:focus-visible { outline: 2px solid var(--color-primary-green); outline-offset: 2px; }
+
+    /* Verdict pills variants para asimetría --hit/--miss */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .pill--miss {
+      background: rgba(220,38,38,0.08);
+      color: #991b1b;
+      border-color: rgba(220,38,38,0.25);
+    }
+
+    /* Empty CTA buttons (en empty-block) */
+    .empty-cta {
+      background: transparent;
+      border: 1px solid var(--color-primary-green);
+      border-radius: 8px;
+      padding: 8px 14px;
+      color: var(--color-primary-green);
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .empty-cta:hover { background: rgba(2,204,116,0.05); }
+    .empty-cta:focus-visible { outline: 2px solid var(--color-primary-green); outline-offset: 2px; }
+    .empty-cta--primary { background: var(--color-primary-green); color: #fff; }
+    .empty-cta--primary:hover { background: var(--color-primary-green); filter: brightness(0.95); }
+
+    /* Match-card result variant (Jugados): más compacto */
+    .match-card--result .match-card__cta { display: none; }
+    .match-card--result .match-card__body { padding-bottom: 10px; }
 
     .hint-banner {
       padding: 12px 14px;
@@ -543,6 +722,7 @@ export class PicksListComponent implements OnInit, OnDestroy {
     if (this.triviaTickTimer) clearInterval(this.triviaTickTimer);
   }
   private api = inject(ApiService);
+  private redeemModal = inject(RedeemModalService);
   private auth = inject(AuthService);
   private userModes = inject(UserModesService);
   private time = inject(TimeService);
@@ -550,6 +730,7 @@ export class PicksListComponent implements OnInit, OnDestroy {
   private triviaModal = inject(TriviaModalService);
   rail = inject(RailModalsService);
   sync = inject(PicksSyncService);
+  groupActions = inject(GroupActionsService);
 
   @ViewChild('rnd') randomizer?: RandomizerModalComponent;
 
@@ -581,11 +762,84 @@ export class PicksListComponent implements OnInit, OnDestroy {
   // sync.isPending. No más pendingEdits, debounceTimer, ni savingMatch
   // por componente.
 
+  /** Persisted en localStorage para que el user no pierda contexto entre nav. */
+  private static readonly SUB_SEG_KEY = 'picks-sub-seg';
   tab = signal<'upcoming' | 'played'>('upcoming');
   matches = signal<MatchWithMeta[]>([]);
+  /** Mapa phaseId → order para derivar multiplier por matchCard. */
+  private phaseOrderById = signal<Map<string, number>>(new Map());
   loading = signal(true);
   totals = signal<Totals>({ points: 0, exactCount: 0, resultCount: 0, globalRank: null });
   hasComplete = computed(() => this.userModes.hasComplete());
+
+  /** Filtros en pestaña Próximos. */
+  filterPending = signal<boolean>(false);
+  filterGroup = signal<string>('');
+
+  /** Estado de sync agregado a nivel de página (vs status per-card). */
+  syncStatus = computed<'pending' | 'synced' | null>(() => {
+    const pend = this.sync.pending();
+    if (pend > 0) return 'pending';
+    if (this.recentlyPersisted()) return 'synced';
+    return null;
+  });
+  /** Flag transient: se enciende cuando el pending baja a 0 después de tener items. */
+  private recentlyPersisted = signal<boolean>(false);
+  private prevPending = 0;
+
+  constructor() {
+    // Restaura el sub-seg persistido (typeof check para SSR safety)
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const stored = localStorage.getItem(PicksListComponent.SUB_SEG_KEY);
+        if (stored === 'played' || stored === 'upcoming') {
+          this.tab.set(stored);
+        }
+      } catch { /* localStorage might be disabled */ }
+    }
+    // Efecto: trackea pending count para encender el "Guardado" pill transient.
+    effect(() => {
+      const pend = this.sync.pending();
+      if (this.prevPending > 0 && pend === 0) {
+        this.recentlyPersisted.set(true);
+        setTimeout(() => this.recentlyPersisted.set(false), 2000);
+      }
+      this.prevPending = pend;
+    });
+  }
+
+  onSubSegChange(value: 'upcoming' | 'played') {
+    this.tab.set(value);
+    if (typeof localStorage !== 'undefined') {
+      try { localStorage.setItem(PicksListComponent.SUB_SEG_KEY, value); } catch { /* ignore */ }
+    }
+  }
+
+  clearFilters() {
+    this.filterPending.set(false);
+    this.filterGroup.set('');
+  }
+
+  /** Multiplicador por phaseId (mapeado desde order para coincidir con scoring real). */
+  phaseMultiplier(phaseId: string): number {
+    const ord = this.phaseOrderById().get(phaseId) ?? 0;
+    switch (ord) {
+      case 1: return 1;
+      case 2: return 1.5;
+      case 3: return 2;
+      case 4: return 2.5;
+      case 5: return 3;
+      case 6: return 4;
+      default: return 1;
+    }
+  }
+
+  /** Abre directamente la primera trivia del match (vs chips antes). */
+  openTriviaFirst(matchId: string, event: Event) {
+    event.stopPropagation();
+    const first = this.triviaQuestionsFor(matchId)[0];
+    if (first) this.triviaModal.openForMatch(matchId, first.id);
+  }
 
   /** Paginación de días en la pestaña "próximos". Antes acumulaba (se sumaban
    *  2 días al final cada click); ahora REEMPLAZA: muestra una ventana fija
@@ -632,10 +886,11 @@ export class PicksListComponent implements OnInit, OnDestroy {
     return this.banners()[slot] ?? [];
   }
 
-  scrollToCanjear() {
-    // El canjear inline vive ahora en /mis-comodines (slot al final del
-    // grid). Navegamos allá; el form ya está visible en esa página.
-    void this.router.navigate(['/mis-comodines'], { fragment: 'card-canjear' });
+  openRedeemModal() {
+    // FAB del rail: abre el modal global de canjear. Antes navegaba a
+    // /mis-comodines#card-canjear via router — inconsistente con el resto
+    // de la app (desktop usa el modal del shell). Ahora ambos usan modal.
+    this.redeemModal.open();
   }
 
   // ---------- Helpers para el match-card inline ----------
@@ -719,13 +974,14 @@ export class PicksListComponent implements OnInit, OnDestroy {
    *  away no se rellena con "0" automáticamente — sigue mostrando
    *  empty/placeholder.
    *
-   *  Slice(-1) toma el ÚLTIMO dígito tipeado: previene que con un
-   *  "0" existente y typear "1", input.value "01" se reduzca a "0"
-   *  en lugar de "1". */
+   *  Bug #6 fix: aceptamos 2 dígitos (max 99) para soportar marcadores
+   *  10+ que sí pueden ocurrir (España 10-0 Malta). slice(-2) preserva
+   *  los últimos 2 caracteres tipeados.
+   */
   onScoreInput(matchId: string, side: 'home' | 'away', event: Event) {
     const input = event.target as HTMLInputElement;
-    const raw = input.value.replace(/[^0-9]/g, '').slice(-1);
-    const v = raw === '' ? 0 : Math.max(0, Math.min(9, parseInt(raw, 10)));
+    const raw = input.value.replace(/[^0-9]/g, '').slice(-2);
+    const v = raw === '' ? 0 : Math.max(0, Math.min(99, parseInt(raw, 10)));
     if (raw !== input.value) input.value = raw;
 
     const cur = this.currentScores(matchId);
@@ -816,17 +1072,38 @@ export class PicksListComponent implements OnInit, OnDestroy {
   upcomingCount = computed(() => this.matches().filter((m) => !this.time.isPast(m.kickoffAt)).length);
   playedCount = computed(() => this.matches().filter((m) => this.time.isPast(m.kickoffAt)).length);
 
-  private upcomingSorted = computed(() =>
-    this.matches()
+  /** Aplica filtros (solo-pendientes + grupo) en el lado próximos. */
+  private upcomingSorted = computed(() => {
+    const onlyPending = this.filterPending();
+    // filterGroup: por ahora se ignora a nivel datasource porque matches no
+    // están taggeados con groupId; queda como hook futuro para integrar
+    // cuando el backend exponga match-vs-group ownership (TODO(A6)).
+    return this.matches()
       .filter((m) => !this.time.isPast(m.kickoffAt))
-      .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt)),
-  );
+      .filter((m) => {
+        if (!onlyPending) return true;
+        // pendientes = sin pick en DB y sin pending en sync.
+        const pending = this.sync.getPending<PickPayload>('pick', m.id);
+        return !m.pick && !pending;
+      })
+      .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt));
+  });
 
   playedMatches = computed(() =>
     this.matches()
       .filter((m) => this.time.isPast(m.kickoffAt))
       .sort((a, b) => b.kickoffAt.localeCompare(a.kickoffAt)),
   );
+
+  /** Resumen de aciertos en pestaña Jugados (mostrado a nivel página, no per-card). */
+  playedAggregations = computed(() => {
+    const played = this.playedMatches().filter((m) => this.isPlayed(m));
+    const withPick = played.filter((m) => !!m.pick);
+    const exactos = withPick.filter((m) => m.pick!.exactScore).length;
+    const aciertos = withPick.filter((m) => m.pick!.correctResult || m.pick!.exactScore).length;
+    const pts = withPick.reduce((acc, m) => acc + (m.pick!.pointsEarned ?? 0), 0);
+    return { exactos, aciertos, total: withPick.length, pts };
+  });
 
   allUpcomingDays = computed<DayBlock[]>(() => {
     const byDate = new Map<string, MatchWithMeta[]>();
@@ -851,6 +1128,17 @@ export class PicksListComponent implements OnInit, OnDestroy {
   hasPrevDays = computed(() => this.dayOffset() > 0);
   hasNextDays = computed(() =>
     this.dayOffset() + PicksListComponent.DAYS_PER_PAGE < this.allUpcomingDays().length,
+  );
+
+  /** Mostrar pager solo si total > pageSize (i.e. hay más de 1 ventana). */
+  needsPaging = computed(() =>
+    this.allUpcomingDays().length > PicksListComponent.DAYS_PER_PAGE,
+  );
+  totalWindowsCount = computed(() =>
+    Math.max(1, Math.ceil(this.allUpcomingDays().length / PicksListComponent.DAYS_PER_PAGE)),
+  );
+  currentWindowIndex = computed(() =>
+    Math.floor(this.dayOffset() / PicksListComponent.DAYS_PER_PAGE) + 1,
   );
 
   /** Avanza a la siguiente ventana de DAYS_PER_PAGE días.
@@ -946,6 +1234,13 @@ export class PicksListComponent implements OnInit, OnDestroy {
           .filter((p): p is { id: string; name: string } => !!p && !!p.id)
           .map((p) => [p.id, p.name]),
       );
+      // Build phaseId → order map para derivar multiplier en cards
+      const phaseOrderMap = new Map<string, number>(
+        (phasesRes.data ?? [])
+          .filter((p): p is { id: string; order: number } => !!p && !!p.id && typeof p.order === 'number')
+          .map((p) => [p.id, p.order]),
+      );
+      this.phaseOrderById.set(phaseOrderMap);
       const teamMap = new Map<string, { name: string; flagCode: string; crestUrl: string | null }>(
         (teamsRes.data ?? [])
           .filter((t): t is NonNullable<typeof t> => !!t && !!t.slug)

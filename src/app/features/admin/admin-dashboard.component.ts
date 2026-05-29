@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
+import { ConfirmDialogService } from '../../shared/ui/confirm-dialog.service';
 
 const TOURNAMENT_ID = 'mundial-2026';
 const DAY_MS = 86_400_000;
@@ -103,7 +104,7 @@ interface ActivityItem {
           <small>Users registrados</small>
           <div class="kpi-card__value">{{ formatNumber(totalUsers()) }}</div>
           @if (newUsersLast24h() > 0) {
-            <span class="kpi-card__delta kpi-card__delta--up">↑ +{{ newUsersLast24h() }} últimas 24h</span>
+            <span class="kpi-card__delta kpi-card__delta--up"><span aria-hidden="true">↑ </span>+{{ newUsersLast24h() }} últimas 24h</span>
           } @else {
             <span class="kpi-card__delta" style="color: var(--color-text-muted);">Sin altas en últimas 24h</span>
           }
@@ -113,7 +114,7 @@ interface ActivityItem {
           <small>Picks totales</small>
           <div class="kpi-card__value">{{ formatNumber(totalPicks()) }}</div>
           @if (newPicksLast24h() > 0) {
-            <span class="kpi-card__delta kpi-card__delta--up">↑ +{{ newPicksLast24h() }} últimas 24h</span>
+            <span class="kpi-card__delta kpi-card__delta--up"><span aria-hidden="true">↑ </span>+{{ newPicksLast24h() }} últimas 24h</span>
           } @else {
             <span class="kpi-card__delta" style="color: var(--color-text-muted);">Sin movimiento últimas 24h</span>
           }
@@ -127,13 +128,15 @@ interface ActivityItem {
           </span>
         </article>
 
-        <article class="kpi-card kpi-card--danger">
+        <a class="kpi-card kpi-card--danger kpi-card--link"
+           routerLink="/admin/users"
+           [queryParams]="{ status: 'bounced' }">
           <small>SES bounces</small>
           <div class="kpi-card__value">{{ totalBounces() }}</div>
           <span class="kpi-card__delta kpi-card__delta--down">
-            {{ totalBounces() === 0 ? 'Sin bounces — todo OK' : 'Acumulado · revisar' }}
+            {{ totalBounces() === 0 ? 'Sin bounces — todo OK' : 'Ver usuarios afectados →' }}
           </span>
-        </article>
+        </a>
       </section>
 
       <h2 style="font-family: var(--font-display); font-size: var(--fs-xl); text-transform: uppercase; line-height: 1; margin-bottom: var(--space-md);">
@@ -141,7 +144,7 @@ interface ActivityItem {
       </h2>
       <div class="quick-actions">
         <a routerLink="/admin/results" class="quick-action">
-          <span class="quick-action__icon">⚽</span>
+          <span class="quick-action__icon" aria-hidden="true">⚽</span>
           <h3>Publicar resultado</h3>
           <p>
             {{ pendingResults() === 0
@@ -150,21 +153,70 @@ interface ActivityItem {
           </p>
         </a>
         <a routerLink="/admin/fixtures" class="quick-action">
-          <span class="quick-action__icon">📅</span>
+          <span class="quick-action__icon" aria-hidden="true">📅</span>
           <h3>Editar fixture</h3>
           <p>Cambiar horario, sede o equipos. Aviso si afecta picks ya hechos.</p>
         </a>
         <a routerLink="/admin/special-results" class="quick-action">
-          <span class="quick-action__icon">🏆</span>
+          <span class="quick-action__icon" aria-hidden="true">🏆</span>
           <h3>Adjudicar specials</h3>
           <p>Disponible al cierre del torneo. Define campeón, subcampeón y revelación.</p>
         </a>
         <a routerLink="/admin/users" class="quick-action">
-          <span class="quick-action__icon">👥</span>
+          <span class="quick-action__icon" aria-hidden="true">👥</span>
           <h3>Gestionar users</h3>
           <p>Buscar, reset password, marcar emails con bounce.</p>
         </a>
       </div>
+
+      <!-- Setup del torneo · pre-kickoff checklist.
+           Cada fila linkea a la pantalla donde se completa el paso. -->
+      @if (!setupComplete()) {
+        <section class="setup-checklist">
+          <h2 class="setup-checklist__title">Setup del torneo</h2>
+          <p class="setup-checklist__hint">
+            Antes del primer kickoff verificá que estos pasos estén completos.
+          </p>
+          <ul class="setup-list">
+            <li>
+              <span class="setup-icon"
+                    [class.is-ok]="setup().teamsOk"
+                    aria-hidden="true">{{ setup().teamsOk ? '✓' : '○' }}</span>
+              <a routerLink="/admin/teams">
+                <strong>Equipos cargados</strong>
+                <small>{{ setup().teamsCount }} / 48</small>
+              </a>
+            </li>
+            <li>
+              <span class="setup-icon"
+                    [class.is-ok]="setup().groupsAssignedOk"
+                    aria-hidden="true">{{ setup().groupsAssignedOk ? '✓' : '○' }}</span>
+              <a routerLink="/admin/teams">
+                <strong>Equipos en grupos</strong>
+                <small>{{ setup().groupsAssignedCount }} / {{ setup().teamsCount || 48 }}</small>
+              </a>
+            </li>
+            <li>
+              <span class="setup-icon"
+                    [class.is-ok]="setup().fixturesOk"
+                    aria-hidden="true">{{ setup().fixturesOk ? '✓' : '○' }}</span>
+              <a routerLink="/admin/fixtures">
+                <strong>Fixtures fase de grupos</strong>
+                <small>{{ setup().groupStageFixtures }} / 72</small>
+              </a>
+            </li>
+            <li>
+              <span class="setup-icon"
+                    [class.is-ok]="setup().bracketOk"
+                    aria-hidden="true">{{ setup().bracketOk ? '✓' : '○' }}</span>
+              <a routerLink="/admin/bracket">
+                <strong>Posiciones del bracket</strong>
+                <small>{{ setup().bracketWithPositionCount }} / {{ setup().bracketTotalCount || '?' }}</small>
+              </a>
+            </li>
+          </ul>
+        </section>
+      }
 
       @if (activity().length > 0) {
         <div class="activity">
@@ -188,9 +240,68 @@ interface ActivityItem {
       }
     }
   `,
+  styles: [`
+    .setup-checklist {
+      background: var(--color-primary-white);
+      border: 1px solid var(--color-line);
+      border-left: 3px solid var(--color-primary-green);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: var(--space-xl);
+    }
+    .setup-checklist__title {
+      font-family: var(--font-display);
+      font-size: var(--fs-lg);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      line-height: 1;
+      margin: 0 0 6px;
+    }
+    .setup-checklist__hint {
+      margin: 0 0 14px;
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+    .setup-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+    .setup-list li { display: flex; align-items: center; gap: 12px; }
+    .setup-list a {
+      flex: 1;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 12px;
+      text-decoration: none;
+      color: var(--color-primary-black);
+      background: rgba(0,0,0,0.02);
+      border-radius: 8px;
+      transition: background 0.15s ease;
+    }
+    .setup-list a:hover { background: rgba(2, 204, 116, 0.08); }
+    .setup-list a:focus-visible {
+      outline: 2px solid var(--color-primary-green);
+      outline-offset: 2px;
+    }
+    .setup-list strong { font-size: 14px; font-weight: 600; }
+    .setup-list small { font-size: 12px; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+    .setup-icon {
+      width: 26px; height: 26px;
+      display: grid; place-items: center;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.06);
+      color: var(--color-text-muted);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .setup-icon.is-ok {
+      background: rgba(2, 204, 116, 0.18);
+      color: var(--color-primary-green);
+    }
+  `],
 })
 export class AdminDashboardComponent implements OnInit {
   private toast = inject(ToastService);
+  private confirmDialog = inject(ConfirmDialogService);
   scoringGroupStage = signal(false);
   scoringBracket = signal(false);
   scoringMsg = signal<string | null>(null);
@@ -201,7 +312,14 @@ export class AdminDashboardComponent implements OnInit {
   sweepMsg = signal<string | null>(null);
 
   async runLoyaltySweep() {
-    if (!confirm('¿Otorgar comodín de fidelidad a los users que tienen TODAS sus predicciones llenas?\n\nEsto debería correrse a 7 días del kickoff del torneo.')) return;
+    const ok = await this.confirmDialog.ask({
+      title: 'Sweep · comodín de fidelidad',
+      message:
+        'Otorga el comodín de fidelidad a los users que tienen TODAS sus predicciones llenas. ' +
+        'Se recomienda correrlo a 7 días del kickoff del torneo.',
+      confirmLabel: 'Ejecutar sweep',
+    });
+    if (!ok) return;
     this.sweepingLoyalty.set(true);
     this.sweepMsg.set(null);
     try {
@@ -222,7 +340,14 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   async runEngagementSweep() {
-    if (!confirm('¿Otorgar comodín de engagement a los users con ≥80% de marcadores predichos antes del kickoff?\n\nEsto se corre al cierre del torneo.')) return;
+    const ok = await this.confirmDialog.ask({
+      title: 'Sweep · comodín de engagement',
+      message:
+        'Otorga el comodín de engagement a los users con ≥80% de marcadores predichos antes ' +
+        'del kickoff. Se corre al cierre del torneo.',
+      confirmLabel: 'Ejecutar sweep',
+    });
+    if (!ok) return;
     this.sweepingEngagement.set(true);
     this.sweepMsg.set(null);
     try {
@@ -243,7 +368,14 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   async runExpirySweep() {
-    if (!confirm('¿Marcar como EXPIRED los comodines no asignados que pasaron su ventana, y emitir recordatorios 24h antes? Idempotente — re-correr no duplica.')) return;
+    const ok = await this.confirmDialog.ask({
+      title: 'Sweep · caducidad de comodines',
+      message:
+        'Marca como EXPIRED los comodines no asignados que pasaron su ventana y emite los ' +
+        'recordatorios 24 h antes. Idempotente — re-correr no duplica.',
+      confirmLabel: 'Ejecutar sweep',
+    });
+    if (!ok) return;
     this.sweepingExpiry.set(true);
     this.sweepMsg.set(null);
     try {
@@ -264,7 +396,14 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   async runScoreGroupStage() {
-    if (!confirm('¿Calcular scoring de fase de grupos + mejores 3eros para TODOS los users? Idempotente — no duplica.')) return;
+    const ok = await this.confirmDialog.ask({
+      title: 'Scoring · fase de grupos',
+      message:
+        'Calcula el scoring de fase de grupos + mejores 3eros para TODOS los users. ' +
+        'Idempotente — no duplica.',
+      confirmLabel: 'Calcular scoring',
+    });
+    if (!ok) return;
     this.scoringGroupStage.set(true);
     this.scoringMsg.set(null);
     try {
@@ -287,7 +426,13 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   async runScoreBracket() {
-    if (!confirm('¿Calcular scoring de bracket (octavos→campeón) para TODOS los users? Idempotente.')) return;
+    const ok = await this.confirmDialog.ask({
+      title: 'Scoring · bracket',
+      message:
+        'Calcula el scoring de bracket (octavos→campeón) para TODOS los users. Idempotente.',
+      confirmLabel: 'Calcular scoring',
+    });
+    if (!ok) return;
     this.scoringBracket.set(true);
     this.scoringMsg.set(null);
     try {
@@ -319,6 +464,29 @@ export class AdminDashboardComponent implements OnInit {
   newPicksLast24h = signal(0);
   pendingResults = signal(0);
   totalBounces = signal(0);
+
+  /** Pre-kickoff checklist. Cada flag indica si el paso está completo
+   *  según el state actual de la DB. */
+  setup = signal<{
+    teamsCount: number;
+    teamsOk: boolean;
+    groupsAssignedCount: number;
+    groupsAssignedOk: boolean;
+    groupStageFixtures: number;
+    fixturesOk: boolean;
+    bracketTotalCount: number;
+    bracketWithPositionCount: number;
+    bracketOk: boolean;
+  }>({
+    teamsCount: 0, teamsOk: false,
+    groupsAssignedCount: 0, groupsAssignedOk: false,
+    groupStageFixtures: 0, fixturesOk: false,
+    bracketTotalCount: 0, bracketWithPositionCount: 0, bracketOk: false,
+  });
+  setupComplete = computed(() => {
+    const s = this.setup();
+    return s.teamsOk && s.groupsAssignedOk && s.fixturesOk && s.bracketOk;
+  });
 
   activity = signal<ActivityItem[]>([]);
 
@@ -362,9 +530,44 @@ export class AdminDashboardComponent implements OnInit {
       // Build activity feed from heuristics: most recent FINAL matches, group creations,
       // and bounced users. Sorted desc by timestamp, top 6.
       const teamsRes = await this.api.listTeams(TOURNAMENT_ID);
+      const teamsList = teamsRes.data ?? [];
       const teamName = new Map<string, string>(
-        (teamsRes.data ?? []).map((t) => [t.slug, t.name]),
+        teamsList.map((t) => [t.slug, t.name]),
       );
+
+      // Setup checklist derivado del state DB.
+      // Mundial 2026: 48 equipos, 12 grupos × 6 partidos = 72 fixtures de
+      // fase de grupos, + 32 partidos eliminatorios = bracket. El bracket
+      // total se infiere del schema phases (los partidos con phase.order
+      // >= 2 deberían tener bracketPosition). Para no cargar phases acá
+      // (y mantener el ngOnInit ligero), usamos heurística: matches con
+      // bracketPosition != null son knockout; el "expected" del bracket
+      // se infiere del subset de matches que NO son de grupos.
+      const teamsCount = teamsList.length;
+      const groupsAssignedCount = teamsList.filter((t) => !!t.groupLetter).length;
+      const matchesWithoutBracket = matches.filter((m) => m.bracketPosition == null);
+      const matchesWithBracket = matches.filter((m) => m.bracketPosition != null);
+      // Si hay phases, lo correcto sería filtrar por phase.order. Como
+      // heurística sin cargar phases: contamos fixtures sin bracketPosition
+      // como "fase de grupos" (los partidos del knockout siempre deben
+      // tener bracketPosition seteado).
+      const groupStageFixtures = matchesWithoutBracket.length;
+      const bracketWithPositionCount = matchesWithBracket.length;
+      // Total esperado del bracket: total de matches - 72 de fase de grupos,
+      // o si todavía no hay 72, asumimos 32 (R32 → F en Mundial 2026).
+      const bracketTotalCount = Math.max(matches.length - 72, 32);
+
+      this.setup.set({
+        teamsCount,
+        teamsOk: teamsCount >= 48,
+        groupsAssignedCount,
+        groupsAssignedOk: teamsCount > 0 && groupsAssignedCount === teamsCount,
+        groupStageFixtures,
+        fixturesOk: groupStageFixtures >= 72,
+        bracketTotalCount,
+        bracketWithPositionCount,
+        bracketOk: bracketWithPositionCount >= 32,
+      });
 
       const items: ActivityItem[] = [];
       for (const m of matches) {

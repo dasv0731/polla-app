@@ -5,6 +5,7 @@ import { uploadData, getUrl, remove } from 'aws-amplify/storage';
 import { ApiService } from '../../core/api/api.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
+import { ConfirmDialogService } from '../../shared/ui/confirm-dialog.service';
 
 const TOURNAMENT_ID = 'mundial-2026';
 const MAX_BANNER_BYTES = 2 * 1024 * 1024;     // 2 MB
@@ -181,17 +182,20 @@ interface CodeRow {
                        placeholder="PEPSI100">
               </div>
               <div class="form-card__field" style="margin: 0;">
-                <label class="form-card__label">Max usos</label>
+                <label class="form-card__label" [attr.for]="'sp-max-' + i">Max usos</label>
                 <input class="form-card__input" type="number" min="1" max="100000"
+                       inputmode="numeric" autocomplete="off"
+                       [id]="'sp-max-' + i"
                        [(ngModel)]="c.maxUses" [name]="'max-' + i" required
                        (input)="c.dirty = true">
               </div>
             </div>
             <div style="display: grid; grid-template-columns: 1fr 110px; gap: var(--space-sm); margin-top: var(--space-sm); align-items: end;">
               <div class="form-card__field" style="margin: 0;">
-                <label class="form-card__label">Tipo de comodín que otorga</label>
+                <label class="form-card__label" [attr.for]="'sp-ctype-' + i">Tipo de comodín que otorga</label>
                 <select class="form-card__input" [(ngModel)]="c.comodinType"
-                        [name]="'ctype-' + i" required
+                        [id]="'sp-ctype-' + i"
+                        [name]="'ctype-' + i" required autocomplete="off"
                         (change)="c.dirty = true">
                   @for (opt of COMODIN_OPTIONS; track opt.value) {
                     <option [value]="opt.value">{{ opt.label }}</option>
@@ -199,8 +203,10 @@ interface CodeRow {
                 </select>
               </div>
               <div class="form-card__field" style="margin: 0;">
-                <label class="form-card__label">Pts (legacy)</label>
+                <label class="form-card__label" [attr.for]="'sp-pts-' + i">Pts (legacy)</label>
                 <input class="form-card__input" type="number" min="0" max="500"
+                       inputmode="numeric" autocomplete="off"
+                       [id]="'sp-pts-' + i"
                        [(ngModel)]="c.pointsValue" [name]="'pts-' + i"
                        [disabled]="!!c.comodinType"
                        (input)="c.dirty = true">
@@ -208,14 +214,16 @@ interface CodeRow {
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm); margin-top: var(--space-sm);">
               <div class="form-card__field" style="margin: 0;">
-                <label class="form-card__label">Inicio (Quito)</label>
-                <input class="form-card__input" type="datetime-local" [(ngModel)]="c.startLocal"
+                <label class="form-card__label" [attr.for]="'sp-start-' + i">Inicio (Quito)</label>
+                <input class="form-card__input" type="datetime-local"
+                       [id]="'sp-start-' + i" [(ngModel)]="c.startLocal"
                        [name]="'start-' + i" required
                        (input)="c.dirty = true">
               </div>
               <div class="form-card__field" style="margin: 0;">
-                <label class="form-card__label">Expira (Quito)</label>
-                <input class="form-card__input" type="datetime-local" [(ngModel)]="c.endLocal"
+                <label class="form-card__label" [attr.for]="'sp-end-' + i">Expira (Quito)</label>
+                <input class="form-card__input" type="datetime-local"
+                       [id]="'sp-end-' + i" [(ngModel)]="c.endLocal"
                        [name]="'end-' + i" required
                        (input)="c.dirty = true">
               </div>
@@ -307,6 +315,7 @@ export class AdminSponsorEditComponent implements OnInit {
 
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  private confirmDialog = inject(ConfirmDialogService);
   private router = inject(Router);
 
   SLOTS = SLOTS;
@@ -487,7 +496,13 @@ export class AdminSponsorEditComponent implements OnInit {
   async removeBannerSlot(slot: SlotKey) {
     const key = this.slotKey(slot);
     if (!key) return;
-    if (!confirm('¿Borrar este banner del bucket? Esta acción no se puede deshacer.')) return;
+    const ok = await this.confirmDialog.ask({
+      title: 'Borrar banner',
+      message: 'Esto borra el banner del bucket. La acción no se puede deshacer.',
+      confirmLabel: 'Borrar banner',
+      danger: true,
+    });
+    if (!ok) return;
     this.busyKey.set(key);
     try {
       try { await remove({ path: key }); }
@@ -532,8 +547,15 @@ export class AdminSponsorEditComponent implements OnInit {
       this.codes.update((arr) => arr.filter((x) => x !== c));
       return;
     }
-    if (!confirm(`¿Borrar el código "${c.code}"? El audit trail de canjes anteriores se mantiene.`)) return;
-    this.codes.update((arr) => arr.map((x) => (x === c ? { ...x, deleted: true } : x)));
+    this.confirmDialog.ask({
+      title: 'Borrar código',
+      message: `Vas a borrar el código "${c.code}". El audit trail de canjes anteriores se mantiene.`,
+      confirmLabel: 'Borrar código',
+      danger: true,
+    }).then((ok) => {
+      if (!ok) return;
+      this.codes.update((arr) => arr.map((x) => (x === c ? { ...x, deleted: true } : x)));
+    });
   }
 
   async saveAll() {

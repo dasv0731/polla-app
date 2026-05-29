@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="Foto de jugador (placeholder)">
+  <rect width="120" height="120" fill="#E0E0E0"></rect>
+  <circle cx="60" cy="46" r="20" fill="#9b9b9b"></circle>
+  <path d="M20 110 C20 82 40 72 60 72 C80 72 100 82 100 110 Z" fill="#9b9b9b"></path>
+</svg>

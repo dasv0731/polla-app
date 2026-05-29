@@ -4,6 +4,9 @@ import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService } from '../../core/user/user-modes.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
+import { ToastService } from '../../core/notifications/toast.service';
+import { IconComponent } from '../../shared/ui/icon/icon.component';
+import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
 
 interface GroupSummary {
   id: string;
@@ -17,13 +20,13 @@ interface GroupSummary {
 @Component({
   standalone: true,
   selector: 'app-group-join',
-  imports: [RouterLink],
+  imports: [RouterLink, IconComponent, SkeletonComponent],
   template: `
     <div class="auth-shell">
       <header class="auth-header">
         <div class="auth-header__inner">
-          <a routerLink="/picks" class="auth-header__logo" aria-label="Polla Mundial 2026">
-            <img src="assets/logo-golgana.png" alt="Golgana">
+          <a routerLink="/home" class="auth-header__logo" aria-label="Golgana">
+            <img src="assets/logo-golgana.png" alt="Golgana" width="199" height="98" class="brand-logo">
           </a>
           <a routerLink="/groups" class="auth-header__back">← Mis grupos</a>
         </div>
@@ -34,8 +37,10 @@ interface GroupSummary {
         @let err = joinError();
 
         @if (loading()) {
-          <article class="join-card">
-            <p class="join-card__lead">Validando código…</p>
+          <article class="join-card" aria-busy="true">
+            <p class="join-card__kicker">Validando código…</p>
+            <app-skeleton variant="card" />
+            <app-skeleton variant="text" [count]="3" />
           </article>
         } @else if (alreadyMember()) {
           <article class="join-card">
@@ -53,15 +58,23 @@ interface GroupSummary {
         } @else if (g !== null) {
           <article class="join-card">
             <p class="join-card__kicker">Invitación a un grupo</p>
-            <div class="join-card__icon">★</div>
+            <div class="join-card__icon"><app-icon name="star" size="lg" /></div>
             <h1 class="join-card__name">{{ g.name }}</h1>
             <p class="join-card__owner">
               Invitado por <strong>{{ '@' + g.ownerHandle }}</strong> · Código <strong>{{ g.joinCode }}</strong>
+              <button type="button" class="join-card__copy"
+                      (click)="copyCode(g.joinCode)"
+                      [attr.aria-label]="'Copiar código ' + g.joinCode">
+                <app-icon name="clipboard" size="sm" />
+                {{ copied() ? '¡Copiado!' : 'Copiar' }}
+              </button>
             </p>
 
             <div class="join-stats">
               <div class="join-stat"><strong>{{ g.members }}</strong><small>Miembros</small></div>
-              <div class="join-stat"><strong>{{ formatDate(g.createdAt) }}</strong><small>Creado</small></div>
+              <!-- TODO(A6): consume createdAt when previewJoinCode lambda extended -->
+              <div class="join-stat"><strong>—</strong><small>Creado</small></div>
+              <!-- TODO(A6): hardcoded "WC26" hasta que previewJoinCode exponga tournamentCode -->
               <div class="join-stat"><strong>WC26</strong><small>Torneo</small></div>
             </div>
 
@@ -69,7 +82,15 @@ interface GroupSummary {
               Al unirte verás el ranking interno del grupo, podrás compararte con los otros miembros y compartir bullying sano. Tus picks aparecen anónimos hasta el cierre del partido.
             </p>
 
-            @if (err !== null) {
+            @if (isGroupFull()) {
+              <div class="join-error">
+                <h4>Grupo lleno</h4>
+                <p>
+                  Este grupo ya alcanzó su límite de {{ MAX_MEMBERS }} miembros.
+                  Pídele al admin que elimine a alguien inactivo o crea un grupo nuevo.
+                </p>
+              </div>
+            } @else if (err !== null) {
               <div class="join-error">
                 <h4>No pudimos unirte</h4>
                 <p>{{ err }}</p>
@@ -77,10 +98,12 @@ interface GroupSummary {
             }
 
             <div class="join-card__actions">
-              <button class="btn btn--primary btn--lg" type="button" (click)="confirm()" [disabled]="joining()">
+              <button class="btn btn--primary btn--lg" type="button"
+                      (click)="confirm()"
+                      [disabled]="joining() || isGroupFull()">
                 {{ joining() ? 'Uniendo…' : 'Unirme al grupo' }}
               </button>
-              <a class="btn btn--ghost" routerLink="/groups">Rechazar</a>
+              <a class="btn btn--ghost" routerLink="/groups">Más tarde</a>
             </div>
           </article>
         } @else {
@@ -88,6 +111,11 @@ interface GroupSummary {
             <div class="join-error">
               <h4>Código inválido</h4>
               <p>{{ error() ?? 'No encontramos el grupo. El código puede ser incorrecto o haber expirado.' }}</p>
+              <p class="join-card__hint">
+                Pedile al admin que verifique el código.
+                ¿Sigue fallando? Escribinos a
+                <a href="mailto:soporte@golgana.net">soporte&#64;golgana.net</a>.
+              </p>
             </div>
             <div class="join-card__actions">
               <a class="btn btn--primary" routerLink="/groups">Volver a mis grupos</a>
@@ -97,18 +125,61 @@ interface GroupSummary {
       </main>
 
       <footer class="auth-footer">
-        © 2026 Golgana — <a href="#">Reglas</a> · <a href="#">Privacidad</a>
+        © 2026 Golgana — <a href="https://polla.golgana.net/reglas" target="_blank" rel="noopener noreferrer">Reglas</a> · <a href="https://polla.golgana.net/privacidad" target="_blank" rel="noopener noreferrer">Privacidad</a>
       </footer>
     </div>
   `,
+  styles: [`
+    :host { display: block; }
+
+    .join-card__copy {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: 8px;
+      padding: 2px 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-primary-green);
+      background: transparent;
+      border: 1px solid var(--color-line);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+    .join-card__copy:hover {
+      background: var(--wf-green-soft);
+    }
+    .join-card__copy:focus-visible {
+      outline: 2px solid var(--color-primary-green);
+      outline-offset: 2px;
+    }
+
+    .join-card__hint {
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--color-text-muted);
+      line-height: 1.4;
+    }
+    .join-card__hint a {
+      color: var(--color-primary-green);
+      text-decoration: underline;
+    }
+  `],
 })
 export class GroupJoinComponent implements OnInit {
   @Input() code!: string;
+
+  /** Tope hard del backend para miembros por grupo.
+   *  TODO(A6): consume maxMembers from previewJoinCode lambda once extended.
+   *  Hoy el preview no lo expone, así que lo mantenemos hardcoded acá. */
+  readonly MAX_MEMBERS = 30;
 
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private userModes = inject(UserModesService);
   private router = inject(Router);
+  private toast = inject(ToastService);
 
   loading = signal(true);
   joining = signal(false);
@@ -116,11 +187,26 @@ export class GroupJoinComponent implements OnInit {
   joinError = signal<string | null>(null);
   alreadyMember = signal(false);
   group = signal<GroupSummary | null>(null);
+  copied = signal(false);
+  private copyResetTimer?: ReturnType<typeof setTimeout>;
+
+  /** Bloquea el CTA si el grupo ya alcanzó el límite. Solo aplica cuando
+   *  no sos miembro todavía — si ya estás dentro y el grupo está full,
+   *  no es bloqueante (el "Ir al grupo" branch atrapa primero). */
+  isGroupFull = computed(() => {
+    const g = this.group();
+    return !!g && !this.alreadyMember() && g.members >= this.MAX_MEMBERS;
+  });
 
   ngOnInit() {
+    // El authGuard ya redirige a `/login?returnUrl=/groups/join/CODE` si no
+    // hay sesión, y login/register propagan returnUrl al onboarding. Cuando
+    // llegamos acá garantizado hay user — un branch de fallback paranoico
+    // por si el guard fallara en SSR o en un edge case.
     if (!this.auth.user()) {
-      sessionStorage.setItem('pendingJoin', this.code);
-      void this.router.navigate(['/register']);
+      void this.router.navigate(['/login'], {
+        queryParams: { returnUrl: '/groups/join/' + this.code },
+      });
       return;
     }
     void this.loadGroup();
@@ -145,7 +231,8 @@ export class GroupJoinComponent implements OnInit {
         joinCode: this.code,                  // el user ya tiene el código (vino por URL)
         ownerHandle: data.ownerHandle ?? '—',
         members: data.memberCount,
-        createdAt: '',                        // no exponemos en el preview
+        // TODO(A6): consume createdAt when previewJoinCode lambda extended
+        createdAt: '',
       });
       this.alreadyMember.set(data.alreadyMember);
     } catch (e) {
@@ -200,6 +287,21 @@ export class GroupJoinComponent implements OnInit {
       return new Date(iso).toLocaleDateString('es-EC', { day: '2-digit', month: 'short' });
     } catch {
       return '—';
+    }
+  }
+
+  /** Copia el código al clipboard. Muestra feedback visual ("¡Copiado!")
+   *  por 2s y un toast por accesibilidad. */
+  async copyCode(code: string) {
+    try {
+      await navigator.clipboard.writeText(code);
+      this.copied.set(true);
+      this.toast.success('Código copiado al portapapeles.');
+      if (this.copyResetTimer) clearTimeout(this.copyResetTimer);
+      this.copyResetTimer = setTimeout(() => this.copied.set(false), 2000);
+    } catch {
+      // Fallback: no clipboard API disponible (insecure context, navegador antiguo).
+      this.toast.error('No se pudo copiar. Selecciona el código manualmente.');
     }
   }
 }

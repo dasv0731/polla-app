@@ -5,11 +5,13 @@ import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
+import { IconComponent } from '../../shared/ui/icon/icon.component';
+import { DirtyAware } from '../../shared/util/dirty-form.guard';
 
 @Component({
   standalone: true,
   selector: 'app-group-invite-email',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, IconComponent],
   template: `
     @let g = group();
 
@@ -40,7 +42,11 @@ import { humanizeError } from '../../core/notifications/domain-errors';
               @for (email of emails(); track email) {
                 <span class="email-chip">
                   {{ email }}
-                  <span class="email-chip__remove" (click)="removeEmail(email)" aria-label="Quitar">×</span>
+                  <button type="button" class="email-chip__remove"
+                          (click)="removeEmail(email)"
+                          [attr.aria-label]="'Quitar ' + email">
+                    <app-icon name="close" size="sm" [decorative]="true" />
+                  </button>
                 </span>
               }
               <input id="emails-input" type="email"
@@ -50,18 +56,30 @@ import { humanizeError } from '../../core/notifications/domain-errors';
                      (keydown.,)="onSubmitChip($event)"
                      (keydown.space)="onSubmitChip($event)"
                      (blur)="commitDraft()"
-                     placeholder="agregar otro email...">
+                     placeholder="agregar otro email…">
             </div>
-            <span class="form-card__hint">Máx. 20 emails por invitación.</span>
+            <div class="form-card__hint-row">
+              <span class="form-card__hint">Máx. 20 emails por invitación.</span>
+              <span class="form-card__counter"
+                    [class.is-near-limit]="emails().length >= 18">
+                {{ emails().length }} / 20
+              </span>
+            </div>
           </div>
 
           <div class="form-card__field">
             <label class="form-card__label" for="message">Mensaje opcional</label>
             <textarea class="form-card__textarea" id="message" name="message"
-                      rows="3" placeholder="Hey, armé un grupo para la polla del Mundial..."
-                      [(ngModel)]="message" maxlength="200"
+                      rows="3" placeholder="Hey, armé un grupo para la polla del Mundial…"
+                      [(ngModel)]="message" maxlength="500"
                       style="min-height: 80px; padding: 12px 14px; resize: vertical;"></textarea>
-            <span class="form-card__hint">Aparece debajo del CTA en el email. Máx 200 caracteres.</span>
+            <div class="form-card__hint-row">
+              <span class="form-card__hint">Aparece debajo del CTA en el email.</span>
+              <span class="form-card__counter"
+                    [class.is-near-limit]="message.length >= 450">
+                {{ message.length }} / 500
+              </span>
+            </div>
           </div>
 
           <button class="btn btn--primary form-card__submit" type="submit"
@@ -70,7 +88,7 @@ import { humanizeError } from '../../core/notifications/domain-errors';
           </button>
 
           @if (groupIsFull()) {
-            <p class="text-mute" style="font-size:12px;margin-top:8px;">
+            <p class="text-mute" role="alert" style="font-size:12px;margin-top:8px;">
               El grupo ya tiene 30 miembros. No se pueden enviar más invitaciones hasta
               que el admin elimine a alguien.
             </p>
@@ -88,11 +106,17 @@ import { humanizeError } from '../../core/notifications/domain-errors';
           </p>
 
           <div class="email-preview">
+            <header class="email-preview__subject">
+              <strong>Asunto:</strong> {{ g.name }} te invita a Polla Mundialista 2026
+            </header>
             <div class="email-preview__head">
-              <img src="assets/logo-golgana.png" alt="Golgana">
+              <!-- TODO(A6): valores hardcoded (logo, sender, copyright) deberían
+                   venir del template del email server-side cuando se conecte el
+                   lambda real de invitaciones. -->
+              <img src="assets/logo-golgana.png" alt="Golgana" width="199" height="98">
               <div class="email-preview__head-info">
-                <strong>Polla Mundialista</strong>
-                <small>polla&#64;golgana.net · Para: {{ emails()[0] ?? 'amigo@ejemplo.com' }}</small>
+                <strong>Polla Mundialista 2026</strong>
+                <small>polla&#64;golgana.net · Para: {{ emails().length ? emails()[0] : 'amigo@ejemplo.com' }}</small>
               </div>
             </div>
             <div class="email-preview__body">
@@ -100,7 +124,7 @@ import { humanizeError } from '../../core/notifications/domain-errors';
                 {{ '@' + (currentHandle() ?? 'tu') }} te invitó
               </p>
               <h2>Te invitan a "{{ g.name }}"</h2>
-              <p>{{ '@' + (currentHandle() ?? 'tu') }} armó un grupo en la <strong>Polla Mundial 2026</strong> y quiere que estés. Es gratis y solo pide email + password.</p>
+              <p>{{ '@' + (currentHandle() ?? 'tu') }} armó un grupo en la <strong>Polla Mundialista 2026</strong> y quiere que estés. Es gratis y solo pide email + password.</p>
               @if (message.trim()) {
                 <p style="font-style: italic; padding: var(--space-sm) var(--space-md); border-left: 3px solid var(--color-primary-green); background: var(--color-green-5);">
                   "{{ message }}"
@@ -125,8 +149,45 @@ import { humanizeError } from '../../core/notifications/domain-errors';
       }
     </main>
   `,
+  styles: [`
+    .email-chip__remove {
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      color: var(--color-primary-white);
+      background: var(--color-text-muted);
+    }
+    .email-chip__remove:focus-visible {
+      outline: 2px solid var(--color-primary-green);
+      outline-offset: 2px;
+    }
+    .email-preview__subject {
+      padding: var(--space-sm) var(--space-md);
+      border-bottom: 1px solid var(--color-border);
+      font-size: var(--fs-sm);
+      color: var(--color-text-muted);
+      background: var(--color-bg-subtle, #fafafa);
+    }
+    .email-preview__subject strong { color: var(--color-primary-black); }
+    .form-card__hint-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--space-sm);
+      margin-top: 4px;
+    }
+    .form-card__counter {
+      font-size: var(--fs-xs);
+      color: var(--color-text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .form-card__counter.is-near-limit {
+      color: var(--color-warn, #c97a00);
+      font-weight: 600;
+    }
+  `],
 })
-export class GroupInviteEmailComponent implements OnInit {
+export class GroupInviteEmailComponent implements OnInit, DirtyAware {
   @Input() id!: string;
 
   private api = inject(ApiService);
@@ -150,6 +211,12 @@ export class GroupInviteEmailComponent implements OnInit {
   });
   groupIsFull = computed(() => (this.memberCount() ?? 0) >= 30);
 
+  /** True si el user empezó a redactar algo (chips o mensaje). Usado por
+   *  `dirtyFormGuard` para confirmar abandono. */
+  isDirty(): boolean {
+    return this.emails().length > 0 || this.message.trim().length > 0 || this.draft().trim().length > 0;
+  }
+
   async ngOnInit() {
     try {
       const [grp, members] = await Promise.all([
@@ -162,6 +229,17 @@ export class GroupInviteEmailComponent implements OnInit {
       this.memberCount.set((members.data ?? []).length);
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  /** Re-cuenta members antes de mandar, para evitar race con otro admin que
+   *  acaba de llenar el grupo. */
+  private async refreshGroupInfo() {
+    try {
+      const members = await this.api.groupMembers(this.id);
+      this.memberCount.set((members.data ?? []).length);
+    } catch {
+      // Si falla, mantenemos el conteo previo; el lambda hará el check final.
     }
   }
 
@@ -205,6 +283,15 @@ export class GroupInviteEmailComponent implements OnInit {
     this.commitDraft();
     const list = this.emails();
     if (list.length === 0) return;
+
+    // Re-check memberCount para que un grupo que se llenó en otra sesión no
+    // dispare un POST que el backend igualmente va a rechazar.
+    await this.refreshGroupInfo();
+    if (this.groupIsFull()) {
+      this.toast.error('Grupo lleno. No se puede invitar.');
+      return;
+    }
+
     this.sending.set(true);
     try {
       const res = await this.api.emailGroupInvite(this.id, list);
@@ -212,6 +299,10 @@ export class GroupInviteEmailComponent implements OnInit {
       this.toast.success(
         `${sent} invitación${sent === 1 ? '' : 'es'} enviada${sent === 1 ? '' : 's'}`,
       );
+      // Reset state ANTES de navegar para que el guard no dispare.
+      this.emails.set([]);
+      this.message = '';
+      this.draft.set('');
       void this.router.navigate(['/groups', this.id]);
     } catch (e) {
       this.toast.error(humanizeError(e));

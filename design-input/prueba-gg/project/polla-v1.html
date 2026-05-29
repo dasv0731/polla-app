@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="es-EC"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Polla Mundialista · Variación C — Golgana</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./styles/tokens.css"><link rel="stylesheet" href="./styles/base.css"><link rel="stylesheet" href="./styles/golgana-pro.css">
+<link rel="icon" type="image/png" href="./assets/logo-golgana.png">
+<style>
+body{background:#f5f4f0;font-family:var(--font-primary)}
+/* TOP NAV */
+.tn{background:#0a0a0a;color:#fff;position:sticky;top:0;z-index:50;border-bottom:1px solid rgba(255,255,255,0.08)}
+.tn__in{max-width:1480px;margin:0 auto;padding:14px 24px;display:grid;grid-template-columns:auto 1fr auto;gap:32px;align-items:center}
+.tn__logo{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none}
+.tn__logo img{height:30px}
+.tn__logo strong{font-family:var(--font-display);font-size:22px;letter-spacing:0.04em}
+.tn__nav{display:flex;gap:4px}
+.tn__nav a{font-size:13px;letter-spacing:0.06em;text-transform:uppercase;font-weight:500;padding:9px 14px;border-radius:8px;color:rgba(255,255,255,0.7);text-decoration:none;transition:all 0.2s}
+.tn__nav a:hover{color:#fff;background:rgba(255,255,255,0.06)}
+.tn__nav a.active{color:#fff;background:rgba(2,204,116,0.18);border:1px solid rgba(2,204,116,0.5)}
+.tn__r{display:flex;align-items:center;gap:14px}
+.tn__bell{position:relative;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:50%;width:36px;height:36px;display:grid;place-items:center;cursor:pointer}
+.tn__bell::after{content:"3";position:absolute;top:-3px;right:-3px;background:var(--color-primary-green);color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:10px;border:2px solid #0a0a0a}
+.tn__usr{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:30px;padding:4px 14px 4px 4px;cursor:pointer}
+.tn__av{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#067a4a,#02cc74);display:grid;place-items:center;color:#fff;font-weight:600;font-size:12px}
+.tn__usr span{font-size:13px;color:#fff}
+@media(max-width:880px){.tn__nav{display:none}}
+
+/* TOAST */
+.toast{background:#0a0a0a;color:#fff;border-bottom:1px solid rgba(2,204,116,0.4);padding:10px 24px;text-align:center;font-size:12px;display:flex;align-items:center;justify-content:center;gap:10px}
+.toast::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--color-primary-green);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:0.6}}
+.toast a{color:var(--color-primary-green);font-weight:600;text-decoration:none}
+
+/* SHELL — left main + right sidebar sticky */
+.shell{max-width:1480px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:1fr 340px;gap:28px;align-items:start}
+@media(max-width:1100px){.shell{grid-template-columns:1fr}}
+.main{padding:28px 0}
+.side{padding:28px 0;position:sticky;top:64px;align-self:start;display:flex;flex-direction:column;gap:14px;max-height:calc(100vh - 64px);overflow-y:auto}
+@media(max-width:1100px){.side{position:static;max-height:none;overflow:visible}}
+
+/* HERO MIX B + C */
+.hero{background:linear-gradient(135deg,#0a0a0a 0%,#0a3d20 60%,#067a4a 100%);color:#fff;border-radius:18px;padding:28px 32px;position:relative;overflow:hidden;margin-bottom:24px}
+.hero::before{content:"";position:absolute;inset:0;background:radial-gradient(60% 80% at 80% 30%,rgba(2,204,116,0.22),transparent 60%);z-index:0}
+.hero__in{position:relative;z-index:1;display:grid;grid-template-columns:auto 1fr auto;gap:24px;align-items:center}
+.hero__av{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#02cc74,#016b3d);display:grid;place-items:center;font-family:var(--font-display);font-size:24px;color:#fff}
+.hero__k{font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.55);margin-bottom:4px}
+.hero__t{font-family:var(--font-display);font-size:32px;line-height:1.05;margin-bottom:6px}
+.hero__t strong{color:var(--color-primary-green)}
+.hero__s{font-size:13px;color:rgba(255,255,255,0.7)}
+.hero__alert{background:rgba(220,38,38,0.18);border:1px solid rgba(220,38,38,0.45);color:#fca5a5;padding:6px 12px;border-radius:6px;font-size:11px;display:inline-flex;align-items:center;gap:6px;margin-top:8px}
+.hero__cta{background:var(--color-primary-green);color:#fff;padding:12px 22px;border-radius:8px;font-weight:600;text-decoration:none;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;white-space:nowrap}
+@media(max-width:680px){.hero__in{grid-template-columns:1fr;text-align:center}.hero__av{margin:0 auto}}
+
+/* SECTION HEADER */
+.sh{display:flex;justify-content:space-between;align-items:baseline;margin:8px 0 14px;flex-wrap:wrap;gap:12px}
+.sh h2{font-family:var(--font-display);font-size:22px;letter-spacing:0.01em}
+.sh a{font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-primary-green);font-weight:600;text-decoration:none}
+
+/* PICKS PENDIENTES C — big number dark */
+.pp-card{background:#0a0a0a;color:#fff;border-radius:14px;padding:24px;display:grid;grid-template-columns:auto 1fr auto;gap:20px;align-items:center;margin-bottom:24px;position:relative;overflow:hidden}
+.pp-card::before{content:"";position:absolute;top:-50%;right:-20%;width:300px;height:300px;background:radial-gradient(circle,rgba(2,204,116,0.18),transparent 70%)}
+.pp-card__n{font-family:var(--font-display);font-size:64px;color:var(--color-primary-green);line-height:1;position:relative}
+.pp-card__t{position:relative}
+.pp-card__t strong{font-family:var(--font-display);font-size:18px;display:block}
+.pp-card__t small{font-size:11px;color:rgba(255,255,255,0.6);letter-spacing:0.04em}
+.pp-card__t small em{color:#fca5a5;font-style:normal}
+.pp-card__b{background:var(--color-primary-green);color:#fff;padding:12px 22px;border-radius:8px;font-weight:600;text-decoration:none;font-size:12px;letter-spacing:0.04em;text-transform:uppercase;white-space:nowrap;position:relative}
+
+/* GRUPOS A — lista compacta */
+.gr-list{display:flex;flex-direction:column;gap:8px}
+.gr{background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:10px;padding:12px;display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;transition:all 0.15s}
+.gr:hover{border-color:rgba(2,204,116,0.4);background:rgba(2,204,116,0.02)}
+.gr__av{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;color:#fff;font-family:var(--font-display);font-size:16px;flex-shrink:0}
+.gr__b{flex:1;min-width:0}
+.gr__n{font-family:var(--font-display);font-size:16px;line-height:1}
+.gr__m{font-size:11px;color:var(--color-text-muted);margin-top:3px}
+.gr__r{padding:4px 10px;border-radius:6px;font-family:var(--font-display);font-size:15px}
+.gr__r--gold{background:rgba(245,158,11,0.18);color:#b45309}
+.gr__r--bronze{background:rgba(180,83,9,0.18);color:#92400e}
+.gr__r--n{background:rgba(0,0,0,0.06);color:var(--color-text-muted)}
+.gr-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.gr-actions button{background:transparent;border:1px dashed rgba(2,204,116,0.4);border-radius:10px;padding:10px;color:var(--color-primary-green);font-family:inherit;font-weight:600;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer}
+.gr-actions button:hover{background:rgba(2,204,116,0.05);border-style:solid}
+
+/* RANKING C — global + grupo */
+.rk{background:linear-gradient(135deg,#02cc74,#016b3d);color:#fff;border-radius:14px;padding:22px;margin-top:24px}
+.rk__h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}
+.rk__h div{display:flex;flex-direction:column}
+.rk__big{font-family:var(--font-display);font-size:36px;line-height:1}
+.rk__l{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;opacity:0.85;margin-top:4px}
+.rk__r{text-align:right}
+.rk__r .rk__big{font-size:28px}
+.rk__bar{height:4px;background:rgba(255,255,255,0.25);border-radius:999px;overflow:hidden}
+.rk__bar__f{height:100%;background:#fff;width:78%}
+.rk__s{margin-top:6px;font-size:11px;opacity:0.85;display:flex;justify-content:space-between}
+
+/* PICKS ESPECIALES · compacto */
+.spk{background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:12px;padding:14px;margin-top:20px}
+.spk__h{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.spk__row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.spk__c{text-align:center;padding:8px;border-radius:8px;background:#fafaf6;text-decoration:none;color:inherit;transition:all 0.2s;display:flex;align-items:center;gap:6px;justify-content:center;font-size:11px}
+.spk__c:hover{transform:translateY(-1px)}
+.spk__c--filled{background:linear-gradient(135deg,#fde047,#f59e0b);color:#7c2d12;border-color:transparent}
+.spk__c--filled-s{background:linear-gradient(135deg,#e5e7eb,#9ca3af);color:#1f2937;border-color:transparent}
+.spk__c--empty{background:#f3f4f6;border:1px dashed var(--color-primary-green);color:var(--color-primary-green)}
+.spk__c__big{font-size:16px;line-height:1}
+.spk__c__name{font-family:var(--font-display);font-size:11px;line-height:1}
+.spk__c__l{display:none}
+
+/* COMODINES A · compacto */
+.com{background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:12px;padding:14px;margin-top:20px}
+.com__h{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.com__row{display:flex;gap:6px}
+.com__c{flex:1;height:48px;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:6px;color:#fff;text-align:center;padding:8px;font-size:10px;letter-spacing:0.04em;text-transform:uppercase;cursor:pointer;transition:transform 0.2s}
+.com__c:hover{transform:translateY(-1px)}
+.com__c__i{font-size:16px;line-height:1}
+.com__c--double{background:linear-gradient(135deg,#02cc74,#016b3d)}
+.com__c--shield{background:linear-gradient(135deg,#f59e0b,#b45309)}
+.com__c--empty{background:rgba(0,0,0,0.04);color:rgba(0,0,0,0.35);border:1px dashed rgba(0,0,0,0.2);cursor:default}
+
+/* Próximo partido A + Countdown C · ampliado */
+.np{background:linear-gradient(160deg,#0a0a0a 0%,#0a3d20 100%);color:#fff;border-radius:16px;padding:24px;position:relative;overflow:hidden;border:1px solid rgba(2,204,116,0.25)}
+.np::before{content:"";position:absolute;inset:0;background:radial-gradient(80% 60% at 50% 0%,rgba(2,204,116,0.35),transparent 70%)}
+.np__in{position:relative}
+.np__k{font-size:10px;letter-spacing:0.16em;color:var(--color-primary-green);font-weight:700;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.np__k::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--color-primary-green);box-shadow:0 0 0 3px rgba(2,204,116,0.25)}
+.np__title{font-family:var(--font-display);font-size:20px;line-height:1.1;color:#fff;margin-bottom:16px}
+.np__title em{font-style:normal;color:var(--color-primary-green)}
+.np__cd{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:18px}
+.np__cd__c{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.14);border-radius:9px;padding:11px 0;text-align:center}
+.np__cd__n{font-family:var(--font-display);font-size:26px;line-height:1;color:#fff}
+.np__cd__l{font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.55);margin-top:3px}
+.np__teams{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;padding:14px 0;border-top:1px solid rgba(255,255,255,0.1);border-bottom:1px solid rgba(255,255,255,0.1)}
+.np__team{text-align:center;display:flex;flex-direction:column;gap:6px;align-items:center}
+.np__flag{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.06);display:grid;place-items:center;font-size:32px;border:2px solid rgba(255,255,255,0.15)}
+.np__name{font-family:var(--font-display);font-size:16px;line-height:1.05}
+.np__sub{font-size:9px;color:rgba(255,255,255,0.55);letter-spacing:0.06em;text-transform:uppercase}
+.np__vs{font-family:var(--font-display);font-size:20px;color:var(--color-primary-green);padding:0 4px}
+.np__meta{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding:9px 12px;background:rgba(255,255,255,0.04);border-radius:8px;font-size:11px;color:rgba(255,255,255,0.7);letter-spacing:0.04em}
+.np__meta strong{color:#fff;font-family:var(--font-display);font-size:14px}
+.np__pick{margin-top:12px;display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:10px 12px;background:rgba(2,204,116,0.18);border:1px solid rgba(2,204,116,0.4);border-radius:8px}
+.np__pick__l{font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.7);margin-bottom:2px;display:block}
+.np__pick strong{font-family:var(--font-display);font-size:18px;color:#fff}
+.np__edit{color:var(--color-primary-green);font-size:10px;text-decoration:none;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;white-space:nowrap}
+
+/* SIGUIENTES PARTIDOS B */
+.up{background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:14px;padding:18px}
+.up__h{font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:12px;display:flex;justify-content:space-between}
+.up__h a{color:var(--color-primary-green);font-weight:600;text-decoration:none}
+.up__row{padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.06);text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:4px}
+.up__row:last-child{border-bottom:0}
+.up__row__h{display:flex;justify-content:space-between;font-size:10px;color:var(--color-text-muted);letter-spacing:0.04em}
+.up__row__h .st-ok{color:var(--color-primary-green);font-weight:700}
+.up__row__h .st-p{color:#dc2626;font-weight:700}
+.up__row__t{font-family:var(--font-display);font-size:14px}
+.up__row__t.muted{color:var(--color-text-muted)}
+
+/* NOTICIAS — mix B principal + A lista */
+.news{display:flex;flex-direction:column;gap:12px}
+.news__hero{background:#0a0a0a;border-radius:14px;overflow:hidden;text-decoration:none;color:#fff;position:relative;aspect-ratio:5/3;display:flex;align-items:end}
+.news__hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.55}
+.news__hero::before{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.95) 0%,transparent 60%);z-index:1}
+.news__hero__b{position:relative;z-index:2;padding:16px}
+.news__hero__k{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-primary-green);font-weight:700;margin-bottom:6px}
+.news__hero__t{font-family:var(--font-display);font-size:18px;line-height:1.1}
+.news__list{background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:14px;padding:6px 14px}
+.news__row{display:flex;gap:10px;padding:12px 0;border-bottom:1px solid rgba(0,0,0,0.05);text-decoration:none;color:inherit}
+.news__row:last-child{border-bottom:0}
+.news__row__img{width:52px;height:52px;border-radius:8px;background:linear-gradient(135deg,#0a3d20,#067a4a);flex-shrink:0}
+.news__row__b{flex:1;min-width:0}
+.news__row__k{font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-primary-green);font-weight:700;margin-bottom:3px}
+.news__row__t{font-family:var(--font-display);font-size:13px;line-height:1.15;color:var(--color-primary-black)}
+.news__row__m{font-size:10px;color:var(--color-text-muted);margin-top:3px}
+
+/* FAB A + Toast B (ya está arriba) */
+.fab{position:fixed;bottom:24px;right:24px;z-index:60}
+.fab__btn{background:linear-gradient(135deg,#02cc74,#016b3d);color:#fff;border:none;cursor:pointer;padding:14px 22px;border-radius:999px;box-shadow:0 12px 30px rgba(2,204,116,0.4);display:flex;align-items:center;gap:10px;font-family:var(--font-primary);font-weight:600;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;animation:fabp 2.5s infinite}
+@keyframes fabp{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.fab__icon{display:grid;place-items:center;width:24px;height:24px;background:#fff;color:var(--color-primary-green);border-radius:50%;font-size:14px}
+
+/* ============ MOBILE / TABLET ============ */
+.tn__burger{display:none;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:8px;width:36px;height:36px;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:18px}
+#m-nav{display:none}
+@media (max-width:880px){
+  .tn__in{grid-template-columns:auto 1fr auto;gap:14px;padding:12px 16px}
+  .tn__logo strong{display:none}
+  .tn__burger{display:flex}
+  .tn__usr span{display:none}
+  .tn__usr{padding:4px}
+  #m-nav:checked ~ .toast,#m-nav:checked ~ .shell,#m-nav:checked ~ .fab{display:none}
+  #m-nav:checked + .tn .tn__nav{display:flex;flex-direction:column;position:absolute;top:100%;left:0;right:0;background:#0a0a0a;border-bottom:1px solid rgba(255,255,255,0.08);padding:8px;gap:2px}
+  #m-nav:checked + .tn .tn__nav a{padding:14px 18px;border-radius:8px}
+  .toast{font-size:11px;padding:8px 14px;text-align:left}
+  .shell{padding:0 16px;gap:18px}
+  .main,.side{padding:18px 0}
+  .hero{padding:20px 18px;border-radius:14px;margin-bottom:18px}
+  .hero__in{grid-template-columns:auto 1fr;gap:14px}
+  .hero__av{width:48px;height:48px;font-size:18px;align-self:start}
+  .hero__t{font-size:22px}
+  .hero__s{font-size:12px}
+  .hero__cta{grid-column:1/-1;text-align:center;padding:10px;font-size:12px}
+  .pp-card{grid-template-columns:auto 1fr;gap:14px;padding:18px;border-radius:12px}
+  .pp-card__n{font-size:48px}
+  .pp-card__t strong{font-size:15px}
+  .pp-card__b{grid-column:1/-1;text-align:center;padding:10px;font-size:11px}
+  .rk{padding:18px;border-radius:12px}
+  .rk__big{font-size:28px}
+  .rk__r .rk__big{font-size:22px}
+  .gr{padding:10px}
+  .gr__av{width:36px;height:36px;font-size:14px}
+  .gr__n{font-size:14px}
+  .gr__m{font-size:10px}
+  .sh h2{font-size:18px}
+  .gr-actions button{font-size:10px;padding:8px}
+  .np{padding:16px}
+  .np__cd__n{font-size:18px}
+  .np__name{font-size:13px}
+  .np__flag{font-size:28px}
+  .news__hero__t{font-size:15px}
+  .news__row__t{font-size:12px}
+  .up{padding:14px}
+  .up__row__t{font-size:13px}
+  .fab__btn{padding:11px 16px;font-size:11px}
+  .fab__btn .fab-text{display:none}
+  .fab{bottom:16px;right:16px}
+}
+@media (max-width:480px){
+  .gr-actions{grid-template-columns:1fr}
+  .hero__in{grid-template-columns:1fr;text-align:center}
+  .hero__av{margin:0 auto}
+  .pp-card{grid-template-columns:1fr;text-align:center}
+}
+</style>
+</head>
+<body>
+
+<input type="checkbox" id="m-nav" style="display:none">
+
+<!-- TOP NAV -->
+<nav class="tn"><div class="tn__in">
+<a href="#" class="tn__logo"><img src="./assets/logo-golgana.png" alt="Golgana"><strong>POLLA</strong></a>
+<div class="tn__nav">
+<a href="#" class="active">Inicio</a>
+<a href="#">Mis picks</a>
+<a href="#">Grupos</a>
+<a href="#">Ranking</a>
+<a href="./mundial-2026.html">Mundial</a>
+</div>
+<div class="tn__r"><div class="tn__bell" title="Notificaciones">🔔</div><div class="tn__usr"><div class="tn__av">DS</div><span>@dasv0731</span></div><label for="m-nav" class="tn__burger">☰</label></div>
+</div></nav>
+
+<!-- TOAST B (trivia disponible arriba) -->
+<div class="toast">Nueva trivia disponible · 3 preguntas para ganar un comodín · <a href="#">Responder ahora →</a></div>
+
+<!-- SHELL -->
+<div class="shell">
+
+<!-- ===== MAIN (izquierda) ===== -->
+<div class="main">
+
+<!-- HERO mix B + C -->
+<section class="hero">
+<div class="hero__in">
+<div class="hero__av">DS</div>
+<div>
+<div class="hero__k">Hola, @dasv0731</div>
+<div class="hero__t">Quedan <strong>15 días</strong> · estás en posición <strong>#147</strong></div>
+<div class="hero__s">128 pts · 3 grupos activos · 68% de aciertos</div>
+<div class="hero__alert">⚠ Cierra el primer pick en 2h 14min</div>
+</div>
+<a href="#" class="hero__cta">Hacer picks →</a>
+</div>
+</section>
+
+<!-- PICKS PENDIENTES C -->
+<div class="pp-card">
+<div class="pp-card__n">3</div>
+<div class="pp-card__t">
+<strong>Picks pendientes para hoy</strong>
+<small>Si los enviás sumas hasta <em>30 pts</em>. Si no, pierdes la jornada.</small>
+</div>
+<a href="#" class="pp-card__b">Hacer picks →</a>
+</div>
+
+<!-- GRUPOS A -->
+<div class="sh"><h2>Mis grupos · 3 activos</h2><a href="#">Ver todos →</a></div>
+<div class="gr-list">
+<a href="#" class="gr"><div class="gr__av" style="background:linear-gradient(135deg,#067a4a,#02cc74)">P1</div><div class="gr__b"><div class="gr__n">Prueba1</div><div class="gr__m">12 jugadores · Premio $50 + trofeo</div></div><span class="gr__r gr__r--gold">#1</span></a>
+<a href="#" class="gr"><div class="gr__av" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8)">OF</div><div class="gr__b"><div class="gr__n">Oficina FC</div><div class="gr__m">24 jugadores · Premio $200</div></div><span class="gr__r gr__r--bronze">#3</span></a>
+<a href="#" class="gr"><div class="gr__av" style="background:linear-gradient(135deg,#f59e0b,#b45309)">FA</div><div class="gr__b"><div class="gr__n">Familia</div><div class="gr__m">8 jugadores · Bragging rights</div></div><span class="gr__r gr__r--n">#23</span></a>
+</div>
+<div class="gr-actions">
+<button>＋ Crear grupo</button>
+<button>→ Unirme con código</button>
+</div>
+
+<!-- RANKING C -->
+<div class="rk">
+<div class="rk__h">
+<div><div class="rk__big">#147</div><div class="rk__l">Global · 14.892 jug.</div></div>
+<div class="rk__r"><div class="rk__big">#1</div><div class="rk__l">En Prueba1</div></div>
+</div>
+<div class="rk__bar"><div class="rk__bar__f"></div></div>
+<div class="rk__s"><span>128 pts · 17 de 25 picks acertados</span><span>▲ 23 esta semana</span></div>
+</div>
+
+<!-- ESPECIALES mix B + C -->
+<div class="spk">
+<div class="spk__h">🏆 Picks especiales · valen hasta 65 pts</div>
+<div class="spk__row">
+<a href="#" class="spk__c spk__c--filled">
+<div class="spk__c__big">🇦🇷</div>
+<div class="spk__c__name">Argentina</div>
+<div class="spk__c__l">Campeón · 30 pts</div>
+</a>
+<a href="#" class="spk__c spk__c--filled-s">
+<div class="spk__c__big">🇧🇷</div>
+<div class="spk__c__name">Brasil</div>
+<div class="spk__c__l">Sub · 15 pts</div>
+</a>
+<a href="#" class="spk__c spk__c--empty">
+<div class="spk__c__big" style="opacity:0.6">＋</div>
+<div class="spk__c__name">Elegir</div>
+<div class="spk__c__l">Revelación · 20 pts</div>
+</a>
+</div>
+</div>
+
+<!-- COMODINES A -->
+<div class="com">
+<div class="com__h"><span>⚡ Comodines · 2 de 3 disponibles</span><a href="#" style="color:var(--color-primary-green);text-decoration:none">Ver detalles →</a></div>
+<div class="com__row">
+<div class="com__c com__c--double"><div class="com__c__i">×2</div>Doble punto</div>
+<div class="com__c com__c--shield"><div class="com__c__i">🛡</div>Escudo</div>
+<div class="com__c com__c--empty"><div class="com__c__i">?</div>Usado</div>
+</div>
+</div>
+
+</div><!-- /main -->
+
+<!-- ===== SIDEBAR DERECHO ===== -->
+<aside class="side">
+
+<!-- Próximo partido A + countdown C -->
+<div class="np">
+<div class="np__in">
+<div class="np__k">En vivo en 15 días</div>
+<div class="np__title">El <em>debut</em> de la Tri en el Mundial</div>
+<div class="np__cd">
+<div class="np__cd__c"><div class="np__cd__n" data-cd="d">15</div><div class="np__cd__l">Días</div></div>
+<div class="np__cd__c"><div class="np__cd__n" data-cd="h">04</div><div class="np__cd__l">Hrs</div></div>
+<div class="np__cd__c"><div class="np__cd__n" data-cd="m">22</div><div class="np__cd__l">Min</div></div>
+<div class="np__cd__c"><div class="np__cd__n" data-cd="s">10</div><div class="np__cd__l">Seg</div></div>
+</div>
+<div class="np__teams">
+<div class="np__team"><div class="np__flag">🇪🇨</div><div class="np__name">Ecuador</div><div class="np__sub">25° FIFA</div></div>
+<div class="np__vs">VS</div>
+<div class="np__team"><div class="np__flag">🇺🇿</div><div class="np__name">Uzbekistán</div><div class="np__sub">58° FIFA</div></div>
+</div>
+<div class="np__meta">
+<span>📍 Atlanta · Mercedes-Benz</span>
+<strong>19:00 ET</strong>
+</div>
+<div class="np__pick">
+<div><span class="np__pick__l">Tu pick</span><strong>3 - 0</strong></div>
+<a href="#" class="np__edit">Editar →</a>
+</div>
+</div>
+</div>
+
+<!-- Siguientes B -->
+<div class="up">
+<div class="up__h"><span>Siguientes picks</span><a href="#">Ver todos →</a></div>
+<a href="#" class="up__row">
+<div class="up__row__h"><span>13/06 · ESP vs SEN</span><span class="st-p">⚠ Pendiente</span></div>
+<div class="up__row__t" style="color:#dc2626">Hacer pick · cierra 2h 14m</div>
+</a>
+<a href="#" class="up__row">
+<div class="up__row__h"><span>14/06 · USA vs JPN</span><span class="st-p">Pendiente</span></div>
+<div class="up__row__t muted">Cierra en 1d</div>
+</a>
+<a href="#" class="up__row">
+<div class="up__row__h"><span>14/06 · BRA vs CMR</span><span class="st-ok">✓ Pick</span></div>
+<div class="up__row__t">2-1 a favor de Brasil</div>
+</a>
+<a href="#" class="up__row">
+<div class="up__row__h"><span>15/06 · POR vs RSA</span><span class="st-ok">✓ Pick</span></div>
+<div class="up__row__t">3-0 a favor de Portugal</div>
+</a>
+</div>
+
+<!-- Noticias mix B + A -->
+<div class="news">
+<a href="#" class="news__hero">
+<img src="./assets/hero-placeholder.svg" alt="">
+<div class="news__hero__b">
+<div class="news__hero__k">Destacada · 5 min</div>
+<div class="news__hero__t">Beccacece confirma a Caicedo como capitán antes del debut</div>
+</div>
+</a>
+<div class="news__list">
+<a href="#" class="news__row"><div class="news__row__img"></div><div class="news__row__b"><div class="news__row__k">Análisis · Ayer</div><div class="news__row__t">Argentina llega como el favorito #1</div><div class="news__row__m">5 min lectura</div></div></a>
+<a href="#" class="news__row"><div class="news__row__img"></div><div class="news__row__b"><div class="news__row__k">Reportaje · Hace 2d</div><div class="news__row__t">Las 16 sedes del Mundial · guía</div><div class="news__row__m">12 min lectura</div></div></a>
+<a href="#" class="news__row"><div class="news__row__img"></div><div class="news__row__b"><div class="news__row__k">Datos · Hace 3d</div><div class="news__row__t">Las 5 cifras que explican a la Tri</div><div class="news__row__m">4 min lectura</div></div></a>
+</div>
+</div>
+
+</aside>
+</div>
+
+<!-- FAB A -->
+<div class="fab">
+<button class="fab__btn" onclick="openMd('m-trivia')"><span class="fab__icon">⚡</span><span class="fab-text">Trivia · Gana comodín</span></button>
+</div>
+
+<!-- ============ MODALES (produccion) ============ -->
+<style>
+.md-bg{position:fixed;inset:0;background:rgba(10,10,10,0.75);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+.md-bg.is-open{display:flex}
+.md{background:#fff;border-radius:16px;padding:28px;max-width:480px;width:100%;max-height:90vh;overflow:auto;position:relative}
+.md--lg{max-width:600px}
+.md__x{position:absolute;top:12px;right:12px;background:#f3f4f6;border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;display:grid;place-items:center}
+.md__k{font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-primary-green);font-weight:700;margin-bottom:8px}
+.md__t{font-family:var(--font-display);font-size:28px;line-height:1;margin-bottom:8px}
+.md__s{font-size:13px;color:var(--color-text-muted);margin-bottom:20px;line-height:1.5}
+.md__f{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.md__f label{font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--color-text-muted);font-weight:600}
+.md__f input{padding:12px 14px;border:1px solid rgba(0,0,0,0.12);border-radius:8px;font-size:15px;font-family:inherit;outline:none}
+.md__f input:focus{border-color:var(--color-primary-green);box-shadow:0 0 0 3px rgba(2,204,116,0.15)}
+.md__info{background:#fafaf6;border:1px solid rgba(0,0,0,0.06);border-radius:8px;padding:12px;font-size:12px;color:var(--color-text-muted);margin-top:6px}
+.md__a{display:flex;gap:10px;margin-top:18px}
+.md__b{flex:1;padding:13px;border:none;border-radius:8px;font-family:inherit;font-weight:600;cursor:pointer;font-size:13px;letter-spacing:0.04em;text-transform:uppercase}
+.md__b--p{background:var(--color-primary-green);color:#fff}
+.md__b--s{background:#f3f4f6;color:var(--color-primary-black)}
+.tq__c{font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-primary-green);font-weight:600;margin-bottom:8px}
+.tq__q{font-family:var(--font-display);font-size:24px;line-height:1.1;margin-bottom:16px}
+.tq__opts{display:flex;flex-direction:column;gap:8px}
+.tq__opt{padding:13px 16px;border:1px solid rgba(0,0,0,0.12);border-radius:10px;background:#fff;text-align:left;cursor:pointer;font-size:14px;font-family:inherit;transition:all 0.15s}
+.tq__opt:hover{border-color:var(--color-primary-green);background:rgba(2,204,116,0.05)}
+.tq__opt.sel{border-color:var(--color-primary-green);background:rgba(2,204,116,0.1);font-weight:600}
+.tq__prize{background:linear-gradient(135deg,rgba(245,158,11,0.1),rgba(245,158,11,0.02));border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:12px;display:flex;align-items:center;gap:12px;margin-top:14px}
+.tq__prize-i{font-size:24px}
+.tq__prize-t{font-family:var(--font-display);font-size:16px;line-height:1;color:#b45309}
+.tq__prize-s{font-size:11px;color:var(--color-text-muted);margin-top:2px}
+</style>
+
+<div class="md-bg" id="m-create"><div class="md"><button class="md__x" onclick="closeMd('m-create')">×</button>
+<div class="md__k">Polla Mundialista</div><h3 class="md__t">Crear nuevo grupo</h3>
+<p class="md__s">Recibirás un código de 6 dígitos para compartir con tus amigos.</p>
+<div class="md__f"><label>Nombre del grupo</label><input type="text" placeholder="Ej: Amigos del barrio"></div>
+<div class="md__f"><label>Premio (opcional)</label><input type="text" placeholder="Ej: $100 al ganador"></div>
+<div class="md__info">ℹ Los grupos cierran al pitazo inicial del primer partido del Mundial.</div>
+<div class="md__a"><button class="md__b md__b--s" onclick="closeMd('m-create')">Cancelar</button><button class="md__b md__b--p" onclick="closeMd('m-create')">Crear grupo</button></div>
+</div></div>
+
+<div class="md-bg" id="m-join"><div class="md"><button class="md__x" onclick="closeMd('m-join')">×</button>
+<div class="md__k">Polla Mundialista</div><h3 class="md__t">Unirme con código</h3>
+<p class="md__s">Ingresa el código que te compartieron para unirte al grupo.</p>
+<div class="md__f"><label>Código del grupo</label><input type="text" placeholder="A1B2C3" maxlength="6" style="text-transform:uppercase;letter-spacing:0.18em;font-family:var(--font-display);font-size:22px;text-align:center"></div>
+<div class="md__a"><button class="md__b md__b--s" onclick="closeMd('m-join')">Cancelar</button><button class="md__b md__b--p" onclick="closeMd('m-join')">Unirme</button></div>
+</div></div>
+
+<div class="md-bg" id="m-trivia"><div class="md md--lg"><button class="md__x" onclick="closeMd('m-trivia')">×</button>
+<div class="tq__c">⚡ Trivia diaria · Pregunta 1 de 3</div>
+<div class="tq__q">¿Cuántos goles anotó Argentina en el Mundial 2022?</div>
+<div class="tq__opts">
+<button class="tq__opt" onclick="selOpt(this)">12 goles</button>
+<button class="tq__opt" onclick="selOpt(this)">15 goles</button>
+<button class="tq__opt" onclick="selOpt(this)">9 goles</button>
+<button class="tq__opt" onclick="selOpt(this)">14 goles</button>
+</div>
+<div class="tq__prize"><div class="tq__prize-i">🎁</div><div><div class="tq__prize-t">Premio: 1 Comodín "Doble Punto"</div><div class="tq__prize-s">Vale doble en cualquier pick · expira en 24h</div></div></div>
+<div class="md__a"><button class="md__b md__b--s" onclick="closeMd('m-trivia')">Después</button><button class="md__b md__b--p" onclick="closeMd('m-trivia')">Siguiente →</button></div>
+</div></div>
+
+<script>
+function openMd(id){document.getElementById(id).classList.add('is-open');document.body.style.overflow='hidden'}
+function closeMd(id){document.getElementById(id).classList.remove('is-open');document.body.style.overflow=''}
+function selOpt(b){b.parentElement.querySelectorAll('.tq__opt').forEach(x=>x.classList.remove('sel'));b.classList.add('sel')}
+document.querySelectorAll('.md-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeMd(m.id)}));
+document.querySelectorAll('.gr-actions button').forEach((b,i)=>b.addEventListener('click',()=>openMd(i===0?'m-create':'m-join')));
+document.querySelector('.toast a').addEventListener('click',e=>{e.preventDefault();openMd('m-trivia')});
+</script>
+<script>
+(function(){var k=new Date('2026-06-12T23:00:00Z').getTime();function p(n){return n<10?'0'+n:''+n}function t(){var d=k-Date.now();if(d<=0)return;var dd=Math.floor(d/86400000),hh=Math.floor((d%86400000)/3600000),mm=Math.floor((d%3600000)/60000),ss=Math.floor((d%60000)/1000);var els={d:dd,h:hh,m:mm,s:ss};Object.keys(els).forEach(k=>{var e=document.querySelector('[data-cd="'+k+'"]');if(e)e.textContent=p(els[k])})}t();setInterval(t,1000)})();
+</script>
+</body></html>

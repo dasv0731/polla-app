@@ -1,5 +1,7 @@
+import { isDevMode } from '@angular/core';
 import type { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
+import { dirtyFormGuard } from './shared/util/dirty-form.guard';
 import { ShellComponent } from './shared/layout/shell.component';
 
 export const routes: Routes = [
@@ -43,16 +45,8 @@ export const routes: Routes = [
         loadComponent: () => import('./features/picks/picks-list.component').then((m) => m.PicksListComponent),
       },
       {
-        path: 'picks/by-group',
-        loadComponent: () => import('./features/picks/picks-grupo.component').then((m) => m.PicksGrupoComponent),
-      },
-      {
         path: 'picks/group-stage',
         loadComponent: () => import('./features/picks/picks-tabla-grupos.component').then((m) => m.PicksTablaGruposComponent),
-      },
-      {
-        path: 'picks/group-stage/predict',
-        loadComponent: () => import('./features/picks/group-stage-picks.component').then((m) => m.GroupStagePicksComponent),
       },
       {
         path: 'picks/bracket',
@@ -63,27 +57,22 @@ export const routes: Routes = [
         loadComponent: () => import('./features/picks/pick-detail.component').then((m) => m.PickDetailComponent),
       },
       {
-        path: 'picks/trivia/:matchId',
-        loadComponent: () => import('./features/picks/trivia.component').then((m) => m.TriviaComponent),
-      },
-      {
         path: 'groups',
         loadComponent: () => import('./features/groups/groups-list.component').then((m) => m.GroupsListComponent),
       },
       {
-        path: 'groups/new',
-        loadComponent: () => import('./features/groups/group-create.component').then((m) => m.GroupCreateComponent),
-      },
-      {
         path: 'groups/:id/invite',
+        canDeactivate: [dirtyFormGuard],
         loadComponent: () => import('./features/groups/group-invite-email.component').then((m) => m.GroupInviteEmailComponent),
       },
       {
         path: 'groups/:id/prizes',
+        canDeactivate: [dirtyFormGuard],
         loadComponent: () => import('./features/groups/group-prizes-edit.component').then((m) => m.GroupPrizesEditComponent),
       },
       {
         path: 'groups/:id/edit',
+        canDeactivate: [dirtyFormGuard],
         loadComponent: () => import('./features/groups/group-edit.component').then((m) => m.GroupEditComponent),
       },
       {
@@ -116,5 +105,11 @@ export const routes: Routes = [
       },
     ],
   },
+  // Dev-only — visible solo en development builds (isDevMode === true).
+  ...(isDevMode() ? [{
+    path: 'dev/components',
+    loadComponent: () =>
+      import('./dev/dev-components.component').then((m) => m.DevComponentsComponent),
+  }] : []),
   { path: '**', redirectTo: 'home' },
 ];

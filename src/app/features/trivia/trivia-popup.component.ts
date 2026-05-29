@@ -3,6 +3,8 @@ import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService } from '../../core/user/user-modes.service';
 import { TriviaModalService } from '../../core/trivia/trivia-modal.service';
+import { ModalComponent } from '../../shared/ui/modal/modal.component';
+import { IconComponent } from '../../shared/ui/icon/icon.component';
 
 const TOURNAMENT_ID = 'mundial-2026';
 const POLL_MS = 60_000;
@@ -56,12 +58,13 @@ interface ActiveQuestion {
 @Component({
   standalone: true,
   selector: 'app-trivia-popup',
+  imports: [ModalComponent, IconComponent],
   template: `
     @if (showFab()) {
       <button type="button" class="trivia-fab"
               aria-label="Jugar trivia"
               (click)="modal.open()">
-        <span class="trivia-fab__icon">⚡</span>
+        <span class="trivia-fab__icon" aria-hidden="true"><app-icon name="zap" size="sm" /></span>
         <span>Trivia · +10 pts</span>
         @if (queueRemaining() > 1) {
           <span class="trivia-fab__time">{{ queueRemaining() }}</span>
@@ -70,13 +73,14 @@ interface ActiveQuestion {
     }
 
     @if (modal.isOpen() && current(); as q) {
-      <div class="trivia-modal is-open"
-           [class.trivia-modal--marca]="q.sponsor !== null"
-           [class.trivia-modal--sinad]="q.sponsor === null"
-           role="dialog" aria-modal="true">
-        <button type="button" class="trivia-modal__close-overlay"
-                aria-label="Cerrar" (click)="closeModal()"></button>
-        <div class="trivia-modal__card">
+      <app-modal [open]="true"
+                 [title]="modalTitle()"
+                 description="+10 pts si aciertas"
+                 size="md"
+                 (close)="closeModal()">
+        <div slot="body"
+             [class.trivia-modal--marca]="q.sponsor !== null"
+             [class.trivia-modal--sinad]="q.sponsor === null">
 
           @if (q.sponsor; as s) {
             <div class="trivia-sponsor">
@@ -84,32 +88,24 @@ interface ActiveQuestion {
                 <div class="trivia-sponsor__logo">{{ s.icon }}</div>
                 <div>
                   <div class="trivia-sponsor__kicker">PRESENTADA POR</div>
-                  <div class="trivia-sponsor__name">{{ s.name }}</div>
+                  <div class="trivia-sponsor__name" translate="no">{{ s.name }}</div>
                 </div>
               </div>
               <span class="trivia-sponsor__ad">PUBLICIDAD</span>
             </div>
           }
 
-          <div class="trivia-head">
-            <div class="trivia-head__left">
-              <span class="trivia-head__icon">⚡</span>
-              <div>
-                <div class="trivia-head__title">TRIVIA · {{ q.homeTeam }} vs {{ q.awayTeam }}</div>
-                <div class="trivia-head__sub">+10 pts si aciertas</div>
+          @if (!revealed() && secondsLeft() > 0) {
+            <div class="trivia-head" style="justify-content: flex-end;">
+              <div class="trivia-head__right">
+                <span class="trivia-timer" role="timer" aria-live="off"
+                      [class.trivia-timer--low]="secondsLeft() <= 15"
+                      [attr.aria-label]="'Tiempo restante: ' + formatTimer(secondsLeft())">
+                  <span aria-hidden="true"><app-icon name="clock" size="sm" /> {{ formatTimer(secondsLeft()) }}</span>
+                </span>
               </div>
             </div>
-            <div class="trivia-head__right">
-              @if (!revealed() && secondsLeft() > 0) {
-                <span class="trivia-timer"
-                      [class.trivia-timer--low]="secondsLeft() <= 15">
-                  ⏱ {{ formatTimer(secondsLeft()) }}
-                </span>
-              }
-              <button type="button" class="trivia-head__close"
-                      aria-label="Cerrar" (click)="closeModal()">✕</button>
-            </div>
-          </div>
+          }
 
           <div class="trivia-body">
             <div class="trivia-step">
@@ -136,9 +132,9 @@ interface ActiveQuestion {
                   <span class="trivia-option__letter">{{ opt.key }}</span>
                   <span class="trivia-option__text">{{ q[opt.field] }}</span>
                   @if (isCorrect) {
-                    <span class="trivia-option__badge trivia-option__badge--correct">✓</span>
+                    <span class="trivia-option__badge trivia-option__badge--correct"><app-icon name="check" size="sm" /></span>
                   } @else if (isUserWrong) {
-                    <span class="trivia-option__badge trivia-option__badge--wrong">✕</span>
+                    <span class="trivia-option__badge trivia-option__badge--wrong"><app-icon name="close" size="sm" /></span>
                   }
                 </button>
               }
@@ -147,15 +143,15 @@ interface ActiveQuestion {
             @if (revealed()) {
               @if (picked() === q.correctOption) {
                 <div class="trivia-reveal trivia-reveal--ok">
-                  ✓ ¡Acertaste! +10 pts
+                  <app-icon name="check" size="sm" /> ¡Acertaste! +10 pts
                 </div>
               } @else if (picked() && picked() !== q.correctOption) {
                 <div class="trivia-reveal trivia-reveal--bad">
-                  ✕ Respuesta correcta: <strong>{{ q.correctOption }}</strong>
+                  <app-icon name="close" size="sm" /> Respuesta correcta: <strong>{{ q.correctOption }}</strong>
                 </div>
               } @else {
                 <div class="trivia-reveal trivia-reveal--skip">
-                  ⏱ Tiempo agotado · Respuesta correcta: <strong>{{ q.correctOption }}</strong>
+                  <app-icon name="clock" size="sm" /> Tiempo agotado · Respuesta correcta: <strong>{{ q.correctOption }}</strong>
                 </div>
               }
               @if (q.cleanExplanation) {
@@ -164,23 +160,6 @@ interface ActiveQuestion {
             } @else if (msg()) {
               <p class="trivia-msg">{{ msg() }}</p>
             }
-
-            <div class="trivia-actions">
-              @if (!revealed()) {
-                <button type="button" class="trivia-skip" (click)="skip()">↶ Saltar</button>
-                <button type="button" class="trivia-next"
-                        [disabled]="picked() === null || submitting()"
-                        (click)="answer()">
-                  {{ submitting() ? 'Enviando…' : 'Responder' }}
-                </button>
-              } @else {
-                @let isLast = currentIndex() >= visibleQueue().length - 1;
-                <span></span>
-                <button type="button" class="trivia-next" (click)="advance()">
-                  {{ isLast ? 'Cerrar' : 'Siguiente →' }}
-                </button>
-              }
-            </div>
           </div>
 
           @if (q.sponsor) {
@@ -188,9 +167,24 @@ interface ActiveQuestion {
               <span class="trivia-foot__text">Trivia patrocinada · acierta y gana un comodín</span>
             </div>
           }
-
         </div>
-      </div>
+
+        <div slot="footer">
+          @if (!revealed()) {
+            <button type="button" class="trivia-skip" (click)="skip()"><app-icon name="undo" size="sm" /> Saltar</button>
+            <button type="button" class="trivia-next"
+                    [disabled]="picked() === null || submitting()"
+                    (click)="answer()">
+              {{ submitting() ? 'Enviando…' : 'Responder' }}
+            </button>
+          } @else {
+            @let isLast = currentIndex() >= visibleQueue().length - 1;
+            <button type="button" class="trivia-next" (click)="advance()">
+              {{ isLast ? 'Cerrar' : 'Siguiente →' }}
+            </button>
+          }
+        </div>
+      </app-modal>
     }
   `,
   styles: [`
@@ -246,6 +240,13 @@ export class TriviaPopupComponent implements OnInit, OnDestroy {
   current = computed<ActiveQuestion | null>(() => {
     const idx = this.activeIndex();
     return this.visibleQueue()[idx] ?? null;
+  });
+
+  /** Title del modal: "Trivia · HomeTeam vs AwayTeam" — pasado a <app-modal>
+   *  para aria-labelledby + h2 visible. Reemplaza el custom trivia-head__title. */
+  modalTitle = computed(() => {
+    const q = this.current();
+    return q ? `Trivia · ${q.homeTeam} vs ${q.awayTeam}` : '';
   });
 
   /** Index de la pregunta visible actual. Se controla con advance(). */

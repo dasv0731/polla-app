@@ -11,6 +11,11 @@ import { TimeService } from '../../core/time/time.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
 import { RailModalsService } from '../../core/layout/rail-modals.service';
 import { PicksSyncService } from '../../core/sync/picks-sync.service';
+import { GroupActionsService } from '../../core/groups/group-actions.service';
+import { EmptyBlockComponent } from '../../shared/ui/empty-block/empty-block.component';
+import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
+import { IconComponent } from '../../shared/ui/icon/icon.component';
+import { ConfirmDialogService } from '../../shared/ui/confirm-dialog.service';
 
 type GameMode = 'SIMPLE' | 'COMPLETE';
 
@@ -52,33 +57,28 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
 @Component({
   standalone: true,
   selector: 'app-bracket-picks',
-  imports: [RouterLink, RouterLinkActive, NgTemplateOutlet, TeamFlagComponent],
+  imports: [
+    RouterLink,
+    RouterLinkActive,
+    NgTemplateOutlet,
+    TeamFlagComponent,
+    EmptyBlockComponent,
+    SkeletonComponent,
+    IconComponent,
+  ],
   template: `
     <section class="page">
 
-      <!-- Header con stats (mismo patrón que /picks y /picks/group-stage) -->
+      <!-- Header simplificado · stats canonicos viven en Home (A8b) -->
       <header class="page__header">
         <div>
           <div class="kicker">MUNDIAL 2026 · GOLGANA</div>
           <h1 class="page__title">Mis picks</h1>
         </div>
-        <div class="page__stats">
-          <div class="page__stat">
-            <div class="num">{{ totals().points }}</div>
-            <div class="lbl">pts</div>
-          </div>
-          <div class="page__stat">
-            <div class="num">{{ totals().exactCount }}</div>
-            <div class="lbl">exactos</div>
-          </div>
-          <div class="page__stat">
-            <div class="num">{{ totals().resultCount }}</div>
-            <div class="lbl">resultados</div>
-          </div>
-          <div class="page__stat">
-            <div class="num">{{ totals().globalRank ? '#' + totals().globalRank : '—' }}</div>
-            <div class="lbl">global</div>
-          </div>
+        <!-- Counter X/N prominent -->
+        <div class="bracket-counter" aria-live="polite">
+          <span class="bracket-counter__big">{{ pickedCount() }}<span class="bracket-counter__sep">/</span>{{ totalKnockoutMatches() }}</span>
+          <span class="bracket-counter__lbl">predicciones</span>
         </div>
       </header>
 
@@ -93,9 +93,12 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
 
       <!-- Mode switch (si el user tiene > 1 modo) -->
       @if (availableModes().length > 1) {
-        <div class="seg" style="max-width:280px;margin-bottom:14px;">
+        <div class="seg" style="max-width:280px;margin-bottom:14px;"
+             role="tablist" aria-label="Modo de juego">
           @for (m of availableModes(); track m) {
             <button type="button" class="seg__item"
+                    role="tab"
+                    [attr.aria-selected]="mode() === m"
                     [class.is-active]="mode() === m"
                     (click)="switchMode(m)">
               {{ m === 'COMPLETE' ? 'Modo completo' : 'Modo simple' }}
@@ -104,51 +107,83 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
         </div>
       }
 
-      <!-- Intro: descripción + status + edit -->
+      <!-- Intro: descripción + status + lock pill + scoring details -->
       <div class="bracket-intro">
         <p>
-          Tu predicción de la fase eliminatoria.
-          <b>+2 a +16 pts</b> por equipo correcto según fase (R32 → final) · <b>+25 pts</b> por el campeón.
-          @if (bracketLocked()) {
-            <br><span class="text-mute">Bracket cerrado · {{ bracketLockFormatted() }}.</span>
-          } @else if (bracketLockFormatted()) {
-            <br><span class="text-mute">Cierra al kickoff de la 1ª llave · {{ bracketLockFormatted() }}.</span>
-          }
+          Tu predicción de la fase eliminatoria. Click en un equipo para elegirlo como ganador.
         </p>
-        <div class="bracket-intro__actions">
-          @if (saveStatus() === 'saving') {
-            <span class="pill">⏳ Guardando…</span>
-          } @else if (saveStatus() === 'saved') {
-            <span class="pill pill--green">✓ Bracket guardado</span>
-          } @else if (saveStatus() === 'dirty') {
-            <span class="pill pill--warn">● Cambios sin guardar</span>
-          } @else if (saveStatus() === 'error') {
-            <span class="pill" style="background:rgba(195,51,51,0.1);color:#c33;border-color:rgba(195,51,51,0.3);">⚠ Error</span>
-          }
-          <span class="text-mute" style="font-size:11px;">
-            {{ pickedCount() }} / {{ totalKnockoutMatches() }}
+        <!-- Lock status as pill (was inline <br>) -->
+        @if (bracketLocked()) {
+          <span class="lock-pill lock-pill--locked">
+            <app-icon name="lock" size="sm" />
+            Bracket cerrado · {{ bracketLockFormatted() }}
           </span>
+        } @else if (bracketLockFormatted()) {
+          <span class="lock-pill">
+            <app-icon name="clock" size="sm" />
+            Cierra al kickoff de la 1ª llave · {{ bracketLockFormatted() }}
+          </span>
+        }
+        <!-- Scoring table colapsable (sistema de puntos por fase) -->
+        <details class="scoring-table">
+          <summary>
+            <app-icon name="trophy" size="sm" />
+            Sistema de puntos por fase
+          </summary>
+          <table>
+            <thead>
+              <tr><th>Fase</th><th>Pts por equipo correcto</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>R32 (16avos)</td><td>+2 pts</td></tr>
+              <tr><td>Octavos (R16)</td><td>+4 pts</td></tr>
+              <tr><td>Cuartos</td><td>+8 pts</td></tr>
+              <tr><td>Semifinal</td><td>+16 pts</td></tr>
+              <tr><td>Final</td><td>+25 pts (campeón)</td></tr>
+            </tbody>
+          </table>
+        </details>
+        <div class="bracket-intro__actions" aria-live="polite">
+          @if (saveStatus() === 'saving') {
+            <span class="pill"><span aria-hidden="true">⏳ </span>Guardando…</span>
+          } @else if (saveStatus() === 'saved') {
+            <span class="pill pill--green">
+              <app-icon name="check" size="sm" />Bracket guardado
+            </span>
+          } @else if (saveStatus() === 'dirty') {
+            <span class="pill pill--warn"><span aria-hidden="true">● </span>Cambios sin guardar</span>
+          } @else if (saveStatus() === 'error') {
+            <span class="pill" role="alert" style="background:rgba(195,51,51,0.1);color:#c33;border-color:rgba(195,51,51,0.3);">
+              <app-icon name="alert" size="sm" />Error
+            </span>
+          }
         </div>
       </div>
 
       <!-- Filter pills (visual; "Tu camino" hace dim al resto) -->
-      <div class="bracket-filter">
+      <div class="bracket-filter" role="group" aria-label="Filtro del bracket">
         <button type="button" class="bracket-filter__pill"
+                [attr.aria-pressed]="filter() === 'mine'"
                 [class.is-active]="filter() === 'mine'"
                 (click)="filter.set('mine')">Tu camino</button>
         <button type="button" class="bracket-filter__pill"
+                [attr.aria-pressed]="filter() === 'all'"
                 [class.is-active]="filter() === 'all'"
                 (click)="filter.set('all')">Todos</button>
       </div>
 
       @if (loading()) {
-        <p class="loading-msg">Cargando bracket…</p>
+        <app-skeleton variant="card" [count]="3" />
       } @else if (availableModes().length === 0) {
-        <div class="empty-block">
-          <h3>Sin grupos privados</h3>
-          <p>Necesitas pertenecer a al menos un grupo privado para usar el bracket.</p>
-          <a class="btn-wf btn-wf--primary" routerLink="/groups/new">Crear un grupo →</a>
-        </div>
+        <app-empty-block
+          iconName="users"
+          title="Sin grupos privados"
+          sub="Necesitas pertenecer a al menos un grupo privado para usar el bracket.">
+          <button type="button" class="btn-wf btn-wf--primary"
+                  (click)="groupActions.openCreate()">Crear un grupo →</button>
+          <button type="button" class="btn-wf btn-wf--ghost"
+                  (click)="groupActions.openJoin()">Unirme con código →</button>
+        </app-empty-block>
       } @else if (projectionMissing()) {
         @let miss = projectionMissing()!;
         <div class="empty-block">
@@ -156,36 +191,83 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
           <ul class="check-list">
             @if (miss.groupsWithoutFullStanding.length > 0) {
               <li>
-                ⚠ Faltan posiciones en {{ miss.groupsWithoutFullStanding.length }} grupo(s):
+                <span aria-hidden="true">⚠ </span>Faltan posiciones en {{ miss.groupsWithoutFullStanding.length }} grupo(s):
                 {{ miss.groupsWithoutFullStanding.join(', ') }}
-                <a routerLink="/picks/group-stage/predict" class="btn-wf btn-wf--sm">
-                  Ir a tabla de grupos →
+                <a routerLink="/picks/group-stage" [queryParams]="{ view: 'pred' }" class="btn-wf btn-wf--sm">
+                  Ir a tabla de grupos <span aria-hidden="true">→</span>
                 </a>
               </li>
             } @else {
-              <li>✓ Tablas de grupos completas</li>
+              <li><span aria-hidden="true">✓ </span>Tablas de grupos completas</li>
             }
             @if (miss.thirdsCount !== 8) {
               <li>
-                ⚠ Marca exactamente 8 mejores 3.os (tienes {{ miss.thirdsCount }})
-                <a routerLink="/profile/special-picks" class="btn-wf btn-wf--sm">
-                  Ir a mis terceros →
+                <span aria-hidden="true">⚠ </span>Marca exactamente 8 mejores 3.os (tienes {{ miss.thirdsCount }})
+                <a routerLink="/picks/group-stage" [queryParams]="{ view: 'pred' }" class="btn-wf btn-wf--sm">
+                  Ir a mis terceros <span aria-hidden="true">→</span>
                 </a>
               </li>
             } @else {
-              <li>✓ 8 mejores 3.os marcados</li>
+              <li><span aria-hidden="true">✓ </span>8 mejores 3.os marcados</li>
             }
           </ul>
         </div>
       } @else {
         @if (isProjected()) {
           <div class="info-banner" style="margin-bottom:14px;padding:10px 12px;background:rgba(0,200,100,0.08);border:1px solid rgba(0,200,100,0.25);border-radius:8px;font-size:13px;color:var(--wf-ink-2);">
-            🔮 Bracket armado desde tus predicciones de grupos.
+            <app-icon name="star" size="sm" /> Bracket armado desde tus predicciones de grupos.
             Tus elecciones aquí se quedan fijas — los resultados reales
             del Mundial puntúan tu BracketPick comparando equipos por fase.
           </div>
         }
-        <!-- Grid del bracket: 9 columnas (16avos a ambos extremos) -->
+        <!-- Mobile (<768px): accordion vertical por fase. -->
+        <div class="bracket-mobile" role="region" aria-label="Bracket por fase">
+          @for (phase of mobilePhases; track phase.order) {
+            <details class="bracket-phase" [open]="isPhaseOpen(phase.order)" (toggle)="onPhaseToggle(phase.order, $event)">
+              <summary class="bracket-phase__head">
+                <span class="bracket-phase__title">{{ phase.label }}</span>
+                <span class="bracket-phase__count">
+                  {{ phaseCount(phase.order) }} {{ phaseCount(phase.order) === 1 ? 'llave' : 'llaves' }}
+                </span>
+                <span class="bracket-phase__chev" aria-hidden="true">▾</span>
+              </summary>
+              <div class="bracket-phase__body">
+                @if (phase.order === 6) {
+                  @let fm = finalMatch();
+                  @if (fm) {
+                    <div class="bracket-final-card">
+                      <div class="bracket-final-card__title"><app-icon name="trophy" size="sm" /> FINAL</div>
+                      <ng-container *ngTemplateOutlet="slotTpl; context: {match: fm, side: 'home'}"></ng-container>
+                      <ng-container *ngTemplateOutlet="slotTpl; context: {match: fm, side: 'away'}"></ng-container>
+                      @let champ = champion();
+                      @if (champ) {
+                        <div class="bracket-final-card__champion">
+                          CAMPEÓN · <span translate="no">{{ champ }}</span>
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <div class="bracket-final-card">
+                      <div class="bracket-final-card__title"><app-icon name="trophy" size="sm" /> FINAL</div>
+                      <div class="text-mute" style="text-align:center;font-size:11px;padding:8px 4px;">
+                        Aún sin definir
+                      </div>
+                    </div>
+                  }
+                } @else {
+                  @for (m of matchesIn(phase.order, 'left'); track m.id) {
+                    <ng-container *ngTemplateOutlet="matchTpl; context: {$implicit: m, prefix: phase.prefix}"></ng-container>
+                  }
+                  @for (m of matchesIn(phase.order, 'right'); track m.id) {
+                    <ng-container *ngTemplateOutlet="matchTpl; context: {$implicit: m, prefix: phase.prefix}"></ng-container>
+                  }
+                }
+              </div>
+            </details>
+          }
+        </div>
+
+        <!-- Desktop (≥768px): grid del bracket 9 columnas (16avos a ambos extremos) -->
         <div class="bracket-scroll">
           <div class="bracket-grid">
 
@@ -235,19 +317,19 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
               @let fm = finalMatch();
               @if (fm) {
                 <div class="bracket-final-card">
-                  <div class="bracket-final-card__title">🏆 FINAL</div>
+                  <div class="bracket-final-card__title"><app-icon name="trophy" size="sm" /> FINAL</div>
                   <ng-container *ngTemplateOutlet="slotTpl; context: {match: fm, side: 'home'}"></ng-container>
                   <ng-container *ngTemplateOutlet="slotTpl; context: {match: fm, side: 'away'}"></ng-container>
                   @let champ = champion();
                   @if (champ) {
                     <div class="bracket-final-card__champion">
-                      CAMPEÓN · {{ champ }}
+                      CAMPEÓN · <span translate="no">{{ champ }}</span>
                     </div>
                   }
                 </div>
               } @else {
                 <div class="bracket-final-card">
-                  <div class="bracket-final-card__title">🏆 FINAL</div>
+                  <div class="bracket-final-card__title"><app-icon name="trophy" size="sm" /> FINAL</div>
                   <div class="text-mute" style="text-align:center;font-size:11px;padding:8px 4px;">
                     Aún sin definir
                   </div>
@@ -286,21 +368,38 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
           </div>
         </div>
 
-        <!-- Leyenda -->
-        <div class="bracket-legend">
-          <span class="bracket-legend__item">
+        <!-- Leyenda completa · 6 estados (vs 2 anteriores) -->
+        <div class="bracket-legend bracket-legend--full">
+          <span class="bracket-legend__item" title="Equipo elegido por ti como ganador">
             <span class="bracket-legend__icon bracket-legend__icon--mine"></span>
             Tu predicción
           </span>
-          <span class="bracket-legend__item">
+          <span class="bracket-legend__item" title="Equipo que ganó realmente (resultado FINAL) o que pasaría según tu proyección upstream">
             <span class="bracket-legend__icon bracket-legend__icon--win"></span>
             Ganador (real / proyectado)
           </span>
-          <span class="text-mute">
-            ·
-            @if (bracketLocked()) { Bloqueado, solo lectura. }
-            @else { Click en un equipo para elegirlo como ganador. }
+          <span class="bracket-legend__item" title="Equipo que elegiste pero ya fue eliminado por el resultado real">
+            <span class="bracket-legend__icon bracket-legend__icon--discarded"></span>
+            Descartado
           </span>
+          <span class="bracket-legend__item" title="Slot bloqueado tras el kickoff de la primera llave">
+            <span class="bracket-legend__icon bracket-legend__icon--locked">
+              <app-icon name="lock" size="sm" />
+            </span>
+            Bloqueado
+          </span>
+          <span class="bracket-legend__item" title="Slot esperando el resultado de la fase anterior">
+            <span class="bracket-legend__icon bracket-legend__icon--awaiting"></span>
+            Esperando
+          </span>
+          <span class="bracket-legend__item" title="Slot editable (clickea para elegir)">
+            <span class="bracket-legend__icon bracket-legend__icon--editable"></span>
+            Editable
+          </span>
+        </div>
+        <div class="bracket-legend__hint text-mute">
+          @if (bracketLocked()) { Bloqueado, solo lectura. }
+          @else { Click en un equipo para elegirlo como ganador. }
         </div>
       }
 
@@ -332,7 +431,7 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
                 (click)="pickWinner(match.id, teamId)">
           @if (isEmpty) {
             <span class="bracket-slot__team bracket-slot__placeholder">
-              Pick fase anterior
+              {{ placeholderLabel(match, side) }}
             </span>
           } @else {
             <span class="bracket-slot__team">
@@ -370,11 +469,191 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
       margin: 0 0 12px;
       line-height: 1.5;
     }
-    .loading-msg {
-      padding: 32px;
-      text-align: center;
+
+    /* Counter X/N prominent en header */
+    .bracket-counter {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 2px;
+    }
+    .bracket-counter__big {
+      font-family: var(--wf-display, var(--font-display));
+      font-size: 28px;
+      line-height: 1;
+      color: var(--color-primary-green);
+      font-weight: 700;
+    }
+    .bracket-counter__sep {
+      opacity: 0.4;
+      margin: 0 2px;
+    }
+    .bracket-counter__lbl {
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--wf-ink-3, var(--color-text-muted));
+    }
+
+    /* Lock status pill (vs anterior <br> inline) */
+    .lock-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      background: rgba(0,0,0,0.04);
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--wf-ink-2, #333);
+      margin-top: 8px;
+    }
+    .lock-pill--locked {
+      background: rgba(220,38,38,0.08);
+      border-color: rgba(220,38,38,0.25);
+      color: #991b1b;
+    }
+
+    /* Scoring details table colapsable */
+    .scoring-table {
+      margin-top: 12px;
+      padding: 10px 14px;
+      border: 1px solid var(--wf-line, var(--color-line));
+      border-radius: 10px;
+      background: var(--wf-paper, #fff);
+    }
+    .scoring-table summary {
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--color-primary-green);
+    }
+    .scoring-table summary:focus-visible {
+      outline: 2px solid var(--color-primary-green);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+    .scoring-table[open] summary { margin-bottom: 8px; }
+    .scoring-table table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .scoring-table th,
+    .scoring-table td {
+      padding: 6px 8px;
+      text-align: left;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+    }
+    .scoring-table th {
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
       color: var(--wf-ink-3);
+    }
+    .scoring-table tr:last-child td { border-bottom: 0; }
+
+    /* Legend full (6 estados) */
+    .bracket-legend--full {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 16px;
+      padding: 10px 0;
+    }
+    .bracket-legend__item {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--wf-ink-2, #333);
+    }
+    .bracket-legend__icon {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--wf-fill, rgba(0,0,0,0.06));
+      border: 1px solid var(--wf-line, var(--color-line));
+    }
+    .bracket-legend__icon--mine { background: rgba(2,204,116,0.2); border-color: var(--color-primary-green); }
+    .bracket-legend__icon--win  { background: var(--color-primary-green); border-color: var(--color-primary-green); }
+    .bracket-legend__icon--discarded { background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.2); position: relative; }
+    .bracket-legend__icon--discarded::after {
+      content: '';
+      position: absolute;
+      inset: 50% 2px auto;
+      height: 1px;
+      background: rgba(0,0,0,0.5);
+      transform: translateY(-50%);
+    }
+    .bracket-legend__icon--locked { color: var(--wf-ink-3); }
+    .bracket-legend__icon--awaiting { background: rgba(255,180,0,0.18); border-color: rgba(255,180,0,0.4); }
+    .bracket-legend__icon--editable { background: #fff; border-color: var(--color-primary-green); border-style: dashed; }
+    .bracket-legend__hint {
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    /* ---------------------------------------------------------------
+       Mobile layout (<768px): phase-by-phase accordion (vs 9-column
+       horizontal scroll). Mantiene el grid desktop intacto.
+       --------------------------------------------------------------- */
+    .bracket-mobile { display: none; }
+    @media (max-width: 768px) {
+      .bracket-mobile { display: block; margin: 0 0 14px; }
+      .bracket-scroll { display: none; }
+      .bracket-counter { align-items: flex-start; }
+    }
+    .bracket-phase {
+      border: 1px solid var(--wf-line-2);
+      border-radius: 10px;
+      background: var(--wf-paper);
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+    .bracket-phase__head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      cursor: pointer;
+      list-style: none;
+      font-size: 13px;
+      font-weight: 700;
+      background: var(--wf-fill, rgba(0,0,0,0.03));
+    }
+    .bracket-phase__head::-webkit-details-marker { display: none; }
+    .bracket-phase__title {
+      flex: 1;
+      font-family: var(--wf-display, var(--font-display));
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .bracket-phase__count {
+      font-size: 11px;
+      color: var(--wf-ink-3);
+      font-weight: 600;
+    }
+    .bracket-phase__chev {
       font-size: 14px;
+      color: var(--wf-ink-3);
+      transition: transform 0.18s ease;
+    }
+    .bracket-phase[open] .bracket-phase__chev { transform: rotate(180deg); }
+    .bracket-phase__body {
+      padding: 12px 14px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .bracket-phase__chev { transition: none; }
     }
   `],
 })
@@ -386,8 +665,26 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
   private time = inject(TimeService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private confirmDialog = inject(ConfirmDialogService);
   rail = inject(RailModalsService);
   sync = inject(PicksSyncService);
+  groupActions = inject(GroupActionsService);
+
+  hasUserPicks = computed(() => this.winners().size > 0);
+
+  /** Label contextual del slot vacío. Si el padre upstream existe,
+   *  muestra "Esperando {label}" (ej R32-1, O-3); sino el fallback
+   *  genérico. */
+  placeholderLabel(match: KnockoutMatch, side: 'home' | 'away'): string {
+    const parent = this.parentOf(match, side);
+    if (!parent || parent.bracketPosition == null) return 'Pick fase anterior';
+    const prefix =
+      parent.phaseOrder === 2 ? 'R32' :
+      parent.phaseOrder === 3 ? 'O'   :
+      parent.phaseOrder === 4 ? 'C'   :
+      parent.phaseOrder === 5 ? 'S'   : 'F';
+    return `Esperando ${prefix}-${parent.bracketPosition}`;
+  }
 
   loading = signal(true);
   availableModes = computed(() => this.userModes.modes());
@@ -505,6 +802,34 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
     return side === 'left' ? all.slice(0, mid) : all.slice(mid);
   }
 
+  // ---- Mobile accordion (vista por fase, <768px) -------------------
+  /** Lista ordenada de fases que arman el accordion mobile. */
+  readonly mobilePhases: Array<{ order: number; label: string; prefix: string }> = [
+    { order: 2, label: '16avos · R32', prefix: 'R32' },
+    { order: 3, label: 'Octavos', prefix: 'O' },
+    { order: 4, label: 'Cuartos', prefix: 'C' },
+    { order: 5, label: 'Semifinales', prefix: 'S' },
+    { order: 6, label: 'Final', prefix: 'F' },
+  ];
+
+  /** Estado de open/close por fase. R32 default open. */
+  private phaseOpen = signal<Record<number, boolean>>({ 2: true, 3: false, 4: false, 5: false, 6: false });
+
+  isPhaseOpen(order: number): boolean {
+    return this.phaseOpen()[order] ?? false;
+  }
+
+  onPhaseToggle(order: number, ev: Event) {
+    const target = ev.target as HTMLDetailsElement;
+    this.phaseOpen.update((cur) => ({ ...cur, [order]: target.open }));
+  }
+
+  /** Número total de matches (ambos lados) en la fase. Final cuenta como 1. */
+  phaseCount(order: number): number {
+    if (order === 6) return this.finalMatch() ? 1 : 0;
+    return this.matchesIn(order, 'left').length + this.matchesIn(order, 'right').length;
+  }
+
   /** Para un match con resultado FINAL, devuelve el slug del team que ganó.
    *  Empate (penales/etc) → ningún winner determinado; null. */
   realWinner(m: KnockoutMatch): string | null {
@@ -580,6 +905,12 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
       return;
     }
     await this.loadForMode();
+    // Default filter "Tu camino" si el user ya tiene picks (UX: foco
+    // automático en su rama). Si no tiene picks, queda "Todos" para
+    // ver el bracket completo y decidir.
+    if (this.hasUserPicks()) {
+      this.filter.set('mine');
+    }
   }
 
   ngOnDestroy(): void {
@@ -591,6 +922,18 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
 
   async switchMode(m: GameMode) {
     if (this.mode() === m) return;
+    // Warning si el user tiene picks: cambiar de modo NO migra el bracket
+    // (cada modo tiene su propia colección). Consistencia con
+    // group-stage-picks y special-picks.
+    if (this.hasUserPicks()) {
+      const ok = await this.confirmDialog.ask({
+        title: 'Cambiar modo',
+        message: 'Tu bracket actual NO se aplica al otro modo. El bracket del modo destino se carga desde su propia colección — lo podés recuperar volviendo al modo actual.',
+        confirmLabel: 'Cambiar modo',
+        cancelLabel: 'Cancelar',
+      });
+      if (!ok) return;
+    }
     this.mode.set(m);
     this.serverId = null;
     void this.router.navigate([], {

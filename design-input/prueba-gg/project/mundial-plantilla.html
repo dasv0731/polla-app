@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es-EC"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Plantilla Ecuador — Mundial 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./styles/tokens.css"><link rel="stylesheet" href="./styles/base.css"><link rel="stylesheet" href="./styles/components.css"><link rel="stylesheet" href="./styles/golgana-pro.css">
+<link rel="icon" type="image/png" href="./assets/logo-golgana.png"><style>
+.pl-hero { position:relative; background:#000; color:#fff; overflow:hidden; }
+.pl-hero__bg { position:absolute; inset:0; background:linear-gradient(135deg,#000 0%,#0a3d20 60%,#067a4a 100%); z-index:0; }
+.pl-hero__inner { position:relative; z-index:1; max-width:1440px; margin:0 auto; padding:48px 20px 56px; display:grid; gap:32px; }
+@media (min-width:992px){ .pl-hero__inner{ padding:64px; gap:40px; } }
+.pl-hero__top { display:grid; grid-template-columns:1fr; gap:24px; align-items:end; }
+@media (min-width:768px){ .pl-hero__top{ grid-template-columns:1fr auto; } }
+.pl-hero__kicker { font-family:var(--font-primary); font-weight:700; font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:var(--color-primary-green); display:flex; align-items:center; gap:8px; }
+.pl-hero__kicker::before { content:""; width:24px; height:2px; background:var(--color-primary-green); }
+.pl-hero__title { font-family:var(--font-display); font-size:clamp(56px,9vw,128px); line-height:0.85; text-transform:uppercase; margin:12px 0 0; }
+.pl-hero__lead { color:rgba(255,255,255,0.78); max-width:60ch; margin-top:16px; line-height:1.55; }
+.pl-hero__counts { display:flex; flex-direction:column; gap:8px; align-items:end; }
+.pl-hero__counts strong { font-family:var(--font-display); font-size:64px; line-height:1; color:#fff; }
+.pl-hero__counts span { font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:rgba(255,255,255,0.55); }
+.pl-hero__metrics { display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.12); border-radius:14px; overflow:hidden; }
+@media (min-width:768px){ .pl-hero__metrics{ grid-template-columns:repeat(4,1fr); } }
+.pl-m { background:rgba(0,0,0,0.45); padding:24px 22px; display:flex; flex-direction:column; gap:8px; }
+.pl-m--accent { background:linear-gradient(135deg,var(--color-primary-green),#016b3d); }
+.pl-m__lab { font-family:var(--font-primary); font-weight:700; font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:rgba(255,255,255,0.65); }
+.pl-m--accent .pl-m__lab { color:rgba(255,255,255,0.9); }
+.pl-m__num { font-family:var(--font-display); font-size:clamp(36px,4vw,52px); line-height:1; color:#fff; }
+.pl-m__cap { font-size:11px; color:rgba(255,255,255,0.6); line-height:1.45; }
+.pl-m--accent .pl-m__cap { color:rgba(255,255,255,0.85); }
+.staff-card { display:flex; gap:14px; align-items:center; padding:14px; background:#fff; border:1px solid var(--color-divider); border-radius:12px; }
+.staff-card__av { width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#0a3d20,#067a4a); flex-shrink:0; display:grid; place-items:center; color:#fff; font-family:var(--font-display); font-size:20px; }
+.staff-card__name { font-family:var(--font-display); font-size:18px; line-height:1.05; }
+.staff-card__role { font-size:11px; color:var(--color-text-muted); letter-spacing:0.08em; text-transform:uppercase; margin-top:4px; display:block; }
+.ed-card { display:flex; flex-direction:column; background:#fff; border:1px solid var(--color-divider); border-radius:14px; overflow:hidden; transition:transform 0.2s,box-shadow 0.2s; }
+.ed-card:hover { transform:translateY(-2px); box-shadow:0 12px 32px -16px rgba(0,0,0,0.18); }
+.ed-card__img { aspect-ratio:16/9; background:linear-gradient(135deg,#0a3d20,#067a4a); }
+.ed-card__img img { width:100%; height:100%; object-fit:cover; }
+.ed-card__body { padding:18px; display:flex; flex-direction:column; gap:6px; flex:1; }
+.ed-card__kicker { font-family:var(--font-primary); font-weight:700; font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:var(--color-primary-green); }
+.ed-card__title { font-family:var(--font-display); font-size:20px; line-height:1.05; color:var(--color-primary-black); text-wrap:balance; }
+.ed-card__meta { font-size:11px; color:var(--color-text-muted); letter-spacing:0.06em; text-transform:uppercase; margin-top:auto; padding-top:8px; border-top:1px solid var(--color-divider); }
+</style>
+</head>
+<body data-variant="bento" data-density="normal" data-accent="muted">
+<input type="checkbox" id="drawer" class="drawer-toggle sr-only">
+<header class="site-header"><div class="site-header__inner">
+<a href="./home-mejorada.html" class="site-header__logo"><img src="./assets/logo-golgana.png" alt="Golgana"></a>
+<nav class="site-header__nav"><a href="./home-mejorada.html">Inicio</a><a href="./mundial-2026.html" class="is-active">Mundial 2026</a><a href="./torneo-mejorado.html">LigaPro</a><a href="./equipo-mejorado.html">Equipos</a><a href="./jugador-mejorado.html">Jugadores</a></nav>
+<label for="drawer" class="drawer-btn"><span></span><span></span><span></span></label></div></header>
+
+<main>
+<div class="pro-container"><nav class="pcrumb"><a href="./home-mejorada.html">Inicio</a><span class="pcrumb__sep">/</span><a href="./mundial-2026.html">Mundial 2026</a><span class="pcrumb__sep">/</span><a href="./mundial-equipo.html">Ecuador</a><span class="pcrumb__sep">/</span><span aria-current="page">Plantilla</span></nav></div>
+
+<section class="pl-hero">
+<div class="pl-hero__bg"></div>
+<div class="pl-hero__inner">
+  <div class="pl-hero__top">
+    <div>
+      <span class="pl-hero__kicker">🇪🇨 Selección de Ecuador · Mundial 2026</span>
+      <h1 class="pl-hero__title">Plantilla<br>oficial</h1>
+    </div>
+    <div class="pl-hero__counts"><strong>26</strong><span>convocados</span></div>
+  </div>
+  <div class="pl-hero__metrics">
+    <div class="pl-m pl-m--accent"><span class="pl-m__lab">Eliminatorias</span><div class="pl-m__num">2°</div><span class="pl-m__cap">Conmebol · 25 pts en 18 PJ</span></div>
+    <div class="pl-m"><span class="pl-m__lab">Goles a favor</span><div class="pl-m__num">22</div><span class="pl-m__cap">3° mejor ataque eliminatorias</span></div>
+    <div class="pl-m"><span class="pl-m__lab">Generación dorada</span><div class="pl-m__num">11</div><span class="pl-m__cap">Campeones sub-20 2019 en la lista</span></div>
+    <div class="pl-m pl-m--accent"><span class="pl-m__lab">Jugador más caro</span><div class="pl-m__num">€90M</div><span class="pl-m__cap">M. Caicedo · Chelsea FC</span></div>
+  </div>
+</div>
+</section>
+
+<section class="pro-section pro-container">
+
+<p class="pro-lead" style="font-size: clamp(18px,1.6vw,22px); line-height: 1.55; color: var(--color-text-secondary); max-width: 72ch; margin-bottom: 40px; text-wrap: pretty; width: 857.593px">Lista definitiva entregada por Beccacece a FIFA el 4 de junio. 3 arqueros, 9 defensas, 8 mediocampistas, 6 delanteros. 18 juegan en Europa, 5 en LigaPro, 3 en Liga MX/MLS.</p>
+
+<div class="pro-sec-head"><div class="pro-sec-head__l"><span class="pro-sec-head__kicker">Arqueros · 3</span><h2 class="pro-sec-head__title">Porteros</h2></div></div>
+<div class="bento" style="margin-bottom:32px">
+<a class="ptile b-c3" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">1</span><div class="ptile__body"><span class="ptile__pos">POR</span><span class="ptile__name">H. Galíndez</span></div></a>
+<a class="ptile b-c3" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">12</span><div class="ptile__body"><span class="ptile__pos">POR</span><span class="ptile__name">A. Domínguez</span></div></a>
+<a class="ptile b-c3" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">25</span><div class="ptile__body"><span class="ptile__pos">POR</span><span class="ptile__name">G. Cortez</span></div></a>
+</div>
+
+<div class="pro-sec-head"><div class="pro-sec-head__l"><span class="pro-sec-head__kicker">Defensas · 9</span><h2 class="pro-sec-head__title">Línea de fondo</h2></div></div>
+<div class="bento" style="margin-bottom:32px">
+<a class="ptile b-c3" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">2</span><div class="ptile__body"><span class="ptile__pos">DEF</span><span class="ptile__name">F. Torres</span></div></a>
+<a class="ptile b-c3" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">3</span><div class="ptile__body"><span class="ptile__pos">DEF</span><span class="ptile__name">P. Hincapié</span></div></a>
+<a class="ptile b-c3" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">4</span><div class="ptile__body"><span class="ptile__pos">DEF</span><span class="ptile__name">W. Pacho</span></div></a>
+<a class="ptile b-c3" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">17</span><div class="ptile__body"><span class="ptile__pos">DEF</span><span class="ptile__name">Á. Preciado</span></div></a>
+<a class="ptile b-c3" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">7</span><div class="ptile__body"><span class="ptile__pos">DEF</span><span class="ptile__name">P. Estupiñán</span></div></a>
+<a class="ptile b-c3" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">15</span><div class="ptile__body"><span class="ptile__pos">DEF</span><span class="ptile__name">A. Pacho</span></div></a>
+<a class="ptile b-c3" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">21</span><div class="ptile__body"><span class="ptile__pos">DEF</span><span class="ptile__name">A. Mina</span></div></a>
+<a class="ptile b-c3" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">26</span><div class="ptile__body"><span class="ptile__pos">DEF</span><span class="ptile__name">F. Léon</span></div></a>
+</div>
+
+<div class="pro-sec-head"><div class="pro-sec-head__l"><span class="pro-sec-head__kicker">Mediocampistas · 8</span><h2 class="pro-sec-head__title">Medio campo</h2></div></div>
+<div class="bento" style="margin-bottom:32px">
+<a class="ptile b-c3" href="./mundial-jugador.html" style="outline:3px solid var(--color-primary-green)"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num" style="background:#fff;color:var(--color-primary-green)">22</span><div class="ptile__body"><span class="ptile__pos">CAP · MED</span><span class="ptile__name">M. Caicedo</span></div></a>
+<a class="ptile b-c3" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">23</span><div class="ptile__body"><span class="ptile__pos">MED</span><span class="ptile__name">M. Sarmiento</span></div></a>
+<a class="ptile b-c3" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">8</span><div class="ptile__body"><span class="ptile__pos">MED</span><span class="ptile__name">A. Franco</span></div></a>
+<a class="ptile b-c3" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">10</span><div class="ptile__body"><span class="ptile__pos">MED</span><span class="ptile__name">K. Páez</span></div></a>
+<a class="ptile b-c3" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">13</span><div class="ptile__body"><span class="ptile__pos">MED</span><span class="ptile__name">N. Sarmiento</span></div></a>
+<a class="ptile b-c3" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">16</span><div class="ptile__body"><span class="ptile__pos">MED</span><span class="ptile__name">J. Yeboah</span></div></a>
+<a class="ptile b-c3" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">18</span><div class="ptile__body"><span class="ptile__pos">MED</span><span class="ptile__name">G. Cortez</span></div></a>
+<a class="ptile b-c3" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">20</span><div class="ptile__body"><span class="ptile__pos">MED</span><span class="ptile__name">J. Cifuentes</span></div></a>
+</div>
+
+<div class="pro-sec-head"><div class="pro-sec-head__l"><span class="pro-sec-head__kicker">Delanteros · 6</span><h2 class="pro-sec-head__title">Ataque</h2></div></div>
+<div class="bento">
+<a class="ptile b-c3" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">9</span><div class="ptile__body"><span class="ptile__pos">DEL</span><span class="ptile__name">E. Valencia</span></div></a>
+<a class="ptile b-c3" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">14</span><div class="ptile__body"><span class="ptile__pos">DEL</span><span class="ptile__name">G. Plata</span></div></a>
+<a class="ptile b-c3" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">11</span><div class="ptile__body"><span class="ptile__pos">DEL</span><span class="ptile__name">J. Cifuentes</span></div></a>
+<a class="ptile b-c3" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">19</span><div class="ptile__body"><span class="ptile__pos">DEL</span><span class="ptile__name">J. Sarmiento</span></div></a>
+<a class="ptile b-c3" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">24</span><div class="ptile__body"><span class="ptile__pos">DEL</span><span class="ptile__name">L. Mena</span></div></a>
+<a class="ptile b-c3" href="#"><img src="./assets/player-placeholder.svg" alt=""><span class="ptile__num">6</span><div class="ptile__body"><span class="ptile__pos">DEL</span><span class="ptile__name">B. Caicedo</span></div></a>
+</div>
+
+<section class="pro-section">
+<div class="pro-sec-head"><div class="pro-sec-head__l"><span class="pro-sec-head__kicker">Datos plantilla</span><h2 class="pro-sec-head__title">Por liga y por edad</h2></div></div>
+<div class="bento">
+<article class="tile b-c6"><span class="tile__kicker">Liga de origen</span>
+<div class="bars" style="margin-top:12px">
+<div class="bar"><span class="bar__label">Premier League</span><div class="bar__track"><div class="bar__fill" style="width:35%"></div></div><span class="bar__val">9</span></div>
+<div class="bar"><span class="bar__label">LigaPro</span><div class="bar__track"><div class="bar__fill" style="width:19%"></div></div><span class="bar__val">5</span></div>
+<div class="bar"><span class="bar__label">Bundesliga</span><div class="bar__track"><div class="bar__fill" style="width:15%"></div></div><span class="bar__val">4</span></div>
+<div class="bar"><span class="bar__label">Serie A IT</span><div class="bar__track"><div class="bar__fill" style="width:12%"></div></div><span class="bar__val">3</span></div>
+<div class="bar"><span class="bar__label">LaLiga</span><div class="bar__track"><div class="bar__fill" style="width:8%"></div></div><span class="bar__val">2</span></div>
+<div class="bar"><span class="bar__label">MLS / Liga MX</span><div class="bar__track"><div class="bar__fill" style="width:11%"></div></div><span class="bar__val">3</span></div>
+</div></article>
+<article class="tile tile--dark b-c6"><span class="tile__kicker">Edad de los convocados</span>
+<div class="bars" style="margin-top:12px">
+<div class="bar"><span class="bar__label" style="color:rgba(255,255,255,0.7)">18-22</span><div class="bar__track" style="background:rgba(255,255,255,0.1)"><div class="bar__fill" style="width:23%"></div></div><span class="bar__val" style="color:#fff">6</span></div>
+<div class="bar"><span class="bar__label" style="color:rgba(255,255,255,0.7)">23-26</span><div class="bar__track" style="background:rgba(255,255,255,0.1)"><div class="bar__fill" style="width:42%"></div></div><span class="bar__val" style="color:#fff">11</span></div>
+<div class="bar"><span class="bar__label" style="color:rgba(255,255,255,0.7)">27-30</span><div class="bar__track" style="background:rgba(255,255,255,0.1)"><div class="bar__fill" style="width:27%"></div></div><span class="bar__val" style="color:#fff">7</span></div>
+<div class="bar"><span class="bar__label" style="color:rgba(255,255,255,0.7)">31+</span><div class="bar__track" style="background:rgba(255,255,255,0.1)"><div class="bar__fill" style="width:8%"></div></div><span class="bar__val" style="color:#fff">2</span></div>
+</div></article>
+</div></section>
+
+<section class="pro-section pro-container">
+<div class="pro-sec-head"><div class="pro-sec-head__l"><span class="pro-sec-head__kicker">Cuerpo técnico</span><h2 class="pro-sec-head__title">El staff de Beccacece</h2></div></div>
+<div class="bento">
+<article class="tile tile--green b-c6"><span class="tile__kicker" style="color:#fff;opacity:0.85">Director técnico</span>
+<div style="display:flex;gap:20px;align-items:center;margin-top:12px">
+<div style="width:96px;height:96px;border-radius:50%;background:rgba(255,255,255,0.15);display:grid;place-items:center;color:#fff;font-family:var(--font-display);font-size:36px;flex-shrink:0">SB</div>
+<div><h3 class="tile__title" style="color:#fff;font-size:32px">Sebastián Beccacece</h3><p style="color:rgba(255,255,255,0.85);font-size:13px;margin-top:6px">🇦🇷 Argentino · 53 años · Asumió ago 2024</p>
+<p style="color:rgba(255,255,255,0.75);font-size:12px;margin-top:8px;line-height:1.5">Ex Independiente y Defensa y Justicia. Discípulo de Sampaoli. Llevó a la Tri al 2° lugar en eliminatorias.</p></div>
+</div></article>
+<div class="b-c6" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+<div class="staff-card"><div class="staff-card__av">PV</div><div><div class="staff-card__name">Patricio Vásquez</div><span class="staff-card__role">Asistente técnico</span></div></div>
+<div class="staff-card"><div class="staff-card__av">JM</div><div><div class="staff-card__name">JM Azconzábal</div><span class="staff-card__role">Analista táctico</span></div></div>
+<div class="staff-card"><div class="staff-card__av">CB</div><div><div class="staff-card__name">Carlos Bossio</div><span class="staff-card__role">Entrenador de arqueros</span></div></div>
+<div class="staff-card"><div class="staff-card__av">NA</div><div><div class="staff-card__name">Nicolás Alvarado</div><span class="staff-card__role">Preparador físico</span></div></div>
+<div class="staff-card"><div class="staff-card__av">DR</div><div><div class="staff-card__name">Dr. Diego Rosero</div><span class="staff-card__role">Médico jefe</span></div></div>
+<div class="staff-card"><div class="staff-card__av">FA</div><div><div class="staff-card__name">Felipe Aguinaga</div><span class="staff-card__role">Jefe de prensa</span></div></div>
+</div></div></section>
+
+<section class="pro-section pro-container">
+<div class="pro-sec-head"><div class="pro-sec-head__l"><span class="pro-sec-head__kicker">Editorial · Cobertura plantilla</span><h2 class="pro-sec-head__title">Lo último de la lista</h2></div><a href="#" class="pro-sec-head__cta">Ver todo →</a></div>
+<div class="bento">
+<a class="ed-card b-c6" href="#"><div class="ed-card__img"><img src="./assets/hero-placeholder.svg" alt=""></div><div class="ed-card__body"><span class="ed-card__kicker">Análisis · 5 may</span><h3 class="ed-card__title" style="font-size:28px">Las sorpresas de la lista de 26: dos juveniles dentro, un veterano fuera</h3><p class="tile__caption">Beccacece dejó fuera a un referente y metió a dos sub-21 con minutos en Europa. La rueda de prensa post-convocatoria.</p><span class="ed-card__meta">Por Carlos Mosquera · 9 min</span></div></a>
+<a class="ed-card b-c6" href="#"><div class="ed-card__img"><img src="./assets/hero-placeholder.svg" alt=""></div><div class="ed-card__body"><span class="ed-card__kicker">Datos · 4 may</span><h3 class="ed-card__title" style="font-size:28px">El mapa de la plantilla: dónde juegan los 26 convocados</h3><p class="tile__caption">Premier League lidera con 9, LigaPro aporta 5 y aparece la sorpresa de tres jugadores en MLS.</p><span class="ed-card__meta">Por Daniela Espinoza · 6 min</span></div></a>
+<a class="ed-card b-c4" href="#"><div class="ed-card__img"><img src="./assets/hero-placeholder.svg" alt=""></div><div class="ed-card__body"><span class="ed-card__kicker">Crono</span><h3 class="ed-card__title">El día en que Beccacece llamó a sus 26</h3><span class="ed-card__meta">3 may · 5 min</span></div></a>
+<a class="ed-card b-c4" href="#"><div class="ed-card__img"><img src="./assets/hero-placeholder.svg" alt=""></div><div class="ed-card__body"><span class="ed-card__kicker">Opinión</span><h3 class="ed-card__title">Por qué dejar fuera a Sebas Méndez es una apuesta arriesgada</h3><span class="ed-card__meta">2 may · 7 min</span></div></a>
+<a class="ed-card b-c4" href="#"><div class="ed-card__img"><img src="./assets/hero-placeholder.svg" alt=""></div><div class="ed-card__body"><span class="ed-card__kicker">Entrevista</span><h3 class="ed-card__title">Hernán Galíndez: "Mi segundo Mundial es un milagro"</h3><span class="ed-card__meta">1 may · 11 min</span></div></a>
+</div></section>
+
+</main>
+<footer class="site-footer"><p class="site-footer__copy">© 2026 Golgana — Mundial 2026</p></footer>
+<script src="./scripts/tweaks.js"></script>
+</body></html>

@@ -1,51 +1,17 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { AuthBrandPanelComponent } from '../../shared/ui/auth-brand-panel/auth-brand-panel.component';
+import { IconComponent } from '../../shared/ui/icon/icon.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, AuthBrandPanelComponent, IconComponent],
   template: `
     <div class="auth-shell">
-      <!-- Panel de marca (solo desktop ≥992) -->
-      <aside class="auth-brand">
-        <div class="auth-brand__top">
-          <img src="assets/logo-golgana.png" alt="" class="auth-brand__logo-img" style="height:32px;width:auto;">
-          <span class="auth-brand__title">GOLGANA · MUNDIAL 2026</span>
-        </div>
-
-        <div>
-          <h1 class="auth-brand__h1">
-            Predice cada partido.<br>
-            Gana contra tus panas.
-          </h1>
-          <p class="auth-brand__sub">
-            Crea grupos privados, asigna premios, gana comodines y demuestra
-            quién sabe más de fútbol.
-          </p>
-
-          <div class="auth-brand__stats">
-            <div>
-              <div class="num">2.4k</div>
-              <div class="lbl">Jugadores</div>
-            </div>
-            <div>
-              <div class="num">180</div>
-              <div class="lbl">Grupos activos</div>
-            </div>
-            <div>
-              <div class="num">$15k</div>
-              <div class="lbl">En premios</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="auth-brand__foot">
-          © 2026 Polla Mundialista · Términos · Privacidad
-        </div>
-      </aside>
+      <app-auth-brand-panel [stats]="stats()" />
 
       <!-- Formulario -->
       <section class="auth-form">
@@ -53,9 +19,9 @@ import { AuthService } from '../../core/auth/auth.service';
 
           <!-- Header mobile -->
           <div class="auth-mobile-head">
-            <div class="auth-mobile-head__logo">⚽</div>
-            <h1 class="auth-mobile-head__title">Polla Mundialista</h1>
-            <div class="auth-mobile-head__kicker">Mundial 2026</div>
+            <img src="assets/logo-golgana.png" alt="" class="auth-mobile-head__logo brand-logo--sm">
+            <h1 class="auth-mobile-head__title">Golgana</h1>
+            <div class="auth-mobile-head__kicker">Polla Mundialista 2026</div>
           </div>
 
           <!-- Header desktop -->
@@ -75,6 +41,9 @@ import { AuthService } from '../../core/auth/auth.service';
                 class="auth-input"
                 placeholder="tu@correo.com"
                 autocomplete="email"
+                inputmode="email"
+                spellcheck="false"
+                autocapitalize="off"
                 required
                 [(ngModel)]="email">
             </div>
@@ -92,18 +61,20 @@ import { AuthService } from '../../core/auth/auth.service';
                   class="auth-input"
                   placeholder="••••••••"
                   autocomplete="current-password"
+                  spellcheck="false"
+                  autocapitalize="off"
                   required
                   [(ngModel)]="password">
                 <button type="button" class="auth-input-toggle"
                         (click)="showPwd.set(!showPwd())"
                         [attr.aria-label]="showPwd() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
-                  {{ showPwd() ? '👁️‍🗨️' : '👁' }}
+                  <app-icon [name]="showPwd() ? 'eye-off' : 'eye'" size="md" />
                 </button>
               </div>
             </div>
 
             @if (error()) {
-              <p class="auth-error">{{ error() }}</p>
+              <p class="auth-error" role="alert">{{ error() }}</p>
             }
 
             <button
@@ -117,7 +88,10 @@ import { AuthService } from '../../core/auth/auth.service';
 
           <div class="auth-bottom">
             <span class="text-mute">¿Primera vez? </span>
-            <a routerLink="/register" class="auth-bottom__link">Crear cuenta →</a>
+            <a routerLink="/register"
+               [queryParams]="forwardQueryParams()"
+               queryParamsHandling="merge"
+               class="auth-bottom__link">Crear cuenta <span aria-hidden="true">→</span></a>
           </div>
 
         </div>
@@ -155,11 +129,18 @@ import { AuthService } from '../../core/auth/auth.service';
       color: var(--wf-ink-3);
     }
     .auth-input-toggle:hover { color: var(--wf-ink); }
+    .auth-input-toggle:focus-visible {
+      outline: 2px solid var(--color-primary-green);
+      outline-offset: 2px;
+      border-radius: 4px;
+      color: var(--wf-ink);
+    }
   `],
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   private auth = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   email = '';
   password = '';
@@ -167,17 +148,69 @@ export class LoginComponent {
   error = signal<string | null>(null);
   showPwd = signal(false);
 
+  // TODO(A6): replace with ApiService.getPublicStats() once polla-backend lambda deployed
+  stats = signal({ totalUsers: 2400, totalGroups: 180, totalPrizesAccrued: 15000 });
+
+  ngOnInit() {
+    // Pre-rellenar email desde query (típicamente viene de forgot-password
+    // si el auto-login post-reset falló y nos redirigió acá).
+    const qEmail = this.route.snapshot.queryParamMap.get('email');
+    if (qEmail) this.email = qEmail;
+  }
+
   async submit() {
     this.error.set(null);
     this.loading.set(true);
     try {
       await this.auth.login(this.email, this.password);
-      void this.router.navigate(['/home']);
+      void this.router.navigateByUrl(this.safeReturnUrl());
     } catch (e) {
-      const msg = (e as Error).message ?? 'Credenciales inválidas';
-      this.error.set(msg);
+      const err = e as { name?: string; message?: string };
+      // Cognito UserNotConfirmedException: el user creó cuenta pero nunca
+      // confirmó el OTP. Lo mandamos al flow de register paso 'confirm'
+      // con email pre-llenado para que pueda completar el código.
+      if (err?.name === 'UserNotConfirmedException') {
+        // Bug #4 fix: el flow original perdía el password al redirigir a
+        // /register?confirm=1. El submitConfirm allá hacía
+        // `auth.login(email, '')` y fallaba silenciosamente. Stash el
+        // password en sessionStorage para que register.component lo lea
+        // post-OTP. Se borra apenas se completa el login (success path).
+        try {
+          sessionStorage.setItem('pending-confirm-password', this.password);
+        } catch { /* sessionStorage puede estar deshabilitado */ }
+        // Reenviar el código para que el user reciba uno nuevo (el
+        // original puede haber expirado).
+        try { await this.auth.resend(this.email); } catch { /* ignore */ }
+        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+        void this.router.navigate(['/register'], {
+          queryParams: {
+            email: this.email,
+            confirm: '1',
+            ...(returnUrl ? { returnUrl } : {}),
+          },
+        });
+        return;
+      }
+      this.error.set(err?.message ?? 'Credenciales inválidas');
     } finally {
       this.loading.set(false);
     }
+  }
+
+  /** Lee `?returnUrl=` del query string. Solo permite paths relativos al
+   *  mismo origen — bloqueamos URLs externas / esquemas raros para evitar
+   *  open-redirect a través de un login link manipulado. */
+  private safeReturnUrl(): string {
+    const raw = this.route.snapshot.queryParamMap.get('returnUrl');
+    if (!raw) return '/home';
+    if (!raw.startsWith('/') || raw.startsWith('//')) return '/home';
+    return raw;
+  }
+
+  /** Propaga `returnUrl` al link "Crear cuenta" para que el flow de
+   *  register termine también en el deep-link original. */
+  forwardQueryParams() {
+    const ret = this.route.snapshot.queryParamMap.get('returnUrl');
+    return ret ? { returnUrl: ret } : null;
   }
 }

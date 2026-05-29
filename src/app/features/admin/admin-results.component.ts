@@ -2,8 +2,14 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { ToastService } from '../../core/notifications/toast.service';
+import { ConfirmDialogService } from '../../shared/ui/confirm-dialog.service';
 
 const TOURNAMENT_ID = 'mundial-2026';
+/** Clave de localStorage donde se guardan los scores tipeados por el admin
+ *  pero no confirmados ("Calcular puntos"). Si el admin recarga durante
+ *  un día con varios partidos, no pierde lo que entró. Se limpia al
+ *  commitear exitosamente. */
+const STAGED_KEY = 'admin-results-staged-v1';
 
 interface ResultMatch {
   id: string;
@@ -102,13 +108,17 @@ interface StagedScore { home: number; away: number; }
                   <strong>{{ teamName(m.homeTeamId) }}</strong>
                   <div class="score-stepper">
                     <button type="button" class="score-stepper__btn"
+                            [attr.aria-label]="'Restar gol ' + teamName(m.homeTeamId)"
                             [disabled]="homeScore() === 0"
-                            (click)="dec('home')">−</button>
+                            (click)="dec('home')"><span aria-hidden="true">−</span></button>
                     <input class="score-stepper__value" type="number" min="0" max="20"
+                           inputmode="numeric" autocomplete="off" spellcheck="false"
+                           [attr.aria-label]="'Goles ' + teamName(m.homeTeamId)"
                            [value]="homeScore()" (input)="setScore('home', $any($event.target).value)">
                     <button type="button" class="score-stepper__btn"
+                            [attr.aria-label]="'Sumar gol ' + teamName(m.homeTeamId)"
                             [disabled]="homeScore() >= 20"
-                            (click)="inc('home')">+</button>
+                            (click)="inc('home')"><span aria-hidden="true">+</span></button>
                   </div>
                 </div>
                 <span class="submit-form__divider">—</span>
@@ -116,20 +126,24 @@ interface StagedScore { home: number; away: number; }
                   <strong>{{ teamName(m.awayTeamId) }}</strong>
                   <div class="score-stepper">
                     <button type="button" class="score-stepper__btn"
+                            [attr.aria-label]="'Restar gol ' + teamName(m.awayTeamId)"
                             [disabled]="awayScore() === 0"
-                            (click)="dec('away')">−</button>
+                            (click)="dec('away')"><span aria-hidden="true">−</span></button>
                     <input class="score-stepper__value" type="number" min="0" max="20"
+                           inputmode="numeric" autocomplete="off" spellcheck="false"
+                           [attr.aria-label]="'Goles ' + teamName(m.awayTeamId)"
                            [value]="awayScore()" (input)="setScore('away', $any($event.target).value)">
                     <button type="button" class="score-stepper__btn"
+                            [attr.aria-label]="'Sumar gol ' + teamName(m.awayTeamId)"
                             [disabled]="awayScore() >= 20"
-                            (click)="inc('away')">+</button>
+                            (click)="inc('away')"><span aria-hidden="true">+</span></button>
                   </div>
                 </div>
               </div>
 
               <div class="submit-form__actions">
                 <button type="button" class="btn btn--ghost" (click)="cancelSelect(); $event.stopPropagation()">Cancelar</button>
-                <button type="button" class="btn btn--primary" (click)="stage(m); $event.stopPropagation()">Guardar</button>
+                <button type="button" class="btn btn--primary" (click)="stage(m); $event.stopPropagation()">Guardar marcador</button>
               </div>
             </div>
           }
@@ -141,6 +155,7 @@ interface StagedScore { home: number; away: number; }
 export class AdminResultsComponent implements OnInit {
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  private confirmDialog = inject(ConfirmDialogService);
 
   loading = signal(true);
   matches = signal<ResultMatch[]>([]);
@@ -151,7 +166,10 @@ export class AdminResultsComponent implements OnInit {
   // Resultados puestos por el admin pero NO escritos en DB todavía. La
   // DB y el scoring se commitean solo cuando se aprieta "Calcular puntos"
   // arriba. Map<matchId, {home, away}>.
-  staged = signal<Map<string, StagedScore>>(new Map());
+  //
+  // Persistido en localStorage (`STAGED_KEY`) para que si el admin recarga
+  // la pestaña durante un día con varios partidos, no pierde lo tipeado.
+  staged = signal<Map<string, StagedScore>>(this.loadStagedFromStorage());
 
   selectedId = signal<string | null>(null);
   homeScore = signal(0);
@@ -276,8 +294,40 @@ export class AdminResultsComponent implements OnInit {
       next.set(m.id, { home, away });
       return next;
     });
+    this.persistStaged();
     this.toast.success(`${this.teamName(m.homeTeamId)} ${home}—${away} ${this.teamName(m.awayTeamId)} · guardado para revisión`);
     this.cancelSelect();
+  }
+
+  /** Hidrata `staged` desde localStorage en el ctor del signal. Si el JSON
+   *  está corrupto, arranca vacío sin throw. */
+  private loadStagedFromStorage(): Map<string, StagedScore> {
+    if (typeof localStorage === 'undefined') return new Map();
+    try {
+      const raw = localStorage.getItem(STAGED_KEY);
+      if (!raw) return new Map();
+      const obj = JSON.parse(raw) as Record<string, StagedScore>;
+      return new Map(Object.entries(obj));
+    } catch {
+      return new Map();
+    }
+  }
+
+  /** Persiste el Map staged actual. Llamar tras cada stage() y al limpiar. */
+  private persistStaged(): void {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      const map = this.staged();
+      if (map.size === 0) {
+        localStorage.removeItem(STAGED_KEY);
+        return;
+      }
+      const obj: Record<string, StagedScore> = {};
+      for (const [k, v] of map) obj[k] = v;
+      localStorage.setItem(STAGED_KEY, JSON.stringify(obj));
+    } catch {
+      /* quota / private mode — ignoramos, el comportamiento queda como antes */
+    }
   }
 
   setScore(side: 'home' | 'away', value: string) {
@@ -319,11 +369,14 @@ export class AdminResultsComponent implements OnInit {
     const targets = this.toCommit();
     if (targets.length === 0) return;
     const stagedMap = this.staged();
-    const confirmed = confirm(
-      `¿Calcular los puntos de ${targets.length} partido${targets.length === 1 ? '' : 's'}?\n\n` +
-      `Esto guarda los resultados en la base de datos y procesa los picks de TODOS los usuarios. ` +
-      `La operación es idempotente — si la repites no duplica.`,
-    );
+    const confirmed = await this.confirmDialog.ask({
+      title: 'Calcular puntos',
+      message:
+        `Vas a calcular los puntos de ${targets.length} partido${targets.length === 1 ? '' : 's'}. ` +
+        'Guarda los resultados en la base de datos y procesa los picks de TODOS los usuarios. ' +
+        'Idempotente — si la repites no duplica.',
+      confirmLabel: 'Calcular puntos',
+    });
     if (!confirmed) return;
     this.calculating.set(true);
     let totalUpdated = 0;
@@ -363,6 +416,7 @@ export class AdminResultsComponent implements OnInit {
       }
       // Limpiar staged y recargar desde DB para reflejar el estado real.
       this.staged.set(new Map());
+      this.persistStaged();
       void this.load();
     } finally {
       this.calculating.set(false);

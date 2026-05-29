@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es-EC"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Polla — Variaciones</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./styles/tokens.css"><link rel="stylesheet" href="./styles/base.css"><link rel="stylesheet" href="./styles/golgana-pro.css">
+<style>
+body{background:#f5f4f0;font-family:var(--font-primary)}
+.wrap{max-width:1280px;margin:0 auto;padding:40px 24px 80px}
+h1{font-family:var(--font-display);font-size:clamp(36px,5vw,56px);line-height:1;margin-bottom:12px}
+.lead{font-size:15px;color:var(--color-text-muted);max-width:64ch;line-height:1.6;margin-bottom:32px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media(max-width:980px){.grid{grid-template-columns:1fr}}
+.opt{background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;text-decoration:none;color:inherit;transition:all 0.2s}
+.opt:hover{border-color:var(--color-primary-green);transform:translateY(-2px);box-shadow:0 16px 32px rgba(0,0,0,0.06)}
+.opt--rec{border:2px solid var(--color-primary-green);position:relative}
+.opt--rec::after{content:"RECOMENDADO";position:absolute;top:14px;right:14px;background:var(--color-primary-green);color:#fff;padding:4px 10px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:0.1em;z-index:2}
+.opt__pic{aspect-ratio:16/10;background:#0a0a0a;position:relative;overflow:hidden}
+.opt__b{padding:22px 24px;flex:1;display:flex;flex-direction:column;gap:10px}
+.opt__t{font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--color-primary-green);font-weight:700}
+.opt__h{font-family:var(--font-display);font-size:24px;line-height:1}
+.opt__d{font-size:13px;color:var(--color-text-muted);line-height:1.5}
+.opt__tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:auto}
+.opt__tag{background:#fafaf6;border:1px solid rgba(0,0,0,0.06);padding:3px 10px;border-radius:999px;font-size:10px;letter-spacing:0.02em}
+.opt__cta{padding:14px 24px;background:#fafaf6;border-top:1px solid rgba(0,0,0,0.06);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-primary-green);font-weight:700;display:flex;justify-content:space-between}
+
+/* Mini wireframe blocks */
+.wf{position:absolute;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.18);border-radius:4px}
+.wf.g{background:rgba(2,204,116,0.4);border-color:rgba(2,204,116,0.6)}
+.wf.s{background:rgba(255,255,255,0.92)}
+.wf-l{position:absolute;color:rgba(255,255,255,0.6);font-size:8px;letter-spacing:0.1em;text-transform:uppercase;padding:3px 5px}
+
+.spec-box{background:#0a0a0a;color:#fff;border-radius:16px;padding:32px;margin-top:48px}
+.spec-box h2{font-family:var(--font-display);font-size:28px;line-height:1.05;margin-bottom:16px}
+.spec-box ul{font-size:13px;color:rgba(255,255,255,0.8);line-height:1.7;padding-left:18px;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 20px;list-style:none;padding-left:0;margin-bottom:0}
+.spec-box li{padding-left:18px;position:relative}
+.spec-box li::before{content:"✓";position:absolute;left:0;color:var(--color-primary-green);font-weight:700}
+.spec-box strong{color:#fff}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--color-primary-green);font-weight:700;margin-bottom:10px">Polla mundialista · 3 versiones</div>
+<h1>Elegí cómo se ve la home</h1>
+<p class="lead">Tres variaciones armadas con los componentes que elegiste. Cada una toma un layout distinto pero las mismas piezas. Cliqueá para ver cada una en vivo.</p>
+
+<div class="grid">
+
+<!-- V1 · Layout C -->
+<a href="./polla-v1.html" class="opt">
+<div class="opt__pic">
+<div class="wf" style="top:0;left:0;right:0;height:8%;border-radius:0"><span class="wf-l" style="top:50%;left:14px;transform:translateY(-50%)">TOP NAV</span></div>
+<div class="wf" style="top:10%;left:0;right:0;height:5%;border-radius:0;background:rgba(2,204,116,0.2);border-color:rgba(2,204,116,0.3)"><span class="wf-l" style="top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.7)">TOAST TRIVIA</span></div>
+<div class="wf g" style="top:18%;left:5%;width:50%;height:14%"><span class="wf-l" style="color:#fff">Hero</span></div>
+<div class="wf s" style="top:34%;left:5%;width:50%;height:10%"><span class="wf-l" style="color:#333">Picks pendientes</span></div>
+<div class="wf s" style="top:46%;left:5%;width:50%;height:14%"><span class="wf-l" style="color:#333">Mis grupos</span></div>
+<div class="wf" style="top:46%;right:5%;width:30%;height:42%;background:rgba(2,204,116,0.18);border-color:rgba(2,204,116,0.4)"><span class="wf-l" style="color:#fff">SIDEBAR DER · próximo partido + noticias</span></div>
+<div class="wf s" style="top:62%;left:5%;width:50%;height:10%"><span class="wf-l" style="color:#333">Ranking + Especiales</span></div>
+<div class="wf s" style="top:74%;left:5%;width:50%;height:14%"><span class="wf-l" style="color:#333">Comodines</span></div>
+</div>
+<div class="opt__b">
+<div class="opt__t">V1 · Layout C — Cobertura</div>
+<div class="opt__h">Sidebar derecho sticky</div>
+<div class="opt__d">Tu polla a la izquierda. A la derecha, sidebar fijo con el próximo partido + countdown + tus siguientes picks + noticias. Contexto del Mundial siempre presente.</div>
+<div class="opt__tags">
+<span class="opt__tag">Hero B+C</span>
+<span class="opt__tag">Partido A+countdown</span>
+<span class="opt__tag">Picks C</span>
+<span class="opt__tag">Ranking C</span>
+<span class="opt__tag">Toast trivia</span>
+</div>
+</div>
+<div class="opt__cta"><span>Ver versión →</span></div>
+</a>
+
+<!-- V2 · Layout G + H -->
+<a href="./polla-v2.html" class="opt">
+<div class="opt__pic">
+<div class="wf" style="top:0;left:0;width:8%;bottom:0;border-radius:0"><span class="wf-l" style="top:50%;left:50%;transform:translate(-50%,-50%) rotate(-90deg)">ICONS</span></div>
+<div class="wf" style="top:0;left:10%;right:0;height:5%;border-radius:0;background:rgba(2,204,116,0.2);border-color:rgba(2,204,116,0.3)"><span class="wf-l" style="top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.7)">TOAST</span></div>
+<div class="wf s" style="top:8%;left:10%;right:2%;height:9%"><span class="wf-l" style="color:#333">Header personal + KPI strip</span></div>
+<div class="wf s" style="top:19%;left:10%;width:30%;height:22%"><span class="wf-l" style="color:#333">Próx partido</span></div>
+<div class="wf s" style="top:19%;left:42%;width:22%;height:22%"><span class="wf-l" style="color:#333">Picks pend.</span></div>
+<div class="wf s" style="top:19%;left:66%;right:2%;height:22%"><span class="wf-l" style="color:#333">Ranking</span></div>
+<div class="wf s" style="top:43%;left:10%;width:30%;height:22%"><span class="wf-l" style="color:#333">Especiales</span></div>
+<div class="wf s" style="top:43%;left:42%;width:30%;height:22%"><span class="wf-l" style="color:#333">Grupos</span></div>
+<div class="wf s" style="top:43%;left:74%;right:2%;height:22%"><span class="wf-l" style="color:#333">Comodines</span></div>
+<div class="wf s" style="top:67%;left:10%;width:55%;height:22%"><span class="wf-l" style="color:#333">Siguientes picks</span></div>
+<div class="wf s" style="top:67%;left:67%;right:2%;height:22%"><span class="wf-l" style="color:#333">Noticias</span></div>
+</div>
+<div class="opt__b">
+<div class="opt__t">V2 · Layout G — Cockpit</div>
+<div class="opt__h">Bento denso · cero scroll</div>
+<div class="opt__d">Sidebar izquierdo solo iconos (expandible al hover). KPI strip arriba con 5 métricas. Bento 12-col con 8 módulos visibles a la vez. Máxima densidad para power users.</div>
+<div class="opt__tags">
+<span class="opt__tag">Hero compact</span>
+<span class="opt__tag">5 KPIs</span>
+<span class="opt__tag">Bento 12-col</span>
+<span class="opt__tag">Sidebar icons</span>
+<span class="opt__tag">Toast trivia</span>
+</div>
+</div>
+<div class="opt__cta"><span>Ver versión →</span></div>
+</a>
+
+<!-- V3 · MI RECOMENDACIÓN (híbrido C+G+H) -->
+<a href="./polla-v3.html" class="opt opt--rec">
+<div class="opt__pic">
+<div class="wf" style="top:0;left:0;width:8%;bottom:0;border-radius:0"><span class="wf-l" style="top:50%;left:50%;transform:translate(-50%,-50%) rotate(-90deg)">ICONS</span></div>
+<div class="wf g" style="top:0;left:10%;width:60%;height:18%"><span class="wf-l" style="color:#fff">Hero compacto + KPIs</span></div>
+<div class="wf s" style="top:20%;left:10%;width:60%;height:14%"><span class="wf-l" style="color:#333">Picks pendientes + acciones</span></div>
+<div class="wf" style="top:0;right:0;width:28%;bottom:0;background:rgba(2,204,116,0.18);border-color:rgba(2,204,116,0.4)"><span class="wf-l" style="color:#fff;top:8px">SIDEBAR · próximo<br>+ countdown<br>+ noticias</span></div>
+<div class="wf s" style="top:36%;left:10%;width:60%;height:18%"><span class="wf-l" style="color:#333">Grupos · 3 cards</span></div>
+<div class="wf s" style="top:56%;left:10%;width:29%;height:18%"><span class="wf-l" style="color:#333">Especiales</span></div>
+<div class="wf s" style="top:56%;left:41%;width:29%;height:18%"><span class="wf-l" style="color:#333">Ranking</span></div>
+<div class="wf s" style="top:76%;left:10%;width:60%;height:12%"><span class="wf-l" style="color:#333">Comodines</span></div>
+</div>
+<div class="opt__b">
+<div class="opt__t">V3 · Híbrido — Mi recomendación</div>
+<div class="opt__h">Sidebar izq + main + sidebar der</div>
+<div class="opt__d">Lo mejor de los 3 mundos: nav fijo a la izq (iconos), <strong>contexto del Mundial a la der</strong> (sticky), y el medio para tu polla. Más espacio que C, más contexto que G, navegación clara.</div>
+<div class="opt__tags">
+<span class="opt__tag">Triple panel</span>
+<span class="opt__tag">Nav siempre visible</span>
+<span class="opt__tag">Contexto fútbol</span>
+<span class="opt__tag">Sin scroll inicial</span>
+</div>
+</div>
+<div class="opt__cta"><span>Ver versión →</span><span style="color:var(--color-primary-green)">★ Recomendado</span></div>
+</a>
+
+</div>
+
+<div class="spec-box">
+<div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--color-primary-green);font-weight:700;margin-bottom:12px">Componentes aplicados en las 3 versiones</div>
+<h2>Tu selección de componentes</h2>
+<ul>
+<li><strong>Hero:</strong> Mix B (urgencia) + C (identidad personal)</li>
+<li><strong>Próximo partido:</strong> A (card grande oscura) + Countdown C integrado</li>
+<li><strong>Próximos picks:</strong> B (lista compacta con estados)</li>
+<li><strong>Picks pendientes:</strong> C (big number dark + CTA)</li>
+<li><strong>Ranking:</strong> C (global + grupo, gradiente verde)</li>
+<li><strong>Especiales:</strong> B (3 banderas) + "Elegir" como en C</li>
+<li><strong>Grupos:</strong> A (lista compacta)</li>
+<li><strong>Noticias:</strong> B (hero card) + A (lista) combinados</li>
+<li><strong>Comodines:</strong> A (3 chips cuadrados)</li>
+<li><strong>Trivia:</strong> A (FAB pulsante) + B (toast superior)</li>
+</ul>
+</div>
+
+</div>
+</body></html>

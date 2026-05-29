@@ -1,5 +1,6 @@
 import type { Routes } from '@angular/router';
 import { adminGuard } from '../../core/auth/admin.guard';
+import { dirtyFormGuard } from '../../shared/util/dirty-form.guard';
 import { AdminShellComponent } from './admin-shell.component';
 
 export const adminRoutes: Routes = [
@@ -42,10 +43,12 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'fixtures/new',
+        canDeactivate: [dirtyFormGuard],
         loadComponent: () => import('./admin-fixture-edit.component').then((m) => m.AdminFixtureEditComponent),
       },
       {
         path: 'fixtures/:id/edit',
+        canDeactivate: [dirtyFormGuard],
         loadComponent: () => import('./admin-fixture-edit.component').then((m) => m.AdminFixtureEditComponent),
       },
       {
@@ -66,6 +69,7 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'teams/:slug/edit',
+        canDeactivate: [dirtyFormGuard],
         loadComponent: () => import('./admin-team-edit.component').then((m) => m.AdminTeamEditComponent),
       },
       {
@@ -75,10 +79,6 @@ export const adminRoutes: Routes = [
       {
         path: 'users',
         loadComponent: () => import('./admin-users.component').then((m) => m.AdminUsersComponent),
-      },
-      {
-        path: 'articles',
-        loadComponent: () => import('./admin-articles.component').then((m) => m.AdminArticlesComponent),
       },
     ],
   },

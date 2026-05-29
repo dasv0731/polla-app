@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es-EC">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Argentina vs Marruecos — R32 · Mundial 2026</title>
+  <meta name="description" content="Argentina vs Marruecos por la Round of 32 del Mundial 2026. Lunes 30 jun, 13:00 (Houston). Cuenta regresiva, equipos confirmados y picks de la polla.">
+  <meta property="og:title" content="Argentina vs Marruecos — R32 · Mundial 2026">
+  <meta property="og:description" content="Programado · Lun 30 jun 13:00 · NRG Stadium, Houston">
+  <meta property="og:type" content="article">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="../styles/components.css">
+  <link rel="stylesheet" href="../styles/polla.css">
+  <link rel="icon" type="image/png" href="../assets/logo-golgana.png">
+
+  <!-- Schema SportsEvent -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SportsEvent",
+    "name": "Argentina vs Marruecos",
+    "startDate": "2026-06-30T18:00:00Z",
+    "eventStatus": "https://schema.org/EventScheduled",
+    "location": { "@type": "Place", "name": "NRG Stadium", "address": "Houston, USA" },
+    "homeTeam": { "@type": "SportsTeam", "name": "Argentina" },
+    "awayTeam": { "@type": "SportsTeam", "name": "Marruecos" }
+  }
+  </script>
+
+  <style>
+    /* Match hero — variant scheduled */
+    .mh { background: var(--color-primary-black); color: var(--color-primary-white); position: relative; overflow: hidden; padding: var(--space-2xl) var(--section-x-mobile); }
+    .mh::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 25% 50%, rgba(108,172,228,0.25) 0%, transparent 55%), radial-gradient(circle at 75% 50%, rgba(193,39,45,0.25) 0%, transparent 55%); }
+    .mh__content { position: relative; max-width: var(--container-wide); margin-inline: auto; }
+    .mh__competition { color: var(--color-primary-green); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.12em; font-weight: var(--fw-bold); text-align: center; }
+    .mh__teams { display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--space-md); align-items: center; margin: var(--space-lg) 0; }
+    .mh__side { display: flex; flex-direction: column; align-items: center; gap: var(--space-sm); text-align: center; }
+    .mh__side .flag { width: 96px; height: 96px; border-radius: var(--radius-md); }
+    .mh__side strong { font-family: var(--font-display); font-size: var(--fs-2xl); line-height: 1; text-transform: uppercase; color: var(--color-primary-white); }
+    .mh__side small { color: rgba(255,255,255,0.6); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.1em; }
+    .mh__vs { display: flex; flex-direction: column; align-items: center; gap: var(--space-sm); }
+    .mh__status { padding: 6px 14px; background: var(--color-primary-grey); color: var(--color-primary-black); font-size: var(--fs-xs); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: 0.12em; border-radius: 999px; }
+    .mh__time { font-family: var(--font-display); font-size: var(--fs-2xl); color: var(--color-primary-green); line-height: 1; text-align: center; }
+    .mh__time small { display: block; font-size: var(--fs-xs); color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px; font-family: var(--font-primary); }
+    .mh__ctas { display: flex; justify-content: center; gap: var(--space-md); flex-wrap: wrap; margin-top: var(--space-xl); }
+    @media (min-width: 480px) { .mh__side .flag { width: 130px; height: 130px; } .mh__side strong { font-size: var(--fs-3xl); } .mh__time { font-size: 56px; } }
+    @media (min-width: 992px) { .mh { padding: var(--space-3xl) var(--section-x-desktop); } .mh__side .flag { width: 160px; height: 160px; } .mh__time { font-size: 72px; } }
+
+    /* Match info grid */
+    .match-info { display: grid; gap: var(--space-md); grid-template-columns: repeat(2, 1fr); margin-block: var(--space-xl); }
+    @media (min-width: 480px) { .match-info { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 992px) { .match-info { grid-template-columns: repeat(6, 1fr); } }
+    .match-info__item { background: var(--color-primary-grey); border-radius: var(--radius-md); padding: var(--space-md); }
+    .match-info__item small { display: block; font-size: var(--fs-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; font-weight: var(--fw-bold); }
+    .match-info__item strong { font-family: var(--font-display); font-size: var(--fs-md); line-height: 1.1; display: block; }
+
+    /* H2H bar (extiende del manual v2) */
+    .h2h-hero { background: var(--color-primary-black); color: var(--color-primary-white); border-radius: var(--radius-lg); padding: var(--space-2xl); position: relative; overflow: hidden; margin-block: var(--space-xl); }
+    .h2h-hero h3 { font-family: var(--font-display); font-size: var(--fs-2xl); text-transform: uppercase; line-height: 1; color: var(--color-primary-white); margin-bottom: var(--space-md); }
+    .h2h-bar { display: grid; grid-template-columns: auto 1fr auto; gap: var(--space-md); align-items: center; margin-top: var(--space-md); }
+    .h2h-bar__label { font-family: var(--font-display); font-size: var(--fs-2xl); color: var(--color-primary-green); line-height: 1; white-space: nowrap; }
+    .h2h-bar__label--right { color: #C1272D; }
+    .h2h-bar__track { display: flex; height: 32px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,0.1); }
+    .h2h-bar__fill { display: flex; align-items: center; justify-content: center; font-size: var(--fs-xs); font-weight: var(--fw-bold); color: var(--color-primary-white); }
+    .h2h-bar__fill--home { background: #6cace4; color: var(--color-primary-black); }
+    .h2h-bar__fill--draw { background: rgba(255,255,255,0.35); color: var(--color-primary-black); }
+    .h2h-bar__fill--away { background: #C1272D; }
+    .h2h-summary { font-size: var(--fs-sm); color: rgba(255,255,255,0.7); margin-top: var(--space-md); text-align: center; }
+
+    /* Pick CTA box (anima pick de visitante) */
+    .pick-cta { background: var(--color-primary-green); color: var(--color-primary-white); border-radius: var(--radius-lg); padding: var(--space-2xl); text-align: center; margin-block: var(--space-xl); }
+    .pick-cta h3 { font-family: var(--font-display); font-size: var(--fs-2xl); text-transform: uppercase; line-height: 1; color: var(--color-primary-white); margin-bottom: var(--space-sm); }
+    .pick-cta p { color: rgba(255,255,255,0.95); font-size: var(--fs-md); margin-bottom: var(--space-lg); }
+    .pick-cta .btn--primary { background: var(--color-primary-black); border-color: var(--color-primary-black); }
+    .pick-cta .btn--primary:hover { background: var(--color-primary-white); color: var(--color-primary-black); border-color: var(--color-primary-white); }
+
+    /* Flags */
+    .flag { background: var(--color-primary-grey); border-radius: var(--radius-sm); }
+    .flag--ar { background: linear-gradient(180deg, #6cace4 33%, #fff 33%, #fff 66%, #6cace4 66%); }
+    .flag--ma { background: #C1272D; }
+    .flag--br { background: #FFDF00; }
+    .flag--es { background: linear-gradient(180deg, #C60B1E 25%, #FFC400 25%, #FFC400 75%, #C60B1E 75%); }
+    .flag--co { background: linear-gradient(180deg, #FFCD00 50%, #003893 50%); }
+    .flag--mx { background: linear-gradient(90deg, #006847 33%, #fff 33%, #fff 66%, #CE1126 66%); }
+    .flag--ec { background: linear-gradient(180deg, #FFCF24 50%, #003DA5 50%, #003DA5 75%, #E74C3C 75%); }
+    .flag--fr { background: linear-gradient(90deg, #002395 33%, #fff 33%, #fff 66%, #ED2939 66%); }
+  </style>
+</head>
+<body>
+
+  <input type="checkbox" id="drawer" class="drawer-toggle sr-only">
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a href="./index.html" class="site-header__logo"><img src="../assets/logo-golgana.png" alt="Golgana"></a>
+      <nav class="site-header__nav" aria-label="Principal">
+        <a href="./index.html">Inicio</a>
+        <a href="./reglas.html">Reglas</a>
+        <a href="#">Ranking</a>
+        <a href="#" class="is-active">Partidos</a>
+        <a href="https://app.polla.golgana.net/login" class="btn btn--ghost btn--sm" style="margin-left: var(--space-md); border-color: var(--color-primary-green);">Iniciar sesión</a>
+      </nav>
+      <label for="drawer" class="drawer-btn"><span></span><span></span><span></span></label>
+    </div>
+  </header>
+  <label for="drawer" class="drawer-backdrop" aria-hidden="true"></label>
+  <aside class="drawer">
+    <a href="./index.html">Inicio</a>
+    <a href="./reglas.html">Reglas</a>
+    <a href="#">Ranking</a>
+    <a href="#">Partidos</a>
+    <a href="https://app.polla.golgana.net/login">Iniciar sesión</a>
+  </aside>
+
+  <!-- Mock state switcher (sólo para mockup; en producción es la misma URL) -->
+  <div class="state-banner" role="note">
+    <span class="state-banner__label">Mock · estados del partido:</span>
+    <a href="./partido-scheduled.html" class="is-active">Programado</a>
+    <a href="./partido-playing.html">En vivo</a>
+    <a href="./partido-finished.html">Finalizado</a>
+  </div>
+
+  <main>
+    <!-- HERO MATCH SCHEDULED -->
+    <section class="mh">
+      <div class="mh__content">
+        <p class="mh__competition">Mundial 2026 · Round of 32 · Partido 12</p>
+        <div class="mh__teams">
+          <div class="mh__side">
+            <span class="flag flag--ar"></span>
+            <strong>Argentina</strong>
+            <small>1° del grupo B</small>
+          </div>
+          <div class="mh__vs">
+            <span class="mh__status">Programado</span>
+            <div class="mh__time">13:00<small>Lun 30 jun</small></div>
+          </div>
+          <div class="mh__side">
+            <span class="flag flag--ma"></span>
+            <strong>Marruecos</strong>
+            <small>2° del grupo G</small>
+          </div>
+        </div>
+
+        <!-- Countdown — se anima vía polla.js si data-countdown está -->
+        <div class="countdown" data-countdown="2026-06-30T18:00:00Z" style="max-width: 480px; margin-inline: auto;">
+          <div class="countdown__cell"><span class="countdown__value">66</span><span class="countdown__label">Días</span></div>
+          <div class="countdown__cell"><span class="countdown__value">14</span><span class="countdown__label">Horas</span></div>
+          <div class="countdown__cell"><span class="countdown__value">36</span><span class="countdown__label">Min</span></div>
+          <div class="countdown__cell"><span class="countdown__value">42</span><span class="countdown__label">Seg</span></div>
+        </div>
+
+        <div class="mh__ctas">
+          <a href="https://app.polla.golgana.net/picks" class="btn btn--primary">Hacer mi pick</a>
+          <a href="#h2h" class="btn btn--ghost" style="background: rgba(255,255,255,0.08); color: var(--color-primary-white); border-color: rgba(255,255,255,0.3);">Ver historial</a>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <nav class="breadcrumb">
+        <a href="./index.html">Inicio</a><span class="breadcrumb__sep">/</span>
+        <a href="#">Partidos</a><span class="breadcrumb__sep">/</span>
+        <a href="#">Round of 32</a><span class="breadcrumb__sep">/</span>
+        <span aria-current="page">Argentina vs Marruecos</span>
+      </nav>
+
+      <!-- DATOS DEL PARTIDO -->
+      <section>
+        <header class="section-heading" style="margin-bottom: var(--space-md);">
+          <div class="section-heading__text">
+            <p class="kicker">Datos</p>
+            <h2 class="h2">Sobre el partido</h2>
+          </div>
+        </header>
+        <div class="match-info">
+          <div class="match-info__item"><small>Fecha</small><strong>30 jun 2026</strong></div>
+          <div class="match-info__item"><small>Hora local</small><strong>13:00 ET</strong></div>
+          <div class="match-info__item"><small>Estadio</small><strong>NRG Stadium</strong></div>
+          <div class="match-info__item"><small>Sede</small><strong>Houston · USA</strong></div>
+          <div class="match-info__item"><small>Capacidad</small><strong>72,220</strong></div>
+          <div class="match-info__item"><small>Árbitro</small><strong>Por confirmar</strong></div>
+        </div>
+      </section>
+
+      <!-- H2H -->
+      <section id="h2h">
+        <div class="h2h-hero">
+          <p class="kicker" style="color: var(--color-primary-green); margin-bottom: var(--space-md);">Histórico</p>
+          <h3>Argentina vs Marruecos · de toda la historia</h3>
+          <p style="color: rgba(255,255,255,0.7); font-size: var(--fs-sm); margin-bottom: var(--space-md);">5 enfrentamientos en torneos oficiales y amistosos.</p>
+
+          <div class="h2h-bar">
+            <span class="h2h-bar__label">3 ARG</span>
+            <div class="h2h-bar__track">
+              <div class="h2h-bar__fill h2h-bar__fill--home" style="width: 60%;">3</div>
+              <div class="h2h-bar__fill h2h-bar__fill--draw" style="width: 20%;">1</div>
+              <div class="h2h-bar__fill h2h-bar__fill--away" style="width: 20%;">1</div>
+            </div>
+            <span class="h2h-bar__label h2h-bar__label--right">1 MAR</span>
+          </div>
+
+          <p class="h2h-summary">Último: 22 noviembre 2022 · Argentina 1 — 2 Marruecos · Mundial Qatar (sorpresa global)</p>
+        </div>
+      </section>
+
+      <!-- AGGREGATE PICK PREVIEW (placeholder hasta que cierre kickoff) -->
+      <section>
+        <header class="section-heading">
+          <div class="section-heading__text">
+            <p class="kicker">Polla en vivo</p>
+            <h2 class="h2">¿Qué piensa la gente?</h2>
+          </div>
+        </header>
+
+        <div class="pick-aggregate">
+          <h3 class="pick-aggregate__title">Picks acumulados (1.247 jugadores)</h3>
+          <div class="pick-aggregate__row">
+            <div class="pick-aggregate__label">
+              <span>Argentina gana</span>
+              <span class="pick-aggregate__pct">68%</span>
+            </div>
+            <div class="pick-aggregate__bar">
+              <div class="pick-aggregate__fill" style="width: 68%;"></div>
+            </div>
+          </div>
+          <div class="pick-aggregate__row">
+            <div class="pick-aggregate__label">
+              <span>Empate</span>
+              <span class="pick-aggregate__pct">17%</span>
+            </div>
+            <div class="pick-aggregate__bar">
+              <div class="pick-aggregate__fill" style="width: 17%;"></div>
+            </div>
+          </div>
+          <div class="pick-aggregate__row">
+            <div class="pick-aggregate__label">
+              <span>Marruecos gana</span>
+              <span class="pick-aggregate__pct">15%</span>
+            </div>
+            <div class="pick-aggregate__bar">
+              <div class="pick-aggregate__fill" style="width: 15%;"></div>
+            </div>
+          </div>
+          <p class="pick-aggregate__total">Marcador más popular: 2-1 a favor de Argentina (24% de los picks)</p>
+        </div>
+      </section>
+
+      <!-- PICK CTA -->
+      <section class="pick-cta">
+        <h3>Tu pick puede valer x2</h3>
+        <p>Round of 32 multiplica los puntos por 2. Hasta 10 puntos por marcador exacto. Cierra al silbatazo del lunes 30.</p>
+        <a href="https://app.polla.golgana.net/picks" class="btn btn--primary btn--lg">Hacer mi pick</a>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__grid">
+      <div class="site-footer__brand">
+        <img src="../assets/logo-golgana.png" alt="Golgana">
+        <p>Polla Mundialista — Mundial FIFA 2026.</p>
+      </div>
+      <div class="site-footer__col">
+        <h4>Polla</h4>
+        <a href="./reglas.html">Reglas</a>
+        <a href="#">Ranking global</a>
+        <a href="#">Calendario</a>
+      </div>
+      <div class="site-footer__col">
+        <h4>Cuenta</h4>
+        <a href="https://app.polla.golgana.net/login">Iniciar sesión</a>
+        <a href="https://app.polla.golgana.net/register">Crear cuenta</a>
+      </div>
+      <div class="site-footer__col">
+        <h4>Legal</h4>
+        <a href="./privacidad.html">Privacidad</a>
+        <a href="./terminos.html">Términos</a>
+      </div>
+    </div>
+    <hr class="site-footer__divider">
+    <p class="site-footer__copy">© 2026 Golgana — Polla Mundialista</p>
+  </footer>
+
+  <script src="../scripts/polla.js" defer></script>
+</body>
+</html>

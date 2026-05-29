@@ -16,9 +16,9 @@ export class RightRailService {
 
   visible = computed(() => {
     const url = this.currentUrl();
-    // /picks/group-stage/predict (drag-and-drop): NO FABs — el editor
+    // /picks/group-stage?view=pred (drag-and-drop): NO FABs — el editor
     // necesita todo el espacio sin distracciones flotantes.
-    if (url.startsWith('/picks/group-stage/predict')) return false;
+    if (url.startsWith('/picks/group-stage') && url.includes('view=pred')) return false;
     return (
       url === '/picks' ||
       url.startsWith('/picks/group-stage') ||

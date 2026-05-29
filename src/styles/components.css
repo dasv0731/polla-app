@@ -4,6 +4,24 @@
    ============================================================ */
 
 /* ============================================================
+   Brand logo utility (A5 size unification)
+   Single token --logo-size-md aplicado cross-app vía clase.
+   Variantes --sm / --lg para usos secundarios.
+   ============================================================ */
+.brand-logo {
+  height: var(--logo-size-md, 32px);
+  width: auto;
+}
+.brand-logo--sm {
+  height: var(--logo-size-sm, 24px);
+  width: auto;
+}
+.brand-logo--lg {
+  height: var(--logo-size-lg, 48px);
+  width: auto;
+}
+
+/* ============================================================
    Botón primario (CTA)
    Fondo verde, texto blanco, borde verde, radius-md
    UPPERCASE, font-weight 600
@@ -63,6 +81,16 @@
   cursor: pointer;
 }
 .link-green:hover { text-decoration: underline; }
+
+/* Variante botón con reset (mismo estilo visual que el <a>). Útil cuando
+ * el destino no es una URL sino que dispara un modal o una acción. */
+.link-green--btn {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  text-align: inherit;
+}
 
 /* Botón grande (hero) */
 .btn--lg {
@@ -418,13 +446,27 @@
   color: var(--color-primary-green);
   margin-bottom: var(--space-md);
 }
-.site-footer__col a {
+.site-footer__col a,
+.site-footer__col .site-footer__logout {
   display: block;
   padding: 6px 0;
   color: var(--color-on-dark-muted);
   font-size: var(--fs-sm);
 }
-.site-footer__col a:hover { color: var(--color-primary-green); }
+.site-footer__col .site-footer__logout {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  padding-inline: 0;
+}
+.site-footer__col a:hover,
+.site-footer__col .site-footer__logout:hover { color: var(--color-primary-green); }
+.site-footer__col .site-footer__logout:focus-visible {
+  outline: 2px solid var(--color-primary-green);
+  outline-offset: 2px;
+}
 
 .site-footer__socials {
   display: flex;

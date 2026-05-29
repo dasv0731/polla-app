@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es-EC">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Argentina 1-1 Marruecos · EN VIVO — Mundial 2026</title>
+  <meta name="description" content="Argentina vs Marruecos en vivo · Round of 32 · Mundial 2026. Marcador parcial 1-1 al minuto 67. Estamos en partido — los picks ya están cerrados.">
+  <meta name="robots" content="index, follow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/tokens.css">
+  <link rel="stylesheet" href="../styles/base.css">
+  <link rel="stylesheet" href="../styles/components.css">
+  <link rel="stylesheet" href="../styles/polla.css">
+  <link rel="icon" type="image/png" href="../assets/logo-golgana.png">
+
+  <style>
+    /* Match hero — variant playing */
+    .mh { background: var(--color-primary-black); color: var(--color-primary-white); position: relative; overflow: hidden; padding: var(--space-2xl) var(--section-x-mobile); }
+    .mh::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 25% 50%, rgba(108,172,228,0.25) 0%, transparent 55%), radial-gradient(circle at 75% 50%, rgba(193,39,45,0.25) 0%, transparent 55%); }
+    .mh::after { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: var(--color-lost); animation: pulseBar 1.5s ease-in-out infinite; }
+    @keyframes pulseBar { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .mh__content { position: relative; max-width: var(--container-wide); margin-inline: auto; }
+
+    .mh__live-bar { display: flex; justify-content: center; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-md); }
+    .mh__live { display: inline-flex; align-items: center; gap: 6px; background: var(--color-lost); color: var(--color-primary-white); padding: 6px 14px; border-radius: 999px; font-size: var(--fs-xs); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: 0.12em; }
+    .mh__live::before { content: "●"; animation: blink 1s ease-in-out infinite; }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+    .mh__competition { color: var(--color-on-dark-muted); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.12em; font-weight: var(--fw-bold); }
+
+    .mh__teams { display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--space-md); align-items: center; margin: var(--space-lg) 0; }
+    .mh__side { display: flex; flex-direction: column; align-items: center; gap: var(--space-sm); text-align: center; }
+    .mh__side .flag { width: 96px; height: 96px; border-radius: var(--radius-md); }
+    .mh__side strong { font-family: var(--font-display); font-size: var(--fs-2xl); line-height: 1; text-transform: uppercase; color: var(--color-primary-white); }
+    .mh__side small { color: rgba(255,255,255,0.6); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.1em; }
+    .mh__score { font-family: var(--font-display); font-size: 80px; line-height: 1; color: var(--color-primary-white); white-space: nowrap; }
+    @media (min-width: 480px) { .mh__score { font-size: 120px; } .mh__side .flag { width: 130px; height: 130px; } .mh__side strong { font-size: var(--fs-3xl); } }
+    @media (min-width: 992px) { .mh { padding: var(--space-3xl) var(--section-x-desktop); } .mh__score { font-size: 160px; } .mh__side .flag { width: 160px; height: 160px; } }
+
+    .mh__minute { display: inline-block; margin-top: var(--space-sm); padding: 4px 14px; background: var(--color-primary-green); color: var(--color-primary-black); font-family: var(--font-display); font-size: var(--fs-xl); border-radius: var(--radius-sm); }
+
+    /* Goals list */
+    .goals { display: grid; gap: var(--space-md); grid-template-columns: 1fr 1fr; max-width: 720px; margin: var(--space-xl) auto 0; padding: var(--space-md); background: rgba(255,255,255,0.04); border-radius: var(--radius-lg); }
+    .goals__col strong { display: block; font-family: var(--font-primary); font-size: var(--fs-xs); color: var(--color-primary-green); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: var(--space-sm); }
+    .goals__col ul { list-style: none; padding: 0; }
+    .goals__col li { padding: 4px 0; font-size: var(--fs-sm); color: rgba(255,255,255,0.85); }
+    .goals__col li::before { content: "⚽ "; }
+    .goals__col li small { color: rgba(255,255,255,0.5); margin-left: 6px; }
+    .goals__col--right { text-align: right; }
+    .goals__col--right li::before { content: ""; }
+    .goals__col--right li::after { content: " ⚽"; }
+
+    /* Live notice (manual v2 §9.13.9 reusable) */
+    .live-notice { background: var(--color-primary-black); color: var(--color-primary-white); padding: var(--space-2xl); border-left: 6px solid var(--color-primary-green); border-radius: var(--radius-md); margin-block: var(--space-xl); }
+    .live-notice__kicker { color: var(--color-primary-green); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.12em; font-weight: var(--fw-bold); margin-bottom: var(--space-sm); }
+    .live-notice h3 { font-family: var(--font-display); font-size: var(--fs-2xl); text-transform: uppercase; line-height: 1; color: var(--color-primary-white); margin-bottom: var(--space-md); }
+    .live-notice p { color: var(--color-on-dark-muted); font-size: var(--fs-md); line-height: var(--lh-body); margin-bottom: var(--space-md); max-width: 60ch; }
+    .live-notice .btn--primary { background: var(--color-primary-green); border-color: var(--color-primary-green); }
+    .live-notice .btn--primary:hover { background: var(--color-primary-white); color: var(--color-primary-black); border-color: var(--color-primary-white); }
+
+    /* Match info */
+    .match-info { display: grid; gap: var(--space-md); grid-template-columns: repeat(2, 1fr); }
+    @media (min-width: 480px) { .match-info { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 992px) { .match-info { grid-template-columns: repeat(6, 1fr); } }
+    .match-info__item { background: var(--color-primary-grey); border-radius: var(--radius-md); padding: var(--space-md); }
+    .match-info__item small { display: block; font-size: var(--fs-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; font-weight: var(--fw-bold); }
+    .match-info__item strong { font-family: var(--font-display); font-size: var(--fs-md); line-height: 1.1; display: block; }
+
+    .flag { background: var(--color-primary-grey); border-radius: var(--radius-sm); }
+    .flag--ar { background: linear-gradient(180deg, #6cace4 33%, #fff 33%, #fff 66%, #6cace4 66%); }
+    .flag--ma { background: #C1272D; }
+  </style>
+</head>
+<body>
+
+  <input type="checkbox" id="drawer" class="drawer-toggle sr-only">
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a href="./index.html" class="site-header__logo"><img src="../assets/logo-golgana.png" alt="Golgana"></a>
+      <nav class="site-header__nav" aria-label="Principal">
+        <a href="./index.html">Inicio</a>
+        <a href="./reglas.html">Reglas</a>
+        <a href="#">Ranking</a>
+        <a href="#" class="is-active">Partidos</a>
+        <a href="https://app.polla.golgana.net/login" class="btn btn--ghost btn--sm" style="margin-left: var(--space-md); border-color: var(--color-primary-green);">Iniciar sesión</a>
+      </nav>
+      <label for="drawer" class="drawer-btn"><span></span><span></span><span></span></label>
+    </div>
+  </header>
+  <label for="drawer" class="drawer-backdrop" aria-hidden="true"></label>
+  <aside class="drawer">
+    <a href="./index.html">Inicio</a>
+    <a href="./reglas.html">Reglas</a>
+    <a href="#">Ranking</a>
+    <a href="#">Partidos</a>
+  </aside>
+
+  <div class="state-banner" role="note">
+    <span class="state-banner__label">Mock · estados del partido:</span>
+    <a href="./partido-scheduled.html">Programado</a>
+    <a href="./partido-playing.html" class="is-active">En vivo</a>
+    <a href="./partido-finished.html">Finalizado</a>
+  </div>
+
+  <main>
+    <!-- HERO MATCH PLAYING -->
+    <section class="mh">
+      <div class="mh__content">
+        <div class="mh__live-bar">
+          <span class="mh__live">EN VIVO</span>
+          <span class="mh__competition">Mundial 2026 · Round of 32</span>
+        </div>
+
+        <div class="mh__teams">
+          <div class="mh__side">
+            <span class="flag flag--ar"></span>
+            <strong>Argentina</strong>
+            <small>1° del grupo B</small>
+          </div>
+          <div class="mh__vs" style="display: flex; flex-direction: column; align-items: center;">
+            <div class="mh__score">1 — 1</div>
+            <span class="mh__minute">67'</span>
+          </div>
+          <div class="mh__side">
+            <span class="flag flag--ma"></span>
+            <strong>Marruecos</strong>
+            <small>2° del grupo G</small>
+          </div>
+        </div>
+
+        <!-- Goals list -->
+        <div class="goals">
+          <div class="goals__col">
+            <strong>Argentina</strong>
+            <ul>
+              <li>Lautaro Martínez <small>34'</small></li>
+            </ul>
+          </div>
+          <div class="goals__col goals__col--right">
+            <strong>Marruecos</strong>
+            <ul>
+              <li><small>52' (pen)</small> En-Nesyri</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <nav class="breadcrumb">
+        <a href="./index.html">Inicio</a><span class="breadcrumb__sep">/</span>
+        <a href="#">Partidos</a><span class="breadcrumb__sep">/</span>
+        <span aria-current="page">Argentina vs Marruecos</span>
+      </nav>
+
+      <!-- LIVE NOTICE — postura editorial: no datos en vivo -->
+      <section class="live-notice">
+        <p class="live-notice__kicker">Estamos en partido</p>
+        <h3>El agregado de picks aparece al silbatazo final</h3>
+        <p>La polla muestra cómo le fue a los jugadores <strong>una vez termina el partido</strong>. Mientras esto se juega, la ventana de pick ya cerró y los puntos se calculan automáticamente cuando publicamos el resultado oficial.</p>
+        <p>¿Quieres ver el partido en vivo? <a href="#" class="link-green" style="color: var(--color-primary-green);">Buscá la transmisión oficial</a> y volvé a esta página al terminar para ver el desglose.</p>
+        <a href="./index.html" class="btn btn--primary">Volver al inicio</a>
+      </section>
+
+      <!-- Match info -->
+      <section style="margin-top: var(--space-xl);">
+        <header class="section-heading">
+          <div class="section-heading__text">
+            <p class="kicker">Datos</p>
+            <h2 class="h2">Sobre el partido</h2>
+          </div>
+        </header>
+        <div class="match-info">
+          <div class="match-info__item"><small>Fecha</small><strong>30 jun 2026</strong></div>
+          <div class="match-info__item"><small>Hora local</small><strong>13:00 ET</strong></div>
+          <div class="match-info__item"><small>Estadio</small><strong>NRG Stadium</strong></div>
+          <div class="match-info__item"><small>Sede</small><strong>Houston · USA</strong></div>
+          <div class="match-info__item"><small>Capacidad</small><strong>72,220</strong></div>
+          <div class="match-info__item"><small>Árbitro</small><strong>S. Marciniak</strong></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__grid">
+      <div class="site-footer__brand">
+        <img src="../assets/logo-golgana.png" alt="Golgana">
+        <p>Polla Mundialista — Mundial FIFA 2026.</p>
+      </div>
+      <div class="site-footer__col">
+        <h4>Polla</h4>
+        <a href="./reglas.html">Reglas</a>
+        <a href="#">Ranking global</a>
+        <a href="#">Calendario</a>
+      </div>
+      <div class="site-footer__col">
+        <h4>Cuenta</h4>
+        <a href="https://app.polla.golgana.net/login">Iniciar sesión</a>
+        <a href="https://app.polla.golgana.net/register">Crear cuenta</a>
+      </div>
+      <div class="site-footer__col">
+        <h4>Legal</h4>
+        <a href="./privacidad.html">Privacidad</a>
+        <a href="./terminos.html">Términos</a>
+      </div>
+    </div>
+    <hr class="site-footer__divider">
+    <p class="site-footer__copy">© 2026 Golgana — Polla Mundialista</p>
+  </footer>
+
+  <script src="../scripts/polla.js" defer></script>
+</body>
+</html>

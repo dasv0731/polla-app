@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { IconComponent } from '../../shared/ui/icon/icon.component';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
@@ -46,26 +47,24 @@ const COMODIN_NAMES: Record<string, string> = {
 const COMODIN_IMPACT: Record<string, string> = {
   MULTIPLIER_X2: 'Duplica los puntos en 1 partido (grupos / R32 / R16).',
   PHASE_BOOST: 'x1.5 a marcadores de toda una fase (octavos o cuartos).',
-  GROUP_SAFE_PICK: '50% si fallás 1 posición de un grupo (en vez de 0).',
+  GROUP_SAFE_PICK: '50% si fallas 1 posición de un grupo (en vez de 0).',
   BRACKET_SAFE_PICK: '50% si tu equipo no llega a la fase predicha.',
-  REASSIGN_CHAMP_RUNNER: 'Cambiás campeón/subcampeón post-grupos. Paga 50%.',
+  REASSIGN_CHAMP_RUNNER: 'Cambias campeón/subcampeón post-grupos. Paga 50%.',
   LATE_EDIT: 'Editar marcador hasta 15 min post-kickoff. Paga 50%.',
-  BRACKET_RESET: 'Reescribís todos los picks de una fase. Paga 60%.',
-  GROUP_RESET: 'Reordenás un grupo post-J1. Paga 50%.',
+  BRACKET_RESET: 'Reescribes todos los picks de una fase. Paga 60%.',
+  GROUP_RESET: 'Reordenas un grupo post-J1. Paga 50%.',
   ANTI_PENALTY: 'Anula el descuento del Pick seguro de llaves: paga 100%.',
 };
 
 @Component({
   standalone: true,
   selector: 'app-sponsor-redeem',
-  imports: [FormsModule],
+  imports: [FormsModule, IconComponent],
   template: `
     <section class="sr">
       <header class="sr__head">
-        <span class="sr__kicker">Sponsors</span>
-        <h2>Canjear código</h2>
         <p class="sr__lead">
-          Tienes un código de un sponsor? Ingrésalo para sumar puntos extra.
+          ¿Tienes un código de un sponsor? Ingrésalo para sumar puntos extra.
           Cada código se puede canjear una sola vez por usuario.
         </p>
       </header>
@@ -96,10 +95,10 @@ const COMODIN_IMPACT: Record<string, string> = {
           @for (r of redemptions(); track r.id) {
             <li class="sr__history-item">
               <div style="flex: 1;">
-                <strong>{{ r.codeText }}</strong>
+                <strong translate="no">{{ r.codeText }}</strong>
                 @if (r.comodinName) {
                   <small style="display: block; color: var(--color-primary-green); font-weight: var(--fw-semibold); margin-top: 2px;">
-                    🃏 {{ r.comodinName }}
+                    <app-icon name="gift" size="sm" /> {{ r.comodinName }}
                   </small>
                   @if (r.comodinImpact) {
                     <small style="display: block; color: var(--color-text-muted); line-height: 1.3; margin-top: 2px;">
@@ -112,7 +111,7 @@ const COMODIN_IMPACT: Record<string, string> = {
                   </small>
                 }
                 <small style="display: block; color: var(--color-text-muted); margin-top: 2px;">
-                  {{ r.sponsorName }} · {{ formatDate(r.redeemedAt) }}
+                  <span translate="no">{{ r.sponsorName }}</span> · {{ formatDate(r.redeemedAt) }}
                 </small>
               </div>
             </li>
@@ -171,9 +170,10 @@ const COMODIN_IMPACT: Record<string, string> = {
       font-weight: 600;
       background: var(--wf-paper);
     }
-    .sr__input:focus {
+    .sr__input:focus-visible {
       outline: none;
       border-color: var(--color-primary-green);
+      box-shadow: 0 0 0 3px rgba(2, 204, 116, 0.18);
     }
     .sr__banner {
       display: grid;
