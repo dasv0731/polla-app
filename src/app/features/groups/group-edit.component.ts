@@ -18,6 +18,8 @@ interface GroupEdit {
   /** Comodines flag — read-only en edit, definido al crear el grupo.
    *  Null = legacy group (tratamos como ON: !== false). */
   comodinesEnabled: boolean | null;
+  entryFeeEnabled: boolean | null;
+  entryFeeInstructions: string | null;
 }
 
 /**
@@ -144,6 +146,43 @@ interface GroupEdit {
                 </div>
               }
             </div>
+          </div>
+
+          <div class="form-card__field" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--color-line);">
+            <h2 class="form-card__title" style="margin-bottom: 8px;">Cuota de ingreso</h2>
+            <label class="check-row">
+              <input type="checkbox"
+                     [checked]="entryFeeEnabled()"
+                     (change)="entryFeeEnabled.set($any($event.target).checked)">
+              <span>
+                <strong>Cobrar cuota de ingreso al grupo</strong><br>
+                <small style="color: var(--color-text-muted);">
+                  Si la activás, los miembros sin pagar verán un recordatorio en la pantalla del grupo.
+                </small>
+              </span>
+            </label>
+
+            @if (entryFeeEnabled()) {
+              <div class="form-card__field" style="margin-top: 12px;">
+                <label class="form-card__label" for="edit-entry-fee">Instrucciones de pago</label>
+                <textarea id="edit-entry-fee" name="entryFeeInstructions"
+                          class="form-card__input"
+                          rows="4"
+                          maxlength="500"
+                          [(ngModel)]="entryFeeInstructions"
+                          placeholder="Ej: Depositar $20 USD a la cuenta XXXXXX y enviar el comprobante por WhatsApp a +593 XXX-XXXX."></textarea>
+                <div class="form-card__hint-row">
+                  <span class="form-card__hint">Hasta 500 caracteres. Los saltos de línea se respetan.</span>
+                  <span class="form-card__counter"
+                        [class.is-near-limit]="entryFeeInstructions.length >= 450">
+                    {{ entryFeeInstructions.length }}/500
+                  </span>
+                </div>
+                @if (entryFeeError(); as err) {
+                  <p class="modal-error" role="alert" style="margin-top: 8px;">{{ err }}</p>
+                }
+              </div>
+            }
           </div>
 
           @if (group()?.adminUserId && modeIsComplete()) {
@@ -275,6 +314,36 @@ interface GroupEdit {
       color: var(--wf-ink-3);
       text-align: center;
     }
+
+    /* Entry-fee block — mirrored from group-actions-modals (Task 7) so
+       the toggle row + inline error read the same in both screens. */
+    .check-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--color-line);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    .check-row:hover { border-color: rgba(2, 204, 116, 0.5); }
+    .check-row input[type="checkbox"] {
+      margin: 3px 0 0;
+      accent-color: var(--color-primary-green);
+      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+    }
+    .modal-error {
+      font-size: 12px;
+      color: #dc2626;
+      padding: 8px 12px;
+      background: rgba(220, 38, 38, 0.08);
+      border-radius: 6px;
+      border: 1px solid rgba(220, 38, 38, 0.2);
+      margin: 0;
+    }
   `],
 })
 export class GroupEditComponent implements OnInit, DirtyAware {
@@ -303,6 +372,17 @@ export class GroupEditComponent implements OnInit, DirtyAware {
    *  programático en `onFileSelected` no dispararía recomputo del computed,
    *  y el botón "Guardar cambios" quedaría deshabilitado tras el upload. */
   imageKey = signal('');
+  /** Entry-fee toggle. Signal (not plain field) so `dirty` computed
+   *  re-evaluates when it changes — same reason as `imageKey`. */
+  entryFeeEnabled = signal(false);
+  /** Free-text instructions. Plain field — ngModel two-way binding from
+   *  the textarea matches the pattern of `description`. The `dirty`
+   *  computed re-evaluates because `entryFeeEnabled` (signal) typically
+   *  changes alongside, but we still read it via plain reference. */
+  entryFeeInstructions = '';
+  /** Inline validation error for the entry-fee textarea (e.g. empty
+   *  when toggle is on). Cleared at the start of every save(). */
+  entryFeeError = signal<string | null>(null);
   private mode: 'SIMPLE' | 'COMPLETE' = 'COMPLETE';
 
   isAdmin = computed(() => {
@@ -323,7 +403,9 @@ export class GroupEditComponent implements OnInit, DirtyAware {
     // imageKey es signal; la lectura `this.imageKey()` registra dependencia.
     return this.name.trim() !== g.name
       || this.description !== (g.description ?? '')
-      || this.imageKey() !== (g.imageKey ?? '');
+      || this.imageKey() !== (g.imageKey ?? '')
+      || this.entryFeeEnabled() !== (g.entryFeeEnabled === true)
+      || this.entryFeeInstructions !== (g.entryFeeInstructions ?? '');
   });
 
   /** DirtyAware contract — usado por `dirtyFormGuard` para confirmar
@@ -344,6 +426,10 @@ export class GroupEditComponent implements OnInit, DirtyAware {
       // Task 5 regenera schema.d.ts y este cast deja de ser necesario.
       const comodinesEnabled =
         (d as { comodinesEnabled?: boolean | null }).comodinesEnabled ?? null;
+      const entryFeeEnabled =
+        (d as { entryFeeEnabled?: boolean | null }).entryFeeEnabled ?? null;
+      const entryFeeInstructions =
+        (d as { entryFeeInstructions?: string | null }).entryFeeInstructions ?? null;
       this.group.set({
         id: d.id,
         name: d.name,
@@ -351,11 +437,15 @@ export class GroupEditComponent implements OnInit, DirtyAware {
         imageKey: (d as { imageKey?: string | null }).imageKey ?? null,
         adminUserId: d.adminUserId,
         comodinesEnabled,
+        entryFeeEnabled,
+        entryFeeInstructions,
       });
       this.name = d.name;
       this.description = (d as { description?: string | null }).description ?? '';
       const initialKey = (d as { imageKey?: string | null }).imageKey ?? '';
       this.imageKey.set(initialKey);
+      this.entryFeeEnabled.set(entryFeeEnabled === true);
+      this.entryFeeInstructions = entryFeeInstructions ?? '';
       // Si ya hay imagen, resolver signed URL para preview.
       if (initialKey) {
         try {
@@ -453,20 +543,56 @@ export class GroupEditComponent implements OnInit, DirtyAware {
 
   async save() {
     if (!this.dirty() || !this.isAdmin()) return;
-    this.saving.set(true);
     this.error.set(null);
+    this.entryFeeError.set(null);
+
+    // Entry-fee validation, mirroring the handler rules. Run BEFORE
+    // setting `saving` so the disabled button doesn't flicker on the
+    // common case of someone forgetting the instructions text.
+    let feeInstructionsForPayload: string | null = null;
+    if (this.entryFeeEnabled()) {
+      const trimmed = this.entryFeeInstructions.trim();
+      if (trimmed.length === 0) {
+        this.entryFeeError.set('Las instrucciones son obligatorias si activás la cuota.');
+        return;
+      }
+      if (trimmed.length > 500) {
+        this.entryFeeError.set('Las instrucciones no pueden superar los 500 caracteres.');
+        return;
+      }
+      feeInstructionsForPayload = trimmed;
+    }
+
+    this.saving.set(true);
     try {
       const res = await this.api.updateGroup({
         id: this.id,
         name: this.name.trim(),
         description: this.description.trim() || null,
         imageKey: this.imageKey().trim() || null,
+        entryFeeEnabled: this.entryFeeEnabled(),
+        entryFeeInstructions: feeInstructionsForPayload,
       });
       if (res.errors && res.errors.length > 0) {
         const msg = res.errors[0]?.message ?? 'Error al guardar';
         this.error.set(humanizeError(new Error(msg)));
         return;
       }
+
+      // Detect OFF → ON transition and auto-pay the admin via
+      // markEntryFeePaid. Server-side auth on Membership doesn't allow
+      // direct admin writes from the client; the mutation validates
+      // adminUserId server-side and updates the admin's Membership row.
+      const prev = this.group();
+      const wasOff = !(prev?.entryFeeEnabled === true);
+      const isOn = this.entryFeeEnabled() === true;
+      if (wasOff && isOn) {
+        const me = this.auth.user()?.sub;
+        if (me) {
+          await this.api.markEntryFeePaid({ groupId: this.id, userId: me, paid: true });
+        }
+      }
+
       this.toast.success('Grupo actualizado');
       // Tras save exitoso forzamos el snapshot al estado nuevo para que
       // el guard CanDeactivate no pida confirmación en la navegación
@@ -477,6 +603,8 @@ export class GroupEditComponent implements OnInit, DirtyAware {
         name: this.name.trim(),
         description: this.description.trim() || null,
         imageKey: this.imageKey().trim() || null,
+        entryFeeEnabled: this.entryFeeEnabled(),
+        entryFeeInstructions: feeInstructionsForPayload,
       });
       void this.router.navigate(['/groups', this.id]);
     } catch (e) {
