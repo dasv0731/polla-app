@@ -1,10 +1,10 @@
 import { Component, EventEmitter, Input, OnInit, Output, computed, inject, signal } from '@angular/core';
-import { A11yModule } from '@angular/cdk/a11y';
 import { FormsModule } from '@angular/forms';
 import { uploadData } from 'aws-amplify/storage';
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiService } from '../../core/api/api.service';
 import { ToastService } from '../../core/notifications/toast.service';
+import { ModalComponent } from '../../shared/ui/modal/modal.component';
 import { UserAvatarComponent } from '../../shared/user-avatar/user-avatar.component';
 import { COUNTRY_OPTIONS, flagFromCountryCode } from '../../shared/util/countries';
 
@@ -14,26 +14,19 @@ import { COUNTRY_OPTIONS, flagFromCountryCode } from '../../shared/util/countrie
  *   2. Nombre / handle — read-only (no se puede cambiar después del registro).
  *   3. Cambiar contraseña — flow Cognito vía AuthService.changePassword.
  *
- * No usa diálogo HTML5 nativo para mantener consistencia visual con el
- * resto de modales de la app (overlay clickable + close-on-escape custom).
+ * A2: consume `<app-modal>` shared.
  */
 @Component({
   standalone: true,
   selector: 'app-edit-profile-modal',
-  imports: [FormsModule, UserAvatarComponent, A11yModule],
+  imports: [FormsModule, UserAvatarComponent, ModalComponent],
   template: `
-    <div class="edit-profile-overlay" role="dialog" aria-modal="true" aria-labelledby="ep-title"
-         cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
-         (keydown.escape)="close()">
-      <div class="edit-profile-overlay__close-area" role="presentation"
-           (click)="close()"></div>
-      <div class="edit-profile-modal">
-        <header class="edit-profile-modal__head">
-          <h2 id="ep-title">Editar perfil</h2>
-          <button type="button" class="edit-profile-modal__close"
-                  aria-label="Cerrar" (click)="close()">✕</button>
-        </header>
-
+    <app-modal
+      [open]="true"
+      title="Editar perfil"
+      size="md"
+      (close)="close()">
+      <div slot="body" class="ep-body">
         <section class="ep-section">
           <h3 class="ep-section__title">Foto de perfil</h3>
           <div class="ep-avatar-row">
@@ -140,54 +133,21 @@ import { COUNTRY_OPTIONS, flagFromCountryCode } from '../../shared/util/countrie
           }
         </section>
 
-        <footer class="edit-profile-modal__foot">
-          <button type="button" class="btn-wf" (click)="close()">Cerrar</button>
-        </footer>
       </div>
-    </div>
+      <div slot="footer">
+        <button type="button" class="btn-wf" (click)="close()">Cerrar</button>
+      </div>
+    </app-modal>
   `,
   styles: [`
-    .edit-profile-overlay {
-      position: fixed; inset: 0; z-index: 1000;
-      background: rgba(0, 0, 0, 0.55);
-      display: flex; align-items: center; justify-content: center;
-      padding: 20px;
-    }
-    .edit-profile-overlay__close-area {
-      position: absolute; inset: 0;
-      background: transparent; border: 0; cursor: pointer;
-    }
-    .edit-profile-modal {
-      position: relative; z-index: 1;
-      background: var(--wf-paper, #fff);
-      border: 1px solid var(--wf-line, #e5e7eb);
-      border-radius: 12px;
-      width: 100%; max-width: 480px;
-      max-height: 90vh; overflow-y: auto;
-      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.25);
-    }
-    .edit-profile-modal__head {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--wf-line);
-    }
-    .edit-profile-modal__head h2 {
-      margin: 0; font-size: 18px;
-      font-family: var(--wf-display, system-ui);
-      letter-spacing: 0.04em;
-    }
-    .edit-profile-modal__close {
-      background: transparent; border: 0; cursor: pointer;
-      font-size: 18px; padding: 4px 8px;
-      color: var(--wf-ink-2);
-    }
-    .edit-profile-modal__foot {
-      display: flex; justify-content: flex-end;
-      padding: 12px 20px;
-      border-top: 1px solid var(--wf-line);
+    :host { display: contents; }
+
+    .ep-body {
+      display: flex;
+      flex-direction: column;
     }
     .ep-section {
-      padding: 16px 20px;
+      padding: 16px 0;
       border-bottom: 1px solid var(--wf-line);
     }
     .ep-section:last-of-type { border-bottom: 0; }
