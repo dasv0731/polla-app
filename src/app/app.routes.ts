@@ -1,3 +1,4 @@
+import { isDevMode } from '@angular/core';
 import type { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
 import { dirtyFormGuard } from './shared/util/dirty-form.guard';
@@ -110,5 +111,11 @@ export const routes: Routes = [
       },
     ],
   },
+  // Dev-only — visible solo en development builds (isDevMode === true).
+  ...(isDevMode() ? [{
+    path: 'dev/components',
+    loadComponent: () =>
+      import('./dev/dev-components.component').then((m) => m.DevComponentsComponent),
+  }] : []),
   { path: '**', redirectTo: 'home' },
 ];
