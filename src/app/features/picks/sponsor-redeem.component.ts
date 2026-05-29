@@ -63,10 +63,8 @@ const COMODIN_IMPACT: Record<string, string> = {
   template: `
     <section class="sr">
       <header class="sr__head">
-        <span class="sr__kicker">Sponsors</span>
-        <h2>Canjear código</h2>
         <p class="sr__lead">
-          Tienes un código de un sponsor? Ingrésalo para sumar puntos extra.
+          ¿Tienes un código de un sponsor? Ingrésalo para sumar puntos extra.
           Cada código se puede canjear una sola vez por usuario.
         </p>
       </header>

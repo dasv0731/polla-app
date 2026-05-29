@@ -146,11 +146,11 @@ type GameMode = 'SIMPLE' | 'COMPLETE';
                      [disabled]="loading()"
                      autocomplete="off"
                      required>
-              <div class="auth-helper">El código se lo das a un admin de grupo.</div>
+              <div class="auth-helper">El código te lo da un admin de grupo.</div>
             </div>
 
             @if (error()) {
-              <p class="modal-error">{{ error() }}</p>
+              <p class="modal-error" role="alert">{{ error() }}</p>
             }
         </form>
 

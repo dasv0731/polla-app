@@ -5,6 +5,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ConfirmDialogService } from '../ui/confirm-dialog.service';
 import { IconComponent } from '../ui/icon/icon.component';
 import { MoreSheetComponent } from '../ui/more-sheet/more-sheet.component';
+import { UserAvatarComponent } from '../user-avatar/user-avatar.component';
 
 /**
  * Sidebar negro design-v3. Layout vertical fijo a la izquierda en desktop
@@ -20,7 +21,7 @@ import { MoreSheetComponent } from '../ui/more-sheet/more-sheet.component';
 @Component({
   standalone: true,
   selector: 'app-sidebar',
-  imports: [RouterLink, RouterLinkActive, IconComponent, MoreSheetComponent],
+  imports: [RouterLink, RouterLinkActive, IconComponent, MoreSheetComponent, UserAvatarComponent],
   template: `
     <aside class="lsb" aria-label="Navegación principal">
       <a class="lsb__logo" routerLink="/home" aria-label="Inicio">
@@ -68,7 +69,12 @@ import { MoreSheetComponent } from '../ui/more-sheet/more-sheet.component';
                   [attr.aria-expanded]="userMenuOpen()"
                   aria-haspopup="menu"
                   aria-label="Menú de usuario">
-            <div class="lsb__av">{{ avatarInitials() }}</div>
+            <app-user-avatar
+              class="lsb__av-wrap"
+              [sub]="userSub() ?? ''"
+              [handle]="handle() ?? ''"
+              [avatarKey]="avatarKey()"
+              size="sm" />
             <span class="lsb__t" translate="no">{{ '@' + (handle() ?? 'jugador') }}</span>
           </button>
           @if (userMenuOpen()) {
@@ -525,11 +531,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   handle = computed(() => this.auth.user()?.handle ?? null);
-  avatarInitials = computed(() => {
-    const h = this.handle();
-    if (!h) return '?';
-    return h.slice(0, 2).toUpperCase();
-  });
+  userSub = computed(() => this.auth.user()?.sub ?? null);
+  avatarKey = computed(() => this.auth.user()?.avatarKey ?? null);
   isAdmin = computed(() => this.auth.user()?.isAdmin === true);
 
   // Notification unread count (recovered from zombie nav.component) — drives

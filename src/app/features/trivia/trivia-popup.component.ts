@@ -101,7 +101,7 @@ interface ActiveQuestion {
                 <span class="trivia-timer" role="timer" aria-live="off"
                       [class.trivia-timer--low]="secondsLeft() <= 15"
                       [attr.aria-label]="'Tiempo restante: ' + formatTimer(secondsLeft())">
-                  <span aria-hidden="true">⏱ {{ formatTimer(secondsLeft()) }}</span>
+                  <span aria-hidden="true"><app-icon name="clock" size="sm" /> {{ formatTimer(secondsLeft()) }}</span>
                 </span>
               </div>
             </div>
@@ -151,7 +151,7 @@ interface ActiveQuestion {
                 </div>
               } @else {
                 <div class="trivia-reveal trivia-reveal--skip">
-                  ⏱ Tiempo agotado · Respuesta correcta: <strong>{{ q.correctOption }}</strong>
+                  <app-icon name="clock" size="sm" /> Tiempo agotado · Respuesta correcta: <strong>{{ q.correctOption }}</strong>
                 </div>
               }
               @if (q.cleanExplanation) {
@@ -171,7 +171,7 @@ interface ActiveQuestion {
 
         <div slot="footer">
           @if (!revealed()) {
-            <button type="button" class="trivia-skip" (click)="skip()">↶ Saltar</button>
+            <button type="button" class="trivia-skip" (click)="skip()"><app-icon name="undo" size="sm" /> Saltar</button>
             <button type="button" class="trivia-next"
                     [disabled]="picked() === null || submitting()"
                     (click)="answer()">
