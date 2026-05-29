@@ -2,50 +2,16 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { AuthBrandPanelComponent } from '../../shared/ui/auth-brand-panel/auth-brand-panel.component';
+import { IconComponent } from '../../shared/ui/icon/icon.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, AuthBrandPanelComponent, IconComponent],
   template: `
     <div class="auth-shell">
-      <!-- Panel de marca (solo desktop ≥992) -->
-      <aside class="auth-brand">
-        <div class="auth-brand__top">
-          <img src="assets/logo-golgana.png" alt="Golgana" width="199" height="98" class="auth-brand__logo-img brand-logo">
-          <span class="auth-brand__title">Polla Mundialista 2026</span>
-        </div>
-
-        <div>
-          <h1 class="auth-brand__h1">
-            Predice cada partido.<br>
-            Gana contra tus panas.
-          </h1>
-          <p class="auth-brand__sub">
-            Crea grupos privados, asigna premios, gana comodines y demuestra
-            quién sabe más de fútbol.
-          </p>
-
-          <div class="auth-brand__stats">
-            <div>
-              <div class="num">2.4k</div>
-              <div class="lbl">Jugadores</div>
-            </div>
-            <div>
-              <div class="num">180</div>
-              <div class="lbl">Grupos activos</div>
-            </div>
-            <div>
-              <div class="num">$15k</div>
-              <div class="lbl">En premios</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="auth-brand__foot">
-          © 2026 Golgana · Términos · Privacidad
-        </div>
-      </aside>
+      <app-auth-brand-panel [stats]="stats()" />
 
       <!-- Formulario -->
       <section class="auth-form">
@@ -102,7 +68,7 @@ import { AuthService } from '../../core/auth/auth.service';
                 <button type="button" class="auth-input-toggle"
                         (click)="showPwd.set(!showPwd())"
                         [attr.aria-label]="showPwd() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
-                  {{ showPwd() ? '👁️‍🗨️' : '👁' }}
+                  <app-icon [name]="showPwd() ? 'eye-off' : 'eye'" size="md" />
                 </button>
               </div>
             </div>
@@ -181,6 +147,9 @@ export class LoginComponent implements OnInit {
   loading = signal(false);
   error = signal<string | null>(null);
   showPwd = signal(false);
+
+  // TODO(A6): replace with ApiService.getPublicStats() once polla-backend lambda deployed
+  stats = signal({ totalUsers: 2400, totalGroups: 180, totalPrizesAccrued: 15000 });
 
   ngOnInit() {
     // Pre-rellenar email desde query (típicamente viene de forgot-password
