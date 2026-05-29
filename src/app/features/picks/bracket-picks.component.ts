@@ -220,7 +220,54 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
             del Mundial puntúan tu BracketPick comparando equipos por fase.
           </div>
         }
-        <!-- Grid del bracket: 9 columnas (16avos a ambos extremos) -->
+        <!-- Mobile (<768px): accordion vertical por fase. -->
+        <div class="bracket-mobile" role="region" aria-label="Bracket por fase">
+          @for (phase of mobilePhases; track phase.order) {
+            <details class="bracket-phase" [open]="isPhaseOpen(phase.order)" (toggle)="onPhaseToggle(phase.order, $event)">
+              <summary class="bracket-phase__head">
+                <span class="bracket-phase__title">{{ phase.label }}</span>
+                <span class="bracket-phase__count">
+                  {{ phaseCount(phase.order) }} {{ phaseCount(phase.order) === 1 ? 'llave' : 'llaves' }}
+                </span>
+                <span class="bracket-phase__chev" aria-hidden="true">▾</span>
+              </summary>
+              <div class="bracket-phase__body">
+                @if (phase.order === 6) {
+                  @let fm = finalMatch();
+                  @if (fm) {
+                    <div class="bracket-final-card">
+                      <div class="bracket-final-card__title"><span aria-hidden="true">🏆 </span>FINAL</div>
+                      <ng-container *ngTemplateOutlet="slotTpl; context: {match: fm, side: 'home'}"></ng-container>
+                      <ng-container *ngTemplateOutlet="slotTpl; context: {match: fm, side: 'away'}"></ng-container>
+                      @let champ = champion();
+                      @if (champ) {
+                        <div class="bracket-final-card__champion">
+                          CAMPEÓN · <span translate="no">{{ champ }}</span>
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <div class="bracket-final-card">
+                      <div class="bracket-final-card__title"><span aria-hidden="true">🏆 </span>FINAL</div>
+                      <div class="text-mute" style="text-align:center;font-size:11px;padding:8px 4px;">
+                        Aún sin definir
+                      </div>
+                    </div>
+                  }
+                } @else {
+                  @for (m of matchesIn(phase.order, 'left'); track m.id) {
+                    <ng-container *ngTemplateOutlet="matchTpl; context: {$implicit: m, prefix: phase.prefix}"></ng-container>
+                  }
+                  @for (m of matchesIn(phase.order, 'right'); track m.id) {
+                    <ng-container *ngTemplateOutlet="matchTpl; context: {$implicit: m, prefix: phase.prefix}"></ng-container>
+                  }
+                }
+              </div>
+            </details>
+          }
+        </div>
+
+        <!-- Desktop (≥768px): grid del bracket 9 columnas (16avos a ambos extremos) -->
         <div class="bracket-scroll">
           <div class="bracket-grid">
 
@@ -553,21 +600,60 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
       margin-top: 4px;
     }
 
-    /* Mobile layout: 1 columna scroll horizontal (lightweight refactor;
-       accordion completo es out-of-scope para A8b; mantiene scrollX
-       pero más legible con sticky col headers). */
+    /* ---------------------------------------------------------------
+       Mobile layout (<768px): phase-by-phase accordion (vs 9-column
+       horizontal scroll). Mantiene el grid desktop intacto.
+       --------------------------------------------------------------- */
+    .bracket-mobile { display: none; }
     @media (max-width: 768px) {
-      .bracket-scroll {
-        overflow-x: auto;
-        scroll-snap-type: x mandatory;
-        -webkit-overflow-scrolling: touch;
-      }
-      .bracket-scroll .bracket-col {
-        scroll-snap-align: start;
-      }
-      .bracket-counter {
-        align-items: flex-start;
-      }
+      .bracket-mobile { display: block; margin: 0 0 14px; }
+      .bracket-scroll { display: none; }
+      .bracket-counter { align-items: flex-start; }
+    }
+    .bracket-phase {
+      border: 1px solid var(--wf-line-2);
+      border-radius: 10px;
+      background: var(--wf-paper);
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+    .bracket-phase__head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      cursor: pointer;
+      list-style: none;
+      font-size: 13px;
+      font-weight: 700;
+      background: var(--wf-fill, rgba(0,0,0,0.03));
+    }
+    .bracket-phase__head::-webkit-details-marker { display: none; }
+    .bracket-phase__title {
+      flex: 1;
+      font-family: var(--wf-display, var(--font-display));
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .bracket-phase__count {
+      font-size: 11px;
+      color: var(--wf-ink-3);
+      font-weight: 600;
+    }
+    .bracket-phase__chev {
+      font-size: 14px;
+      color: var(--wf-ink-3);
+      transition: transform 0.18s ease;
+    }
+    .bracket-phase[open] .bracket-phase__chev { transform: rotate(180deg); }
+    .bracket-phase__body {
+      padding: 12px 14px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .bracket-phase__chev { transition: none; }
     }
   `],
 })
@@ -714,6 +800,34 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
     if (phaseOrder === 6) return all; // solo la Final, pero Final va al col central, no aquí
     const mid = Math.ceil(all.length / 2);
     return side === 'left' ? all.slice(0, mid) : all.slice(mid);
+  }
+
+  // ---- Mobile accordion (vista por fase, <768px) -------------------
+  /** Lista ordenada de fases que arman el accordion mobile. */
+  readonly mobilePhases: Array<{ order: number; label: string; prefix: string }> = [
+    { order: 2, label: '16avos · R32', prefix: 'R32' },
+    { order: 3, label: 'Octavos', prefix: 'O' },
+    { order: 4, label: 'Cuartos', prefix: 'C' },
+    { order: 5, label: 'Semifinales', prefix: 'S' },
+    { order: 6, label: 'Final', prefix: 'F' },
+  ];
+
+  /** Estado de open/close por fase. R32 default open. */
+  private phaseOpen = signal<Record<number, boolean>>({ 2: true, 3: false, 4: false, 5: false, 6: false });
+
+  isPhaseOpen(order: number): boolean {
+    return this.phaseOpen()[order] ?? false;
+  }
+
+  onPhaseToggle(order: number, ev: Event) {
+    const target = ev.target as HTMLDetailsElement;
+    this.phaseOpen.update((cur) => ({ ...cur, [order]: target.open }));
+  }
+
+  /** Número total de matches (ambos lados) en la fase. Final cuenta como 1. */
+  phaseCount(order: number): number {
+    if (order === 6) return this.finalMatch() ? 1 : 0;
+    return this.matchesIn(order, 'left').length + this.matchesIn(order, 'right').length;
   }
 
   /** Para un match con resultado FINAL, devuelve el slug del team que ganó.
