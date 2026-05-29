@@ -1,8 +1,8 @@
 import { Component, EventEmitter, Input, Output, computed, inject, signal } from '@angular/core';
-import { A11yModule } from '@angular/cdk/a11y';
 import { FormsModule } from '@angular/forms';
 import { PicksSyncService } from '../../core/sync/picks-sync.service';
 import { ToastService } from '../../core/notifications/toast.service';
+import { ModalComponent } from '../../shared/ui/modal/modal.component';
 
 interface MatchLite {
   id: string;
@@ -35,26 +35,17 @@ interface DateGroup {
 @Component({
   standalone: true,
   selector: 'app-randomizer-modal',
-  imports: [FormsModule, A11yModule],
+  imports: [FormsModule, ModalComponent],
   template: `
     @if (open()) {
-      <div class="picks-modal is-open" role="dialog" aria-modal="true"
-           aria-labelledby="randomizer-modal-title"
-           cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
-           (keydown.escape)="close()">
-        <div class="picks-modal__close-overlay" role="presentation"
-             (click)="close()"></div>
-        <div class="picks-modal__card">
-          <header class="picks-modal__head">
-            <div>
-              <div class="title" id="randomizer-modal-title"><span aria-hidden="true">🎲 </span>Picks aleatorios</div>
-              <div class="meta">{{ selectedCount() }} partido{{ selectedCount() === 1 ? '' : 's' }} · rango {{ minVal() }}–{{ maxVal() }}</div>
-            </div>
-            <button type="button" class="close" (click)="close()" aria-label="Cerrar">✕</button>
-          </header>
-
-          <div class="picks-modal__body">
-            <!-- Selector de partidos -->
+      <app-modal
+        [open]="true"
+        title="Picks aleatorios"
+        [description]="descLine()"
+        size="md"
+        (close)="close()">
+        <div slot="body">
+          <!-- Selector de partidos -->
             <div class="rnd-section">
               <h4 class="rnd-section__title">¿Para qué partidos?</h4>
               <div class="rnd-options" role="group" aria-label="Filtro de partidos">
@@ -107,18 +98,17 @@ interface DateGroup {
                 Ejemplo: <strong>{{ samplePreview() }}</strong>
               </p>
             </div>
-          </div>
-
-          <footer class="picks-modal__foot">
-            <button type="button" class="btn-wf" (click)="close()">Cancelar</button>
-            <button type="button" class="btn-wf btn-wf--primary"
-                    [disabled]="selectedCount() === 0"
-                    (click)="generate()">
-              🎲 Generar para {{ selectedCount() }} partido{{ selectedCount() === 1 ? '' : 's' }}
-            </button>
-          </footer>
         </div>
-      </div>
+
+        <div slot="footer">
+          <button type="button" class="btn-wf" (click)="close()">Cancelar</button>
+          <button type="button" class="btn-wf btn-wf--primary"
+                  [disabled]="selectedCount() === 0"
+                  (click)="generate()">
+            🎲 Generar para {{ selectedCount() }} partido{{ selectedCount() === 1 ? '' : 's' }}
+          </button>
+        </div>
+      </app-modal>
     }
   `,
   styles: [`
@@ -303,6 +293,13 @@ export class RandomizerModalComponent {
   });
 
   selectedCount = computed(() => this.selectedMatches().length);
+
+  /** Description line para `<app-modal>` — partidos + rango. */
+  descLine = computed(() => {
+    const n = this.selectedCount();
+    const plural = n === 1 ? '' : 's';
+    return `${n} partido${plural} · rango ${this.minVal()}–${this.maxVal()}`;
+  });
 
   /** Preview de un pick random ejemplo en el rango seleccionado. */
   samplePreview = computed(() => {
