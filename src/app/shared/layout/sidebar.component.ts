@@ -30,7 +30,7 @@ const TOURNAMENT_ID = 'mundial-2026';
       <a routerLink="/home" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
         <span class="lsb__i" aria-hidden="true">🏠</span><span class="lsb__t">Inicio</span>
       </a>
-      <a routerLink="/picks" routerLinkActive="active">
+      <a routerLink="/picks" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
         <span class="lsb__i" aria-hidden="true">⚽</span><span class="lsb__t">Mis picks</span>
       </a>
       <a routerLink="/groups" routerLinkActive="active">
