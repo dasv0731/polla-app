@@ -170,7 +170,7 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
             @if (miss.thirdsCount !== 8) {
               <li>
                 <span aria-hidden="true">⚠ </span>Marca exactamente 8 mejores 3.os (tienes {{ miss.thirdsCount }})
-                <a routerLink="/profile/special-picks" class="btn-wf btn-wf--sm">
+                <a routerLink="/picks/group-stage" [queryParams]="{ view: 'pred' }" class="btn-wf btn-wf--sm">
                   Ir a mis terceros <span aria-hidden="true">→</span>
                 </a>
               </li>

@@ -1,6 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { A11yModule } from '@angular/cdk/a11y';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { ActivatedRoute, RouterLink, RouterLinkActive } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { TimeService } from '../../core/time/time.service';
@@ -409,6 +409,7 @@ export class PicksTablaGruposComponent implements OnInit {
   private time = inject(TimeService);
   rail = inject(RailModalsService);
   sync = inject(PicksSyncService);
+  private route = inject(ActivatedRoute);
 
   view = signal<'real' | 'pred'>('real');
   loading = signal(true);
@@ -536,6 +537,13 @@ export class PicksTablaGruposComponent implements OnInit {
   }
 
   async ngOnInit() {
+    // Bug #5 fix: respeta ?view=pred query param (usado por deep-link
+    // desde /picks/bracket "Ir a mis terceros").
+    const initialView = this.route.snapshot.queryParamMap.get('view');
+    if (initialView === 'pred' || initialView === 'real') {
+      this.view.set(initialView);
+    }
+
     const userId = this.auth.user()?.sub;
     if (!userId) {
       this.loading.set(false);
