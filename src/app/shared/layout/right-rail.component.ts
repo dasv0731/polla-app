@@ -2,6 +2,8 @@ import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { IconComponent } from '../ui/icon/icon.component';
+import { SkeletonComponent } from '../ui/skeleton/skeleton.component';
 import { getUrl } from 'aws-amplify/storage';
 
 const TOURNAMENT_ID = 'mundial-2026';
@@ -13,11 +15,14 @@ interface NextMatchVm {
   awayName: string;
   homeFlag: string;
   awayFlag: string;
+  homeInitials: string;
+  awayInitials: string;
   kickoffAt: string;
   venue: string | null;
   phaseLabel: string;
-  countdown: { d: string; h: string; m: string; s: string };
+  countdown: { d: string; h: string; m: string; s: string } | null;
   isLive: boolean;
+  isStartingNow: boolean;
   myPick: { home: number; away: number; winnerName: string | null } | null;
 }
 
@@ -44,31 +49,52 @@ interface NewsItemVm {
  * siguientes picks (4 filas hacia /picks/match/:id) y noticias (hero card +
  * 3 rows desde Article.listPublishedArticles). Se colapsa a bloque normal
  * debajo del main en tablet/mobile.
+ *
+ * A8d polish:
+ * - SVG icons via <app-icon> reemplazan emojis (🏳️ ✓ ⚠ →).
+ * - Initials fallback (2 letras team name) cuando no hay flag code.
+ * - Skeleton loading states durante fetch inicial (3 blocks).
+ * - Countdown: `role="timer"`, pad-zero días, "Empieza ya" cuando llega 0,
+ *   "EN VIVO" cuando match ya empezó.
+ * - News images con `loading="lazy" decoding="async"`.
+ * - Intl.RelativeTimeFormat para news dates (ya en uso).
+ * - TODO(A6): consolidar las 5+ calls (listMatches + listTeams + myPicks +
+ *   listPublishedArticles + N×getUrl) a un único `getMyRightRail()` cuando
+ *   la lambda backend esté deployed.
  */
 @Component({
   standalone: true,
   selector: 'app-right-rail',
-  imports: [RouterLink],
+  imports: [RouterLink, IconComponent, SkeletonComponent],
   template: `
     <aside class="side">
 
-      @if (nextMatch(); as m) {
+      @if (loadingNext()) {
+        <div class="np np--skeleton"><app-skeleton variant="card" /></div>
+      } @else {
+        @if (nextMatch(); as m) {
         <div class="np">
           <div class="np__bg"></div>
           <div class="np__in">
             <div class="np__top">
-              <span class="np__live">{{ m.isLive ? '● EN VIVO' : 'Próximo' }}</span>
+              @if (m.isLive) {
+                <span class="np__live">EN VIVO</span>
+              } @else if (m.isStartingNow) {
+                <span class="np__live">Empieza ya</span>
+              } @else {
+                <span class="np__live">Próximo</span>
+              }
               <span class="np__tag">{{ m.phaseLabel }}</span>
             </div>
             <div class="np__hl">El <em>próximo</em> partido</div>
             <div class="np__sub">{{ m.venue ?? 'Sede por confirmar' }}</div>
 
-            @if (!m.isLive) {
-              <div class="np__cd">
-                <div class="np__cd__c"><div class="np__cd__n">{{ m.countdown.d }}</div><div class="np__cd__l">Días</div></div>
-                <div class="np__cd__c"><div class="np__cd__n">{{ m.countdown.h }}</div><div class="np__cd__l">Hrs</div></div>
-                <div class="np__cd__c"><div class="np__cd__n">{{ m.countdown.m }}</div><div class="np__cd__l">Min</div></div>
-                <div class="np__cd__c"><div class="np__cd__n">{{ m.countdown.s }}</div><div class="np__cd__l">Seg</div></div>
+            @if (m.countdown; as cd) {
+              <div class="np__cd" role="timer" aria-label="Tiempo hasta kickoff">
+                <div class="np__cd__c"><div class="np__cd__n">{{ cd.d }}</div><div class="np__cd__l">Días</div></div>
+                <div class="np__cd__c"><div class="np__cd__n">{{ cd.h }}</div><div class="np__cd__l">Hrs</div></div>
+                <div class="np__cd__c"><div class="np__cd__n">{{ cd.m }}</div><div class="np__cd__l">Min</div></div>
+                <div class="np__cd__c"><div class="np__cd__n">{{ cd.s }}</div><div class="np__cd__l">Seg</div></div>
               </div>
             }
 
@@ -78,7 +104,7 @@ interface NewsItemVm {
                   @if (m.homeFlag) {
                     <span class="fi fi-{{ m.homeFlag.toLowerCase() }}"></span>
                   } @else {
-                    🏳️
+                    <span class="np__fl__ini" aria-hidden="true">{{ m.homeInitials }}</span>
                   }
                 </div>
                 <div class="np__n">{{ m.homeName }}</div>
@@ -89,7 +115,7 @@ interface NewsItemVm {
                   @if (m.awayFlag) {
                     <span class="fi fi-{{ m.awayFlag.toLowerCase() }}"></span>
                   } @else {
-                    🏳️
+                    <span class="np__fl__ini" aria-hidden="true">{{ m.awayInitials }}</span>
                   }
                 </div>
                 <div class="np__n">{{ m.awayName }}</div>
@@ -110,30 +136,48 @@ interface NewsItemVm {
               <a class="np__pk np__pk--cta" [routerLink]="['/picks/match', m.id]">
                 <div>
                   <span class="np__pk__l">Sin pick</span>
-                  <strong>Hacer pick →</strong>
+                  <strong>
+                    Hacer pick
+                    <app-icon name="arrow-right" size="sm" />
+                  </strong>
                 </div>
               </a>
             }
 
-            <a class="np__cta" [routerLink]="['/picks/match', m.id]">Ver previa completa →</a>
+            <a class="np__cta" [routerLink]="['/picks/match', m.id]">
+              <span>Ver previa completa</span>
+              <app-icon name="arrow-right" size="sm" />
+            </a>
           </div>
         </div>
+        }
       }
 
-      @if (upcoming().length > 0) {
+      @if (loadingUpcoming()) {
+        <div class="up up--skeleton"><app-skeleton variant="list" [count]="4" /></div>
+      } @else if (upcoming().length > 0) {
         <div class="up">
           <div class="up__h">
             <span>Siguientes picks</span>
-            <a routerLink="/picks">Ver todos →</a>
+            <a class="up__h__more" routerLink="/picks">
+              <span>Ver todos</span>
+              <app-icon name="arrow-right" size="sm" />
+            </a>
           </div>
           @for (r of upcoming(); track r.id) {
             <a class="up__r" [routerLink]="['/picks/match', r.id]">
               <div class="up__r__h">
                 <span>{{ r.dateLabel }} · {{ r.matchLabel }}</span>
                 @if (r.hasPick) {
-                  <span class="ok">✓ Pick</span>
+                  <span class="ok">
+                    <app-icon name="check" size="sm" />
+                    <span>Pick</span>
+                  </span>
                 } @else {
-                  <span class="pe">⚠ {{ r.countdownLabel }}</span>
+                  <span class="pe">
+                    <app-icon name="alert" size="sm" />
+                    <span>{{ r.countdownLabel }}</span>
+                  </span>
                 }
               </div>
               <div class="up__r__t" [class.m]="!r.hasPick">
@@ -144,13 +188,16 @@ interface NewsItemVm {
         </div>
       }
 
-      @if (newsHero(); as hero) {
+      @if (loadingNews()) {
+        <div class="news news--skeleton"><app-skeleton variant="card" /></div>
+      } @else {
+        @if (newsHero(); as hero) {
         <div class="news">
           <a [href]="hero.externalUrl" target="_blank" rel="noopener noreferrer" class="news__hero">
             @if (hero.resolvedImageUrl) {
-              <img [src]="hero.resolvedImageUrl" [alt]="hero.title">
+              <img [src]="hero.resolvedImageUrl" [alt]="hero.title" loading="lazy" decoding="async">
             } @else {
-              <img src="assets/news-placeholder.svg" [alt]="hero.title">
+              <img src="assets/news-placeholder.svg" [alt]="hero.title" loading="lazy" decoding="async">
             }
             <div class="news__hero__b">
               <div class="news__hero__k">Destacada · {{ hero.relativeTime }}</div>
@@ -169,10 +216,14 @@ interface NewsItemVm {
                   </div>
                 </a>
               }
-              <a [href]="newsHubUrl" target="_blank" rel="noopener noreferrer" class="news__more">Ver todas →</a>
+              <a [href]="newsHubUrl" target="_blank" rel="noopener noreferrer" class="news__more">
+                <span>Ver todas</span>
+                <app-icon name="arrow-right" size="sm" />
+              </a>
             </div>
           }
         </div>
+        }
       }
     </aside>
   `,
@@ -267,6 +318,13 @@ interface NewsItemVm {
       border: 2px solid rgba(255,255,255,0.18);
     }
     .np__tm--home .np__fl { border-color: rgba(2,204,116,0.5); box-shadow: 0 0 0 4px rgba(2,204,116,0.12); }
+    .np__fl__ini {
+      font-family: var(--font-display);
+      font-size: 18px;
+      letter-spacing: 0.04em;
+      color: rgba(255,255,255,0.75);
+      text-transform: uppercase;
+    }
     .np__n { font-family: var(--font-display); font-size: 17px; line-height: 1; color: #fff; }
     .np__vs { display: flex; flex-direction: column; align-items: center; gap: 3px; }
     .np__vs__l { font-family: var(--font-display); font-size: 20px; color: var(--color-primary-green); line-height: 1; }
@@ -336,6 +394,7 @@ interface NewsItemVm {
       display: flex; justify-content: space-between;
     }
     .up__h a { color: var(--color-primary-green); font-weight: 600; text-decoration: none; }
+    .up__h__more { display: inline-flex; align-items: center; gap: 4px; }
     .up__r {
       padding: 8px 0;
       border-bottom: 1px solid rgba(0,0,0,0.06);
@@ -345,8 +404,10 @@ interface NewsItemVm {
     }
     .up__r:last-child { border-bottom: 0; }
     .up__r__h { display: flex; justify-content: space-between; font-size: 10px; color: var(--color-text-muted); }
-    .up__r__h .ok { color: var(--color-primary-green); font-weight: 700; }
-    .up__r__h .pe { color: #dc2626; font-weight: 700; }
+    .up__r__h .ok,
+    .up__r__h .pe { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; }
+    .up__r__h .ok { color: var(--color-primary-green); }
+    .up__r__h .pe { color: #dc2626; }
     .up__r__t { font-family: var(--font-display); font-size: 13px; }
     .up__r__t.m { color: var(--color-text-muted); }
 
@@ -396,7 +457,8 @@ interface NewsItemVm {
     .news__row__k { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-primary-green); font-weight: 700; margin-bottom: 3px; }
     .news__row__t { font-family: var(--font-display); font-size: 13px; line-height: 1.15; }
     .news__more {
-      display: block; padding: 11px 0;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 11px 0;
       text-align: center;
       font-size: 11px;
       letter-spacing: 0.12em;
@@ -418,10 +480,17 @@ export class RightRailComponent implements OnInit, OnDestroy {
   newsHero = signal<NewsItemVm | null>(null);
   newsList = signal<NewsItemVm[]>([]);
 
+  loadingNext = signal(true);
+  loadingUpcoming = signal(true);
+  loadingNews = signal(true);
+
   private tickerId?: ReturnType<typeof setInterval>;
   private rawNext: { kickoffAt: string } | null = null;
 
   async ngOnInit() {
+    // TODO(A6): replace these parallel calls (listMatches + listTeams +
+    // myPicks + listPublishedArticles + N×getUrl) with single
+    // getMyRightRail() call when polla-backend lambda deployed.
     void this.loadNextAndUpcoming();
     void this.loadNews();
     this.tickerId = setInterval(() => this.refreshCountdown(), 1000);
@@ -473,7 +542,13 @@ export class RightRailComponent implements OnInit, OnDestroy {
         const home = teamMap.get(first.homeTeamId) ?? { name: first.homeTeamId, flag: '' };
         const away = teamMap.get(first.awayTeamId) ?? { name: first.awayTeamId, flag: '' };
         const myPick = pickMap.get(first.id);
-        const isLive = first.status === 'IN_PROGRESS' || first.status === 'LIVE';
+        const koMs = ko.getTime();
+        const diff = koMs - now;
+        const statusLive = first.status === 'IN_PROGRESS' || first.status === 'LIVE';
+        // EN VIVO if backend status says so OR kickoff pasó (< 2h grace ya
+        // filtró ese arriba, así que diff<0 indica match in-progress).
+        const isLive = statusLive || diff < 0;
+        const isStartingNow = !isLive && diff <= 0;
         let winnerName: string | null = null;
         if (myPick) {
           if (myPick.home > myPick.away) winnerName = home.name;
@@ -486,11 +561,14 @@ export class RightRailComponent implements OnInit, OnDestroy {
           awayName: away.name,
           homeFlag: home.flag,
           awayFlag: away.flag,
+          homeInitials: this.initials(home.name),
+          awayInitials: this.initials(away.name),
           kickoffAt: first.kickoffAt,
           venue: first.venue ?? null,
           phaseLabel: 'Mundial 2026',
-          countdown: this.computeCountdown(ko.getTime(), now),
+          countdown: isLive || isStartingNow ? null : this.computeCountdown(koMs, now),
           isLive,
+          isStartingNow,
           myPick: myPick ? { home: myPick.home, away: myPick.away, winnerName } : null,
         });
         nextLoaded = true;
@@ -529,6 +607,8 @@ export class RightRailComponent implements OnInit, OnDestroy {
     if (!upcomingLoaded) {
       this.upcoming.set(this.seedUpcoming());
     }
+    this.loadingNext.set(false);
+    this.loadingUpcoming.set(false);
   }
 
   /** Próximo partido mock — visible cuando no hay fixtures cargados. */
@@ -540,11 +620,14 @@ export class RightRailComponent implements OnInit, OnDestroy {
       awayName: 'Argentina',
       homeFlag: 'mx',
       awayFlag: 'ar',
+      homeInitials: this.initials('México'),
+      awayInitials: this.initials('Argentina'),
       kickoffAt: ko.toISOString(),
       venue: 'Estadio Azteca · Ciudad de México',
       phaseLabel: 'Mundial 2026 · Grupo A',
       countdown: this.computeCountdown(ko.getTime(), Date.now()),
       isLive: false,
+      isStartingNow: false,
       myPick: null,
     };
   }
@@ -607,6 +690,7 @@ export class RightRailComponent implements OnInit, OnDestroy {
     }
     this.newsHero.set(enriched[0] ?? null);
     this.newsList.set(enriched.slice(1));
+    this.loadingNews.set(false);
   }
 
   /** Noticias mock — visibles hasta que existan Article reales en DB. */
@@ -632,8 +716,20 @@ export class RightRailComponent implements OnInit, OnDestroy {
     const ko = new Date(this.rawNext.kickoffAt).getTime();
     const now = Date.now();
     const cur = this.nextMatch();
-    if (!cur || cur.isLive) return;
-    if (ko - now <= 0) return;
+    if (!cur) return;
+    if (cur.isLive) return;
+    const diff = ko - now;
+    // Transition states cuando el ticker cruza el kickoff:
+    // diff <= 0  → "Empieza ya" (sin countdown numérico)
+    // diff < -60s → asumimos kickoff hace rato → "EN VIVO"
+    if (diff <= 0) {
+      const isLive = diff < -60_000;
+      const isStartingNow = !isLive;
+      if (cur.isLive !== isLive || cur.isStartingNow !== isStartingNow || cur.countdown !== null) {
+        this.nextMatch.set({ ...cur, countdown: null, isLive, isStartingNow });
+      }
+      return;
+    }
     this.nextMatch.set({ ...cur, countdown: this.computeCountdown(ko, now) });
   }
 
@@ -644,7 +740,20 @@ export class RightRailComponent implements OnInit, OnDestroy {
     const m = Math.floor((diff % 3_600_000) / 60_000);
     const s = Math.floor((diff % 60_000) / 1000);
     const p2 = (n: number) => (n < 10 ? '0' : '') + n;
-    return { d: String(d), h: p2(h), m: p2(m), s: p2(s) };
+    return { d: p2(d), h: p2(h), m: p2(m), s: p2(s) };
+  }
+
+  /** 2-letter uppercase initials para flag fallback. Strips non-letters,
+   *  toma primera letra de las primeras dos palabras o las primeras dos
+   *  letras si es una sola palabra. */
+  private initials(name: string): string {
+    const clean = (name ?? '').trim();
+    if (!clean) return '??';
+    const parts = clean.split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return clean.slice(0, 2).toUpperCase();
   }
 
   private static readonly shortDateFmt = new Intl.DateTimeFormat('es-EC', {
