@@ -229,6 +229,8 @@ Estas decisiones se tomaron durante el brainstorm session y son load-bearing par
 - **User dropdown bottom area** (notif/perfil/logout) o equivalente accordion.
 - **Per-group ranking dropdown** (nuevo design — acordeón sidebar O en `/ranking` landing). Pattern brillante perdido en zombie.
 
+> **Per-group ranking dropdown decision (A4 implementation, 2026-05-28)**: NO se recupera al sidebar (espacio constreñido). La feature vive nativamente en `/ranking` page tab "Mis grupos" (ya implementada — filtra el leaderboard a usuarios que comparten grupos contigo) + en `/groups/:id` que tiene su propia sección de ranking interno del grupo. El sidebar queda simple. Refs: `src/app/features/ranking/ranking.component.ts` scope='mis-grupos'.
+
 **4.3 Eliminar auth-shell.component.ts**:
 - NO usado actualmente — 3 auth surfaces implementan layout inline.
 - **Default**: eliminar archivo + cualquier referencia.
