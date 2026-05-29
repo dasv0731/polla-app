@@ -4,6 +4,7 @@ import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { compareRankable } from '../../shared/util/tiebreakers';
 import { GroupActionsService } from '../../core/groups/group-actions.service';
+import { EmptyBlockComponent } from '../../shared/ui/empty-block/empty-block.component';
 import { getUrl } from 'aws-amplify/storage';
 
 type GameMode = 'SIMPLE' | 'COMPLETE';
@@ -25,7 +26,7 @@ interface GroupRow {
 @Component({
   standalone: true,
   selector: 'app-groups-list',
-  imports: [RouterLink],
+  imports: [RouterLink, EmptyBlockComponent],
   template: `
     <section class="page">
       <header class="page__header" style="margin-bottom:18px;">
@@ -52,14 +53,23 @@ interface GroupRow {
       @if (loading()) {
         <p style="padding:32px;text-align:center;color:var(--wf-ink-3);">Cargando…</p>
       } @else if (groups().length === 0) {
-        <div style="padding:32px;text-align:center;background:var(--wf-paper);border:1px dashed var(--wf-line);border-radius:10px;">
-          <h3 style="font-family:var(--wf-display);font-size:18px;letter-spacing:.04em;margin:0 0 8px;font-weight:normal;">
-            Aún no estás en ningún grupo
-          </h3>
-          <p style="color:var(--wf-ink-3);font-size:13px;margin:0 0 12px;line-height:1.5;">
-            Usa los botones de arriba para crear un grupo o unirte con un código.
-          </p>
-        </div>
+        <!-- Bug #7 fix: design v3 oculta los topnav buttons en desktop, así que
+             un first-time user no veía dónde crear/unirse. Reemplazamos el
+             texto "Usa los botones de arriba" con CTAs explícitos visibles
+             siempre vía <app-empty-block>. -->
+        <app-empty-block
+          iconName="users"
+          title="Sin grupos"
+          sub="Crea uno o únete con un código para empezar a competir con tus panas.">
+          <button class="btn-wf btn-wf--primary" type="button"
+                  (click)="actions.openCreate()">
+            + Crear grupo
+          </button>
+          <button class="btn-wf" type="button"
+                  (click)="actions.openJoin()">
+            → Unirme con código
+          </button>
+        </app-empty-block>
       } @else {
         <div class="groups-list">
           @for (g of groups(); track g.id) {
