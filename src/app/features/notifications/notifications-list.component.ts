@@ -1,7 +1,12 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
+
+interface NotifTarget {
+  route: string;
+  fragment: string | null;
+}
 
 type NotificationKind = 'OBTAINED' | 'ASSIGNED' | 'ACTIVATED' | 'EXPIRED' | 'REMINDER_24H';
 
@@ -26,6 +31,7 @@ const KIND_BADGE: Record<NotificationKind, { label: string; color: string }> = {
 @Component({
   standalone: true,
   selector: 'app-notifications-list',
+  imports: [RouterLink],
   template: `
     <header class="page-header">
       <div class="page-header__top">
@@ -54,17 +60,21 @@ const KIND_BADGE: Record<NotificationKind, { label: string; color: string }> = {
       } @else {
         <ul class="notif-list">
           @for (n of notifs(); track n.id) {
-            <li class="notif-card" [class.is-unread]="!n.readAt"
-                (click)="onClick(n)">
-              <div class="notif-card__head">
-                <span class="notif-card__badge"
-                      [style.background]="badgeColor(n.kind)">
-                  {{ badgeLabel(n.kind) }}
-                </span>
-                <strong class="notif-card__title">{{ n.title }}</strong>
-                <small>{{ formatDate(n.createdAt) }}</small>
-              </div>
-              <p class="notif-card__body">{{ n.body }}</p>
+            <li class="notif-card" [class.is-unread]="!n.readAt">
+              <a class="notif-card__link"
+                 [routerLink]="resolveTarget(n).route"
+                 [fragment]="resolveTarget(n).fragment"
+                 (click)="markRead(n)">
+                <div class="notif-card__head">
+                  <span class="notif-card__badge"
+                        [style.background]="badgeColor(n.kind)">
+                    {{ badgeLabel(n.kind) }}
+                  </span>
+                  <strong class="notif-card__title">{{ n.title }}</strong>
+                  <small>{{ formatDate(n.createdAt) }}</small>
+                </div>
+                <p class="notif-card__body">{{ n.body }}</p>
+              </a>
             </li>
           }
         </ul>
@@ -77,14 +87,23 @@ const KIND_BADGE: Record<NotificationKind, { label: string; color: string }> = {
       background: var(--color-primary-white);
       border: 1px solid var(--wf-line);
       border-radius: 12px;
-      padding: var(--space-sm) var(--space-md);
-      cursor: pointer;
       transition: border-color 100ms;
     }
     .notif-card:hover { border-color: var(--color-primary-green); }
     .notif-card.is-unread {
       border-left: 3px solid var(--color-primary-green);
       background: var(--wf-green-soft);
+    }
+    .notif-card__link {
+      display: block;
+      padding: var(--space-sm) var(--space-md);
+      color: inherit;
+      text-decoration: none;
+      border-radius: inherit;
+    }
+    .notif-card__link:focus-visible {
+      outline: 2px solid var(--color-primary-green);
+      outline-offset: 2px;
     }
     .notif-card__head {
       display: flex;
@@ -112,7 +131,6 @@ const KIND_BADGE: Record<NotificationKind, { label: string; color: string }> = {
 export class NotificationsListComponent implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
-  private router = inject(Router);
 
   loading = signal(true);
   notifs = signal<Notif[]>([]);
@@ -144,24 +162,21 @@ export class NotificationsListComponent implements OnInit {
     }
   }
 
-  async onClick(n: Notif) {
-    // Marca como leída en paralelo a navegar — no bloqueamos la nav por
-    // un fire-and-forget de markRead.
-    if (!n.readAt) {
-      this.notifs.update((arr) => arr.map((x) =>
-        x.id === n.id ? { ...x, readAt: new Date().toISOString() } : x,
-      ));
-      this.api.markNotificationRead(n.id).catch(() => { /* ignore */ });
-    }
-    const target = this.resolveTarget(n);
-    if (target) void this.router.navigateByUrl(target);
+  /** Fire-and-forget: marca la notif como leída sin bloquear la navegación
+   *  que dispara <a routerLink>. La navegación la maneja el router. */
+  markRead(n: Notif) {
+    if (n.readAt) return;
+    this.notifs.update((arr) => arr.map((x) =>
+      x.id === n.id ? { ...x, readAt: new Date().toISOString() } : x,
+    ));
+    this.api.markNotificationRead(n.id).catch(() => { /* ignore */ });
   }
 
-  /** Mapea kind → ruta destino. Todas las notifs actuales son de comodines
+  /** Mapea kind → { route, fragment } para uso directo con [routerLink] +
+   *  [fragment]. Todas las notifs actuales son de comodines
    *  (OBTAINED/ASSIGNED/ACTIVATED/EXPIRED/REMINDER_24H). Cuando agreguemos
-   *  MATCH_LIVE / RANK_CHANGED, este resolver crece. Si no hay match, el
-   *  click solo marca como leído sin navegar. */
-  private resolveTarget(n: Notif): string | null {
+   *  MATCH_LIVE / RANK_CHANGED, este resolver crece. */
+  resolveTarget(n: Notif): NotifTarget {
     switch (n.kind) {
       case 'OBTAINED':
       case 'ASSIGNED':
@@ -170,11 +185,12 @@ export class NotificationsListComponent implements OnInit {
       case 'REMINDER_24H':
         // El fragment apunta al card del comodín específico cuando el id
         // existe; sino, scroll natural al hub de comodines.
-        return n.comodinId
-          ? `/mis-comodines#card-${n.comodinId}`
-          : '/mis-comodines';
+        return {
+          route: '/mis-comodines',
+          fragment: n.comodinId ? `card-${n.comodinId}` : null,
+        };
       default:
-        return null;
+        return { route: '/mis-comodines', fragment: null };
     }
   }
 
