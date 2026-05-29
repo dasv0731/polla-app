@@ -6,6 +6,7 @@ import { GroupActionsService } from '../../core/groups/group-actions.service';
 import { compareRankable } from '../../shared/util/tiebreakers';
 import { EmptyBlockComponent } from '../../shared/ui/empty-block/empty-block.component';
 import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
+import { IconComponent } from '../../shared/ui/icon/icon.component';
 import { Router } from '@angular/router';
 
 const TOURNAMENT_ID = 'mundial-2026';
@@ -82,7 +83,7 @@ const RELATIVE_FMT = new Intl.RelativeTimeFormat('es-EC', { numeric: 'auto' });
 @Component({
   standalone: true,
   selector: 'app-ranking',
-  imports: [EmptyBlockComponent, SkeletonComponent],
+  imports: [EmptyBlockComponent, SkeletonComponent, IconComponent],
   template: `
     <section class="page">
 
@@ -431,7 +432,9 @@ const RELATIVE_FMT = new Intl.RelativeTimeFormat('es-EC', { numeric: 'auto' });
             </span>
             <div class="rank-table-foot__pagi">
               <button type="button" class="btn-wf btn-wf--sm"
-                      (click)="scrollToTop()">Ir al top →</button>
+                      (click)="scrollToTop()">
+                <app-icon name="arrow-left" size="sm" /> Ir al top
+              </button>
             </div>
           </div>
         </div>
