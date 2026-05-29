@@ -3,10 +3,11 @@ import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
+import { RedeemModalService } from '../../core/sponsors/redeem-modal.service';
 import { UserAvatarComponent } from '../../shared/user-avatar/user-avatar.component';
 import { EditProfileModalComponent } from './edit-profile-modal.component';
 import { PreferencesModalComponent } from './preferences-modal.component';
-import { flagImageUrl } from '../../shared/util/countries';
+import { IconComponent } from '../../shared/ui/icon/icon.component';
 
 const TOURNAMENT_ID = 'mundial-2026';
 const TOTAL_SPECIAL_PICKS = 3; // Campeón, Subcampeón, Revelación
@@ -21,14 +22,20 @@ interface Totals {
 @Component({
   standalone: true,
   selector: 'app-profile',
-  imports: [RouterLink, UserAvatarComponent, EditProfileModalComponent, PreferencesModalComponent],
+  imports: [
+    RouterLink, UserAvatarComponent,
+    EditProfileModalComponent, PreferencesModalComponent,
+    IconComponent,
+  ],
   template: `
     @let u = user();
 
     @if (u !== null) {
       <section class="page">
 
-        <!-- Hero del perfil -->
+        <!-- Hero del perfil compacto: avatar + handle + bandera.
+             email y "miembro desde" se ven en el modal Editar perfil
+             (compactación post walkthrough doc 14). -->
         <header class="profile-hero">
           <div class="profile-hero__top">
             <app-user-avatar
@@ -37,24 +44,20 @@ interface Totals {
               [avatarKey]="u.avatarKey"
               size="lg" />
             <div class="profile-hero__name-block">
-              <h1 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--wf-ink);">
-                @if (countryFlagUrl()) {
-                  <img [src]="countryFlagUrl()!" alt="" aria-label="País"
-                       style="width:28px;height:auto;border-radius:3px;box-shadow:0 0 0 1px rgba(0,0,0,.08);">
+              <h1 class="profile-hero__h1">
+                @if (u.country) {
+                  <span class="fi fi-{{ u.country.toLowerCase() }} profile-hero__flag"
+                        aria-label="País"></span>
                 }
                 @if (u.name) {
                   <span>{{ u.name }}</span>
-                  <span style="color: var(--wf-ink-3); font-weight: normal;" translate="no">(&#64;{{ u.handle }})</span>
+                  <span class="profile-hero__handle-mute" translate="no">(&#64;{{ u.handle }})</span>
                 } @else {
                   <span translate="no">{{ '@' + u.handle }}</span>
                 }
               </h1>
-              <div class="profile-hero__meta">
-                {{ u.email }}
-                @if (memberSince()) { · miembro desde {{ memberSince() }} }
-              </div>
               @if (u.bio) {
-                <p class="profile-hero__bio" style="margin: 8px 0 0; color: var(--wf-ink-2); font-size: 13px; line-height: 1.4; max-width: 480px;">{{ u.bio }}</p>
+                <p class="profile-hero__bio">{{ u.bio }}</p>
               }
               <button type="button" class="btn-wf btn-wf--sm profile-hero__edit"
                       (click)="editProfile()">
@@ -82,16 +85,20 @@ interface Totals {
           </div>
         </header>
 
-        <div class="profile-grid">
+        <!-- 4 columnas: Mi juego / Comunicaciones / Cuenta / Sponsors.
+             Notificaciones se mueve a Comunicaciones por categoría correcta. -->
+        <div class="profile-grid profile-grid--4col">
 
-          <!-- Columna 1: Mi juego -->
+          <!-- Columna 1: Mi juego — todos <a> (navegación) -->
           <div>
             <section class="profile-section profile-section--first">
               <h2 class="profile-section__title">Mi juego</h2>
               <div class="profile-list">
 
                 <a routerLink="/mis-comodines" class="profile-list-item">
-                  <span class="profile-list-item__icon" aria-hidden="true">🎁</span>
+                  <span class="profile-list-item__icon" aria-hidden="true">
+                    <app-icon name="gift" size="md" />
+                  </span>
                   <div class="profile-list-item__body">
                     <div class="profile-list-item__title">Mis comodines</div>
                     <div class="profile-list-item__sub">{{ comodinesSub() }}</div>
@@ -104,7 +111,9 @@ interface Totals {
                 </a>
 
                 <a routerLink="/profile/special-picks" class="profile-list-item">
-                  <span class="profile-list-item__icon" aria-hidden="true">⭐</span>
+                  <span class="profile-list-item__icon" aria-hidden="true">
+                    <app-icon name="star" size="md" />
+                  </span>
                   <div class="profile-list-item__body">
                     <div class="profile-list-item__title">Picks especiales</div>
                     <div class="profile-list-item__sub">Campeón, subcampeón, revelación</div>
@@ -112,8 +121,20 @@ interface Totals {
                   <span class="pill">{{ specialPicksDone() }}/{{ totalSpecial }}</span>
                 </a>
 
+              </div>
+            </section>
+          </div>
+
+          <!-- Columna 2: Comunicaciones — todos <a> (navegación) -->
+          <div>
+            <section class="profile-section profile-section--first">
+              <h2 class="profile-section__title">Comunicaciones</h2>
+              <div class="profile-list">
+
                 <a routerLink="/notificaciones" class="profile-list-item">
-                  <span class="profile-list-item__icon" aria-hidden="true">🔔</span>
+                  <span class="profile-list-item__icon" aria-hidden="true">
+                    <app-icon name="bell" size="md" />
+                  </span>
                   <div class="profile-list-item__body">
                     <div class="profile-list-item__title">Notificaciones</div>
                     <div class="profile-list-item__sub">
@@ -129,29 +150,17 @@ interface Totals {
             </section>
           </div>
 
-          <!-- Columna 2: Sponsors + Cuenta -->
+          <!-- Columna 3: Cuenta — todos <button> (acciones) -->
           <div>
             <section class="profile-section profile-section--first">
-              <h2 class="profile-section__title">Sponsors</h2>
-              <a routerLink="/mis-comodines" class="profile-sponsor"
-                 style="text-decoration:none;color:inherit;">
-                <div class="profile-sponsor__body">
-                  <div class="profile-sponsor__title"><span aria-hidden="true">🎁 </span>Canjear código</div>
-                  <div class="profile-sponsor__sub">¿Tienes código de sponsor?</div>
-                </div>
-                <span class="btn-wf btn-wf--sm btn-wf--ink" style="text-decoration:none;">
-                  Canjear →
-                </span>
-              </a>
-            </section>
-
-            <section class="profile-section">
               <h2 class="profile-section__title">Cuenta</h2>
               <div class="profile-list">
 
                 <button type="button" class="profile-list-item"
                         (click)="openPasswordChange()">
-                  <span class="profile-list-item__icon" aria-hidden="true">🔒</span>
+                  <span class="profile-list-item__icon" aria-hidden="true">
+                    <app-icon name="lock" size="md" />
+                  </span>
                   <div class="profile-list-item__body">
                     <div class="profile-list-item__title">Cambiar contraseña</div>
                   </div>
@@ -160,21 +169,20 @@ interface Totals {
 
                 <button type="button" class="profile-list-item"
                         (click)="openPreferences()">
-                  <span class="profile-list-item__icon" aria-hidden="true">⚙</span>
+                  <span class="profile-list-item__icon" aria-hidden="true">
+                    <app-icon name="settings" size="md" />
+                  </span>
                   <div class="profile-list-item__body">
                     <div class="profile-list-item__title">Preferencias</div>
                   </div>
                   <span class="profile-list-item__chev" aria-hidden="true">›</span>
                 </button>
 
-                @if (daysUntilLock() !== null && daysUntilLock()! === 0) {
-                  <!-- Si el torneo ya empezó, no tiene sentido mostrar "días para cierre" arriba.
-                       Si querés agregar atajo a admin / soporte, va acá. -->
-                }
-
                 <button type="button" class="profile-list-item profile-list-item--danger"
                         (click)="logout()">
-                  <span class="profile-list-item__icon" aria-hidden="true">↩</span>
+                  <span class="profile-list-item__icon" aria-hidden="true">
+                    <app-icon name="logout" size="md" />
+                  </span>
                   <div class="profile-list-item__body">
                     <div class="profile-list-item__title">Cerrar sesión</div>
                   </div>
@@ -184,11 +192,31 @@ interface Totals {
             </section>
           </div>
 
+          <!-- Columna 4: Sponsors — visualmente reducido (less padding, smaller heading) -->
+          <div>
+            <section class="profile-section profile-section--first profile-section--compact">
+              <h2 class="profile-section__title profile-section__title--sm">Sponsors</h2>
+              <div class="profile-list">
+                <button type="button" class="profile-list-item"
+                        (click)="openRedeem()">
+                  <span class="profile-list-item__icon" aria-hidden="true">
+                    <app-icon name="gift" size="md" />
+                  </span>
+                  <div class="profile-list-item__body">
+                    <div class="profile-list-item__title">Canjear código</div>
+                    <div class="profile-list-item__sub">¿Tienes código de sponsor?</div>
+                  </div>
+                  <span class="profile-list-item__chev" aria-hidden="true">›</span>
+                </button>
+              </div>
+            </section>
+          </div>
+
         </div>
 
       </section>
     } @else {
-      <p style="padding:48px;text-align:center;color:var(--wf-ink-3);">
+      <p class="profile-loading">
         Cargando perfil…
       </p>
     }
@@ -202,18 +230,77 @@ interface Totals {
       <app-preferences-modal (closed)="closePreferences()" />
     }
   `,
+  styles: [`
+    :host { display: block; }
+    .profile-hero__h1 {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      flex-wrap: wrap;
+      color: var(--color-primary-black);
+      margin: 0;
+    }
+    .profile-hero__flag {
+      width: 28px;
+      height: 21px;
+      border-radius: 3px;
+      box-shadow: 0 0 0 1px rgba(0,0,0,.08);
+    }
+    .profile-hero__handle-mute {
+      color: var(--color-text-muted);
+      font-weight: normal;
+    }
+    .profile-hero__bio {
+      margin: var(--space-sm) 0 0;
+      color: var(--color-text-secondary, var(--color-text-muted));
+      font-size: var(--fs-sm);
+      line-height: var(--lh-body);
+      max-width: 480px;
+    }
+
+    /* 4-column grid layout (vs prior 2-column).
+       Falls back to fewer columns on narrower viewports. */
+    .profile-grid--4col {
+      display: grid;
+      gap: var(--space-md);
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    @media (max-width: 1100px) {
+      .profile-grid--4col { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 600px) {
+      .profile-grid--4col { grid-template-columns: 1fr; }
+    }
+
+    /* Sponsors section: reduced visual weight per walkthrough doc 14. */
+    .profile-section--compact {
+      padding: var(--space-sm) !important;
+    }
+    .profile-section__title--sm {
+      font-size: var(--fs-sm);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+    }
+
+    .profile-loading {
+      padding: 48px;
+      text-align: center;
+      color: var(--color-text-muted);
+    }
+  `],
 })
 export class ProfileComponent implements OnInit {
   private auth = inject(AuthService);
   private api = inject(ApiService);
   private toast = inject(ToastService);
   private router = inject(Router);
+  private redeemModal = inject(RedeemModalService);
 
   readonly totalSpecial = TOTAL_SPECIAL_PICKS;
 
   user = computed(() => this.auth.user());
   totals = signal<Totals>({ points: 0, exactCount: 0, resultCount: 0, globalRank: null });
-  memberSince = signal<string | null>(null);
   daysUntilLock = signal<number | null>(null);
 
   // Counts del listado "Mi juego"
@@ -233,18 +320,19 @@ export class ProfileComponent implements OnInit {
   });
 
   avatar = computed(() => (this.user()?.handle?.[0] ?? '?').toUpperCase());
-  /** URL PNG de la bandera (CDN flagcdn.com). Reemplaza el emoji que en
-   *  Windows se renderiza como texto "EC". */
-  countryFlagUrl = computed(() => flagImageUrl(this.user()?.country, 40));
+
+  /** Abre el RedeemModal global compartido con sidebar + comodines-list. */
+  openRedeem() {
+    this.redeemModal.open();
+  }
 
   async ngOnInit() {
     const u = this.user();
     if (!u) return;
     try {
-      const [t, leaderboard, profile, tournament] = await Promise.all([
+      const [t, leaderboard, tournament] = await Promise.all([
         this.api.myTotal(u.sub, TOURNAMENT_ID),
         this.api.listLeaderboard(TOURNAMENT_ID, 200),
-        this.api.getUser(u.sub),
         this.api.getTournament(TOURNAMENT_ID),
       ]);
 
@@ -258,14 +346,6 @@ export class ProfileComponent implements OnInit {
         resultCount: myTotal?.resultCount ?? 0,
         globalRank: rankIdx >= 0 ? rankIdx + 1 : null,
       });
-
-      if (profile.data?.createdAt) {
-        this.memberSince.set(
-          new Date(profile.data.createdAt).toLocaleDateString('es-EC', {
-            month: 'short', year: 'numeric',
-          }),
-        );
-      }
 
       if (tournament.data?.specialsLockAt) {
         const lockMs = Date.parse(tournament.data.specialsLockAt);
