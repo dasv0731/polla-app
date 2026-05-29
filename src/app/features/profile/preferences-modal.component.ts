@@ -21,45 +21,53 @@ import { PreferencesService } from '../../core/preferences/preferences.service';
       <section slot="body" class="prefs-section">
         <label class="prefs-row">
           <div class="prefs-row__body">
-            <div class="prefs-row__title">🔔 Sonidos</div>
+            <div class="prefs-row__title">Sonidos</div>
             <div class="prefs-row__sub">Sonido corto al recibir una notificación o acertar una trivia.</div>
           </div>
           <input type="checkbox"
+                 role="switch"
                  class="prefs-toggle"
                  [checked]="p().sounds"
+                 [attr.aria-checked]="p().sounds"
                  (change)="toggle('sounds', $event)">
         </label>
 
         <label class="prefs-row">
           <div class="prefs-row__body">
-            <div class="prefs-row__title">⚡ Trivias automáticas</div>
+            <div class="prefs-row__title">Trivias automáticas</div>
             <div class="prefs-row__sub">Abre el modal de trivia automáticamente cuando un partido entra EN VIVO.</div>
           </div>
           <input type="checkbox"
+                 role="switch"
                  class="prefs-toggle"
                  [checked]="p().autoOpenTrivia"
+                 [attr.aria-checked]="p().autoOpenTrivia"
                  (change)="toggle('autoOpenTrivia', $event)">
         </label>
 
         <label class="prefs-row">
           <div class="prefs-row__body">
-            <div class="prefs-row__title">♿ Reducir animaciones</div>
+            <div class="prefs-row__title">Reducir animaciones</div>
             <div class="prefs-row__sub">Desactiva animaciones del tour de bienvenida y transiciones del UI.</div>
           </div>
           <input type="checkbox"
+                 role="switch"
                  class="prefs-toggle"
                  [checked]="p().reduceMotion"
+                 [attr.aria-checked]="p().reduceMotion"
                  (change)="toggle('reduceMotion', $event)">
         </label>
 
         <label class="prefs-row">
           <div class="prefs-row__body">
-            <div class="prefs-row__title">🕐 Hora local del browser</div>
+            <div class="prefs-row__title">Hora local del browser</div>
             <div class="prefs-row__sub">Muestra los kickoffs en tu zona horaria. Si lo apagas, se usa la hora del estadio.</div>
           </div>
           <input type="checkbox"
+                 role="switch"
                  class="prefs-toggle"
                  [checked]="p().localKickoffTime"
+                 [attr.aria-checked]="p().localKickoffTime"
                  (change)="toggle('localKickoffTime', $event)">
         </label>
       </section>
