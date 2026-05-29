@@ -339,6 +339,8 @@ export class ApiService {
     description?: string;
     imageKey?: string;
     comodinesEnabled?: boolean;
+    entryFeeEnabled?: boolean;
+    entryFeeInstructions?: string;
   }): ReturnType<typeof apiClient.mutations.createGroup>;
   createGroup(
     name: string,
@@ -355,6 +357,8 @@ export class ApiService {
       description?: string;
       imageKey?: string;
       comodinesEnabled?: boolean;
+      entryFeeEnabled?: boolean;
+      entryFeeInstructions?: string;
     },
     tournamentId?: string,
     mode?: 'SIMPLE' | 'COMPLETE',
@@ -364,9 +368,6 @@ export class ApiService {
     const input = typeof a === 'string'
       ? { name: a, tournamentId: tournamentId!, mode: mode!, description, imageKey }
       : a;
-    // comodinesEnabled solo se propaga si vino definido. El schema todavía
-    // no está deployado en este sandbox (Task 5 hará amplify push); por eso
-    // el cast as never — Task 5 elimina este cast cuando regenere los tipos.
     return apiClient.mutations.createGroup({
       name: input.name,
       tournamentId: input.tournamentId,
@@ -376,10 +377,28 @@ export class ApiService {
       ...('comodinesEnabled' in input && input.comodinesEnabled !== undefined
         ? { comodinesEnabled: input.comodinesEnabled }
         : {}),
+      ...('entryFeeEnabled' in input && input.entryFeeEnabled !== undefined
+        ? { entryFeeEnabled: input.entryFeeEnabled }
+        : {}),
+      ...('entryFeeInstructions' in input && input.entryFeeInstructions !== undefined
+        ? { entryFeeInstructions: input.entryFeeInstructions }
+        : {}),
     } as never);
   }
-  updateGroup(input: { id: string; name?: string; description?: string | null; imageKey?: string | null }) {
-    return apiClient.models.Group.update(input);
+  updateGroup(input: {
+    id: string;
+    name?: string;
+    description?: string | null;
+    imageKey?: string | null;
+    entryFeeEnabled?: boolean;
+    entryFeeInstructions?: string | null;
+  }) {
+    return apiClient.models.Group.update(input as never);
+  }
+  /** Admin-only: mark a member's entry fee paid (paid=true) or revert it
+   *  (paid=false). Validated server-side against Group.adminUserId. */
+  markEntryFeePaid(input: { groupId: string; userId: string; paid: boolean }) {
+    return apiClient.mutations.markEntryFeePaid(input as never);
   }
   joinGroup(code: string) {
     return apiClient.mutations.joinGroup({ code });

@@ -13,6 +13,9 @@ export const DOMAIN_ERROR_COPY: Record<string, string> = {
   COMODINES_REQUIRES_COMPLETE_MODE: 'Los comodines solo aplican a Modo Completo. Únete a un grupo en modo completo para participar.',
   COMODIN_CAP_REACHED: 'Ya tienes 5 comodines (el techo). Usa o deja caducar uno antes de canjear más.',
   COMODIN_SPONSOR_LIMIT_REACHED: 'Ya canjeaste 2 códigos de sponsor (el máximo por esa vía). El comodín no se acreditó.',
+  ENTRY_FEE_INSTRUCTIONS_REQUIRED: 'Las instrucciones son obligatorias si activás la cuota.',
+  ENTRY_FEE_INSTRUCTIONS_TOO_LONG: 'Las instrucciones no pueden superar los 500 caracteres.',
+  ENTRY_FEE_NOT_GROUP_ADMIN: 'Solo el admin del grupo puede marcar cuotas.',
 };
 
 export function humanizeError(e: unknown): string {
