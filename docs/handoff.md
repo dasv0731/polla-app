@@ -106,7 +106,7 @@ Copiadas a `~/.claude/skills/`:
 | `/picks/trivia/:matchId` (`TriviaComponent` full page) | sin trigger en UI (la trivia moderna usa modal global) | candidato a borrar (verificar primero que no se linkea desde notifs externas) |
 | `/groups/new` (`GroupCreateComponent`) | sin routerLink (todo el flujo es modal `openCreate()`) | borrar componente + ruta, o mantener como fallback documentado |
 | `/admin/bracket` (`AdminBracketComponent`) | ruta registrada pero NO está en admin nav actual | agregar al admin sidebar |
-| `/admin/articles` (`AdminArticlesComponent`) | ruta registrada pero NO está en admin nav actual | agregar al admin sidebar |
+| ~~`/admin/articles` (`AdminArticlesComponent`)~~ | **eliminada en A4 cleanup (2026-05-28)** — Fase D decision. `Article` model backend retenido para integración con polla-public (right-rail). | — |
 
 ### 🔁 Bucles/fricción detectados
 
