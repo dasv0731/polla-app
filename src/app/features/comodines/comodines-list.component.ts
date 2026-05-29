@@ -225,7 +225,7 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
         <div class="com-grid">
           @for (c of filteredComodines(); track c.id) {
             <div class="com-card"
-                 [id]="c.status === 'PENDING_TYPE_CHOICE' ? 'card-pending-' + c.id : null"
+                 [id]="'card-' + c.id"
                  [class.com-card--pending]="c.status === 'PENDING_TYPE_CHOICE'"
                  [class.com-card--available]="c.status === 'UNASSIGNED'"
                  [class.com-card--used]="c.status === 'ASSIGNED' || c.status === 'ACTIVATED'"
@@ -1198,7 +1198,7 @@ export class ComodinesListComponent implements OnInit {
   scrollToFirstPending() {
     const first = this.comodines().find((c) => c.status === 'PENDING_TYPE_CHOICE');
     if (!first) return;
-    const el = document.getElementById('card-pending-' + first.id);
+    const el = document.getElementById('card-' + first.id);
     el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
