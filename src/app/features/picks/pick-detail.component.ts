@@ -95,7 +95,7 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
                 <div class="mh__pick">
                   <span class="mh__pick-label">Tu pick</span>
                   <div class="mh__pick-inputs">
-                    <input type="text" inputmode="numeric" maxlength="1"
+                    <input type="text" inputmode="numeric" maxlength="2"
                            class="mh__pick-input"
                            autocomplete="off" spellcheck="false"
                            [value]="home() ?? ''"
@@ -103,7 +103,7 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
                            [attr.aria-label]="'Goles ' + teamName(m.homeTeamId)"
                            (input)="onBannerInput('home', $event)">
                     <span class="mh__pick-sep">—</span>
-                    <input type="text" inputmode="numeric" maxlength="1"
+                    <input type="text" inputmode="numeric" maxlength="2"
                            class="mh__pick-input"
                            autocomplete="off" spellcheck="false"
                            [value]="away() ?? ''"
@@ -525,8 +525,9 @@ export class PickDetailComponent implements OnInit, OnDestroy {
   onBannerInput(side: 'home' | 'away', event: Event) {
     if (this.isPast()) return;
     const input = event.target as HTMLInputElement;
-    const raw = input.value.replace(/[^0-9]/g, '').slice(-1);
-    const v = raw === '' ? 0 : Math.max(0, Math.min(9, parseInt(raw, 10)));
+    // Bug #6 fix: aceptamos 2 dígitos (0-99) para marcadores 10+.
+    const raw = input.value.replace(/[^0-9]/g, '').slice(-2);
+    const v = raw === '' ? 0 : Math.max(0, Math.min(99, parseInt(raw, 10)));
     if (raw !== input.value) input.value = raw;
     const sig = side === 'home' ? this.home : this.away;
     sig.set(v);

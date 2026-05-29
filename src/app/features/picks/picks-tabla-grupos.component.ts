@@ -299,7 +299,7 @@ interface Totals {
 
                       <div class="score">
                         @if (isUpcoming) {
-                          <input type="text" inputmode="numeric" maxlength="1"
+                          <input type="text" inputmode="numeric" maxlength="2"
                                  class="score__input"
                                  autocomplete="off" spellcheck="false"
                                  [value]="bannerScore(m.id, 'home')"
@@ -307,7 +307,7 @@ interface Totals {
                                  (input)="onScoreInput(m.id, 'home', $event)"
                                  [attr.aria-label]="'Goles ' + teamName(m.homeTeamId)">
                           <span>—</span>
-                          <input type="text" inputmode="numeric" maxlength="1"
+                          <input type="text" inputmode="numeric" maxlength="2"
                                  class="score__input"
                                  autocomplete="off" spellcheck="false"
                                  [value]="bannerScore(m.id, 'away')"
@@ -497,8 +497,9 @@ export class PicksTablaGruposComponent implements OnInit {
    *  con "0" automáticamente — sigue mostrando placeholder. */
   onScoreInput(matchId: string, side: 'home' | 'away', event: Event) {
     const input = event.target as HTMLInputElement;
-    const raw = input.value.replace(/[^0-9]/g, '').slice(-1);
-    const v = raw === '' ? 0 : Math.max(0, Math.min(9, parseInt(raw, 10)));
+    // Bug #6 fix: aceptamos 2 dígitos (0-99) para marcadores 10+.
+    const raw = input.value.replace(/[^0-9]/g, '').slice(-2);
+    const v = raw === '' ? 0 : Math.max(0, Math.min(99, parseInt(raw, 10)));
     if (raw !== input.value) input.value = raw;
 
     const cur = this.currentScores(matchId);

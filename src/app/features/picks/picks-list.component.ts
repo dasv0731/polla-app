@@ -285,7 +285,7 @@ interface TriviaInfo {
                   </div>
                   <div class="score" (click)="$event.stopPropagation()">
                     @if (upcoming) {
-                      <input type="text" inputmode="numeric" maxlength="1"
+                      <input type="text" inputmode="numeric" maxlength="2"
                              class="score__input"
                              autocomplete="off" spellcheck="false"
                              [value]="scoreInputValue(m, 'home')"
@@ -294,7 +294,7 @@ interface TriviaInfo {
                              (click)="$event.stopPropagation()"
                              (input)="onScoreInput(m.id, 'home', $event)">
                       <span>—</span>
-                      <input type="text" inputmode="numeric" maxlength="1"
+                      <input type="text" inputmode="numeric" maxlength="2"
                              class="score__input"
                              autocomplete="off" spellcheck="false"
                              [value]="scoreInputValue(m, 'away')"
@@ -727,13 +727,14 @@ export class PicksListComponent implements OnInit, OnDestroy {
    *  away no se rellena con "0" automáticamente — sigue mostrando
    *  empty/placeholder.
    *
-   *  Slice(-1) toma el ÚLTIMO dígito tipeado: previene que con un
-   *  "0" existente y typear "1", input.value "01" se reduzca a "0"
-   *  en lugar de "1". */
+   *  Bug #6 fix: aceptamos 2 dígitos (max 99) para soportar marcadores
+   *  10+ que sí pueden ocurrir (España 10-0 Malta). slice(-2) preserva
+   *  los últimos 2 caracteres tipeados.
+   */
   onScoreInput(matchId: string, side: 'home' | 'away', event: Event) {
     const input = event.target as HTMLInputElement;
-    const raw = input.value.replace(/[^0-9]/g, '').slice(-1);
-    const v = raw === '' ? 0 : Math.max(0, Math.min(9, parseInt(raw, 10)));
+    const raw = input.value.replace(/[^0-9]/g, '').slice(-2);
+    const v = raw === '' ? 0 : Math.max(0, Math.min(99, parseInt(raw, 10)));
     if (raw !== input.value) input.value = raw;
 
     const cur = this.currentScores(matchId);
