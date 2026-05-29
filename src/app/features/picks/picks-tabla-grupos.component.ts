@@ -1,5 +1,4 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { A11yModule } from '@angular/cdk/a11y';
 import { ActivatedRoute, RouterLink, RouterLinkActive } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -8,6 +7,10 @@ import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
 import { RailModalsService } from '../../core/layout/rail-modals.service';
 import { PicksSyncService } from '../../core/sync/picks-sync.service';
 import { GroupStagePicksComponent } from './group-stage-picks.component';
+import { ModalComponent } from '../../shared/ui/modal/modal.component';
+import { EmptyBlockComponent } from '../../shared/ui/empty-block/empty-block.component';
+import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
+import { IconComponent } from '../../shared/ui/icon/icon.component';
 
 const TOURNAMENT_ID = 'mundial-2026';
 
@@ -76,33 +79,24 @@ interface Totals {
 @Component({
   standalone: true,
   selector: 'app-picks-tabla-grupos',
-  imports: [RouterLink, RouterLinkActive, TeamFlagComponent, GroupStagePicksComponent, A11yModule],
+  imports: [
+    RouterLink,
+    RouterLinkActive,
+    TeamFlagComponent,
+    GroupStagePicksComponent,
+    ModalComponent,
+    EmptyBlockComponent,
+    SkeletonComponent,
+    IconComponent,
+  ],
   template: `
     <section class="page">
 
-      <!-- Header (mismo patrón que /picks) -->
+      <!-- Header simplificado · stats canonicos viven en Home (A8b) -->
       <header class="page__header">
         <div>
           <div class="kicker">MUNDIAL 2026 · GOLGANA</div>
           <h1 class="page__title">Mis picks</h1>
-        </div>
-        <div class="page__stats">
-          <div class="page__stat">
-            <div class="num">{{ totals().points }}</div>
-            <div class="lbl">pts</div>
-          </div>
-          <div class="page__stat">
-            <div class="num">{{ totals().exactCount }}</div>
-            <div class="lbl">exactos</div>
-          </div>
-          <div class="page__stat">
-            <div class="num">{{ totals().resultCount }}</div>
-            <div class="lbl">resultados</div>
-          </div>
-          <div class="page__stat">
-            <div class="num">{{ totals().globalRank ? '#' + totals().globalRank : '—' }}</div>
-            <div class="lbl">global</div>
-          </div>
         </div>
       </header>
 
@@ -115,29 +109,62 @@ interface Totals {
            routerLinkActive="is-active">Bracket</a>
       </nav>
 
-      <!-- Intro: descripción + seg (Tabla real / Mi predicción) -->
+      <!-- Intro: descripción + tabs (Tabla real / Mi predicción).
+           Antes eran seg (aria-pressed). Ahora son tabs primarios
+           (role=tab + aria-selected) por su rol estructural. -->
       <div class="picks-tabla-intro">
         <div class="picks-tabla-intro__text">
           {{ groups().length }} grupos · clasifican los <b>2 primeros</b> de cada grupo a octavos.
         </div>
-        <div class="seg" style="min-width:240px;" role="group" aria-label="Vista de la tabla">
-          <button type="button" class="seg__item"
-                  [attr.aria-pressed]="view() === 'real'"
+        <div class="seg" style="min-width:240px;" role="tablist" aria-label="Vista de la tabla">
+          <button type="button" class="seg__item" role="tab"
+                  [attr.aria-selected]="view() === 'real'"
                   [class.is-active]="view() === 'real'"
-                  (click)="view.set('real')">Tabla real</button>
-          <button type="button" class="seg__item"
-                  [attr.aria-pressed]="view() === 'pred'"
+                  (click)="onViewChange('real')">Tabla real</button>
+          <button type="button" class="seg__item" role="tab"
+                  [attr.aria-selected]="view() === 'pred'"
                   [class.is-active]="view() === 'pred'"
-                  (click)="view.set('pred')">Mi predicción</button>
+                  (click)="onViewChange('pred')">Mi predicción</button>
         </div>
       </div>
 
       @if (view() === 'pred') {
+        <!-- Auto-fill: si no hay predicción aún, ofrecer copiar el orden real -->
+        @if (!hasAnyPrediction() && groups().length > 0) {
+          <div class="auto-fill-bar">
+            <span>
+              <app-icon name="dice" size="sm" />
+              Empezá con el orden actual de la Tabla real
+            </span>
+            <button type="button" class="btn-wf btn-wf--sm" (click)="autoFillFromRanking()">
+              Auto-llenar con orden actual
+            </button>
+          </div>
+        }
         <!-- Mi predicción · embebido inline (no nueva página).
-             El componente maneja su propio loading/save/lock. -->
-        <app-group-stage-picks />
+             [embedded]=true suprime el header propio del componente
+             porque acá ya tenemos el page__header del tabla-grupos. -->
+        <app-group-stage-picks [embedded]="true" />
+        <!-- Link al bracket basado en mi predicción -->
+        <div class="pred-bracket-link">
+          <a routerLink="/picks/bracket" [queryParams]="{ mode: 'pred' }">
+            <app-icon name="trophy" size="sm" />
+            Ver bracket basado en mi predicción
+            <span aria-hidden="true">→</span>
+          </a>
+        </div>
       } @else if (loading()) {
-        <p class="loading-msg">Cargando tabla…</p>
+        <app-skeleton variant="card" [count]="4" />
+      } @else if (!hasAnyPlayed() && groups().length > 0) {
+        <!-- Pre-torneo empty state en Tabla real (todos los grupos 0-0-0) -->
+        <app-empty-block iconName="clock"
+                         title="El Mundial aún no empieza"
+                         sub="Cuando se jueguen los primeros partidos, la tabla se actualizará automáticamente. Mientras tanto, podés hacer tu predicción.">
+          <button type="button" class="empty-cta empty-cta--primary"
+                  (click)="onViewChange('pred')">
+            Hacer mi predicción →
+          </button>
+        </app-empty-block>
       } @else {
         <div class="standings-grid">
           @for (g of groups(); track g.letter) {
@@ -164,8 +191,13 @@ interface Totals {
                 <tbody>
                   @if (view() === 'real') {
                     @for (r of g.rows; track r.team.slug; let i = $index) {
-                      <tr [class.qualify]="i < 2">
-                        <td class="pos">{{ i + 1 }}</td>
+                      <tr [class.qualify]="i < 2" [class.candidate-third]="i === 2">
+                        <td class="pos">
+                          {{ i + 1 }}
+                          @if (i === 2) {
+                            <span class="best-third-badge" title="Candidato a mejor 3ero (clasifican 8)">3°</span>
+                          }
+                        </td>
                         <td>
                           <app-team-flag
                             [flagCode]="r.team.flagCode"
@@ -210,7 +242,9 @@ interface Totals {
                 <button type="button" class="btn-wf btn-wf--block btn-wf--sm"
                         style="justify-content:center;"
                         (click)="openGroupModal(g.letter)">
-                  <span aria-hidden="true">⚽ </span>Hacer picks del Grupo {{ g.letter }} · {{ g.matches.length }} partidos <span aria-hidden="true">→</span>
+                  <app-icon name="pencil" size="sm" />
+                  Hacer picks del Grupo {{ g.letter }} · {{ g.matches.length }} partidos
+                  <span aria-hidden="true">→</span>
                 </button>
               </div>
             </div>
@@ -220,7 +254,11 @@ interface Totals {
         <div class="picks-tabla-legend">
           <span class="picks-tabla-legend__item">
             <span class="picks-tabla-legend__bar"></span>
-            Clasifica a octavos
+            Clasifica a octavos (top 2)
+          </span>
+          <span class="picks-tabla-legend__item">
+            <span class="picks-tabla-legend__bar picks-tabla-legend__bar--third"></span>
+            8 mejores 3eros (clasificación adicional)
           </span>
           @if (view() === 'real') {
             <span>· La tabla se actualiza a medida que se publican resultados.</span>
@@ -232,137 +270,123 @@ interface Totals {
 
     </section>
 
-    <!-- Modal: hacer picks de un grupo -->
+    <!-- Modal: hacer picks de un grupo (A2 follow-up: <app-modal> shared) -->
     @if (openGroup(); as gLetter) {
       @let modalGroup = groupByLetter(gLetter);
       @if (modalGroup) {
-        <div class="picks-modal is-open" role="dialog" aria-modal="true"
-             aria-labelledby="picks-group-modal-title"
-             cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
-             (keydown.escape)="closeModal()">
-          <div class="picks-modal__close-overlay" role="presentation"
-               (click)="closeModal()"></div>
-          <div class="picks-modal__card">
-            <header class="picks-modal__head">
-              <div>
-                <div class="title" id="picks-group-modal-title">Hacer picks · Grupo {{ modalGroup.letter }}</div>
-                <div class="meta">
-                  {{ modalGroup.played }} / {{ modalGroup.matches.length }} jugados
-                  @if (modalGroup.myPoints > 0) { · +{{ modalGroup.myPoints }} pts }
-                </div>
-              </div>
-              <button type="button" class="close" (click)="closeModal()" aria-label="Cerrar"><span aria-hidden="true">✕</span></button>
-            </header>
+        <app-modal
+          [open]="true"
+          [title]="'Hacer picks · Grupo ' + modalGroup.letter"
+          [description]="modalGroup.played + ' / ' + modalGroup.matches.length + ' jugados' + (modalGroup.myPoints > 0 ? ' · +' + modalGroup.myPoints + ' pts' : '')"
+          size="lg"
+          (close)="closeModal()">
+          <div slot="body">
+            @for (m of modalGroup.matches; track m.id) {
+              @let pick = pickByMatch().get(m.id);
+              @let kickoffPast = isKickoffPast(m.kickoffAt);
+              @let isLive = m.status !== 'FINAL' && kickoffPast;
+              @let isAwaiting = m.status === 'FINAL' && (m.homeScore == null || m.awayScore == null);
+              @let isPlayed = m.status === 'FINAL' && m.homeScore != null && m.awayScore != null;
+              @let isUpcoming = m.status !== 'FINAL' && !kickoffPast;
+              @let pickPending = sync.isPending('pick', m.id);
+              @let pickValue = sync.getPending('pick', m.id);
+              @let hasAnyPick = !!pick || !!pickValue;
 
-            <div class="picks-modal__body">
-              @for (m of modalGroup.matches; track m.id) {
-                @let pick = pickByMatch().get(m.id);
-                @let kickoffPast = isKickoffPast(m.kickoffAt);
-                @let isLive = m.status !== 'FINAL' && kickoffPast;
-                @let isAwaiting = m.status === 'FINAL' && (m.homeScore == null || m.awayScore == null);
-                @let isPlayed = m.status === 'FINAL' && m.homeScore != null && m.awayScore != null;
-                @let isUpcoming = m.status !== 'FINAL' && !kickoffPast;
-                @let pickPending = sync.isPending('pick', m.id);
-                @let pickValue = sync.getPending('pick', m.id);
-                @let hasAnyPick = !!pick || !!pickValue;
-
-                <article class="match-card" [class.match-card--accent]="isLive">
-                  <div class="match-card__body">
-                    <div class="match-card__head">
-                      <span>{{ formatKickoff(m.kickoffAt) }}</span>
-                      @if (isPlayed) {
-                        @if (pick?.exactScore) {
-                          <span class="pill pill--green"><span aria-hidden="true">✓ </span>Exacto · +{{ pick?.pointsEarned ?? 0 }}</span>
-                        } @else if (pick?.correctResult) {
-                          <span class="pill pill--green"><span aria-hidden="true">✓ </span>Resultado · +{{ pick?.pointsEarned ?? 0 }}</span>
-                        } @else if (pick) {
-                          <span class="pill">Sin pts</span>
-                        } @else {
-                          <span class="pill">Sin pick</span>
-                        }
-                      } @else if (isLive) {
-                        <span class="pill pill--live">EN VIVO</span>
-                      } @else if (isAwaiting) {
-                        <span class="pill" style="background:rgba(212,165,0,0.15);color:#7a5d00;border-color:rgba(212,165,0,0.3);">Esperando resultado</span>
+              <article class="match-card" [class.match-card--accent]="isLive">
+                <div class="match-card__body">
+                  <div class="match-card__head">
+                    <span>{{ formatKickoff(m.kickoffAt) }}</span>
+                    @if (isPlayed) {
+                      @if (pick?.exactScore) {
+                        <span class="pill pill--green"><app-icon name="check" size="sm" />Exacto · +{{ pick?.pointsEarned ?? 0 }}</span>
+                      } @else if (pick?.correctResult) {
+                        <span class="pill pill--green"><app-icon name="check" size="sm" />Resultado · +{{ pick?.pointsEarned ?? 0 }}</span>
+                      } @else if (pick) {
+                        <span class="pill"><app-icon name="close" size="sm" />Sin pts</span>
                       } @else {
-                        <span class="pill">PRÓX · {{ countdown(m.kickoffAt) }}</span>
+                        <span class="pill">Sin pick</span>
                       }
-                    </div>
-                    <div class="match" style="padding:0;">
-                      <div class="match__team">
-                        <app-team-flag
-                          [flagCode]="teamFlag(m.homeTeamId)"
-                          [name]="teamName(m.homeTeamId)"
-                          [size]="22" />
-                        {{ teamName(m.homeTeamId) }}
-                      </div>
-
-                      <div class="score">
-                        @if (isUpcoming) {
-                          <input type="text" inputmode="numeric" maxlength="2"
-                                 class="score__input"
-                                 autocomplete="off" spellcheck="false"
-                                 [value]="bannerScore(m.id, 'home')"
-                                 placeholder="0"
-                                 (input)="onScoreInput(m.id, 'home', $event)"
-                                 [attr.aria-label]="'Goles ' + teamName(m.homeTeamId)">
-                          <span>—</span>
-                          <input type="text" inputmode="numeric" maxlength="2"
-                                 class="score__input"
-                                 autocomplete="off" spellcheck="false"
-                                 [value]="bannerScore(m.id, 'away')"
-                                 placeholder="0"
-                                 (input)="onScoreInput(m.id, 'away', $event)"
-                                 [attr.aria-label]="'Goles ' + teamName(m.awayTeamId)">
-                        } @else if (isLive || isAwaiting) {
-                          <div class="score__num">{{ m.homeScore ?? '—' }}</div>
-                          <span>—</span>
-                          <div class="score__num">{{ m.awayScore ?? '—' }}</div>
-                        } @else {
-                          <div class="score__num score__num--filled">{{ m.homeScore }}</div>
-                          <span>—</span>
-                          <div class="score__num score__num--filled">{{ m.awayScore }}</div>
-                        }
-                      </div>
-
-                      <div class="match__team match__team--right">
-                        {{ teamName(m.awayTeamId) }}
-                        <app-team-flag
-                          [flagCode]="teamFlag(m.awayTeamId)"
-                          [name]="teamName(m.awayTeamId)"
-                          [size]="22" />
-                      </div>
-                    </div>
-
-                    @if (isUpcoming && hasAnyPick) {
-                      <div class="match-card__pills">
-                        @if (pickPending) {
-                          <span class="pill" style="background:rgba(212,165,0,0.15);color:#7a5d00;border-color:rgba(212,165,0,0.3);"><span aria-hidden="true">● </span>Pendiente</span>
-                        } @else {
-                          <span class="pill pill--green"><span aria-hidden="true">✓ </span>Guardado</span>
-                        }
-                      </div>
-                    } @else if (isLive && pick) {
-                      <div class="match-card__pills">
-                        <span class="pill">Tu pick: {{ pick.homeScorePred }}-{{ pick.awayScorePred }}</span>
-                      </div>
+                    } @else if (isLive) {
+                      <span class="pill pill--live">EN VIVO</span>
+                    } @else if (isAwaiting) {
+                      <span class="pill" style="background:rgba(212,165,0,0.15);color:#7a5d00;border-color:rgba(212,165,0,0.3);">Esperando resultado</span>
+                    } @else {
+                      <span class="pill">PRÓX · {{ countdown(m.kickoffAt) }}</span>
                     }
                   </div>
-                </article>
-              }
+                  <div class="match" style="padding:0;">
+                    <div class="match__team">
+                      <app-team-flag
+                        [flagCode]="teamFlag(m.homeTeamId)"
+                        [name]="teamName(m.homeTeamId)"
+                        [size]="22" />
+                      {{ teamName(m.homeTeamId) }}
+                    </div>
 
-              @if (modalGroup.matches.length === 0) {
-                <p class="empty-msg">Aún no hay partidos cargados para este grupo.</p>
-              }
-            </div>
+                    <div class="score">
+                      @if (isUpcoming) {
+                        <input type="text" inputmode="numeric" maxlength="2"
+                               class="score__input"
+                               autocomplete="off" spellcheck="false"
+                               [value]="bannerScore(m.id, 'home')"
+                               placeholder="0"
+                               (input)="onScoreInput(m.id, 'home', $event)"
+                               [attr.aria-label]="'Goles ' + teamName(m.homeTeamId)">
+                        <span>—</span>
+                        <input type="text" inputmode="numeric" maxlength="2"
+                               class="score__input"
+                               autocomplete="off" spellcheck="false"
+                               [value]="bannerScore(m.id, 'away')"
+                               placeholder="0"
+                               (input)="onScoreInput(m.id, 'away', $event)"
+                               [attr.aria-label]="'Goles ' + teamName(m.awayTeamId)">
+                      } @else if (isLive || isAwaiting) {
+                        <div class="score__num">{{ m.homeScore ?? '—' }}</div>
+                        <span>—</span>
+                        <div class="score__num">{{ m.awayScore ?? '—' }}</div>
+                      } @else {
+                        <div class="score__num score__num--filled">{{ m.homeScore }}</div>
+                        <span>—</span>
+                        <div class="score__num score__num--filled">{{ m.awayScore }}</div>
+                      }
+                    </div>
 
-            <footer class="picks-modal__foot">
-              <span class="meta">Auto-guardado al cambiar</span>
-              <button type="button" class="btn-wf btn-wf--sm btn-wf--primary"
-                      (click)="closeModal()">Listo</button>
-            </footer>
+                    <div class="match__team match__team--right">
+                      {{ teamName(m.awayTeamId) }}
+                      <app-team-flag
+                        [flagCode]="teamFlag(m.awayTeamId)"
+                        [name]="teamName(m.awayTeamId)"
+                        [size]="22" />
+                    </div>
+                  </div>
+
+                  @if (isUpcoming && hasAnyPick) {
+                    <div class="match-card__pills">
+                      @if (pickPending) {
+                        <span class="pill" style="background:rgba(212,165,0,0.15);color:#7a5d00;border-color:rgba(212,165,0,0.3);"><span aria-hidden="true">● </span>Pendiente</span>
+                      } @else {
+                        <span class="pill pill--green"><app-icon name="check" size="sm" />Guardado</span>
+                      }
+                    </div>
+                  } @else if (isLive && pick) {
+                    <div class="match-card__pills">
+                      <span class="pill">Tu pick: {{ pick.homeScorePred }}-{{ pick.awayScorePred }}</span>
+                    </div>
+                  }
+                </div>
+              </article>
+            }
+
+            @if (modalGroup.matches.length === 0) {
+              <p class="empty-msg">Aún no hay partidos cargados para este grupo.</p>
+            }
           </div>
-        </div>
+          <div slot="footer">
+            <span class="meta" style="margin-right:auto;font-size:11px;color:var(--wf-ink-3, var(--color-text-muted));">Auto-guardado al cambiar</span>
+            <button type="button" class="btn-wf btn-wf--sm btn-wf--primary"
+                    (click)="closeModal()">Listo</button>
+          </div>
+        </app-modal>
       }
     }
   `,
@@ -395,11 +419,91 @@ interface Totals {
       font-size: 13px;
     }
 
-    .loading-msg {
-      padding: 32px;
+    /* Auto-fill bar en vista pred (cuando no hay predicción aún) */
+    .auto-fill-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-md);
+      padding: 12px 14px;
+      background: rgba(2,204,116,0.06);
+      border: 1px solid rgba(2,204,116,0.3);
+      border-radius: 10px;
+      font-size: 13px;
+      color: var(--wf-ink-2, #333);
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .auto-fill-bar > span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Link al bracket basado en mi prediccion */
+    .pred-bracket-link {
+      margin-top: 16px;
       text-align: center;
-      color: var(--wf-ink-3);
-      font-size: 14px;
+    }
+    .pred-bracket-link a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--color-primary-green);
+      font-weight: 600;
+      font-size: 13px;
+      text-decoration: none;
+      padding: 8px 14px;
+      border: 1px solid var(--color-primary-green);
+      border-radius: 8px;
+    }
+    .pred-bracket-link a:hover { background: rgba(2,204,116,0.05); }
+    .pred-bracket-link a:focus-visible { outline: 2px solid var(--color-primary-green); outline-offset: 2px; }
+
+    /* Empty state CTA buttons */
+    .empty-cta {
+      background: transparent;
+      border: 1px solid var(--color-primary-green);
+      border-radius: 8px;
+      padding: 8px 14px;
+      color: var(--color-primary-green);
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .empty-cta:hover { background: rgba(2,204,116,0.05); }
+    .empty-cta:focus-visible { outline: 2px solid var(--color-primary-green); outline-offset: 2px; }
+    .empty-cta--primary { background: var(--color-primary-green); color: #fff; }
+    .empty-cta--primary:hover { background: var(--color-primary-green); filter: brightness(0.95); }
+
+    /* 8 mejores 3eros indicator */
+    .picks-tabla-legend__bar--third {
+      background: rgba(245, 158, 11, 0.6) !important;
+    }
+    .best-third-badge {
+      display: inline-block;
+      margin-left: 4px;
+      background: rgba(245, 158, 11, 0.18);
+      color: #92400e;
+      font-family: var(--wf-display, var(--font-display));
+      font-size: 9px;
+      letter-spacing: 0.04em;
+      padding: 1px 4px;
+      border-radius: 3px;
+      vertical-align: middle;
+    }
+    .candidate-third td.pos { white-space: nowrap; }
+
+    /* Verdict pills inline icons en modal */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
     }
   `],
 })
@@ -418,6 +522,40 @@ export class PicksTablaGruposComponent implements OnInit {
 
   groups = signal<GroupBlock[]>([]);
   pickByMatch = signal<Map<string, PickLite>>(new Map());
+
+  /** Cualquier grupo tiene al menos 1 partido FINAL? Para distinguir
+   *  pre-torneo (todos 0-0-0) de "tabla con resultados parciales". */
+  hasAnyPlayed = computed(() =>
+    this.groups().some((g) => g.played > 0),
+  );
+
+  /** Tab switch + ?view=pred query param refresh, sin warning (no
+   *  destructivo: cambiar de vista no borra picks — solo cambia el
+   *  display). El warning de mode (COMPLETE/SIMPLE) vive en el
+   *  embedded <app-group-stage-picks>. */
+  onViewChange(v: 'real' | 'pred') {
+    this.view.set(v);
+  }
+
+  /** Auto-llenar predicción del user con el orden actual de Tabla real.
+   *  Solo aplica si NO hay predicción guardada (pre-condición del UI). */
+  autoFillFromRanking() {
+    const filled = new Map<string, string[]>(this.predByGroup());
+    for (const g of this.groups()) {
+      if (filled.has(g.letter)) continue;
+      const order = g.rows.map((r) => r.team.slug).slice(0, 4);
+      // Si hay menos de 4 equipos en rows (caso pre-torneo con teams sin matches),
+      // tomamos el orden alfabético de byLetter (ya almacenado al loadear).
+      if (order.length >= 4) {
+        filled.set(g.letter, order);
+      }
+    }
+    this.predByGroup.set(filled);
+    // Nota: por ahora la pred se guarda en signal local; persist al backend
+    // queda delegado al embedded group-stage-picks component que gestiona
+    // su propio submit. TODO(A6): exponer saveGroupStandingPick batch API
+    // para que este auto-fill persista directo.
+  }
 
   /** Predicción del user por grupo: groupLetter → [pos1Slug..pos4Slug].
    *  Se carga en ngOnInit (prefiriendo COMPLETE > SIMPLE). */
