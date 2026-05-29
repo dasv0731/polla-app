@@ -5,7 +5,7 @@ import { AuthService } from '../../core/auth/auth.service';
 
 interface NotifTarget {
   route: string;
-  fragment: string | null;
+  fragment: string | undefined;
 }
 
 type NotificationKind = 'OBTAINED' | 'ASSIGNED' | 'ACTIVATED' | 'EXPIRED' | 'REMINDER_24H';
@@ -187,10 +187,10 @@ export class NotificationsListComponent implements OnInit {
         // existe; sino, scroll natural al hub de comodines.
         return {
           route: '/mis-comodines',
-          fragment: n.comodinId ? `card-${n.comodinId}` : null,
+          fragment: n.comodinId ? `card-${n.comodinId}` : undefined,
         };
       default:
-        return { route: '/mis-comodines', fragment: null };
+        return { route: '/mis-comodines', fragment: undefined };
     }
   }
 
