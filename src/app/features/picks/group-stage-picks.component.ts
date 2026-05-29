@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CdkDrag, CdkDragDrop, CdkDropList, CdkDropListGroup, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ApiService } from '../../core/api/api.service';
@@ -6,6 +6,9 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { PicksSyncService } from '../../core/sync/picks-sync.service';
 import { GroupActionsService } from '../../core/groups/group-actions.service';
+import { ConfirmDialogService } from '../../shared/ui/confirm-dialog.service';
+import { EmptyBlockComponent } from '../../shared/ui/empty-block/empty-block.component';
+import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
 
 type GameMode = 'SIMPLE' | 'COMPLETE';
 
@@ -34,56 +37,69 @@ interface ServerIdMap {
 @Component({
   standalone: true,
   selector: 'app-group-stage-picks',
-  imports: [CdkDropListGroup, CdkDropList, CdkDrag],
+  imports: [CdkDropListGroup, CdkDropList, CdkDrag, EmptyBlockComponent, TeamFlagComponent],
   template: `
-    <header class="page-header">
-      <div class="page-header__title">
-        <small>Predicciones · fase de grupos</small>
-        <h1>Tabla final por grupo</h1>
-      </div>
-
-      @if (availableModes().length === 0 && !modesLoading()) {
-        <p class="form-card__hint" style="color: var(--color-lost);">
-          Necesitas pertenecer a al menos un grupo privado para ingresar tus predicciones.
-          <button type="button" class="link-green link-green--btn"
-                  (click)="groupActions.openCreate()">Crea uno →</button>
-          <button type="button" class="link-green link-green--btn"
-                  (click)="groupActions.openJoin()">Unirme con código →</button>
-        </p>
-      } @else if (availableModes().length > 1) {
-        <div class="wf-seg" role="tablist" style="max-width: 320px; margin-top: var(--space-md);">
-          @for (m of availableModes(); track m) {
-            <button type="button" class="wf-seg__item"
-                    [class.is-active]="mode() === m"
-                    (click)="switchMode(m)">
-              {{ m === 'COMPLETE' ? 'Modo completo' : 'Modo simple' }}
-            </button>
-          }
+    <!-- Header propio: solo cuando NO está embebido (en tabla-grupos
+         el page__header del parent ya cubre el title). -->
+    @if (!embedded()) {
+      <header class="page-header">
+        <div class="page-header__title">
+          <small>Predicciones · fase de grupos</small>
+          <h1>Tabla final por grupo</h1>
         </div>
-      } @else if (mode()) {
-        <p class="form-card__hint" style="margin-top: var(--space-sm);">
-          Predicción <strong>{{ mode() === 'COMPLETE' ? 'modo completo' : 'modo simple' }}</strong>.
-          @if (mode() === 'COMPLETE') {
-            Cuenta para el ranking global y para tus grupos completos.
-          } @else {
-            Cuenta para tus grupos simples (no afecta el ranking global).
-          }
-        </p>
-      }
+      </header>
+    }
 
-      @if (lockedAt()) {
-        <p class="form-card__hint" style="color: var(--color-lost);">
-          Las predicciones se cerraron al iniciar el torneo
-          ({{ formatLockDate(lockedAt()!) }}). Solo lectura.
-        </p>
-      } @else if (mode()) {
-        <p class="form-card__hint">
-          Arrastra los equipos para predecir cómo terminará cada grupo.
-          Los <strong>cambios se guardan automáticamente en este navegador</strong>.
-          Pulsa <strong>"Guardar en la base"</strong> cuando termines para que cuente.
-        </p>
-      }
-    </header>
+    <!-- Empty state cuando no hay grupos privados: reemplaza .form-card__hint
+         legacy por <app-empty-block> unificado (A1). -->
+    @if (availableModes().length === 0 && !modesLoading()) {
+      <app-empty-block iconName="users"
+                       title="Necesitas un grupo privado"
+                       sub="Para que tus predicciones cuenten, primero unite o creá un grupo.">
+        <button type="button" class="empty-cta empty-cta--primary"
+                (click)="groupActions.openCreate()">Crear grupo</button>
+        <button type="button" class="empty-cta"
+                (click)="groupActions.openJoin()">Unirme con código</button>
+      </app-empty-block>
+    } @else if (availableModes().length > 1) {
+      <!-- Mode switch unificado (role=tablist + aria-selected, igual que
+           special-picks post-A8c). switchMode pide confirm si hay picks. -->
+      <div class="wf-seg" role="tablist" style="max-width: 320px; margin-top: var(--space-md);">
+        @for (m of availableModes(); track m) {
+          <button type="button" class="wf-seg__item" role="tab"
+                  [attr.aria-selected]="mode() === m"
+                  [class.is-active]="mode() === m"
+                  (click)="switchMode(m)">
+            {{ m === 'COMPLETE' ? 'Modo completo' : 'Modo simple' }}
+          </button>
+        }
+      </div>
+    } @else if (mode()) {
+      <p class="form-card__hint" style="margin-top: var(--space-sm);">
+        Predicción <strong>{{ mode() === 'COMPLETE' ? 'modo completo' : 'modo simple' }}</strong>.
+        @if (mode() === 'COMPLETE') {
+          Cuenta para el ranking global y para tus grupos completos.
+        } @else {
+          Cuenta para tus grupos simples (no afecta el ranking global).
+        }
+      </p>
+    }
+
+    @if (lockedAt()) {
+      <p class="form-card__hint" style="color: var(--color-lost);">
+        Las predicciones se cerraron al iniciar el torneo
+        ({{ formatLockDate(lockedAt()!) }}). Solo lectura.
+      </p>
+    } @else if (mode()) {
+      <!-- Contradicción resuelta: SOLO mensaje auto-save (era "se guardan
+           automáticamente" + "Pulsa Guardar"). El botón final sigue pero
+           se llama "Guardar y sincronizar" para clarificar su rol). -->
+      <p class="form-card__hint">
+        Arrastrá los equipos para predecir cómo terminará cada grupo.
+        Tus cambios se <strong>guardan automáticamente</strong> mientras editás.
+        Sincronizá con la base al final para que cuenten en el scoring.
+      </p>
+    }
 
     @if (loading()) {
       <p style="padding: var(--space-2xl); text-align: center;">Cargando equipos…</p>
@@ -109,7 +125,11 @@ interface ServerIdMap {
                       [class.gs-item--eliminated]="idx === 3"
                       [cdkDragDisabled]="!!lockedAt()">
                     <span class="gs-item__pos">{{ idx + 1 }}°</span>
-                    <span class="gs-item__flag fi" [class]="'fi-' + (teamMap().get(slug)?.flagCode || '').toLowerCase()"></span>
+                    <app-team-flag
+                      class="gs-item__flag"
+                      [flagCode]="teamMap().get(slug)?.flagCode || ''"
+                      [name]="teamMap().get(slug)?.name || slug"
+                      [size]="20" />
                     <span class="gs-item__name">{{ teamMap().get(slug)?.name || slug }}</span>
                     @if (idx === 0 || idx === 1) {
                       <span class="gs-item__tag gs-item__tag--ok">✓ Clasifica</span>
@@ -143,7 +163,11 @@ interface ServerIdMap {
                   [attr.aria-pressed]="advancing"
                   (click)="toggleAdvance(slug)">
                 <span class="gs-third__check">{{ advancing ? '✓' : '+' }}</span>
-                <span class="gs-third__flag fi" [class]="'fi-' + (teamMap().get(slug)?.flagCode || '').toLowerCase()"></span>
+                <app-team-flag
+                  class="gs-third__flag"
+                  [flagCode]="teamMap().get(slug)?.flagCode || ''"
+                  [name]="teamMap().get(slug)?.name || slug"
+                  [size]="20" />
                 <span class="gs-third__name">{{ teamMap().get(slug)?.name || slug }}</span>
                 <small class="gs-third__group">Gr {{ groupOf(slug) }}</small>
               </li>
@@ -162,7 +186,7 @@ interface ServerIdMap {
                   style="width: 100%; margin-top: var(--space-md);"
                   [disabled]="saving() || !!lockedAt()"
                   (click)="saveAll()">
-            {{ saving() ? 'Guardando…' : 'Guardar en la base' }}
+            {{ saving() ? 'Sincronizando…' : 'Sincronizar con la base' }}
           </button>
 
           @if (lastSavedAt()) {
@@ -376,15 +400,42 @@ interface ServerIdMap {
       border-radius: 999px;
       background: rgba(0,0,0,0.06);
     }
+
+    /* Empty state CTAs (en <app-empty-block>) */
+    .empty-cta {
+      background: transparent;
+      border: 1px solid var(--color-primary-green);
+      border-radius: 8px;
+      padding: 8px 14px;
+      color: var(--color-primary-green);
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .empty-cta:hover { background: rgba(2,204,116,0.05); }
+    .empty-cta:focus-visible { outline: 2px solid var(--color-primary-green); outline-offset: 2px; }
+    .empty-cta--primary { background: var(--color-primary-green); color: #fff; }
+    .empty-cta--primary:hover { background: var(--color-primary-green); filter: brightness(0.95); }
   `],
 })
 export class GroupStagePicksComponent implements OnInit {
+  /** Cuando se embebe via <app-group-stage-picks [embedded]="true">,
+   *  el componente NO renderiza su propio page-header (el parent ya
+   *  tiene un h1 / kicker). Default false → standalone usa header propio. */
+  embedded = input<boolean>(false);
+
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private toast = inject(ToastService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private sync = inject(PicksSyncService);
+  private confirmDialog = inject(ConfirmDialogService);
   groupActions = inject(GroupActionsService);
 
   GROUP_LETTERS = GROUP_LETTERS;
@@ -414,6 +465,33 @@ export class GroupStagePicksComponent implements OnInit {
   private serverIds: ServerIdMap = { standings: {}, thirds: null };
 
   private currentUserId = '';
+
+  /** ¿Tiene picks no-default guardados? Heurística: si hay advancing
+   *  seleccionados, o si algún grupo NO está en orden alfabético, el
+   *  user editó. Usado para warning al cambiar de modo. */
+  hasAnyPicks = computed(() => {
+    const s = this.staged();
+    if (s.advancing.length > 0) return true;
+    const tg = this.teamGroup();
+    // Reconstruimos default por grupo (sorted alphabetically by slug)
+    const defaultByGroup = new Map<string, string[]>();
+    for (const [slug, gl] of tg) {
+      const arr = defaultByGroup.get(gl) ?? [];
+      arr.push(slug);
+      defaultByGroup.set(gl, arr);
+    }
+    for (const [, arr] of defaultByGroup) arr.sort();
+    // Compara cada grupo contra default
+    for (const g of GROUP_LETTERS) {
+      const current = s.groups[g] ?? [];
+      const def = defaultByGroup.get(g) ?? [];
+      const sliced = def.slice(0, 4);
+      for (let i = 0; i < Math.min(current.length, sliced.length); i++) {
+        if (current[i] !== sliced[i]) return true;
+      }
+    }
+    return false;
+  });
 
   // Lista de los terceros: el equipo que está en pos3 de cada grupo
   thirdsList = computed(() => {
@@ -481,6 +559,18 @@ export class GroupStagePicksComponent implements OnInit {
 
   async switchMode(m: GameMode) {
     if (this.mode() === m) return;
+    // Warning si hay picks no-trivial: cambiar de modo NO migra los
+    // datos (cada modo tiene su propia colección). Consistencia con
+    // special-picks post-A8c.
+    if (this.hasAnyPicks()) {
+      const ok = await this.confirmDialog.ask({
+        title: 'Cambiar modo',
+        message: 'Tus selecciones actuales NO se aplican al otro modo. Las predicciones del modo destino se cargan desde su propia colección — las podés recuperar volviendo al modo actual.',
+        confirmLabel: 'Cambiar modo',
+        cancelLabel: 'Cancelar',
+      });
+      if (!ok) return;
+    }
     this.mode.set(m);
     // Reflejamos en URL para que un refresh respete la selección.
     void this.router.navigate([], {
