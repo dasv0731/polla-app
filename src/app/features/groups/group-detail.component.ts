@@ -19,6 +19,8 @@ interface GroupHeader {
   /** Storage key del logo/avatar del grupo. null si no se subió.
    *  Resuelve a signed URL en `groupImageUrl` signal. */
   imageKey: string | null;
+  /** Reglas, premios, contexto extra. Editable desde /groups/:id/edit. */
+  description: string | null;
   /** Si el grupo tiene comodines activos. Solo aplica a mode=COMPLETE.
    *  Null/undefined = legacy group, tratamos como ON (!== false). */
   comodinesEnabled: boolean | null;
@@ -67,6 +69,9 @@ interface RankRow {
                   @if (isAdminOfGroup()) { · TÚ ERES ADMIN }
                 </div>
                 <h1 class="group-hero__name">{{ g.name }}</h1>
+                @if (g.description) {
+                  <p class="group-hero__description">{{ g.description }}</p>
+                }
                 @if (g.mode === 'COMPLETE') {
                   <div style="margin-top:6px;">
                     @if (g.comodinesEnabled !== false) {
@@ -403,6 +408,18 @@ interface RankRow {
       accent-color: var(--color-primary-green);
       flex-shrink: 0;
     }
+
+    /* Bug #3 fix: description del grupo (B2 latente). Heredamos color
+     * blanco del hero verde, line-breaks preservados si el user los puso
+     * desde el modal de Crear grupo / Editar grupo. */
+    .group-hero__description {
+      font-size: 13px;
+      line-height: 1.45;
+      color: rgba(255,255,255,0.85);
+      margin: 6px 0 0;
+      max-width: 600px;
+      white-space: pre-line;
+    }
   `],
 })
 export class GroupDetailComponent implements OnInit, OnChanges {
@@ -503,6 +520,8 @@ export class GroupDetailComponent implements OnInit, OnChanges {
         // Task 5 regenera schema.d.ts y este cast deja de ser necesario.
         const comodinesEnabled =
           (grp.data as { comodinesEnabled?: boolean | null }).comodinesEnabled ?? null;
+        const description =
+          (grp.data as { description?: string | null }).description ?? null;
         this.group.set({
           id: grp.data.id,
           name: grp.data.name,
@@ -511,6 +530,7 @@ export class GroupDetailComponent implements OnInit, OnChanges {
           createdAt: grp.data.createdAt,
           mode: (grp.data.mode ?? 'COMPLETE') as 'SIMPLE' | 'COMPLETE',
           imageKey,
+          description,
           comodinesEnabled,
           prize1st: grp.data.prize1st ?? null,
           prize2nd: grp.data.prize2nd ?? null,
