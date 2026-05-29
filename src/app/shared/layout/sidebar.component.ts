@@ -3,6 +3,8 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ConfirmDialogService } from '../ui/confirm-dialog.service';
+import { IconComponent } from '../ui/icon/icon.component';
+import { MoreSheetComponent } from '../ui/more-sheet/more-sheet.component';
 
 /**
  * Sidebar negro design-v3. Layout vertical fijo a la izquierda en desktop
@@ -18,7 +20,7 @@ import { ConfirmDialogService } from '../ui/confirm-dialog.service';
 @Component({
   standalone: true,
   selector: 'app-sidebar',
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink, RouterLinkActive, IconComponent, MoreSheetComponent],
   template: `
     <aside class="lsb" aria-label="Navegación principal">
       <a class="lsb__logo" routerLink="/home" aria-label="Inicio">
@@ -26,30 +28,32 @@ import { ConfirmDialogService } from '../ui/confirm-dialog.service';
         <strong class="lsb__brand-sub">Polla Mundialista 2026</strong>
       </a>
 
-      <a routerLink="/home" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
-        <span class="lsb__i" aria-hidden="true">🏠</span><span class="lsb__t">Inicio</span>
-      </a>
-      <a routerLink="/picks" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
-        <span class="lsb__i" aria-hidden="true">⚽</span><span class="lsb__t">Mis picks</span>
-      </a>
-      <a routerLink="/groups" routerLinkActive="active">
-        <span class="lsb__i" aria-hidden="true">👥</span><span class="lsb__t">Grupos</span>
-      </a>
-      <a routerLink="/ranking" routerLinkActive="active">
-        <span class="lsb__i" aria-hidden="true">🏆</span><span class="lsb__t">Ranking</span>
-      </a>
-      <a routerLink="/picks/group-stage/predict" routerLinkActive="active">
-        <span class="lsb__i" aria-hidden="true">🌎</span><span class="lsb__t">Mundial 2026</span>
-      </a>
-      @if (isAdmin()) {
-        <a routerLink="/admin" routerLinkActive="active">
-          <span class="lsb__i" aria-hidden="true">🛠</span><span class="lsb__t">Admin</span>
+      <div class="lsb__nav-desktop">
+        <a routerLink="/home" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+          <app-icon name="home" size="md" /><span class="lsb__t">Inicio</span>
         </a>
-      }
+        <a routerLink="/picks" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+          <app-icon name="dice" size="md" /><span class="lsb__t">Mis picks</span>
+        </a>
+        <a routerLink="/groups" routerLinkActive="active">
+          <app-icon name="users" size="md" /><span class="lsb__t">Grupos</span>
+        </a>
+        <a routerLink="/ranking" routerLinkActive="active">
+          <app-icon name="trophy" size="md" /><span class="lsb__t">Ranking</span>
+        </a>
+        <a routerLink="/picks/group-stage/predict" routerLinkActive="active">
+          <app-icon name="globe" size="md" /><span class="lsb__t">Mundial 2026</span>
+        </a>
+        @if (isAdmin()) {
+          <a routerLink="/admin" routerLinkActive="active">
+            <app-icon name="wrench" size="md" /><span class="lsb__t">Admin</span>
+          </a>
+        }
+      </div>
 
       <div class="lsb__bottom">
         <a routerLink="/notificaciones" routerLinkActive="active" class="lsb__bell">
-          <span class="lsb__i" aria-hidden="true">🔔</span>
+          <app-icon name="bell" size="md" />
           <span class="lsb__t">Notificaciones</span>
           @if (unreadCount() > 0) {
             <span class="lsb__bell-badge"
@@ -91,7 +95,62 @@ import { ConfirmDialogService } from '../ui/confirm-dialog.service';
           }
         </div>
       </div>
+
+      <!-- MOBILE BOTTOM-NAV (5 items + Más) - hidden on desktop via CSS -->
+      <nav class="lsb__nav-mobile" aria-label="Navegación móvil">
+        <a routerLink="/home" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+          <app-icon name="home" size="md" />
+          <span>Inicio</span>
+        </a>
+        <a routerLink="/picks" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+          <app-icon name="dice" size="md" />
+          <span>Picks</span>
+        </a>
+        <a routerLink="/groups" routerLinkActive="active">
+          <app-icon name="users" size="md" />
+          <span>Grupos</span>
+        </a>
+        <a routerLink="/ranking" routerLinkActive="active">
+          <app-icon name="trophy" size="md" />
+          <span>Ranking</span>
+        </a>
+        <button type="button" (click)="toggleMore()"
+                [class.active]="moreOpen()"
+                [attr.aria-expanded]="moreOpen()"
+                aria-haspopup="dialog">
+          <app-icon name="plus" size="md" />
+          <span>Más</span>
+        </button>
+      </nav>
     </aside>
+
+    <app-more-sheet [open]="moreOpen()" (close)="moreOpen.set(false)">
+      <a class="more-sheet__item" routerLink="/picks/group-stage/predict" (click)="moreOpen.set(false)">
+        <app-icon name="globe" size="md" />
+        <span>Mundial 2026</span>
+      </a>
+      <a class="more-sheet__item" routerLink="/comodines" (click)="moreOpen.set(false)">
+        <app-icon name="gift" size="md" />
+        <span>Comodines</span>
+      </a>
+      <a class="more-sheet__item" routerLink="/notificaciones" (click)="moreOpen.set(false)">
+        <app-icon name="bell" size="md" />
+        <span>Notificaciones</span>
+        @if (unreadCount() > 0) {
+          <span class="more-sheet__badge">{{ unreadCount() }}</span>
+        }
+      </a>
+      <a class="more-sheet__item" routerLink="/profile" (click)="moreOpen.set(false)">
+        <app-icon name="settings" size="md" />
+        <span>Perfil</span>
+      </a>
+      @if (isAdmin()) {
+        <a class="more-sheet__item" routerLink="/admin" (click)="moreOpen.set(false)">
+          <app-icon name="wrench" size="md" />
+          <span>Admin</span>
+        </a>
+      }
+    </app-more-sheet>
   `,
   styles: [`
     :host { display: contents; }
@@ -297,6 +356,42 @@ import { ConfirmDialogService } from '../ui/confirm-dialog.service';
       font-weight: 700;
     }
 
+    /* Desktop default: hide mobile nav */
+    .lsb__nav-mobile { display: none; }
+
+    /* More-sheet item styles (used inside <app-more-sheet> ng-content) */
+    .more-sheet__item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      color: var(--color-primary-black, #0a0a0a);
+      text-decoration: none;
+      background: transparent;
+      border: 0;
+      width: 100%;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      border-bottom: 1px solid var(--color-line, rgba(0,0,0,0.08));
+    }
+    .more-sheet__item:last-child { border-bottom: 0; }
+    .more-sheet__item:hover { background: var(--color-green-5, rgba(2,204,116,0.06)); }
+    .more-sheet__item:focus-visible {
+      outline: 2px solid var(--color-primary-green, #02cc74);
+      outline-offset: -2px;
+      background: var(--color-green-5, rgba(2,204,116,0.06));
+    }
+    .more-sheet__badge {
+      margin-left: auto;
+      background: var(--color-lost, #d23f3f);
+      color: #fff;
+      border-radius: 9px;
+      padding: 2px 7px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
     /* MOBILE / TABLET: bottom-nav horizontal */
     @media (max-width: 767px) {
       .lsb {
@@ -311,26 +406,53 @@ import { ConfirmDialogService } from '../ui/confirm-dialog.service';
         overflow: visible;
       }
       .lsb:hover { width: 100%; align-items: center; }
-      .lsb__logo { display: none; }
-      .lsb a {
-        width: auto; height: 46px;
+      .lsb__logo,
+      .lsb__nav-desktop,
+      .lsb__bottom { display: none; }
+
+      .lsb__nav-mobile {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        flex: 1;
+        height: 100%;
+      }
+      .lsb__nav-mobile a,
+      .lsb__nav-mobile button,
+      .lsb:hover .lsb__nav-mobile a,
+      .lsb:hover .lsb__nav-mobile button {
+        display: flex;
         flex-direction: column;
+        align-items: center;
+        justify-content: center;
         gap: 2px;
         padding: 6px 10px;
-        font-size: 16px;
         margin: 0;
+        width: auto;
+        height: 46px;
+        color: rgba(255,255,255,0.7);
+        text-decoration: none;
+        background: transparent;
+        border: 0;
+        font-family: inherit;
+        cursor: pointer;
       }
-      .lsb:hover a {
-        width: auto; justify-content: center;
-        padding: 6px 10px; margin: 0;
-      }
-      .lsb__t {
-        display: block;
+      .lsb__nav-mobile a span,
+      .lsb__nav-mobile button span {
         font-size: 9px;
         letter-spacing: 0.04em;
         text-transform: uppercase;
       }
-      .lsb__bottom { display: none; }
+      .lsb__nav-mobile a.active,
+      .lsb__nav-mobile button.active {
+        color: var(--color-primary-green, #02cc74);
+      }
+      .lsb__nav-mobile a:focus-visible,
+      .lsb__nav-mobile button:focus-visible {
+        outline: none;
+        box-shadow: inset 0 0 0 2px var(--color-primary-green, #02cc74);
+        color: #fff;
+      }
     }
   `],
 })
@@ -366,6 +488,16 @@ export class SidebarComponent implements OnInit, OnDestroy {
   toggleUserMenu(event: Event) {
     event.stopPropagation();
     this.userMenuOpen.update((v) => !v);
+  }
+
+  // Mobile "Más" sheet — abre slide-up con items extra (Mundial 2026,
+  // Comodines, Notificaciones, Perfil, Admin si aplica). Solo visible
+  // en mobile (<768px); en desktop el sheet jamás se trigerea (el botón
+  // está oculto).
+  moreOpen = signal(false);
+
+  toggleMore() {
+    this.moreOpen.update((v) => !v);
   }
 
   @HostListener('document:click')
