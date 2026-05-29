@@ -1,6 +1,6 @@
 import {
-  Component, ElementRef, OnInit, QueryList, ViewChildren,
-  computed, inject, signal,
+  Component, OnInit, ViewChild,
+  inject, signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -8,6 +8,9 @@ import { AuthService } from '../../core/auth/auth.service';
 import { apiClient } from '../../core/api/client';
 import { PasswordRulesListComponent } from '../../shared/ui/password-rules-list.component';
 import { passwordPassesAllRules } from '../../shared/util/password-rules';
+import { AuthBrandPanelComponent } from '../../shared/ui/auth-brand-panel/auth-brand-panel.component';
+import { IconComponent } from '../../shared/ui/icon/icon.component';
+import { OtpInputComponent } from '../../shared/ui/otp-input/otp-input.component';
 
 type Step = 'form' | 'confirm' | 'handle-conflict';
 type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
@@ -15,35 +18,17 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [FormsModule, RouterLink, PasswordRulesListComponent],
+  imports: [
+    FormsModule, RouterLink,
+    PasswordRulesListComponent,
+    AuthBrandPanelComponent,
+    IconComponent,
+    OtpInputComponent,
+  ],
   template: `
     <div class="auth-shell">
 
-      <!-- Panel de marca (solo desktop) -->
-      <aside class="auth-brand">
-        <div class="auth-brand__top">
-          <img src="assets/logo-golgana.png" alt="Golgana" width="199" height="98" class="auth-brand__logo-img brand-logo">
-          <span class="auth-brand__title">Polla Mundialista 2026</span>
-        </div>
-        <div>
-          <h1 class="auth-brand__h1">
-            Predice cada partido.<br>
-            Gana contra tus panas.
-          </h1>
-          <p class="auth-brand__sub">
-            Crea grupos privados, asigna premios, gana comodines y demuestra
-            quién sabe más de fútbol.
-          </p>
-          <div class="auth-brand__stats">
-            <div><div class="num">2.4k</div><div class="lbl">Jugadores</div></div>
-            <div><div class="num">180</div><div class="lbl">Grupos activos</div></div>
-            <div><div class="num">$15k</div><div class="lbl">En premios</div></div>
-          </div>
-        </div>
-        <div class="auth-brand__foot">
-          © 2026 Golgana · Términos · Privacidad
-        </div>
-      </aside>
+      <app-auth-brand-panel [stats]="stats()" />
 
       <!-- Formulario -->
       <section class="auth-form">
@@ -80,9 +65,9 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
                     [(ngModel)]="handle"
                     (ngModelChange)="onHandleChange($event)">
                   @if (handleStatus() === 'available') {
-                    <span class="auth-input-pill">✓ disponible</span>
+                    <span class="auth-input-pill"><app-icon name="check" size="sm" /> disponible</span>
                   } @else if (handleStatus() === 'taken') {
-                    <span class="auth-input-pill pill-taken">✗ en uso</span>
+                    <span class="auth-input-pill pill-taken"><app-icon name="close" size="sm" /> en uso</span>
                   } @else if (handleStatus() === 'checking') {
                     <span class="auth-input-pill pill-checking">verificando…</span>
                   }
@@ -124,7 +109,7 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
                   <button type="button" class="auth-input-toggle"
                           (click)="showPwd.set(!showPwd())"
                           [attr.aria-label]="showPwd() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
-                    {{ showPwd() ? '👁️‍🗨️' : '👁' }}
+                    <app-icon [name]="showPwd() ? 'eye-off' : 'eye'" size="md" />
                   </button>
                 </div>
                 <app-password-rules-list [password]="password" />
@@ -187,9 +172,9 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
                     [(ngModel)]="handle"
                     (ngModelChange)="onHandleChange($event)">
                   @if (handleStatus() === 'available') {
-                    <span class="auth-input-pill"><span aria-hidden="true">✓ </span>disponible</span>
+                    <span class="auth-input-pill"><app-icon name="check" size="sm" /> disponible</span>
                   } @else if (handleStatus() === 'taken') {
-                    <span class="auth-input-pill pill-taken"><span aria-hidden="true">✗ </span>en uso</span>
+                    <span class="auth-input-pill pill-taken"><app-icon name="close" size="sm" /> en uso</span>
                   } @else if (handleStatus() === 'checking') {
                     <span class="auth-input-pill pill-checking">verificando…</span>
                   }
@@ -229,23 +214,7 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
               </p>
             </div>
 
-            <div class="otp">
-              @for (i of indices; track i) {
-                <input
-                  #otpInput
-                  class="otp__d"
-                  maxlength="1"
-                  inputmode="numeric"
-                  autocomplete="one-time-code"
-                  [attr.name]="'otp-' + (i + 1)"
-                  placeholder="—"
-                  [attr.aria-label]="'Dígito ' + (i + 1)"
-                  [value]="otpDigits()[i]"
-                  (input)="onOtpInput($event, i)"
-                  (keydown)="onOtpKey($event, i)"
-                  (paste)="onOtpPaste($event)">
-              }
-            </div>
+            <app-otp-input #otpInput (complete)="onOtpComplete($event)" />
 
             <div class="auth-resend">
               @if (resendCooldown() > 0) {
@@ -274,7 +243,7 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
             </button>
 
             <div class="auth-tip">
-              💡 Revisa tu spam si no lo encuentras. El código caduca en 10 minutos.
+              Revisa tu spam si no lo encuentras. El código caduca en 10 minutos.
             </div>
 
           }
@@ -339,6 +308,9 @@ export class RegisterComponent implements OnInit {
 
   step = signal<Step>('form');
 
+  // TODO(A6): replace with ApiService.getPublicStats() once polla-backend lambda deployed
+  stats = signal({ totalUsers: 2400, totalGroups: 180, totalPrizesAccrued: 15000 });
+
   ngOnInit() {
     // Soporte para deep-link desde login cuando Cognito reporta
     // UserNotConfirmedException: `?email=foo@bar&confirm=1` aterriza
@@ -365,15 +337,25 @@ export class RegisterComponent implements OnInit {
 
   handleStatus = signal<HandleStatus>('idle');
 
-  readonly indices = [0, 1, 2, 3, 4, 5];
-  otpDigits = signal<string[]>(['', '', '', '', '', '']);
-  code = computed(() => this.otpDigits().join(''));
+  /** Código actual del OTP, mantenido en sync con el `(complete)` event
+   *  del child `<app-otp-input>` y consumido por `submitConfirm()`. */
+  private otpCode = signal<string>('');
+  code = this.otpCode.asReadonly();
+
+  @ViewChild('otpInput') otpInput?: OtpInputComponent;
 
   resendCooldown = signal(0);
   private cooldownTimer?: ReturnType<typeof setInterval>;
   private handleDebounce?: ReturnType<typeof setTimeout>;
 
-  @ViewChildren('otpInput') otpRefs?: QueryList<ElementRef<HTMLInputElement>>;
+  /** Disparado por `<app-otp-input (complete)>` cuando los 6 dígitos
+   *  están llenos. Cachea el código y dispara submitConfirm
+   *  automáticamente para que el user no tenga que clickear "Verificar". */
+  onOtpComplete(code: string) {
+    this.otpCode.set(code);
+    // Auto-submit como UX hint. Si el código está mal, error → user reescribe.
+    void this.submitConfirm();
+  }
 
   canSubmit(): boolean {
     return !!this.handle && !!this.email
@@ -411,37 +393,6 @@ export class RegisterComponent implements OnInit {
     return res.data?.available === true;
   }
 
-  // ---------- OTP handlers ----------
-  onOtpInput(event: Event, idx: number) {
-    const input = event.target as HTMLInputElement;
-    const v = input.value.replace(/\D/g, '').slice(0, 1);
-    const arr = [...this.otpDigits()];
-    arr[idx] = v;
-    this.otpDigits.set(arr);
-    input.value = v;
-    if (v && idx < 5) {
-      this.otpRefs?.toArray()[idx + 1]?.nativeElement.focus();
-    }
-  }
-
-  onOtpKey(event: KeyboardEvent, idx: number) {
-    if (event.key === 'Backspace' && !this.otpDigits()[idx] && idx > 0) {
-      this.otpRefs?.toArray()[idx - 1]?.nativeElement.focus();
-    }
-  }
-
-  onOtpPaste(event: ClipboardEvent) {
-    event.preventDefault();
-    const text = event.clipboardData?.getData('text') ?? '';
-    const digits = text.replace(/\D/g, '').slice(0, 6).split('');
-    if (digits.length === 0) return;
-    const arr = ['', '', '', '', '', ''];
-    digits.forEach((d, i) => arr[i] = d);
-    this.otpDigits.set(arr);
-    const lastIdx = Math.min(digits.length, 5);
-    setTimeout(() => this.otpRefs?.toArray()[lastIdx]?.nativeElement.focus(), 0);
-  }
-
   formatCooldown(): string {
     const s = this.resendCooldown();
     return `00:${String(s).padStart(2, '0')}`;
@@ -468,7 +419,8 @@ export class RegisterComponent implements OnInit {
       }
       await this.auth.register(this.email, this.password, this.handle);
       this.step.set('confirm');
-      this.otpDigits.set(['', '', '', '', '', '']);
+      this.otpCode.set('');
+      this.otpInput?.reset();
       this.startCooldown(60);
     } catch (e) {
       this.error.set((e as Error).message ?? 'No se pudo crear la cuenta');
