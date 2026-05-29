@@ -28,7 +28,7 @@ import { GroupActionsService } from '../../core/groups/group-actions.service';
           <a routerLink="/picks" class="topbar__brand"
              style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:8px;">
             <img src="assets/logo-golgana.png" alt="Golgana" width="199" height="98"
-                 style="height:28px;width:auto;">
+                 class="brand-logo--sm">
           </a>
         </div>
 
