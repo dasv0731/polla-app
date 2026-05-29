@@ -144,7 +144,7 @@ interface ContextualCta {
         } @else if (myGroupsList().length === 0) {
           <app-empty-block iconName="users"
                            title="Aún no estás en ningún grupo"
-                           sub="Creá tu propio grupo o unite con un código de invitación.">
+                           sub="Crea tu propio grupo o únete con un código de invitación.">
             <button type="button" class="empty-cta empty-cta--primary" (click)="onCreateGroup()">
               <app-icon name="plus" size="sm" />Crear grupo
             </button>

@@ -55,7 +55,7 @@ interface ServerIdMap {
     @if (availableModes().length === 0 && !modesLoading()) {
       <app-empty-block iconName="users"
                        title="Necesitas un grupo privado"
-                       sub="Para que tus predicciones cuenten, primero unite o creá un grupo.">
+                       sub="Para que tus predicciones cuenten, primero únete o crea un grupo.">
         <button type="button" class="empty-cta empty-cta--primary"
                 (click)="groupActions.openCreate()">Crear grupo</button>
         <button type="button" class="empty-cta"
