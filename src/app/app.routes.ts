@@ -70,6 +70,7 @@ export const routes: Routes = [
       },
       {
         path: 'groups/:id/prizes',
+        canDeactivate: [dirtyFormGuard],
         loadComponent: () => import('./features/groups/group-prizes-edit.component').then((m) => m.GroupPrizesEditComponent),
       },
       {
