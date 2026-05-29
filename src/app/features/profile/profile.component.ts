@@ -151,20 +151,20 @@ interface Totals {
 
                 <button type="button" class="profile-list-item"
                         (click)="openPasswordChange()">
-                  <span class="profile-list-item__icon">🔒</span>
+                  <span class="profile-list-item__icon" aria-hidden="true">🔒</span>
                   <div class="profile-list-item__body">
                     <div class="profile-list-item__title">Cambiar contraseña</div>
                   </div>
-                  <span class="profile-list-item__chev">›</span>
+                  <span class="profile-list-item__chev" aria-hidden="true">›</span>
                 </button>
 
                 <button type="button" class="profile-list-item"
                         (click)="openPreferences()">
-                  <span class="profile-list-item__icon">⚙</span>
+                  <span class="profile-list-item__icon" aria-hidden="true">⚙</span>
                   <div class="profile-list-item__body">
                     <div class="profile-list-item__title">Preferencias</div>
                   </div>
-                  <span class="profile-list-item__chev">›</span>
+                  <span class="profile-list-item__chev" aria-hidden="true">›</span>
                 </button>
 
                 @if (daysUntilLock() !== null && daysUntilLock()! === 0) {
@@ -174,7 +174,7 @@ interface Totals {
 
                 <button type="button" class="profile-list-item profile-list-item--danger"
                         (click)="logout()">
-                  <span class="profile-list-item__icon">↩</span>
+                  <span class="profile-list-item__icon" aria-hidden="true">↩</span>
                   <div class="profile-list-item__body">
                     <div class="profile-list-item__title">Cerrar sesión</div>
                   </div>
