@@ -250,28 +250,7 @@ interface TriviaInfo {
               @for (m of day.matches; track m.id) {
                 <ng-container *ngTemplateOutlet="cardTpl; context: {$implicit: m}"></ng-container>
               }
-              @if (dayIdx === 0 && visibleDays().length > 1) {
-                <div class="ad-feed ad-feed--coca">
-                  <span class="ad-feed__badge">AD</span>
-                  <span class="ad-feed__icon">🥤</span>
-                  <div class="ad-feed__body">
-                    <div class="ad-feed__title">Coca-Cola refresca tu Mundial</div>
-                    <div class="ad-feed__sponsor">COCA-COLA · Patrocinador oficial</div>
-                  </div>
-                  <button type="button" class="ad-feed__cta">Ver promo</button>
-                </div>
-              }
-              @if (dayIdx === 2) {
-                <div class="ad-feed ad-feed--adidas">
-                  <span class="ad-feed__badge">AD</span>
-                  <span class="ad-feed__icon">👟</span>
-                  <div class="ad-feed__body">
-                    <div class="ad-feed__title">adidas — Equípate para el Mundial</div>
-                    <div class="ad-feed__sponsor">ADIDAS · Sponsor oficial</div>
-                  </div>
-                  <button type="button" class="ad-feed__cta">Ver colección</button>
-                </div>
-              }
+              <!-- Sponsored content is served via SponsorBannerService post-Fase A consolidation -->
             }
             <!-- Days pager bottom · solo si hay más de 1 ventana (totalDays > pageSize) -->
             @if (needsPaging()) {
