@@ -54,7 +54,8 @@ import { RedeemModalComponent } from './redeem-modal.component';
     :host { display: block; }
     .app-shell { display: flex; flex-direction: column; min-height: 100dvh; }
     .shell {
-      margin-left: 64px;
+      margin-left: var(--sidebar-w);
+      transition: margin-left 0.2s ease;
       display: grid;
       grid-template-columns: 1fr 320px;
       gap: 24px;

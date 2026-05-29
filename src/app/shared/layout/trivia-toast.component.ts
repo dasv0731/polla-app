@@ -30,7 +30,8 @@ import { TriviaModalService } from '../../core/trivia/trivia-modal.service';
     :host { display: contents; }
 
     .trivia-toast {
-      margin-left: 64px;
+      margin-left: var(--sidebar-w);
+      transition: margin-left 0.2s ease;
       background: #0a0a0a;
       color: #fff;
       border-bottom: 1px solid rgba(2,204,116,0.4);

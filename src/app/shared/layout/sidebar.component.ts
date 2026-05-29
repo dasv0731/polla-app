@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -65,7 +65,7 @@ const TOURNAMENT_ID = 'mundial-2026';
     .lsb {
       position: fixed;
       top: 0; left: 0; bottom: 0;
-      width: 64px;
+      width: var(--sidebar-w);
       background: #0a0a0a;
       border-right: 1px solid rgba(255,255,255,0.08);
       display: flex;
@@ -77,7 +77,7 @@ const TOURNAMENT_ID = 'mundial-2026';
       transition: width 0.2s;
       overflow: hidden;
     }
-    .lsb:hover { width: 200px; align-items: stretch; }
+    .lsb:hover { width: var(--sidebar-w); align-items: stretch; }
 
     .lsb__logo {
       width: 36px; height: 36px;
@@ -199,6 +199,25 @@ const TOURNAMENT_ID = 'mundial-2026';
 export class SidebarComponent implements OnInit {
   private auth = inject(AuthService);
   private api = inject(ApiService);
+
+  /**
+   * Bug #1 fix: sidebar hover expande de 64px → 200px. Shell + trivia-toast
+   * consumen `var(--sidebar-w)` para margin-left. Mutamos la variable a nivel
+   * `:root` (no `.lsb` scope) para que el resto del layout reaccione.
+   */
+  @HostListener('mouseenter')
+  onHoverEnter() {
+    if (typeof document === 'undefined') return;
+    if (window.matchMedia?.('(max-width: 767px)').matches) return;
+    document.documentElement.style.setProperty('--sidebar-w', '200px');
+  }
+
+  @HostListener('mouseleave')
+  onHoverLeave() {
+    if (typeof document === 'undefined') return;
+    if (window.matchMedia?.('(max-width: 767px)').matches) return;
+    document.documentElement.style.setProperty('--sidebar-w', '64px');
+  }
 
   handle = computed(() => this.auth.user()?.handle ?? null);
   avatarInitials = computed(() => {
