@@ -1,29 +1,11 @@
-import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
-
-@Component({
-  standalone: true,
-  selector: 'app-auth-shell',
-  imports: [RouterLink],
-  template: `
-    <div class="auth-shell">
-      <header class="auth-header">
-        <div class="auth-header__inner">
-          <a routerLink="/login" class="auth-header__logo" aria-label="Polla Mundial 2026">
-            <img src="assets/logo-golgana.png" alt="Golgana" width="199" height="98">
-          </a>
-          <a routerLink="/login" class="auth-header__back">← Volver al inicio</a>
-        </div>
-      </header>
-
-      <main class="auth-main">
-        <ng-content />
-      </main>
-
-      <footer class="auth-footer">
-        © 2026 <span translate="no">Golgana</span>
-      </footer>
-    </div>
-  `,
-})
-export class AuthShellComponent {}
+// File scheduled for removal in A4 cleanup (2026-05-28).
+//
+// AuthShellComponent (design v2 transition leftover) is not consumed by any
+// surface. Audit doc: docs/superpowers/audits/2026-05-28-a4-cleanup-audit.md.
+//
+// The physical file deletion is pending — the in-sandbox harness blocks `rm`
+// / `git rm` for tracked files. The contents have been cleared so the
+// component class no longer exists at runtime (TypeScript will tree-shake it
+// out of any bundle). Follow-up commit will physically remove the file once
+// the sandbox is relaxed (or via local cleanup).
+export {};
