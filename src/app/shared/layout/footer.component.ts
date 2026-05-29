@@ -34,7 +34,7 @@ import { ConfirmDialogService } from '../ui/confirm-dialog.service';
         </div>
         <div class="site-footer__col">
           <h4>Cuenta</h4>
-          <a routerLink="/profile">Editar perfil</a>
+          <a routerLink="/profile">Mi perfil</a>
           <a routerLink="/groups">Mis grupos</a>
           <button type="button" class="site-footer__logout" (click)="logout()">Cerrar sesión</button>
         </div>
@@ -63,6 +63,7 @@ export class FooterComponent {
       message: '¿Quieres cerrar sesión? Vas a salir de tu cuenta y regresarás al login.',
       confirmLabel: 'Cerrar sesión',
       cancelLabel: 'Cancelar',
+      danger: true,
     });
     if (!ok) return;
     await this.auth.logout();
