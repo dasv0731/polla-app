@@ -6,6 +6,11 @@ import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
+import { RedeemModalService } from '../../core/sponsors/redeem-modal.service';
+import { IconComponent } from '../../shared/ui/icon/icon.component';
+import { EmptyBlockComponent } from '../../shared/ui/empty-block/empty-block.component';
+import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
+import { ModalComponent } from '../../shared/ui/modal/modal.component';
 
 const TOURNAMENT_ID = 'mundial-2026';
 
@@ -134,7 +139,10 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
 @Component({
   standalone: true,
   selector: 'app-comodines-list',
-  imports: [RouterLink, FormsModule, A11yModule],
+  imports: [
+    RouterLink, FormsModule, A11yModule,
+    IconComponent, EmptyBlockComponent, SkeletonComponent, ModalComponent,
+  ],
   template: `
     <section class="page">
 
@@ -150,10 +158,6 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
           </p>
         </div>
         <div class="com-header__stats">
-          <div class="com-header__stat">
-            <div class="num">{{ totalCount() }}</div>
-            <div class="lbl">Total</div>
-          </div>
           <div class="com-header__stat">
             <div class="num num--green">{{ unassignedCount() }}</div>
             <div class="lbl">Disponibles</div>
@@ -171,7 +175,9 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
 
       @if (pendingCount() > 0) {
         <div class="com-pending-banner">
-          <span class="com-pending-banner__icon" aria-hidden="true">⚠</span>
+          <span class="com-pending-banner__icon" aria-hidden="true">
+            <app-icon name="alert" size="md" />
+          </span>
           <div class="com-pending-banner__body">
             <div class="com-pending-banner__title">
               {{ pendingCount() === 1
@@ -209,18 +215,19 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
             Usados · {{ usedCount() }}
           </button>
           <button type="button" class="seg__item"
+                  [attr.aria-pressed]="filter() === 'expired'"
                   [class.is-active]="filter() === 'expired'"
                   (click)="filter.set('expired')">
             Expirados · {{ expiredCount() }}
           </button>
         </div>
-        <button type="button" class="btn-wf btn-wf--sm" (click)="scrollToCanjear()">
-          <span aria-hidden="true">🎁 </span>Canjear código
+        <button type="button" class="btn-wf btn-wf--sm" (click)="openRedeem()">
+          <app-icon name="gift" size="sm" /> Canjear código
         </button>
       </div>
 
       @if (loading()) {
-        <p class="loading-msg">Cargando comodines…</p>
+        <app-skeleton variant="card" [count]="3" />
       } @else {
         <div class="com-grid">
           @for (c of filteredComodines(); track c.id) {
@@ -279,7 +286,9 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
               }
 
               @if (c.status === 'PENDING_TYPE_CHOICE') {
-                <div class="com-card__status" role="status"><span aria-hidden="true">⚠ </span>Elige el tipo antes que caduque</div>
+                <div class="com-card__status" role="status">
+                  <app-icon name="alert" size="sm" /> Elige el tipo antes que caduque
+                </div>
                 <button type="button"
                         class="btn-wf btn-wf--block btn-wf--primary btn-wf--sm com-card__cta"
                         (click)="openClaimModal(c)">
@@ -309,122 +318,95 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
 
           @if (filteredComodines().length === 0 && filter() !== 'all') {
             <div style="grid-column: 1 / -1;">
-              <p class="loading-msg">
-                No hay comodines en este filtro.
-              </p>
+              <app-empty-block iconName="filter"
+                               [title]="'Sin ' + filterLabel()"
+                               sub="Cambia el filtro para ver otros comodines." />
             </div>
           }
-
-          <!-- Slot de canjear código (siempre visible al final) -->
-          <form id="card-canjear" class="com-card com-card--code"
-                (ngSubmit)="redeemCode(); $event.preventDefault()">
-            <div class="icon" aria-hidden="true">🎁</div>
-            <div class="tit">¿Tienes un código?</div>
-            <div class="sub">Canjea códigos de sponsors para conseguir más comodines.</div>
-            <div class="form-row">
-              <input type="text" placeholder="PEPSI100" aria-label="Código de sponsor"
-                     [(ngModel)]="codeInput" name="code"
-                     [disabled]="redeemingCode()"
-                     (input)="codeInput = codeInput.toUpperCase()">
-              <button type="submit" class="btn-wf btn-wf--sm btn-wf--primary"
-                      [disabled]="redeemingCode() || !codeInput.trim()">
-                {{ redeemingCode() ? '…' : 'Canjear' }}
-              </button>
-            </div>
-            @if (redeemError()) {
-              <p role="alert" style="font-size:11px;color:var(--wf-danger);margin-top:4px;">{{ redeemError() }}</p>
-            }
-            @if (redeemSuccess()) {
-              <p role="status" style="font-size:11px;color:var(--wf-green-ink);margin-top:4px;"><span aria-hidden="true">✓ </span>{{ redeemSuccess() }}</p>
-            }
-          </form>
 
         </div>
 
         @if (filteredComodines().length === 0 && filter() === 'all') {
-          <div class="empty-block" style="margin-top: 14px;">
-            <h3>Aún no tienes comodines</h3>
-            <p>
-              Canjea un código arriba o gana uno acumulando 20 trivias correctas,
-              llenando tus picks 7 días antes del torneo, o prediciendo ≥80% de
-              marcadores antes del kickoff.
-            </p>
-          </div>
+          <app-empty-block iconName="gift"
+                           title="Aún no tienes comodines"
+                           sub="Canjea un código de sponsor o gánalos acumulando trivias correctas, llenando tus picks temprano, o prediciendo ≥80% de marcadores antes del kickoff.">
+            <button type="button" class="btn-wf btn-wf--primary"
+                    (click)="openRedeem()">Canjear código</button>
+          </app-empty-block>
         }
       }
 
-      <!-- Catálogo de los 9 tipos de comodines (referencia) -->
-      <section class="com-catalog">
-        <header class="com-catalog__head">
-          <h2 class="com-catalog__title">Tipos disponibles</h2>
+      <!-- Catálogo de los 9 tipos de comodines (colapsable — referencia) -->
+      <details class="com-collapsible">
+        <summary>
+          <app-icon name="gift" size="sm" /> Ver todos los tipos de comodín (9)
+        </summary>
+        <section class="com-catalog">
           <p class="com-catalog__sub">
             Los 9 tipos de comodines que existen y qué hace cada uno. Los que ya tienes
             se marcan con un check.
           </p>
-        </header>
-        <div class="com-catalog__grid">
-          @for (t of ALL_TYPES; track t) {
-            @let owned = ownedTypes().has(t);
-            <article class="com-catalog__card" [class.is-owned]="owned">
-              <header class="com-catalog__card-head">
-                <h3 class="com-catalog__card-title">{{ typeInfo(t).name }}</h3>
-                @if (owned) {
-                  <span class="com-catalog__owned"><span aria-hidden="true">✓ </span>tienes</span>
-                }
-              </header>
-              <p class="com-catalog__impact">{{ typeInfo(t).impact }}</p>
-              <p class="com-catalog__window"><span aria-hidden="true">⏱ </span>{{ typeInfo(t).window }}</p>
-            </article>
-          }
-        </div>
-      </section>
+          <div class="com-catalog__grid">
+            @for (t of ALL_TYPES; track t) {
+              @let owned = ownedTypes().has(t);
+              <article class="com-catalog__card" [class.is-owned]="owned">
+                <header class="com-catalog__card-head">
+                  <h3 class="com-catalog__card-title">{{ typeInfo(t).name }}</h3>
+                  @if (owned) {
+                    <span class="com-catalog__owned"><app-icon name="check" size="sm" /> tienes</span>
+                  }
+                </header>
+                <p class="com-catalog__impact">{{ typeInfo(t).impact }}</p>
+                <p class="com-catalog__window">
+                  <app-icon name="clock" size="sm" /> {{ typeInfo(t).window }}
+                </p>
+              </article>
+            }
+          </div>
+        </section>
+      </details>
 
-      <!-- Cómo funcionan -->
-      <section class="com-howto">
-        <h2 class="com-howto__title">¿Cómo funcionan los comodines?</h2>
-        <div class="com-howto__steps">
-          <div class="com-howto__step">
-            <span class="num">1</span>
-            <div>
-              <div class="stitle">Consíguelos</div>
-              <div class="sdesc">Canjea códigos de sponsors o gánalos por trivias correctas, picks tempranos y rachas.</div>
+      <!-- Cómo funcionan (colapsable) -->
+      <details class="com-collapsible">
+        <summary>¿Cómo funcionan los comodines?</summary>
+        <section class="com-howto">
+          <div class="com-howto__steps">
+            <div class="com-howto__step">
+              <span class="num">1</span>
+              <div>
+                <div class="stitle">Consíguelos</div>
+                <div class="sdesc">Canjea códigos de sponsors o gánalos por trivias correctas, picks tempranos y rachas.</div>
+              </div>
+            </div>
+            <div class="com-howto__step">
+              <span class="num">2</span>
+              <div>
+                <div class="stitle">Aplícalos</div>
+                <div class="sdesc">Asigna a un partido específico antes de que empiece. Una vez aplicado no se puede mover.</div>
+              </div>
+            </div>
+            <div class="com-howto__step">
+              <span class="num">3</span>
+              <div>
+                <div class="stitle">Gana más</div>
+                <div class="sdesc">Si aciertas, multiplican tus puntos según el tipo de comodín.</div>
+              </div>
             </div>
           </div>
-          <div class="com-howto__step">
-            <span class="num">2</span>
-            <div>
-              <div class="stitle">Aplícalos</div>
-              <div class="sdesc">Asigna a un partido específico antes de que empiece. Una vez aplicado no se puede mover.</div>
-            </div>
-          </div>
-          <div class="com-howto__step">
-            <span class="num">3</span>
-            <div>
-              <div class="stitle">Gana más</div>
-              <div class="sdesc">Si aciertas, multiplican tus puntos según el tipo de comodín.</div>
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
+      </details>
 
     </section>
 
     <!-- Modal Asignar -->
-    @if (assigning()) {
-      @let comodin = assigning()!;
-      <div class="claim-overlay" role="dialog" aria-modal="true"
-           aria-labelledby="comodin-assign-title"
-           cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
-           (keydown.escape)="closeAssignModal()"
-           (click)="closeAssignModal()">
-        <div class="claim-modal" (click)="$event.stopPropagation()">
-          <header class="claim-modal__head">
-            <h2 id="comodin-assign-title">Asignar: {{ comodin.type ? typeInfo(comodin.type).name : '' }}</h2>
-            <button type="button" class="claim-modal__x" (click)="closeAssignModal()">×</button>
-          </header>
-          <p class="form-card__hint">{{ comodin.type ? typeInfo(comodin.type).impact : '' }}</p>
+    @if (assigning(); as comodin) {
+      <app-modal [open]="true" size="md"
+                 [title]="'Asignar: ' + (comodin.type ? typeInfo(comodin.type).name : '')"
+                 [description]="comodin.type ? typeInfo(comodin.type).impact : ''"
+                 (close)="closeAssignModal()">
+        <div slot="body">
           <p class="form-card__hint" style="margin-top: var(--space-xs);">
-            <span aria-hidden="true">⚠ </span>La asignación es <strong>vinculante</strong>: una vez confirmada
+            <app-icon name="alert" size="sm" /> La asignación es <strong>vinculante</strong>: una vez confirmada
             no se puede mover ni cancelar.
           </p>
 
@@ -545,37 +527,31 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
               {{ assignError() }}
             </p>
           }
-
-          <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-lg); justify-content: flex-end;">
-            <button type="button" class="btn btn--ghost"
-                    [disabled]="assigningNow()"
-                    (click)="closeAssignModal()">Cancelar</button>
-            <button type="button" class="btn btn--primary"
-                    [disabled]="assigningNow() || !canSubmit()"
-                    (click)="submitAssign()">
-              {{ assigningNow() ? 'Asignando…' : 'Confirmar asignación' }}
-            </button>
-          </div>
         </div>
-      </div>
+        <ng-container slot="footer">
+          <button type="button" class="btn btn--ghost"
+                  [disabled]="assigningNow()"
+                  (click)="closeAssignModal()">Cancelar</button>
+          <button type="button" class="btn btn--primary"
+                  [disabled]="assigningNow() || !canSubmit()"
+                  (click)="submitAssign()">
+            {{ assigningNow() ? 'Asignando…' : 'Confirmar asignación' }}
+          </button>
+        </ng-container>
+      </app-modal>
     }
 
-    <!-- Modal Usar (tipos activos #5 #6 #7 #8) -->
-    @if (using()) {
-      @let comodin = using()!;
-      <div class="claim-overlay" role="dialog" aria-modal="true"
-           aria-labelledby="comodin-use-title"
-           cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
-           (keydown.escape)="closeUseModal()"
-           (click)="closeUseModal()">
-        <div class="claim-modal" (click)="$event.stopPropagation()">
-          <header class="claim-modal__head">
-            <h2 id="comodin-use-title">Usar: {{ comodin.type ? typeInfo(comodin.type).name : '' }}</h2>
-            <button type="button" class="claim-modal__x" (click)="closeUseModal()">×</button>
-          </header>
-          <p class="form-card__hint">{{ comodin.type ? typeInfo(comodin.type).impact : '' }}</p>
+    <!-- Modal Usar (tipos activos #5 #6 #7 #8).
+         TODO(A6): BRACKET_RESET es candidate para página dedicada — tiene
+         hasta 8 selects + business logic compleja. Por ahora queda modal lg. -->
+    @if (using(); as comodin) {
+      <app-modal [open]="true" [size]="comodin.type === 'BRACKET_RESET' ? 'lg' : 'md'"
+                 [title]="'Usar: ' + (comodin.type ? typeInfo(comodin.type).name : '')"
+                 [description]="comodin.type ? typeInfo(comodin.type).impact : ''"
+                 (close)="closeUseModal()">
+        <div slot="body">
           <p class="form-card__hint" style="margin-top: var(--space-xs);">
-            <span aria-hidden="true">⚠ </span>Una vez ejercido, no se puede revertir. El comodín queda
+            <app-icon name="alert" size="sm" /> Una vez ejercido, no se puede revertir. El comodín queda
             <strong>ACTIVATED</strong> y modifica tu pick correspondiente.
           </p>
 
@@ -721,39 +697,27 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
               {{ assignError() }}
             </p>
           }
-
-          <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-lg); justify-content: flex-end;">
-            <button type="button" class="btn btn--ghost"
-                    [disabled]="assigningNow()"
-                    (click)="closeUseModal()">Cancelar</button>
-            <button type="button" class="btn btn--primary"
-                    [disabled]="assigningNow() || !canSubmitUse()"
-                    (click)="submitUse()">
-              {{ assigningNow() ? 'Aplicando…' : 'Confirmar' }}
-            </button>
-          </div>
         </div>
-      </div>
+        <ng-container slot="footer">
+          <button type="button" class="btn btn--ghost"
+                  [disabled]="assigningNow()"
+                  (click)="closeUseModal()">Cancelar</button>
+          <button type="button" class="btn btn--primary"
+                  [disabled]="assigningNow() || !canSubmitUse()"
+                  (click)="submitUse()">
+            {{ assigningNow() ? 'Aplicando…' : 'Confirmar' }}
+          </button>
+        </ng-container>
+      </app-modal>
     }
 
     <!-- Modal Elegir tipo -->
-    @if (claiming()) {
-      @let pending = claiming()!;
-      <div class="claim-overlay" role="dialog" aria-modal="true"
-           aria-labelledby="comodin-claim-title"
-           cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
-           (keydown.escape)="closeClaimModal()"
-           (click)="closeClaimModal()">
-        <div class="claim-modal" (click)="$event.stopPropagation()">
-          <header class="claim-modal__head">
-            <h2 id="comodin-claim-title">Elegir tipo de comodín</h2>
-            <button type="button" class="claim-modal__x" (click)="closeClaimModal()">×</button>
-          </header>
-          <p class="form-card__hint">
-            Otorgado por <strong>{{ sourceLabel(pending.source) }}</strong>.
-            Elige uno de los 9 tipos. Los que ya tienes activos están deshabilitados.
-            La elección es <strong>vinculante</strong> — no se puede cambiar después.
-          </p>
+    @if (claiming(); as pending) {
+      <app-modal [open]="true" size="lg"
+                 title="Elegir tipo de comodín"
+                 [description]="'Otorgado por ' + sourceLabel(pending.source) + '. Elige uno de los 9 tipos. La elección es vinculante: no se puede cambiar después.'"
+                 (close)="closeClaimModal()">
+        <div slot="body">
           <ul class="claim-options">
             @for (t of ALL_TYPES; track t) {
               @let owned = ownedTypes().has(t);
@@ -772,35 +736,43 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
             }
           </ul>
         </div>
-      </div>
+      </app-modal>
     }
   `,
   styles: [`
-    .loading-msg {
-      padding: 32px;
-      text-align: center;
-      color: var(--wf-ink-3);
-      font-size: 14px;
+    /* Collapsible catalog + howto sections (replace siempre-visible) */
+    .com-collapsible {
+      margin-top: var(--space-lg);
+      border: 1px solid var(--color-line);
+      border-radius: 12px;
+      background: var(--color-primary-white);
+      overflow: hidden;
     }
-    .empty-block {
-      padding: 24px;
-      text-align: center;
-      background: var(--wf-paper);
-      border: 1px dashed var(--wf-line);
-      border-radius: 10px;
+    .com-collapsible > summary {
+      cursor: pointer;
+      padding: var(--space-md);
+      font-family: var(--font-display);
+      font-size: var(--fs-md);
+      letter-spacing: 0.04em;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
     }
-    .empty-block h3 {
-      font-family: var(--wf-display);
-      font-size: 18px;
-      letter-spacing: .04em;
-      margin: 0 0 8px;
+    .com-collapsible > summary::-webkit-details-marker { display: none; }
+    .com-collapsible > summary::after {
+      content: '▼';
+      margin-left: auto;
+      font-size: 12px;
+      color: var(--color-text-muted);
+      transition: transform 150ms;
     }
-    .empty-block p {
-      color: var(--wf-ink-3);
-      font-size: 13px;
-      margin: 0;
-      line-height: 1.5;
+    .com-collapsible[open] > summary::after { transform: rotate(180deg); }
+    .com-collapsible > summary:focus-visible {
+      outline: 2px solid var(--color-primary-green);
+      outline-offset: -2px;
     }
+    .com-collapsible > section { padding: 0 var(--space-md) var(--space-md); }
 
     .comodin-list {
       list-style: none;
@@ -901,36 +873,7 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
     }
     .phase-radio input { margin: 0; }
 
-    /* Modal Elegir tipo */
-    .claim-overlay {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.55);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 1000; padding: var(--space-md);
-    }
-    .claim-modal {
-      max-width: 720px; width: 100%;
-      max-height: 88vh; overflow-y: auto;
-      background: var(--color-primary-white);
-      border-radius: 12px;
-      padding: var(--space-lg);
-      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
-    }
-    .claim-modal__head {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: var(--space-sm);
-    }
-    .claim-modal__head h2 {
-      font-family: var(--font-display);
-      font-size: 24px;
-      letter-spacing: 0.04em;
-      line-height: 1.05; margin: 0;
-    }
-    .claim-modal__x {
-      background: transparent; border: 0;
-      font-size: 28px; line-height: 1; cursor: pointer;
-      color: var(--color-text-muted);
-    }
+    /* Claim options grid (consumed by <app-modal>) */
     .claim-options {
       list-style: none; padding: 0; margin: var(--space-md) 0 0;
       display: grid;
@@ -971,8 +914,24 @@ export class ComodinesListComponent implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private toast = inject(ToastService);
+  private redeemModal = inject(RedeemModalService);
 
   ALL_TYPES = ALL_TYPES;
+
+  /** Abre el RedeemModal global (mismo modal que usan sidebar y profile). */
+  openRedeem() {
+    this.redeemModal.open();
+  }
+
+  /** Label legible para el filtro activo (usado en el empty-block). */
+  filterLabel(): string {
+    switch (this.filter()) {
+      case 'available': return 'disponibles';
+      case 'used':      return 'usados';
+      case 'expired':   return 'expirados';
+      default:          return 'comodines';
+    }
+  }
   GROUP_LETTERS = ['A','B','C','D','E','F','G','H'];
 
   loading = signal(true);
@@ -1202,49 +1161,9 @@ export class ComodinesListComponent implements OnInit {
     el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
-  scrollToCanjear() {
-    const el = document.getElementById('card-canjear');
-    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    setTimeout(() => {
-      el?.querySelector<HTMLInputElement>('input')?.focus();
-    }, 400);
-  }
-
-  // ---------- Canje de código de sponsor ----------
-  codeInput = '';
-  redeemingCode = signal(false);
-  redeemError = signal<string | null>(null);
-  redeemSuccess = signal<string | null>(null);
-
-  async redeemCode() {
-    const code = this.codeInput.trim().toUpperCase();
-    if (!code || this.redeemingCode()) return;
-    this.redeemError.set(null);
-    this.redeemSuccess.set(null);
-    this.redeemingCode.set(true);
-    try {
-      const res = await this.api.redeemSponsorCode(code);
-      if (res?.errors && res.errors.length > 0) {
-        this.redeemError.set(res.errors[0]?.message ?? 'Código inválido');
-        return;
-      }
-      this.redeemSuccess.set('Comodín agregado');
-      this.codeInput = '';
-      // refrescar lista
-      const userId = this.auth.user()?.sub;
-      if (userId) {
-        const list = await this.api.listMyComodines(userId, TOURNAMENT_ID);
-        const rows = ((list.data ?? []) as ComodinRow[])
-          .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-        this.comodines.set(rows);
-      }
-      setTimeout(() => this.redeemSuccess.set(null), 4000);
-    } catch (e) {
-      this.redeemError.set(humanizeError(e));
-    } finally {
-      this.redeemingCode.set(false);
-    }
-  }
+  // Canje de código de sponsor — ahora se delega al RedeemModal global
+  // (sidebar + profile + comodines ahora abren el mismo modal). Ver
+  // RedeemModalService + shared/layout/redeem-modal.component.
 
   typeInfo(t: ComodinType) { return TYPE_INFO[t]; }
   sourceLabel(s: ComodinSource) { return SOURCE_LABEL[s]; }
