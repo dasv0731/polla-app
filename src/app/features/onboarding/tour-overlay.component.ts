@@ -1,5 +1,6 @@
 import { Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { A11yModule } from '@angular/cdk/a11y';
 
 const STORAGE_KEY = 'polla-tour-completed-v1';
 
@@ -25,9 +26,12 @@ interface TourStep {
 @Component({
   standalone: true,
   selector: 'app-tour-overlay',
+  imports: [A11yModule],
   template: `
     @if (visible()) {
-      <div class="tour-overlay" role="dialog" aria-modal="true" aria-labelledby="tour-card-title">
+      <div class="tour-overlay" role="dialog" aria-modal="true" aria-labelledby="tour-card-title"
+           cdkTrapFocus
+           [cdkTrapFocusAutoCapture]="true">
         <!-- Backdrop oscuro con clip-path para crear el spotlight.
              Si no hay spotlight, es un backdrop opaco normal. -->
         <div class="tour-overlay__backdrop"
@@ -204,23 +208,22 @@ export class TourOverlayComponent {
       title: 'Crea o únete a un grupo',
       body: 'Tu polla vive dentro de un grupo (panas, oficina, familia). ' +
             'Usa los botones del menú lateral o la pantalla de Mis grupos.',
-      // Sidebar v3 `.lsb` link a /groups. En mobile la sidebar se transforma
-      // en bottom-nav pero el href sigue siendo el mismo.
-      spotlight: '.lsb a[href="/groups"]',
+      // Targets [data-tour="groups"] en sidebar (desktop + mobile bottom-nav).
+      spotlight: '[data-tour="groups"]',
     },
     {
       num: 2,
       title: 'Predicciones de clasificados',
       body: 'Antes del Mundial: arma cómo crees que terminará cada grupo. ' +
             'Aquí encuentras "Clasificados" y "Llaves".',
-      spotlight: '.lsb a[data-tour="mundial"]',
+      spotlight: '[data-tour="mundial"]',
     },
     {
       num: 3,
       title: 'Marcadores partido a partido',
       body: 'Cuando arranque el torneo: predice marcadores antes de cada kickoff. ' +
             'Auto-guarda mientras tipeas.',
-      spotlight: '.lsb a[href="/picks"]',
+      spotlight: '[data-tour="picks"]',
     },
   ];
 

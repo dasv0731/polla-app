@@ -32,10 +32,10 @@ import { MoreSheetComponent } from '../ui/more-sheet/more-sheet.component';
         <a routerLink="/home" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
           <app-icon name="home" size="md" /><span class="lsb__t">Inicio</span>
         </a>
-        <a routerLink="/picks" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+        <a routerLink="/picks" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" data-tour="picks">
           <app-icon name="dice" size="md" /><span class="lsb__t">Mis picks</span>
         </a>
-        <a routerLink="/groups" routerLinkActive="active">
+        <a routerLink="/groups" routerLinkActive="active" data-tour="groups">
           <app-icon name="users" size="md" /><span class="lsb__t">Grupos</span>
         </a>
         <a routerLink="/ranking" routerLinkActive="active">
