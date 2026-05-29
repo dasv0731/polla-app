@@ -4,8 +4,6 @@ import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ConfirmDialogService } from '../ui/confirm-dialog.service';
 
-const TOURNAMENT_ID = 'mundial-2026';
-
 /**
  * Sidebar negro design-v3. Layout vertical fijo a la izquierda en desktop
  * (≥768px): 64px colapsado mostrando solo iconos, 200px al hover. En mobile
@@ -398,17 +396,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
   });
   isAdmin = computed(() => this.auth.user()?.isAdmin === true);
 
-  // Kept for parity with the previous sidebar (the bracket link is no longer
-  // surfaced from here in v3, but consumers may still query the signal).
-  bracketReady = signal(false);
-
   // Notification unread count (recovered from zombie nav.component) — drives
   // the bell badge in `.lsb__bell` bottom area.
   unreadCount = signal(0);
   private notifSub: { unsubscribe: () => void } | undefined;
 
   ngOnInit() {
-    void this.checkBracketReady();
     const userId = this.auth.user()?.sub;
     if (userId) {
       this.notifSub = this.api.observeMyNotifications(userId).subscribe({
@@ -427,24 +420,5 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     if (this.notifSub) this.notifSub.unsubscribe();
-  }
-
-  private async checkBracketReady() {
-    try {
-      const [matchesRes, phasesRes] = await Promise.all([
-        this.api.listMatches(TOURNAMENT_ID),
-        this.api.listPhases(TOURNAMENT_ID),
-      ]);
-      const koPhaseIds = new Set(
-        ((phasesRes.data ?? []) as Array<{ id: string; order: number }>)
-          .filter((p) => (p.order ?? 0) >= 2)
-          .map((p) => p.id),
-      );
-      const hasKO = ((matchesRes.data ?? []) as Array<{ phaseId: string }>)
-        .some((m) => koPhaseIds.has(m.phaseId));
-      this.bracketReady.set(hasKO);
-    } catch {
-      /* no-op */
-    }
   }
 }
