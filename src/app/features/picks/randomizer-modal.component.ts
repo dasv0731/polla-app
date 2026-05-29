@@ -3,6 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { PicksSyncService } from '../../core/sync/picks-sync.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ModalComponent } from '../../shared/ui/modal/modal.component';
+import { IconComponent } from '../../shared/ui/icon/icon.component';
+import { ConfirmDialogService } from '../../shared/ui/confirm-dialog.service';
 
 interface MatchLite {
   id: string;
@@ -21,7 +23,7 @@ interface DateGroup {
 }
 
 /**
- * Modal "🎲 Aleatorio" — genera marcadores random para un set de partidos
+ * Modal "Aleatorio" — genera marcadores random para un set de partidos
  * upcoming, en un rango de números configurable. UX:
  *   1) User elige set: Hoy / 1ª fecha / 2ª fecha / 3ª fecha / Todos.
  *   2) User ajusta rango con dos sliders (min, max) — números entre 0 y 9.
@@ -35,7 +37,7 @@ interface DateGroup {
 @Component({
   standalone: true,
   selector: 'app-randomizer-modal',
-  imports: [FormsModule, ModalComponent],
+  imports: [FormsModule, ModalComponent, IconComponent],
   template: `
     @if (open()) {
       <app-modal
@@ -104,8 +106,9 @@ interface DateGroup {
           <button type="button" class="btn-wf" (click)="close()">Cancelar</button>
           <button type="button" class="btn-wf btn-wf--primary"
                   [disabled]="selectedCount() === 0"
-                  (click)="generate()">
-            🎲 Generar para {{ selectedCount() }} partido{{ selectedCount() === 1 ? '' : 's' }}
+                  (click)="confirmGenerate()">
+            <app-icon name="dice" size="md" />
+            Generar para {{ selectedCount() }} partido{{ selectedCount() === 1 ? '' : 's' }}
           </button>
         </div>
       </app-modal>
@@ -230,6 +233,7 @@ export class RandomizerModalComponent {
 
   private sync = inject(PicksSyncService);
   private toast = inject(ToastService);
+  private confirmDialog = inject(ConfirmDialogService);
 
   open = signal(false);
 
@@ -269,11 +273,11 @@ export class RandomizerModalComponent {
     const todayKey = new Date().toISOString().slice(0, 10);
     const todayGroup = groups.find((g) => g.key === todayKey);
     return [
-      { key: 'today' as Filter, label: '📅 Hoy', count: todayGroup?.count ?? 0 },
+      { key: 'today' as Filter, label: 'Hoy', count: todayGroup?.count ?? 0 },
       { key: 'date-1' as Filter, label: groups[0] ? `1ª fecha · ${this.shortDate(groups[0].key)}` : '1ª fecha', count: groups[0]?.count ?? 0 },
       { key: 'date-2' as Filter, label: groups[1] ? `2ª fecha · ${this.shortDate(groups[1].key)}` : '2ª fecha', count: groups[1]?.count ?? 0 },
       { key: 'date-3' as Filter, label: groups[2] ? `3ª fecha · ${this.shortDate(groups[2].key)}` : '3ª fecha', count: groups[2]?.count ?? 0 },
-      { key: 'all' as Filter, label: '🎲 Todos los próximos', count: this.upcomingMatches().length },
+      { key: 'all' as Filter, label: 'Todos los próximos', count: this.upcomingMatches().length },
     ];
   });
 
@@ -293,6 +297,17 @@ export class RandomizerModalComponent {
   });
 
   selectedCount = computed(() => this.selectedMatches().length);
+
+  /** True si alguno de los partidos seleccionados ya tiene un pick (pending o synced). */
+  hasExistingPicks = computed(() => {
+    for (const m of this.selectedMatches()) {
+      const p = this.sync.getPending<{ home?: number; away?: number; homeTouched?: boolean; awayTouched?: boolean }>('pick', m.id);
+      if (p && (p.homeTouched || p.awayTouched || typeof p.home === 'number' || typeof p.away === 'number')) {
+        return true;
+      }
+    }
+    return false;
+  });
 
   /** Description line para `<app-modal>` — partidos + rango. */
   descLine = computed(() => {
@@ -327,6 +342,21 @@ export class RandomizerModalComponent {
     const next = Math.max(0, Math.min(9, this.maxVal() + delta));
     this.maxVal.set(next);
     if (next < this.minVal()) this.minVal.set(next);
+  }
+
+  /** Pre-check: si alguno de los seleccionados ya tiene un pick, pide confirmación. */
+  async confirmGenerate() {
+    if (this.selectedCount() === 0) return;
+    if (this.hasExistingPicks()) {
+      const ok = await this.confirmDialog.ask({
+        title: 'Sobrescribir picks existentes',
+        message: 'Algunos partidos ya tienen pick. Generar aleatorios los reemplazará.',
+        confirmLabel: 'Sobrescribir',
+        danger: true,
+      });
+      if (!ok) return;
+    }
+    this.generate();
   }
 
   generate() {
