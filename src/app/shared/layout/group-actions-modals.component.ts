@@ -1,5 +1,4 @@
 import { Component, inject, signal } from '@angular/core';
-import { A11yModule } from '@angular/cdk/a11y';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
@@ -8,6 +7,7 @@ import { GroupActionsService } from '../../core/groups/group-actions.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
 import { UserModesService } from '../../core/user/user-modes.service';
+import { ModalComponent } from '../ui/modal/modal.component';
 
 const TOURNAMENT_ID = 'mundial-2026';
 type GameMode = 'SIMPLE' | 'COMPLETE';
@@ -15,27 +15,17 @@ type GameMode = 'SIMPLE' | 'COMPLETE';
 @Component({
   standalone: true,
   selector: 'app-group-actions-modals',
-  imports: [FormsModule, A11yModule],
+  imports: [FormsModule, ModalComponent],
   template: `
     <!-- ============== MODAL · CREAR GRUPO ============== -->
     @if (svc.createOpen()) {
-      <div class="picks-modal is-open" role="dialog" aria-modal="true"
-           aria-labelledby="create-group-title"
-           cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
-           (keydown.escape)="closeCreate()">
-        <div class="picks-modal__close-overlay" role="presentation"
-             (click)="closeCreate()"></div>
-        <div class="picks-modal__card" style="max-width:520px;">
-          <header class="picks-modal__head">
-            <div>
-              <div class="title" id="create-group-title">Crear grupo</div>
-              <div class="meta">Privado, con código de invitación de 6 caracteres</div>
-            </div>
-            <button type="button" class="close" aria-label="Cerrar"
-                    (click)="closeCreate()">✕</button>
-          </header>
-
-          <form class="picks-modal__body" (ngSubmit)="submitCreate()" style="display:flex;flex-direction:column;gap:14px;">
+      <app-modal
+        [open]="true"
+        title="Crear grupo"
+        description="Privado, con código de invitación de 6 caracteres"
+        size="md"
+        (close)="closeCreate()">
+        <form slot="body" (ngSubmit)="submitCreate()" style="display:flex;flex-direction:column;gap:14px;">
 
             <div class="auth-field" style="margin:0;">
               <label class="auth-label" for="grp-name">Nombre del grupo</label>
@@ -114,46 +104,35 @@ type GameMode = 'SIMPLE' | 'COMPLETE';
             @if (error()) {
               <p class="modal-error" role="alert">{{ error() }}</p>
             }
-          </form>
+        </form>
 
-          <footer class="picks-modal__foot">
-            <span class="meta">Te asignamos como admin del grupo</span>
-            <div style="display:flex;gap:8px;">
-              <button type="button" class="btn-wf btn-wf--sm"
-                      (click)="closeCreate()" [disabled]="loading()">
-                Cancelar
-              </button>
-              <button type="button" class="btn-wf btn-wf--sm btn-wf--primary"
-                      (click)="submitCreate()"
-                      [disabled]="loading() || !name.trim()">
-                {{ loading() ? 'Creando…' : 'Crear grupo' }}
-              </button>
-            </div>
-          </footer>
+        <div slot="footer" style="display:flex;align-items:center;gap:8px;justify-content:space-between;width:100%;flex-wrap:wrap;">
+          <span class="meta">Te asignamos como admin del grupo</span>
+          <div style="display:flex;gap:8px;">
+            <button type="button" class="btn-wf btn-wf--sm"
+                    (click)="closeCreate()" [disabled]="loading()">
+              Cancelar
+            </button>
+            <button type="button" class="btn-wf btn-wf--sm btn-wf--primary"
+                    (click)="submitCreate()"
+                    [disabled]="loading() || !name.trim()">
+              {{ loading() ? 'Creando…' : 'Crear grupo' }}
+            </button>
+          </div>
         </div>
-      </div>
+      </app-modal>
     }
 
     <!-- ============== MODAL · UNIRME CON CÓDIGO ============== -->
     @if (svc.joinOpen()) {
-      <div class="picks-modal is-open" role="dialog" aria-modal="true"
-           aria-labelledby="join-group-title"
-           cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
-           (keydown.escape)="closeJoin()">
-        <div class="picks-modal__close-overlay" role="presentation"
-             (click)="closeJoin()"></div>
-        <div class="picks-modal__card" style="max-width:480px;">
-          <header class="picks-modal__head">
-            <div>
-              <div class="title" id="join-group-title">Unirme con código</div>
-              <div class="meta">Pega el código de 6 caracteres que te compartieron</div>
-            </div>
-            <button type="button" class="close" aria-label="Cerrar"
-                    (click)="closeJoin()">✕</button>
-          </header>
-
-          <form class="picks-modal__body" (ngSubmit)="submitJoin()"
-                style="display:flex;flex-direction:column;gap:14px;">
+      <app-modal
+        [open]="true"
+        title="Unirme con código"
+        description="Pega el código de 6 caracteres que te compartieron"
+        size="sm"
+        (close)="closeJoin()">
+        <form slot="body" (ngSubmit)="submitJoin()"
+              style="display:flex;flex-direction:column;gap:14px;">
             <div class="auth-field" style="margin:0;">
               <label class="auth-label" for="join-code">Código de invitación</label>
               <input type="text" id="join-code" name="code" class="auth-input"
@@ -173,56 +152,24 @@ type GameMode = 'SIMPLE' | 'COMPLETE';
             @if (error()) {
               <p class="modal-error">{{ error() }}</p>
             }
-          </form>
+        </form>
 
-          <footer class="picks-modal__foot">
-            <span class="meta"></span>
-            <div style="display:flex;gap:8px;">
-              <button type="button" class="btn-wf btn-wf--sm"
-                      (click)="closeJoin()" [disabled]="loading()">
-                Cancelar
-              </button>
-              <button type="button" class="btn-wf btn-wf--sm btn-wf--primary"
-                      (click)="submitJoin()"
-                      [disabled]="loading() || code.length !== 6">
-                {{ loading() ? 'Validando…' : 'Unirme' }}
-              </button>
-            </div>
-          </footer>
+        <div slot="footer">
+          <button type="button" class="btn-wf btn-wf--sm"
+                  (click)="closeJoin()" [disabled]="loading()">
+            Cancelar
+          </button>
+          <button type="button" class="btn-wf btn-wf--sm btn-wf--primary"
+                  (click)="submitJoin()"
+                  [disabled]="loading() || code.length !== 6">
+            {{ loading() ? 'Validando…' : 'Unirme' }}
+          </button>
         </div>
-      </div>
+      </app-modal>
     }
   `,
   styles: [`
-    /* design-v3 re-skin overrides (scoped — only afecta los modales que
-       este componente renderiza). El backdrop usa fondo negro con blur,
-       cards con border-radius 16 + padding 28, y el header tipográfico
-       en Bebas Neue. */
-    .picks-modal {
-      background: rgba(10, 10, 10, 0.75) !important;
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-    }
-    .picks-modal__card {
-      border-radius: 16px !important;
-      padding: 28px !important;
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
-      border: 1px solid var(--color-line);
-    }
-    .picks-modal__head .title {
-      font-family: var(--font-display);
-      font-size: 28px !important;
-      line-height: 1 !important;
-      letter-spacing: 0.02em;
-    }
-    .picks-modal__head .meta {
-      font-size: 11px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--color-primary-green);
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
+    :host { display: contents; }
 
     .auth-input:focus {
       border-color: var(--color-primary-green);
