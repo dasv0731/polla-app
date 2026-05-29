@@ -1,4 +1,4 @@
-import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -50,7 +50,14 @@ const TOURNAMENT_ID = 'mundial-2026';
 
       <div class="lsb__bottom">
         <a routerLink="/notificaciones" routerLinkActive="active" class="lsb__bell">
-          <span class="lsb__i" aria-hidden="true">🔔</span><span class="lsb__t">Notificaciones</span>
+          <span class="lsb__i" aria-hidden="true">🔔</span>
+          <span class="lsb__t">Notificaciones</span>
+          @if (unreadCount() > 0) {
+            <span class="lsb__bell-badge"
+                  [attr.aria-label]="unreadCount() + ' notificaciones sin leer'">
+              {{ unreadCount() > 99 ? '99+' : unreadCount() }}
+            </span>
+          }
         </a>
         <a routerLink="/profile" class="lsb__usr">
           <div class="lsb__av">{{ avatarInitials() }}</div>
@@ -140,6 +147,29 @@ const TOURNAMENT_ID = 'mundial-2026';
     .lsb:hover .lsb__bottom { align-items: stretch; }
 
     .lsb__bell { position: relative; }
+    .lsb__bell-badge {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      background: var(--color-lost, #d23f3f);
+      color: #fff;
+      border-radius: 9px;
+      font-size: 10px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+    /* Cuando la sidebar está expandida (hover), el badge se acomoda al
+       final del row, no se pisa con el texto. */
+    .lsb:hover .lsb__bell .lsb__bell-badge {
+      position: static;
+      margin-left: auto;
+    }
 
     .lsb__usr {
       display: flex; align-items: center; gap: 10px;
@@ -196,7 +226,7 @@ const TOURNAMENT_ID = 'mundial-2026';
     }
   `],
 })
-export class SidebarComponent implements OnInit {
+export class SidebarComponent implements OnInit, OnDestroy {
   private auth = inject(AuthService);
   private api = inject(ApiService);
 
@@ -231,8 +261,31 @@ export class SidebarComponent implements OnInit {
   // surfaced from here in v3, but consumers may still query the signal).
   bracketReady = signal(false);
 
+  // Notification unread count (recovered from zombie nav.component) — drives
+  // the bell badge in `.lsb__bell` bottom area.
+  unreadCount = signal(0);
+  private notifSub: { unsubscribe: () => void } | undefined;
+
   ngOnInit() {
     void this.checkBracketReady();
+    const userId = this.auth.user()?.sub;
+    if (userId) {
+      this.notifSub = this.api.observeMyNotifications(userId).subscribe({
+        next: (snap) => {
+          const items = snap.items as Array<{ readAt: string | null }>;
+          const unread = items.filter((n) => !n.readAt).length;
+          this.unreadCount.set(unread);
+        },
+        error: (err: unknown) => {
+          // eslint-disable-next-line no-console
+          console.warn('[sidebar] notification subscription error', err);
+        },
+      });
+    }
+  }
+
+  ngOnDestroy() {
+    if (this.notifSub) this.notifSub.unsubscribe();
   }
 
   private async checkBracketReady() {
