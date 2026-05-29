@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, OnInit, SimpleChanges, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, Input, OnChanges, OnInit, SimpleChanges, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -471,6 +471,39 @@ interface RankRow {
           </app-modal>
         }
 
+        @if (showEntryFeeReminder()) {
+          <button type="button"
+                  class="entry-fee-reminder"
+                  data-testid="entry-fee-reminder"
+                  aria-label="Cuota de ingreso pendiente. Ver instrucciones."
+                  (click)="openEntryFeeModal()">
+            <app-icon name="alert" [decorative]="true" size="md" />
+            <span class="entry-fee-reminder__text">
+              <strong>Tu cuota está pendiente</strong>
+              <small>Tocá para ver las instrucciones</small>
+            </span>
+          </button>
+        }
+
+        @if (entryFeeModalOpen()) {
+          <app-modal [open]="true"
+                     title="Instrucciones de pago"
+                     size="sm"
+                     data-testid="entry-fee-modal"
+                     (close)="closeEntryFeeModal()">
+            <div slot="body">
+              <div class="entry-fee-modal-body">{{ group()?.entryFeeInstructions }}</div>
+              <p class="entry-fee-modal-note">
+                Cuando el admin marque tu cuota como pagada, este recordatorio desaparece.
+              </p>
+            </div>
+            <div slot="footer">
+              <button type="button" class="btn-wf btn-wf--sm btn-wf--primary"
+                      (click)="closeEntryFeeModal()">Entendido</button>
+            </div>
+          </app-modal>
+        }
+
         <!-- Transferir admin · modal con lista de members -->
         @if (transferring()) {
           <app-modal [open]="true"
@@ -722,6 +755,59 @@ interface RankRow {
       outline: 2px solid var(--color-primary-green);
       outline-offset: 2px;
     }
+
+    .entry-fee-reminder {
+      position: fixed;
+      bottom: 24px; right: 24px;
+      display: inline-flex; align-items: center; gap: 12px;
+      padding: 14px 20px;
+      min-height: 56px;
+      border-radius: 12px;
+      background: var(--wf-warn-soft);
+      border: 1px solid var(--wf-warn);
+      color: var(--color-text, #111);
+      cursor: pointer;
+      z-index: var(--z-overlay, 100);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+      animation: entry-fee-fade-in 200ms ease-out;
+    }
+    .entry-fee-reminder:focus-visible {
+      outline: 2px solid var(--wf-warn);
+      outline-offset: 2px;
+    }
+    .entry-fee-reminder__text {
+      display: flex; flex-direction: column; align-items: flex-start;
+      line-height: 1.2;
+    }
+    .entry-fee-reminder__text small { color: var(--color-text-muted); font-size: 12px; }
+
+    @media (max-width: 767px) {
+      .entry-fee-reminder {
+        bottom: calc(var(--bp-bottom-nav, 64px) + 16px);
+        right: 16px;
+        left: 16px;
+        justify-content: center;
+      }
+    }
+
+    @keyframes entry-fee-fade-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .entry-fee-reminder { animation: none; }
+    }
+
+    .entry-fee-modal-body {
+      white-space: pre-line;
+      font-size: 15px; line-height: 1.5;
+      color: var(--color-text);
+    }
+    .entry-fee-modal-note {
+      margin-top: 16px;
+      font-size: 13px; color: var(--color-text-muted);
+    }
   `],
 })
 export class GroupDetailComponent implements OnInit, OnChanges {
@@ -765,6 +851,25 @@ export class GroupDetailComponent implements OnInit, OnChanges {
   copied = signal(false);
   removingUserId = signal<string | null>(null);
   currentUserId = '';
+
+  /** UI: instructions modal open state. */
+  entryFeeModalOpen = signal(false);
+
+  /** True when the floating reminder should be visible for the active user.
+   *  Hidden if: group has no entry fee, user is the admin (auto-paid), or
+   *  the user's row already has entryFeePaidAt set. */
+  showEntryFeeReminder = computed<boolean>(() => {
+    const g = this.group();
+    if (!g || g.entryFeeEnabled !== true) return false;
+    const meSub = this.currentUserId;
+    if (!meSub) return false;
+    const mine = this.rows().find((r) => r.userId === meSub);
+    if (!mine) return false;
+    return mine.entryFeePaidAt === null;
+  });
+
+  openEntryFeeModal(): void { this.entryFeeModalOpen.set(true); }
+  closeEntryFeeModal(): void { this.entryFeeModalOpen.set(false); }
 
   isAdminOfGroup = computed(() => this.group()?.adminUserId === this.currentUserId);
 
@@ -960,6 +1065,31 @@ export class GroupDetailComponent implements OnInit, OnChanges {
       );
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  @HostListener('window:focus')
+  onWindowFocus(): void {
+    void this.refreshMemberships();
+  }
+
+  /** Refetch memberships for this group to pick up admin-side
+   *  entryFeePaidAt updates. Lighter than full load() — only touches the
+   *  entryFeePaidAt field on existing rows; does not refetch leaderboard. */
+  private async refreshMemberships(): Promise<void> {
+    if (!this.id) return;
+    try {
+      const res = await this.api.groupMembers(this.id);
+      const map = new Map<string, string | null>();
+      for (const m of (res.data ?? [])) {
+        map.set(m.userId, (m as { entryFeePaidAt?: string | null }).entryFeePaidAt ?? null);
+      }
+      this.rows.set(this.rows().map((r) => ({
+        ...r,
+        entryFeePaidAt: map.has(r.userId) ? map.get(r.userId) ?? null : r.entryFeePaidAt,
+      })));
+    } catch {
+      /* Focus is not user-initiated; do not pop a toast on failure. */
     }
   }
 

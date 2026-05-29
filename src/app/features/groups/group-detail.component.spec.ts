@@ -134,3 +134,119 @@ describe('GroupDetailComponent — entry fee column (admin)', () => {
     expect(memberAfter?.entryFeePaidAt).toBe(paidBefore);
   });
 });
+
+describe('GroupDetailComponent — floating reminder', () => {
+  let fixture: ComponentFixture<GroupDetailComponent>;
+  let component: GroupDetailComponent;
+  let apiMock: {
+    getGroup: jest.Mock;
+    groupMembers: jest.Mock;
+    groupLeaderboard: jest.Mock;
+    getUser: jest.Mock;
+    markEntryFeePaid: jest.Mock;
+  };
+
+  function build(callerSub: string, callerPaid: boolean, feeEnabled: boolean) {
+    apiMock = {
+      getGroup: jest.fn().mockResolvedValue({ data: {
+        id: 'g1', name: 'Polla', adminUserId: 'admin-sub', mode: 'COMPLETE',
+        description: null, imageKey: null, comodinesEnabled: true,
+        entryFeeEnabled: feeEnabled,
+        entryFeeInstructions: feeEnabled ? 'Depositar $20\nA cuenta XXX' : null,
+        joinCode: 'ABC123', createdAt: '2026-01-01',
+        prize1st: null, prize2nd: null, prize3rd: null,
+      } }),
+      groupMembers: jest.fn().mockResolvedValue({ data: [
+        { id: 'm-admin', userId: 'admin-sub', isAdmin: true, joinedAt: '2026-01-01', entryFeePaidAt: feeEnabled ? '2026-01-01T00:00:00Z' : null },
+        { id: 'm-other', userId: 'other-sub', isAdmin: false, joinedAt: '2026-01-02', entryFeePaidAt: callerPaid ? '2026-01-03T00:00:00Z' : null },
+      ] }),
+      groupLeaderboard: jest.fn().mockResolvedValue({ data: [
+        { userId: 'admin-sub', points: 10, exactCount: 1, resultCount: 1 },
+        { userId: 'other-sub', points: 5, exactCount: 0, resultCount: 1 },
+      ] }),
+      getUser: jest.fn().mockImplementation((sub: string) => Promise.resolve({ data: { handle: sub, avatarKey: null } })),
+      markEntryFeePaid: jest.fn(),
+    };
+    TestBed.configureTestingModule({
+      imports: [GroupDetailComponent],
+      providers: [
+        provideRouter([]),
+        { provide: ApiService, useValue: apiMock },
+        { provide: AuthService, useValue: { user: () => ({ sub: callerSub }) } },
+        { provide: ToastService, useValue: { success: jest.fn(), error: jest.fn() } },
+      ],
+    });
+    fixture = TestBed.createComponent(GroupDetailComponent);
+    component = fixture.componentInstance;
+    component.id = 'g1';
+  }
+
+  async function initAndSettle() {
+    fixture.detectChanges();
+    await component.ngOnInit();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  it('member is unpaid + fee enabled: showEntryFeeReminder() === true', async () => {
+    build('other-sub', false, true);
+    await initAndSettle();
+    expect(component.showEntryFeeReminder()).toBe(true);
+  });
+
+  it('member is paid: showEntryFeeReminder() === false', async () => {
+    build('other-sub', true, true);
+    await initAndSettle();
+    expect(component.showEntryFeeReminder()).toBe(false);
+  });
+
+  it('fee disabled at group level: showEntryFeeReminder() === false', async () => {
+    build('other-sub', false, false);
+    await initAndSettle();
+    expect(component.showEntryFeeReminder()).toBe(false);
+  });
+
+  it('admin (own row paid): showEntryFeeReminder() === false', async () => {
+    build('admin-sub', true, true);
+    await initAndSettle();
+    expect(component.showEntryFeeReminder()).toBe(false);
+  });
+
+  it('reminder renders in DOM when showEntryFeeReminder() is true', async () => {
+    build('other-sub', false, true);
+    await initAndSettle();
+    const reminder = fixture.nativeElement.querySelector('[data-testid="entry-fee-reminder"]');
+    expect(reminder).not.toBeNull();
+    expect(reminder.getAttribute('aria-label')).toContain('Cuota');
+  });
+
+  it('clicking openEntryFeeModal renders modal with instructions text', async () => {
+    build('other-sub', false, true);
+    await initAndSettle();
+    component.openEntryFeeModal();
+    fixture.detectChanges();
+    const modal = fixture.nativeElement.querySelector('[data-testid="entry-fee-modal"]');
+    expect(modal).not.toBeNull();
+    expect(modal.textContent).toContain('Depositar $20');
+    expect(modal.textContent).toContain('A cuenta XXX');
+  });
+
+  it('modal body has class entry-fee-modal-body (pre-line styling)', async () => {
+    build('other-sub', false, true);
+    await initAndSettle();
+    component.openEntryFeeModal();
+    fixture.detectChanges();
+    const body = fixture.nativeElement.querySelector('.entry-fee-modal-body');
+    expect(body).not.toBeNull();
+  });
+
+  it('window focus triggers refreshMemberships → groupMembers called again', async () => {
+    build('other-sub', false, true);
+    await initAndSettle();
+    apiMock.groupMembers.mockClear();
+    window.dispatchEvent(new Event('focus'));
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(apiMock.groupMembers).toHaveBeenCalledTimes(1);
+  });
+});
