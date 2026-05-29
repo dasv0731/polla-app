@@ -87,7 +87,7 @@ const SNAPSHOT_KEY = (userId: string, scope: Scope) => `polla-rank-snapshot-${sc
           </p>
         </div>
         @if (myRank() !== null) {
-          <div class="rank-pos-badge">
+          <div class="rank-pos-badge rank-only-desk">
             <div class="kicker">TU POSICIÓN</div>
             <div class="num">#{{ myRank() }}</div>
             @let md = myDelta();
@@ -105,7 +105,7 @@ const SNAPSHOT_KEY = (userId: string, scope: Scope) => `polla-rank-snapshot-${sc
 
       <!-- Hero card (mobile only) -->
       @if (myRank() !== null) {
-        <div class="rank-hero">
+        <div class="rank-hero rank-only-mobile">
           <div class="rank-hero__top">
             <div>
               <div class="rank-hero__kicker">Tu posición {{ scope() === 'global' ? 'global' : 'en tus grupos' }}</div>
@@ -566,7 +566,9 @@ export class RankingComponent implements OnInit, OnDestroy {
   }
 
   scrollToTop() {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const prefersReduced = typeof window !== 'undefined'
+      && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: 0, behavior: prefersReduced ? 'auto' : 'smooth' });
   }
 
   /** Cambio de scope: persiste el snapshot del scope actual antes de saltar. */
