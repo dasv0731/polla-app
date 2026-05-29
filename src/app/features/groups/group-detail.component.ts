@@ -1,11 +1,11 @@
 import { Component, Input, OnChanges, OnInit, SimpleChanges, computed, inject, signal } from '@angular/core';
-import { A11yModule } from '@angular/cdk/a11y';
 import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
 import { ConfirmDialogService } from '../../shared/ui/confirm-dialog.service';
+import { ModalComponent } from '../../shared/ui/modal/modal.component';
 import { UserAvatarComponent } from '../../shared/user-avatar/user-avatar.component';
 import { getUrl } from 'aws-amplify/storage';
 
@@ -41,7 +41,7 @@ interface RankRow {
 @Component({
   standalone: true,
   selector: 'app-group-detail',
-  imports: [RouterLink, UserAvatarComponent, A11yModule],
+  imports: [RouterLink, UserAvatarComponent, ModalComponent],
   template: `
     <section class="page">
 
@@ -311,60 +311,43 @@ interface RankRow {
 
         <!-- Transferir admin · modal con lista de members -->
         @if (transferring()) {
-          <div class="picks-modal is-open" role="dialog" aria-modal="true"
-               aria-labelledby="transfer-admin-title"
-               cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
-               (keydown.escape)="closeTransferAdmin()">
-            <div class="picks-modal__close-overlay" role="presentation"
-                 (click)="closeTransferAdmin()"></div>
-            <div class="picks-modal__card" style="max-width:480px;">
-              <header class="picks-modal__head">
-                <div>
-                  <div class="title" id="transfer-admin-title">Transferir admin</div>
-                  <div class="meta">El nuevo admin podrá editar, invitar y eliminar el grupo. Tú pasas a ser miembro normal.</div>
-                </div>
-                <button type="button" class="close" aria-label="Cerrar"
-                        (click)="closeTransferAdmin()">
-                  <span aria-hidden="true">✕</span>
-                </button>
-              </header>
-
-              <div class="picks-modal__body" style="display:flex;flex-direction:column;gap:8px;">
-                @for (m of nonAdminMembers(); track m.userId) {
-                  <label class="transfer-row" [class.is-selected]="newAdminId() === m.userId">
-                    <input type="radio" name="newAdmin"
-                           [value]="m.userId"
-                           [checked]="newAdminId() === m.userId"
-                           (change)="newAdminId.set(m.userId)">
-                    <div style="flex:1;">
-                      <div class="text-bold" translate="no">{{ '@' + m.handle }}</div>
-                    </div>
-                  </label>
-                }
-                @if (nonAdminMembers().length === 0) {
-                  <p class="text-mute" style="font-size:13px;">
-                    No hay otros miembros en el grupo. Invitá a alguien primero
-                    o eliminá el grupo.
-                  </p>
-                }
-              </div>
-
-              <footer class="picks-modal__foot">
-                <span class="meta"></span>
-                <div style="display:flex;gap:8px;">
-                  <button type="button" class="btn-wf btn-wf--sm"
-                          (click)="closeTransferAdmin()" [disabled]="transferring() === 'submitting'">
-                    Cancelar
-                  </button>
-                  <button type="button" class="btn-wf btn-wf--sm btn-wf--primary"
-                          (click)="submitTransferAdmin()"
-                          [disabled]="!newAdminId() || transferring() === 'submitting'">
-                    {{ transferring() === 'submitting' ? 'Transfiriendo…' : 'Transferir' }}
-                  </button>
-                </div>
-              </footer>
+          <app-modal [open]="true"
+                     title="Transferir admin"
+                     description="El nuevo admin podrá editar, invitar y eliminar el grupo. Tú pasas a ser miembro normal."
+                     size="sm"
+                     (close)="closeTransferAdmin()">
+            <div slot="body" style="display:flex;flex-direction:column;gap:8px;">
+              @for (m of nonAdminMembers(); track m.userId) {
+                <label class="transfer-row" [class.is-selected]="newAdminId() === m.userId">
+                  <input type="radio" name="newAdmin"
+                         [value]="m.userId"
+                         [checked]="newAdminId() === m.userId"
+                         (change)="newAdminId.set(m.userId)">
+                  <div style="flex:1;">
+                    <div class="text-bold" translate="no">{{ '@' + m.handle }}</div>
+                  </div>
+                </label>
+              }
+              @if (nonAdminMembers().length === 0) {
+                <p class="text-mute" style="font-size:13px;">
+                  No hay otros miembros en el grupo. Invitá a alguien primero
+                  o eliminá el grupo.
+                </p>
+              }
             </div>
-          </div>
+
+            <div slot="footer">
+              <button type="button" class="btn-wf btn-wf--sm"
+                      (click)="closeTransferAdmin()" [disabled]="transferring() === 'submitting'">
+                Cancelar
+              </button>
+              <button type="button" class="btn-wf btn-wf--sm btn-wf--primary"
+                      (click)="submitTransferAdmin()"
+                      [disabled]="!newAdminId() || transferring() === 'submitting'">
+                {{ transferring() === 'submitting' ? 'Transfiriendo…' : 'Transferir' }}
+              </button>
+            </div>
+          </app-modal>
         }
 
       }
