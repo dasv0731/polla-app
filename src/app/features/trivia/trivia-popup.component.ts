@@ -1,9 +1,9 @@
 import { Component, OnDestroy, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
-import { A11yModule } from '@angular/cdk/a11y';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService } from '../../core/user/user-modes.service';
 import { TriviaModalService } from '../../core/trivia/trivia-modal.service';
+import { ModalComponent } from '../../shared/ui/modal/modal.component';
 
 const TOURNAMENT_ID = 'mundial-2026';
 const POLL_MS = 60_000;
@@ -57,7 +57,7 @@ interface ActiveQuestion {
 @Component({
   standalone: true,
   selector: 'app-trivia-popup',
-  imports: [A11yModule],
+  imports: [ModalComponent],
   template: `
     @if (showFab()) {
       <button type="button" class="trivia-fab"
@@ -72,16 +72,14 @@ interface ActiveQuestion {
     }
 
     @if (modal.isOpen() && current(); as q) {
-      <div class="trivia-modal is-open"
-           [class.trivia-modal--marca]="q.sponsor !== null"
-           [class.trivia-modal--sinad]="q.sponsor === null"
-           role="dialog" aria-modal="true"
-           aria-labelledby="trivia-modal-title"
-           cdkTrapFocus [cdkTrapFocusAutoCapture]="true"
-           (keydown.escape)="closeModal()">
-        <div class="trivia-modal__close-overlay" role="presentation"
-             (click)="closeModal()"></div>
-        <div class="trivia-modal__card">
+      <app-modal [open]="true"
+                 [title]="modalTitle()"
+                 description="+10 pts si aciertas"
+                 size="md"
+                 (close)="closeModal()">
+        <div slot="body"
+             [class.trivia-modal--marca]="q.sponsor !== null"
+             [class.trivia-modal--sinad]="q.sponsor === null">
 
           @if (q.sponsor; as s) {
             <div class="trivia-sponsor">
@@ -96,26 +94,17 @@ interface ActiveQuestion {
             </div>
           }
 
-          <div class="trivia-head">
-            <div class="trivia-head__left">
-              <span class="trivia-head__icon">⚡</span>
-              <div>
-                <div class="trivia-head__title" id="trivia-modal-title">TRIVIA · {{ q.homeTeam }} vs {{ q.awayTeam }}</div>
-                <div class="trivia-head__sub">+10 pts si aciertas</div>
-              </div>
-            </div>
-            <div class="trivia-head__right">
-              @if (!revealed() && secondsLeft() > 0) {
+          @if (!revealed() && secondsLeft() > 0) {
+            <div class="trivia-head" style="justify-content: flex-end;">
+              <div class="trivia-head__right">
                 <span class="trivia-timer" role="timer" aria-live="off"
                       [class.trivia-timer--low]="secondsLeft() <= 15"
                       [attr.aria-label]="'Tiempo restante: ' + formatTimer(secondsLeft())">
                   <span aria-hidden="true">⏱ {{ formatTimer(secondsLeft()) }}</span>
                 </span>
-              }
-              <button type="button" class="trivia-head__close"
-                      aria-label="Cerrar" (click)="closeModal()">✕</button>
+              </div>
             </div>
-          </div>
+          }
 
           <div class="trivia-body">
             <div class="trivia-step">
@@ -170,23 +159,6 @@ interface ActiveQuestion {
             } @else if (msg()) {
               <p class="trivia-msg">{{ msg() }}</p>
             }
-
-            <div class="trivia-actions">
-              @if (!revealed()) {
-                <button type="button" class="trivia-skip" (click)="skip()">↶ Saltar</button>
-                <button type="button" class="trivia-next"
-                        [disabled]="picked() === null || submitting()"
-                        (click)="answer()">
-                  {{ submitting() ? 'Enviando…' : 'Responder' }}
-                </button>
-              } @else {
-                @let isLast = currentIndex() >= visibleQueue().length - 1;
-                <span></span>
-                <button type="button" class="trivia-next" (click)="advance()">
-                  {{ isLast ? 'Cerrar' : 'Siguiente →' }}
-                </button>
-              }
-            </div>
           </div>
 
           @if (q.sponsor) {
@@ -194,9 +166,24 @@ interface ActiveQuestion {
               <span class="trivia-foot__text">Trivia patrocinada · acierta y gana un comodín</span>
             </div>
           }
-
         </div>
-      </div>
+
+        <div slot="footer">
+          @if (!revealed()) {
+            <button type="button" class="trivia-skip" (click)="skip()">↶ Saltar</button>
+            <button type="button" class="trivia-next"
+                    [disabled]="picked() === null || submitting()"
+                    (click)="answer()">
+              {{ submitting() ? 'Enviando…' : 'Responder' }}
+            </button>
+          } @else {
+            @let isLast = currentIndex() >= visibleQueue().length - 1;
+            <button type="button" class="trivia-next" (click)="advance()">
+              {{ isLast ? 'Cerrar' : 'Siguiente →' }}
+            </button>
+          }
+        </div>
+      </app-modal>
     }
   `,
   styles: [`
@@ -252,6 +239,13 @@ export class TriviaPopupComponent implements OnInit, OnDestroy {
   current = computed<ActiveQuestion | null>(() => {
     const idx = this.activeIndex();
     return this.visibleQueue()[idx] ?? null;
+  });
+
+  /** Title del modal: "Trivia · HomeTeam vs AwayTeam" — pasado a <app-modal>
+   *  para aria-labelledby + h2 visible. Reemplaza el custom trivia-head__title. */
+  modalTitle = computed(() => {
+    const q = this.current();
+    return q ? `Trivia · ${q.homeTeam} vs ${q.awayTeam}` : '';
   });
 
   /** Index de la pregunta visible actual. Se controla con advance(). */
