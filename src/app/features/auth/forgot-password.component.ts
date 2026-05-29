@@ -1,45 +1,31 @@
 import {
-  Component, ElementRef, QueryList, ViewChildren,
-  computed, inject, signal,
+  Component, OnInit, ViewChild,
+  inject, signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { ToastService } from '../../core/notifications/toast.service';
 import { PasswordRulesListComponent } from '../../shared/ui/password-rules-list.component';
 import { passwordPassesAllRules } from '../../shared/util/password-rules';
+import { AuthBrandPanelComponent } from '../../shared/ui/auth-brand-panel/auth-brand-panel.component';
+import { IconComponent } from '../../shared/ui/icon/icon.component';
+import { OtpInputComponent } from '../../shared/ui/otp-input/otp-input.component';
 
 @Component({
   selector: 'app-forgot-password',
   standalone: true,
-  imports: [FormsModule, RouterLink, PasswordRulesListComponent],
+  imports: [
+    FormsModule, RouterLink,
+    PasswordRulesListComponent,
+    AuthBrandPanelComponent,
+    IconComponent,
+    OtpInputComponent,
+  ],
   template: `
     <div class="auth-shell">
 
-      <!-- Panel de marca (solo desktop) -->
-      <aside class="auth-brand">
-        <div class="auth-brand__top">
-          <img src="assets/logo-golgana.png" alt="Golgana" width="199" height="98" class="auth-brand__logo-img brand-logo">
-          <span class="auth-brand__title">Polla Mundialista 2026</span>
-        </div>
-        <div>
-          <h1 class="auth-brand__h1">
-            Predice cada partido.<br>
-            Gana contra tus panas.
-          </h1>
-          <p class="auth-brand__sub">
-            Crea grupos privados, asigna premios, gana comodines y demuestra
-            quién sabe más de fútbol.
-          </p>
-          <div class="auth-brand__stats">
-            <div><div class="num">2.4k</div><div class="lbl">Jugadores</div></div>
-            <div><div class="num">180</div><div class="lbl">Grupos activos</div></div>
-            <div><div class="num">$15k</div><div class="lbl">En premios</div></div>
-          </div>
-        </div>
-        <div class="auth-brand__foot">
-          © 2026 Golgana · Términos · Privacidad
-        </div>
-      </aside>
+      <app-auth-brand-panel [stats]="stats()" />
 
       <!-- Formulario -->
       <section class="auth-form">
@@ -112,23 +98,7 @@ import { passwordPassesAllRules } from '../../shared/util/password-rules';
               </p>
             </div>
 
-            <div class="otp">
-              @for (i of indices; track i) {
-                <input
-                  #otpInput
-                  class="otp__d"
-                  maxlength="1"
-                  inputmode="numeric"
-                  autocomplete="one-time-code"
-                  [attr.name]="'otp-' + (i + 1)"
-                  placeholder="—"
-                  [attr.aria-label]="'Dígito ' + (i + 1)"
-                  [value]="otpDigits()[i]"
-                  (input)="onOtpInput($event, i)"
-                  (keydown)="onOtpKey($event, i)"
-                  (paste)="onOtpPaste($event)">
-              }
-            </div>
+            <app-otp-input #otpInput (complete)="onOtpComplete($event)" />
 
             <div class="auth-resend">
               @if (resendCooldown() > 0) {
@@ -143,19 +113,46 @@ import { passwordPassesAllRules } from '../../shared/util/password-rules';
             <form (ngSubmit)="confirmReset()" style="margin-top:14px;">
               <div class="auth-field">
                 <label for="fp-newpwd" class="auth-label">Nueva contraseña</label>
+                <div class="auth-input-wrap">
+                  <input
+                    [type]="showPwd() ? 'text' : 'password'"
+                    id="fp-newpwd"
+                    name="newPassword"
+                    class="auth-input"
+                    placeholder="••••••••"
+                    autocomplete="new-password"
+                    spellcheck="false"
+                    autocapitalize="off"
+                    minlength="8"
+                    required
+                    [(ngModel)]="newPassword">
+                  <button type="button" class="auth-input-toggle"
+                          (click)="showPwd.set(!showPwd())"
+                          [attr.aria-label]="showPwd() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+                    <app-icon [name]="showPwd() ? 'eye-off' : 'eye'" size="md" />
+                  </button>
+                </div>
+                <app-password-rules-list [password]="newPassword" />
+              </div>
+
+              <div class="auth-field">
+                <label for="fp-newpwd-confirm" class="auth-label">Confirma la contraseña</label>
                 <input
-                  type="password"
-                  id="fp-newpwd"
-                  name="newPassword"
+                  [type]="showPwd() ? 'text' : 'password'"
+                  id="fp-newpwd-confirm"
+                  name="confirmPassword"
                   class="auth-input"
                   placeholder="••••••••"
                   autocomplete="new-password"
                   spellcheck="false"
                   autocapitalize="off"
-                  minlength="8"
                   required
-                  [(ngModel)]="newPassword">
-                <app-password-rules-list [password]="newPassword" />
+                  [(ngModel)]="confirmPassword">
+                @if (showMismatch()) {
+                  <div class="auth-helper" style="color: var(--wf-danger);">
+                    Las contraseñas no coinciden.
+                  </div>
+                }
               </div>
 
               @if (resetError()) {
@@ -169,13 +166,13 @@ import { passwordPassesAllRules } from '../../shared/util/password-rules';
                 type="submit"
                 class="btn-wf btn-wf--block btn-wf--primary"
                 style="padding:14px;font-size:14px;margin-top:14px;"
-                [disabled]="resetting() || code().length !== 6 || !passwordIsValid()">
+                [disabled]="resetting() || code().length !== 6 || !passwordIsValid() || !passwordsMatch()">
                 {{ resetting() ? 'Actualizando…' : 'Actualizar contraseña →' }}
               </button>
             </form>
 
             <div class="auth-tip">
-              💡 Revisa tu spam si no lo encuentras. El código caduca en 15 minutos.
+              Revisa tu spam si no lo encuentras. El código caduca en 15 minutos.
             </div>
 
           }
@@ -205,62 +202,87 @@ import { passwordPassesAllRules } from '../../shared/util/password-rules';
       border-radius: 6px;
       border: 1px solid rgba(0, 200, 100, 0.2);
     }
+    .auth-input-wrap { position: relative; }
+    .auth-input-wrap .auth-input { padding-right: 42px; }
+    .auth-input-toggle {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: 0;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 6px 8px;
+      line-height: 1;
+      color: var(--wf-ink-3);
+    }
+    .auth-input-toggle:hover { color: var(--wf-ink); }
+    .auth-input-toggle:focus-visible {
+      outline: 2px solid var(--color-primary-green);
+      outline-offset: 2px;
+      border-radius: 4px;
+      color: var(--wf-ink);
+    }
   `],
 })
-export class ForgotPasswordComponent {
+export class ForgotPasswordComponent implements OnInit {
   private auth = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private toast = inject(ToastService);
 
   email = '';
   newPassword = '';
+  confirmPassword = '';
 
   requesting = signal(false);
   resetting = signal(false);
   codeSent = signal(false);
+  showPwd = signal(false);
   requestError = signal<string | null>(null);
   resetError = signal<string | null>(null);
   resendInfo = signal<string | null>(null);
 
-  passwordIsValid = (): boolean => passwordPassesAllRules(this.newPassword);
+  // TODO(A6): replace with ApiService.getPublicStats() once polla-backend lambda deployed
+  stats = signal({ totalUsers: 2400, totalGroups: 180, totalPrizesAccrued: 15000 });
 
-  readonly indices = [0, 1, 2, 3, 4, 5];
-  otpDigits = signal<string[]>(['', '', '', '', '', '']);
-  code = computed(() => this.otpDigits().join(''));
+  passwordIsValid = (): boolean => passwordPassesAllRules(this.newPassword);
+  passwordsMatch = (): boolean =>
+    this.newPassword.length > 0 && this.newPassword === this.confirmPassword;
+  /** Mismatch hint solo si confirm tiene algo y difiere — no avisamos
+   *  "no coinciden" cuando el segundo input está vacío todavía. */
+  showMismatch = (): boolean =>
+    this.confirmPassword.length > 0 && this.newPassword !== this.confirmPassword;
+
+  /** Código actual del OTP, mantenido en sync con el `(complete)` event. */
+  private otpCode = signal<string>('');
+  code = this.otpCode.asReadonly();
+
+  @ViewChild('otpInput') otpInput?: OtpInputComponent;
 
   resendCooldown = signal(0);
   private cooldownTimer?: ReturnType<typeof setInterval>;
 
-  @ViewChildren('otpInput') otpRefs?: QueryList<ElementRef<HTMLInputElement>>;
-
-  // ---------- OTP ----------
-  onOtpInput(event: Event, idx: number) {
-    const input = event.target as HTMLInputElement;
-    const v = input.value.replace(/\D/g, '').slice(0, 1);
-    const arr = [...this.otpDigits()];
-    arr[idx] = v;
-    this.otpDigits.set(arr);
-    input.value = v;
-    if (v && idx < 5) {
-      this.otpRefs?.toArray()[idx + 1]?.nativeElement.focus();
-    }
+  ngOnInit() {
+    // Pre-rellenar email si vino del query (típico desde /login con email).
+    const qp = this.route.snapshot.queryParamMap;
+    const qEmail = qp.get('email');
+    if (qEmail) this.email = qEmail;
   }
 
-  onOtpKey(event: KeyboardEvent, idx: number) {
-    if (event.key === 'Backspace' && !this.otpDigits()[idx] && idx > 0) {
-      this.otpRefs?.toArray()[idx - 1]?.nativeElement.focus();
-    }
+  /** Path al que volver tras el reset (mismo patrón que login/onboarding).
+   *  Solo paths relativos al mismo origin — evita open-redirect. */
+  private safeReturnUrl(): string | null {
+    const raw = this.route.snapshot.queryParamMap.get('returnUrl');
+    if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return null;
+    return raw;
   }
 
-  onOtpPaste(event: ClipboardEvent) {
-    event.preventDefault();
-    const text = event.clipboardData?.getData('text') ?? '';
-    const digits = text.replace(/\D/g, '').slice(0, 6).split('');
-    if (digits.length === 0) return;
-    const arr = ['', '', '', '', '', ''];
-    digits.forEach((d, i) => arr[i] = d);
-    this.otpDigits.set(arr);
-    const lastIdx = Math.min(digits.length, 5);
-    setTimeout(() => this.otpRefs?.toArray()[lastIdx]?.nativeElement.focus(), 0);
+  onOtpComplete(code: string) {
+    this.otpCode.set(code);
+    // Sin auto-submit: el user todavía necesita escribir la nueva password
+    // y su confirmación. Solo guardamos el código.
   }
 
   formatCooldown(): string {
@@ -271,8 +293,10 @@ export class ForgotPasswordComponent {
   goBackToEmail(event: Event) {
     event.preventDefault();
     this.codeSent.set(false);
-    this.otpDigits.set(['', '', '', '', '', '']);
+    this.otpCode.set('');
+    this.otpInput?.reset();
     this.newPassword = '';
+    this.confirmPassword = '';
     this.resetError.set(null);
   }
 
@@ -294,19 +318,30 @@ export class ForgotPasswordComponent {
 
   async confirmReset() {
     if (!this.email || this.code().length !== 6 || this.newPassword.length < 8) return;
+    if (!this.passwordsMatch()) {
+      this.resetError.set('Las contraseñas no coinciden.');
+      return;
+    }
     this.resetError.set(null);
     this.resetting.set(true);
+    const returnUrl = this.safeReturnUrl();
     try {
       await this.auth.confirmForgot(this.email, this.code(), this.newPassword);
+      this.toast.success('Contraseña actualizada.');
       // El user acaba de probar email + nueva password — autenticarlo
       // directo es la UX correcta. Si el auto-login falla por algún edge
       // case (race condition con Cognito propagation, p.ej.), cae al
-      // /login normal con el email pre-llenado por la query.
+      // /login normal con el email pre-llenado por la query + returnUrl.
       try {
         await this.auth.login(this.email, this.newPassword);
-        void this.router.navigate(['/home']);
+        void this.router.navigateByUrl(returnUrl ?? '/home');
       } catch {
-        void this.router.navigate(['/login'], { queryParams: { email: this.email } });
+        void this.router.navigate(['/login'], {
+          queryParams: {
+            email: this.email,
+            ...(returnUrl ? { returnUrl } : {}),
+          },
+        });
       }
     } catch (e) {
       this.resetError.set((e as Error).message ?? 'Código inválido o password muy débil');
