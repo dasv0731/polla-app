@@ -58,7 +58,7 @@ interface GroupSummary {
         } @else if (g !== null) {
           <article class="join-card">
             <p class="join-card__kicker">Invitación a un grupo</p>
-            <div class="join-card__icon">★</div>
+            <div class="join-card__icon"><app-icon name="star" size="lg" /></div>
             <h1 class="join-card__name">{{ g.name }}</h1>
             <p class="join-card__owner">
               Invitado por <strong>{{ '@' + g.ownerHandle }}</strong> · Código <strong>{{ g.joinCode }}</strong>
