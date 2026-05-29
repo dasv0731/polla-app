@@ -101,6 +101,39 @@ type GameMode = 'SIMPLE' | 'COMPLETE';
               </div>
             }
 
+            <label class="check-row" style="margin-top: 12px;">
+              <input type="checkbox"
+                     [checked]="entryFeeEnabled()"
+                     (change)="entryFeeEnabled.set($any($event.target).checked)">
+              <span>
+                <strong>Cobrar cuota de ingreso al grupo</strong><br>
+                <small style="color: var(--color-text-muted);">
+                  Si la activás, cada miembro verá un recordatorio hasta que lo marques como pagado.
+                </small>
+              </span>
+            </label>
+
+            @if (entryFeeEnabled()) {
+              <div class="entry-fee-field">
+                <label for="grp-entry-fee">Instrucciones de pago</label>
+                <textarea id="grp-entry-fee" name="entryFeeInstructions"
+                          class="auth-input"
+                          rows="4"
+                          maxlength="500"
+                          [(ngModel)]="entryFeeInstructions"
+                          placeholder="Ej: Depositar $20 USD a la cuenta XXXXXX y enviar el comprobante por WhatsApp a +593 XXX-XXXX."></textarea>
+                <div class="entry-fee-field__hint">
+                  <small style="color: var(--color-text-muted);">Hasta 500 caracteres. Los saltos de línea se respetan.</small>
+                  <small [style.color]="entryFeeInstructions.length >= 450 ? 'var(--wf-warn)' : 'var(--color-text-muted)'">
+                    {{ entryFeeInstructions.length }}/500
+                  </small>
+                </div>
+                @if (entryFeeError(); as err) {
+                  <p class="modal-error" role="alert" style="margin-top: 8px;">{{ err }}</p>
+                }
+              </div>
+            }
+
             @if (error()) {
               <p class="modal-error" role="alert">{{ error() }}</p>
             }
@@ -236,6 +269,19 @@ type GameMode = 'SIMPLE' | 'COMPLETE';
       width: 18px;
       height: 18px;
     }
+
+    .entry-fee-field {
+      margin-top: 12px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .entry-fee-field label {
+      font-size: 13px; font-weight: 500;
+      color: var(--color-text);
+    }
+    .entry-fee-field__hint {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 4px;
+    }
   `],
 })
 export class GroupActionsModalsComponent {
@@ -251,6 +297,9 @@ export class GroupActionsModalsComponent {
   description = '';
   mode = signal<GameMode>('COMPLETE');
   comodinesEnabled = signal(true);
+  entryFeeEnabled = signal(false);
+  entryFeeInstructions = '';
+  entryFeeError = signal<string | null>(null);
   // Unirse
   code = '';
 
@@ -273,6 +322,9 @@ export class GroupActionsModalsComponent {
     this.description = '';
     this.mode.set('COMPLETE');
     this.comodinesEnabled.set(true);
+    this.entryFeeEnabled.set(false);
+    this.entryFeeInstructions = '';
+    this.entryFeeError.set(null);
     this.error.set(null);
   }
   private resetJoin()   { this.code = '';                            this.error.set(null); }
@@ -287,6 +339,23 @@ export class GroupActionsModalsComponent {
     const name = this.name.trim();
     if (!name || this.loading()) return;
     this.error.set(null);
+    this.entryFeeError.set(null);
+
+    // Entry-fee validation (client-side mirror of the handler rules so the
+    // user sees the inline error before we hit the network).
+    let feeInstructionsTrimmed: string | undefined;
+    if (this.entryFeeEnabled()) {
+      feeInstructionsTrimmed = this.entryFeeInstructions.trim();
+      if (feeInstructionsTrimmed.length === 0) {
+        this.entryFeeError.set('Las instrucciones son obligatorias si activás la cuota.');
+        return;
+      }
+      if (feeInstructionsTrimmed.length > 500) {
+        this.entryFeeError.set('Las instrucciones no pueden superar los 500 caracteres.');
+        return;
+      }
+    }
+
     this.loading.set(true);
     try {
       const mode = this.mode();
@@ -298,6 +367,10 @@ export class GroupActionsModalsComponent {
         // comodinesEnabled solo tiene sentido en COMPLETE — en SIMPLE el
         // backend lo ignora, pero evitamos enviar payload contradictorio.
         ...(mode === 'COMPLETE' ? { comodinesEnabled: this.comodinesEnabled() } : {}),
+        ...(this.entryFeeEnabled() ? {
+          entryFeeEnabled: true,
+          entryFeeInstructions: feeInstructionsTrimmed,
+        } : {}),
       });
       const data = (res as { data?: { id?: string } | null })?.data;
       if (!data?.id) {
