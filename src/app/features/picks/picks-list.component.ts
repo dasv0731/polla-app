@@ -11,6 +11,7 @@ import { TriviaModalService } from '../../core/trivia/trivia-modal.service';
 import { RailModalsService } from '../../core/layout/rail-modals.service';
 import { PicksSyncService } from '../../core/sync/picks-sync.service';
 import { RedeemModalService } from '../../core/sponsors/redeem-modal.service';
+import { GroupActionsService } from '../../core/groups/group-actions.service';
 import { RandomizerModalComponent } from './randomizer-modal.component';
 
 /** Payload del sync para picks de marcador. Tracking explícito de
@@ -163,7 +164,10 @@ interface TriviaInfo {
               <strong>Modo completo no activo.</strong>
               Podés ver el calendario, pero los marcadores que predigás
               acá no contarán hasta que estés en un grupo modo completo.
-              <a routerLink="/groups/new" class="link-green">Crear grupo →</a>
+              <button type="button" class="link-green link-green--btn"
+                      (click)="groupActions.openCreate()">Crear grupo →</button>
+              <button type="button" class="link-green link-green--btn"
+                      (click)="groupActions.openJoin()">Unirme con código →</button>
             </div>
           }
           @if (loading()) {
@@ -557,6 +561,7 @@ export class PicksListComponent implements OnInit, OnDestroy {
   private triviaModal = inject(TriviaModalService);
   rail = inject(RailModalsService);
   sync = inject(PicksSyncService);
+  groupActions = inject(GroupActionsService);
 
   @ViewChild('rnd') randomizer?: RandomizerModalComponent;
 

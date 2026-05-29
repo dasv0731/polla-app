@@ -6,6 +6,7 @@ import { UserModesService } from '../../core/user/user-modes.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
 import { PicksSyncService } from '../../core/sync/picks-sync.service';
+import { GroupActionsService } from '../../core/groups/group-actions.service';
 
 type GameMode = 'SIMPLE' | 'COMPLETE';
 
@@ -67,9 +68,12 @@ interface TeamItem {
       @if (availableModes().length === 0) {
         <div class="empty-state">
           <h3>Necesitas un grupo primero</h3>
+          <p>Crea o únete a un grupo para empezar tus picks especiales.</p>
           <p>
-            Crea o únete a un grupo para empezar tus picks especiales.
-            <a class="link-green" routerLink="/groups/new">Crear un grupo →</a>
+            <button type="button" class="link-green link-green--btn"
+                    (click)="groupActions.openCreate()">Crear un grupo →</button>
+            <button type="button" class="link-green link-green--btn"
+                    (click)="groupActions.openJoin()">Unirme con código →</button>
           </p>
         </div>
       } @else {
@@ -145,6 +149,7 @@ interface TeamItem {
 export class SpecialPicksComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  groupActions = inject(GroupActionsService);
   private userModes = inject(UserModesService);
   private toast = inject(ToastService);
   private sync = inject(PicksSyncService);

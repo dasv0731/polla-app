@@ -1,7 +1,8 @@
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { GroupActionsService } from '../../core/groups/group-actions.service';
 import { compareRankable } from '../../shared/util/tiebreakers';
 
 const TOURNAMENT_ID = 'mundial-2026';
@@ -73,7 +74,7 @@ const SNAPSHOT_KEY = (userId: string, scope: Scope) => `polla-rank-snapshot-${sc
 @Component({
   standalone: true,
   selector: 'app-ranking',
-  imports: [RouterLink],
+  imports: [],
   template: `
     <section class="page">
 
@@ -167,7 +168,12 @@ const SNAPSHOT_KEY = (userId: string, scope: Scope) => `polla-rank-snapshot-${sc
             }
           </p>
           @if (scope() === 'mis-grupos') {
-            <a class="btn-wf btn-wf--primary" routerLink="/groups/new">Crear un grupo →</a>
+            <div class="empty-block__actions">
+              <button type="button" class="btn-wf btn-wf--primary"
+                      (click)="groupActions.openCreate()">Crear un grupo →</button>
+              <button type="button" class="btn-wf btn-wf--ghost"
+                      (click)="groupActions.openJoin()">Unirme con código →</button>
+            </div>
           }
         </div>
       } @else {
@@ -434,6 +440,7 @@ const SNAPSHOT_KEY = (userId: string, scope: Scope) => `polla-rank-snapshot-${sc
 export class RankingComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  groupActions = inject(GroupActionsService);
   private route = inject(ActivatedRoute);
 
   /** Math expuesto al template para Math.abs() en pluralización de deltas. */

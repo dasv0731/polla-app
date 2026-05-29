@@ -11,6 +11,8 @@ import { TimeService } from '../../core/time/time.service';
 import { humanizeError } from '../../core/notifications/domain-errors';
 import { RailModalsService } from '../../core/layout/rail-modals.service';
 import { PicksSyncService } from '../../core/sync/picks-sync.service';
+import { GroupActionsService } from '../../core/groups/group-actions.service';
+import { EmptyBlockComponent } from '../../shared/ui/empty-block/empty-block.component';
 
 type GameMode = 'SIMPLE' | 'COMPLETE';
 
@@ -52,7 +54,7 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
 @Component({
   standalone: true,
   selector: 'app-bracket-picks',
-  imports: [RouterLink, RouterLinkActive, NgTemplateOutlet, TeamFlagComponent],
+  imports: [RouterLink, RouterLinkActive, NgTemplateOutlet, TeamFlagComponent, EmptyBlockComponent],
   template: `
     <section class="page">
 
@@ -149,11 +151,15 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
       @if (loading()) {
         <p class="loading-msg">Cargando bracket…</p>
       } @else if (availableModes().length === 0) {
-        <div class="empty-block">
-          <h3>Sin grupos privados</h3>
-          <p>Necesitas pertenecer a al menos un grupo privado para usar el bracket.</p>
-          <a class="btn-wf btn-wf--primary" routerLink="/groups/new">Crear un grupo →</a>
-        </div>
+        <app-empty-block
+          iconName="users"
+          title="Sin grupos privados"
+          sub="Necesitas pertenecer a al menos un grupo privado para usar el bracket.">
+          <button type="button" class="btn-wf btn-wf--primary"
+                  (click)="groupActions.openCreate()">Crear un grupo →</button>
+          <button type="button" class="btn-wf btn-wf--ghost"
+                  (click)="groupActions.openJoin()">Unirme con código →</button>
+        </app-empty-block>
       } @else if (projectionMissing()) {
         @let miss = projectionMissing()!;
         <div class="empty-block">
@@ -393,6 +399,7 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   rail = inject(RailModalsService);
   sync = inject(PicksSyncService);
+  groupActions = inject(GroupActionsService);
 
   loading = signal(true);
   availableModes = computed(() => this.userModes.modes());

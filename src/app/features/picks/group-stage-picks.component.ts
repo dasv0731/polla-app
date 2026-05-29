@@ -1,10 +1,11 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CdkDrag, CdkDragDrop, CdkDropList, CdkDropListGroup, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
 import { PicksSyncService } from '../../core/sync/picks-sync.service';
+import { GroupActionsService } from '../../core/groups/group-actions.service';
 
 type GameMode = 'SIMPLE' | 'COMPLETE';
 
@@ -33,7 +34,7 @@ interface ServerIdMap {
 @Component({
   standalone: true,
   selector: 'app-group-stage-picks',
-  imports: [CdkDropListGroup, CdkDropList, CdkDrag, RouterLink],
+  imports: [CdkDropListGroup, CdkDropList, CdkDrag],
   template: `
     <header class="page-header">
       <div class="page-header__title">
@@ -44,7 +45,10 @@ interface ServerIdMap {
       @if (availableModes().length === 0 && !modesLoading()) {
         <p class="form-card__hint" style="color: var(--color-lost);">
           Necesitas pertenecer a al menos un grupo privado para ingresar tus predicciones.
-          <a class="link-green" routerLink="/groups/new">Crea uno →</a>
+          <button type="button" class="link-green link-green--btn"
+                  (click)="groupActions.openCreate()">Crea uno →</button>
+          <button type="button" class="link-green link-green--btn"
+                  (click)="groupActions.openJoin()">Unirme con código →</button>
         </p>
       } @else if (availableModes().length > 1) {
         <div class="wf-seg" role="tablist" style="max-width: 320px; margin-top: var(--space-md);">
@@ -381,6 +385,7 @@ export class GroupStagePicksComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private sync = inject(PicksSyncService);
+  groupActions = inject(GroupActionsService);
 
   GROUP_LETTERS = GROUP_LETTERS;
 

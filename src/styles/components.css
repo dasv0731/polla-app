@@ -64,6 +64,16 @@
 }
 .link-green:hover { text-decoration: underline; }
 
+/* Variante botón con reset (mismo estilo visual que el <a>). Útil cuando
+ * el destino no es una URL sino que dispara un modal o una acción. */
+.link-green--btn {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  text-align: inherit;
+}
+
 /* Botón grande (hero) */
 .btn--lg {
   padding: 14px 28px;
