@@ -4,9 +4,12 @@ import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { TimeService } from '../../core/time/time.service';
 import { ToastService } from '../../core/notifications/toast.service';
+import { UserModesService } from '../../core/user/user-modes.service';
 import { apiClient } from '../../core/api/client';
 import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
 import { PicksSyncService } from '../../core/sync/picks-sync.service';
+import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
+import { IconComponent } from '../../shared/ui/icon/icon.component';
 
 /** Mismo payload que en picks-list — touched flags por lado para que
  *  un edit de un solo input no contamine visualmente el otro. */
@@ -44,13 +47,18 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
 @Component({
   standalone: true,
   selector: 'app-pick-detail',
-  imports: [RouterLink, TeamFlagComponent],
+  imports: [RouterLink, TeamFlagComponent, SkeletonComponent, IconComponent],
   template: `
     @let m = match();
     @let p = pick();
 
     @if (loading()) {
-      <p style="padding: var(--space-2xl); text-align: center;">Cargando partido…</p>
+      <div style="padding: var(--space-xl); max-width: 720px; margin: 0 auto;">
+        <app-skeleton variant="card" [count]="1" />
+        <div style="margin-top: var(--space-md);">
+          <app-skeleton variant="text" [count]="3" />
+        </div>
+      </div>
     } @else if (m !== null) {
       <!-- HERO -->
       <section class="mh">
@@ -112,11 +120,15 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
                            (input)="onBannerInput('away', $event)">
                   </div>
                   @if (isPast()) {
-                    <span class="mh__pick-state mh__pick-state--locked">Cerrado · kickoff alcanzado</span>
+                    <span class="mh__pick-state mh__pick-state--locked">
+                      <app-icon name="lock" size="sm" />Cerrado · kickoff alcanzado
+                    </span>
                   } @else if (saving()) {
                     <span class="mh__pick-state">Guardando…</span>
                   } @else if (pick()) {
-                    <span class="mh__pick-state mh__pick-state--ok">✓ Guardado</span>
+                    <span class="mh__pick-state mh__pick-state--ok">
+                      <app-icon name="check" size="sm" />Guardado
+                    </span>
                   } @else {
                     <span class="mh__pick-state mh__pick-state--muted">Sin pick · escribí un marcador</span>
                   }
@@ -129,12 +141,23 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
             </div>
 
             @if (!isPast()) {
-              <div class="countdown" style="max-width: 480px; margin-inline: auto;">
-                <div class="countdown__cell"><span class="countdown__value">{{ days() }}</span><span class="countdown__label">Días</span></div>
-                <div class="countdown__cell"><span class="countdown__value">{{ hours() }}</span><span class="countdown__label">Horas</span></div>
-                <div class="countdown__cell"><span class="countdown__value">{{ mins() }}</span><span class="countdown__label">Min</span></div>
-                <div class="countdown__cell"><span class="countdown__value">{{ secs() }}</span><span class="countdown__label">Seg</span></div>
-              </div>
+              <!-- Countdown contextual:
+                   - >1 día: "En N días" simple
+                   - 1 día: "Mañana"
+                   - <24h: full D/H/M/S grid -->
+              @if (countdownMode() === 'simple') {
+                <div class="countdown-simple" role="timer">
+                  <span class="countdown-simple__icon"><app-icon name="clock" size="sm" /></span>
+                  {{ countdownSimpleLabel() }}
+                </div>
+              } @else {
+                <div class="countdown" style="max-width: 480px; margin-inline: auto;">
+                  <div class="countdown__cell"><span class="countdown__value">{{ days() }}</span><span class="countdown__label">Días</span></div>
+                  <div class="countdown__cell"><span class="countdown__value">{{ hours() }}</span><span class="countdown__label">Horas</span></div>
+                  <div class="countdown__cell"><span class="countdown__value">{{ mins() }}</span><span class="countdown__label">Min</span></div>
+                  <div class="countdown__cell"><span class="countdown__value">{{ secs() }}</span><span class="countdown__label">Seg</span></div>
+                </div>
+              }
             }
           }
         </div>
@@ -153,8 +176,14 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
             <div class="pick-vs-result">
               <div class="pick-vs-result__head">
                 <p class="pick-vs-result__verdict"
+                   [class.pick-vs-result__verdict--hit]="verdictKind() === 'exact' || verdictKind() === 'result'"
                    [class.pick-vs-result__verdict--miss]="verdictKind() === 'miss'"
                    [class.pick-vs-result__verdict--none]="verdictKind() === 'none'">
+                  @if (verdictKind() === 'exact' || verdictKind() === 'result') {
+                    <app-icon name="check" size="md" />
+                  } @else if (verdictKind() === 'miss') {
+                    <app-icon name="close" size="md" />
+                  }
                   {{ verdictText() }}
                 </p>
                 <p class="pick-vs-result__sub">{{ verdictSub() }}</p>
@@ -255,8 +284,9 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
             </section>
           }
         } @else {
-          <!-- DATOS DEL PARTIDO (el pick form duplicado se removió;
-               el banner del hero ya tiene los inputs de marcador) -->
+          <!-- DATOS DEL PARTIDO compactos · eliminamos los 3 placeholders
+               (Estadio/Sede/Árbitro) que duplicaban "Por confirmar". Solo
+               quedan los 3 hechos reales: fase + multiplicador + kickoff. -->
           <section>
             <header class="section-heading" style="margin-bottom: var(--space-md);">
               <div class="section-heading__text">
@@ -264,14 +294,30 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
                 <h2 class="h2">Sobre {{ teamName(m.homeTeamId) }} vs {{ teamName(m.awayTeamId) }}</h2>
               </div>
             </header>
-            <div class="match-info">
+            <div class="match-info match-info--compact">
               <div class="match-info__item"><small>Fase</small><strong>{{ phaseName() ?? '—' }}</strong></div>
               <div class="match-info__item"><small>Multiplicador</small><strong>x{{ phaseMultiplier() }} · max {{ (phaseMultiplier()) * 5 }} pts</strong></div>
               <div class="match-info__item"><small>Kickoff</small><strong>{{ time.formatKickoff(m.kickoffAt) }}</strong></div>
-              <div class="match-info__item"><small>Estadio</small><strong>Por confirmar</strong></div>
-              <div class="match-info__item"><small>Sede</small><strong>—</strong></div>
-              <div class="match-info__item"><small>Árbitro</small><strong>Por confirmar</strong></div>
             </div>
+            <!-- TODO(A6): forma reciente + H2H + picks distribution requieren backend.
+                 Hidden hasta que el endpoint esté disponible. -->
+          </section>
+        }
+
+        <!-- Post-match: link al ranking del grupo + share -->
+        @if (isFinal()) {
+          <section class="post-match-actions">
+            @if (primaryGroup(); as g) {
+              <a class="post-match-link" [routerLink]="['/groups', g.id]">
+                <app-icon name="trophy" size="sm" />
+                Ver mi ranking en {{ g.name }}
+                <span aria-hidden="true">→</span>
+              </a>
+            }
+            <button type="button" class="post-match-share" (click)="shareResult()">
+              <app-icon name="arrow-right" size="sm" />
+              Compartir resultado
+            </button>
           </section>
         }
 
@@ -350,9 +396,91 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
       font-weight: 600;
       letter-spacing: .04em;
     }
+    .mh__pick-state {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
     .mh__pick-state--ok     { color: #9eff9e; }
     .mh__pick-state--muted  { opacity: 0.7; }
     .mh__pick-state--locked { color: #ffb3b3; }
+
+    /* Countdown contextual simple (>1 día) */
+    .countdown-simple {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      margin: 12px auto 0;
+    }
+    .countdown-simple__icon {
+      display: inline-flex;
+      opacity: 0.85;
+    }
+
+    /* Verdict --hit variant (asimetría fix vs --miss/--none ya existentes) */
+    .pick-vs-result__verdict {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .pick-vs-result__verdict--hit {
+      color: var(--color-win, #02cc74);
+    }
+
+    /* Match-info compact (3 items reales, no placeholders) */
+    .match-info--compact {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-sm);
+    }
+    @media (max-width: 600px) {
+      .match-info--compact { grid-template-columns: 1fr; }
+    }
+
+    /* Post-match actions: link al grupo + share */
+    .post-match-actions {
+      display: flex;
+      gap: var(--space-md);
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: var(--space-xl) 0;
+    }
+    .post-match-link,
+    .post-match-share {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 16px;
+      background: var(--color-primary-green);
+      color: #fff;
+      border: 0;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      text-decoration: none;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .post-match-link:hover,
+    .post-match-share:hover { filter: brightness(0.95); }
+    .post-match-share {
+      background: transparent;
+      color: var(--color-primary-green);
+      border: 1px solid var(--color-primary-green);
+    }
+    .post-match-share:hover { background: rgba(2,204,116,0.05); filter: none; }
+    .post-match-link:focus-visible,
+    .post-match-share:focus-visible {
+      outline: 2px solid var(--color-primary-green);
+      outline-offset: 2px;
+    }
   `],
 })
 export class PickDetailComponent implements OnInit, OnDestroy {
@@ -363,6 +491,10 @@ export class PickDetailComponent implements OnInit, OnDestroy {
   time = inject(TimeService);
   private toast = inject(ToastService);
   sync = inject(PicksSyncService);
+  private userModes = inject(UserModesService);
+
+  /** Primer grupo del user (para link "Ver mi ranking en X" post-match). */
+  primaryGroup = computed(() => this.userModes.groups()[0] ?? null);
 
   match = signal<MatchData | null>(null);
   pick = signal<PickData | null>(null);
@@ -401,6 +533,20 @@ export class PickDetailComponent implements OnInit, OnDestroy {
   hours = computed(() => pad(Math.floor((this.msUntil() % 86_400_000) / 3_600_000)));
   mins = computed(() => pad(Math.floor((this.msUntil() % 3_600_000) / 60_000)));
   secs = computed(() => pad(Math.floor((this.msUntil() % 60_000) / 1000)));
+
+  /** Countdown contextual:
+   *  - >1 día: simple ("En N días")
+   *  - 1 día: simple ("Mañana")
+   *  - <24h: detail (D/H/M/S grid completa) */
+  countdownMode = computed<'simple' | 'detail'>(() =>
+    this.msUntil() >= 86_400_000 ? 'simple' : 'detail',
+  );
+  countdownSimpleLabel = computed(() => {
+    const ms = this.msUntil();
+    const days = Math.floor(ms / 86_400_000);
+    if (days === 1) return 'Mañana';
+    return `En ${days} días`;
+  });
 
   statusLabel = computed(() => {
     if (this.isPast()) return 'Cerrado';
@@ -648,6 +794,38 @@ export class PickDetailComponent implements OnInit, OnDestroy {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  /** Share result post-match · uses Web Share API si disponible, sino
+   *  copia al clipboard como fallback. */
+  async shareResult() {
+    const m = this.match();
+    const p = this.pick();
+    if (!m) return;
+    const home = this.teamName(m.homeTeamId);
+    const away = this.teamName(m.awayTeamId);
+    const realScore = `${m.homeScore}-${m.awayScore}`;
+    const myScore = p ? `${p.homeScorePred}-${p.awayScorePred}` : 'sin pick';
+    const pts = p?.pointsEarned ?? 0;
+    const text = `Mundial 2026 · ${home} ${realScore} ${away}\n` +
+                 `Mi pick: ${myScore} · +${pts} pts\n` +
+                 `Jugá tu polla en Golgana`;
+    if (typeof navigator !== 'undefined' && 'share' in navigator) {
+      try {
+        await navigator.share({ title: 'Mi pick en Golgana', text });
+        return;
+      } catch {
+        /* user dismissed o share unsupported — fallback al clipboard */
+      }
+    }
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(text);
+        this.toast.success('Resultado copiado al portapapeles');
+        return;
+      } catch { /* ignore */ }
+    }
+    this.toast.error('No se pudo compartir');
   }
 
   /** Botón explícito "Guardar" — encola al sync (mismo path que el
