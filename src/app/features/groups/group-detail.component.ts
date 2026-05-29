@@ -31,6 +31,10 @@ interface GroupHeader {
   prize1st: string | null;
   prize2nd: string | null;
   prize3rd: string | null;
+  /** Cuota de ingreso enabled by admin. Null = legacy group, treat as false. */
+  entryFeeEnabled: boolean | null;
+  /** Free-text payment instructions. Null when feature is off. */
+  entryFeeInstructions: string | null;
 }
 
 interface RankRow {
@@ -40,6 +44,8 @@ interface RankRow {
   points: number;
   exactCount: number;
   resultCount: number;
+  /** Timestamp when admin marked the user's entry fee as paid. Null = pending. */
+  entryFeePaidAt: string | null;
 }
 
 @Component({
@@ -280,6 +286,9 @@ interface RankRow {
                       Result. {{ sortIndicator('result') }}
                     </button>
                   </th>
+                  @if (isAdminOfGroup() && group()?.entryFeeEnabled) {
+                    <th class="cuota-col" scope="col">Cuota</th>
+                  }
                   @if (isAdminOfGroup()) {
                     <th style="width:60px;text-align:center;">Acción</th>
                   }
@@ -305,6 +314,31 @@ interface RankRow {
                     <td class="rank-table__pts">{{ r.points }}</td>
                     <td class="rank-table__desk">{{ r.exactCount }}</td>
                     <td class="rank-table__desk">{{ r.resultCount }}</td>
+                    @if (isAdminOfGroup() && g.entryFeeEnabled) {
+                      <td class="cuota-col">
+                        @if (r.userId === currentUserId) {
+                          <span class="cuota-tag cuota-tag--paid" aria-label="Cuota pagada">
+                            <app-icon name="check" [decorative]="true" [size]="14"></app-icon>
+                            Pagada
+                          </span>
+                        } @else {
+                          <button type="button"
+                                  class="cuota-checkbox"
+                                  [class.is-paid]="r.entryFeePaidAt !== null"
+                                  [attr.aria-pressed]="r.entryFeePaidAt !== null"
+                                  [attr.aria-label]="r.entryFeePaidAt !== null ? 'Quitar marca de pago' : 'Marcar como pagada'"
+                                  [title]="r.entryFeePaidAt !== null ? 'Quitar marca' : 'Marcar como pagada'"
+                                  (click)="toggleEntryFeePaid(r.userId, r.entryFeePaidAt !== null)">
+                            @if (r.entryFeePaidAt !== null) {
+                              <app-icon name="check" [decorative]="true" [size]="14"></app-icon>
+                              Pagada
+                            } @else {
+                              Marcar pagada
+                            }
+                          </button>
+                        }
+                      </td>
+                    }
                     @if (isAdminOfGroup()) {
                       <td style="text-align:center;">
                         @if (r.userId !== g.adminUserId) {
@@ -325,7 +359,7 @@ interface RankRow {
                   </tr>
                 } @empty {
                   <tr>
-                    <td [attr.colspan]="isAdminOfGroup() ? 6 : 5" style="text-align:center; padding: 22px; color: var(--wf-ink-3);">
+                    <td [attr.colspan]="isAdminOfGroup() ? (g.entryFeeEnabled ? 7 : 6) : 5" style="text-align:center; padding: 22px; color: var(--wf-ink-3);">
                       Aún no hay puntajes. Espera al primer partido.
                     </td>
                   </tr>
@@ -661,6 +695,33 @@ interface RankRow {
     }
     .group-share__qr-placeholder span { font-weight: 700; font-size: 20px; }
     .group-share__qr-placeholder small { font-size: 11px; text-align: center; }
+
+    /* Cuota de ingreso column (admin only) */
+    .cuota-col { white-space: nowrap; min-width: 132px; }
+    .cuota-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 999px; font-size: 13px;
+      background: rgba(2, 204, 116, 0.12); color: var(--color-primary-green);
+    }
+    .cuota-tag--paid { font-weight: 500; }
+    .cuota-checkbox {
+      display: inline-flex; align-items: center; gap: 6px;
+      min-height: 44px; padding: 6px 12px;
+      border: 1px solid var(--color-line); border-radius: 999px;
+      background: transparent; color: var(--color-text-muted);
+      font-size: 13px; cursor: pointer;
+      transition: background .15s, border-color .15s, color .15s;
+    }
+    .cuota-checkbox:hover { border-color: var(--color-primary-green); color: var(--color-text); }
+    .cuota-checkbox.is-paid {
+      background: rgba(2, 204, 116, 0.12);
+      color: var(--color-primary-green);
+      border-color: rgba(2, 204, 116, 0.4);
+    }
+    .cuota-checkbox:focus-visible {
+      outline: 2px solid var(--color-primary-green);
+      outline-offset: 2px;
+    }
   `],
 })
 export class GroupDetailComponent implements OnInit, OnChanges {
@@ -828,6 +889,10 @@ export class GroupDetailComponent implements OnInit, OnChanges {
           (grp.data as { comodinesEnabled?: boolean | null }).comodinesEnabled ?? null;
         const description =
           (grp.data as { description?: string | null }).description ?? null;
+        const entryFeeEnabled =
+          (grp.data as { entryFeeEnabled?: boolean | null }).entryFeeEnabled ?? null;
+        const entryFeeInstructions =
+          (grp.data as { entryFeeInstructions?: string | null }).entryFeeInstructions ?? null;
         this.group.set({
           id: grp.data.id,
           name: grp.data.name,
@@ -841,6 +906,8 @@ export class GroupDetailComponent implements OnInit, OnChanges {
           prize1st: grp.data.prize1st ?? null,
           prize2nd: grp.data.prize2nd ?? null,
           prize3rd: grp.data.prize3rd ?? null,
+          entryFeeEnabled,
+          entryFeeInstructions,
         });
         // Resolver signed URL para el logo en background. Si falla (cert
         // expirado, key fantasma), groupImageUrl queda null y el header
@@ -869,6 +936,14 @@ export class GroupDetailComponent implements OnInit, OnChanges {
         }),
       );
 
+      const entryFeePaidByUser = new Map<string, string | null>();
+      for (const m of (members.data ?? [])) {
+        entryFeePaidByUser.set(
+          m.userId,
+          (m as { entryFeePaidAt?: string | null }).entryFeePaidAt ?? null,
+        );
+      }
+
       const sorted = (totals.data ?? []).sort(
         (a, b) => (b.points ?? 0) - (a.points ?? 0),
       );
@@ -880,6 +955,7 @@ export class GroupDetailComponent implements OnInit, OnChanges {
           points: t.points ?? 0,
           exactCount: t.exactCount ?? 0,
           resultCount: t.resultCount ?? 0,
+          entryFeePaidAt: entryFeePaidByUser.get(t.userId) ?? null,
         })),
       );
     } finally {
@@ -948,6 +1024,30 @@ export class GroupDetailComponent implements OnInit, OnChanges {
       this.toast.error(humanizeError(e));
     } finally {
       this.removingUserId.set(null);
+    }
+  }
+
+  // ---------- Cuota de ingreso (admin) ----------
+
+  /** Admin toggles a member's entry-fee paid state. Optimistic update with
+   *  rollback on failure. No-op on the admin's own row (use Editar grupo to
+   *  turn off the feature entirely). */
+  async toggleEntryFeePaid(userId: string, currentlyPaid: boolean): Promise<void> {
+    if (userId === this.currentUserId) return;
+    if (!this.isAdminOfGroup()) return;
+
+    const newPaidAt = currentlyPaid ? null : new Date().toISOString();
+    const prev = this.rows();
+    const next = prev.map((m) =>
+      m.userId === userId ? { ...m, entryFeePaidAt: newPaidAt } : m,
+    );
+    this.rows.set(next);
+
+    try {
+      await this.api.markEntryFeePaid({ groupId: this.id, userId, paid: !currentlyPaid });
+    } catch (e) {
+      this.rows.set(prev); // rollback
+      this.toast.error(humanizeError(e));
     }
   }
 
