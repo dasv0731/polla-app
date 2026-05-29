@@ -22,7 +22,8 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
       <!-- Panel de marca (solo desktop) -->
       <aside class="auth-brand">
         <div class="auth-brand__top">
-          <img src="assets/logo-golgana.png" alt="Golgana" width="199" height="98" class="auth-brand__logo-img" style="height:40px;width:auto;">
+          <img src="assets/logo-golgana.png" alt="Golgana" width="199" height="98" class="auth-brand__logo-img brand-logo">
+          <span class="auth-brand__title">Polla Mundialista 2026</span>
         </div>
         <div>
           <h1 class="auth-brand__h1">
@@ -40,7 +41,7 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
           </div>
         </div>
         <div class="auth-brand__foot">
-          © 2026 Polla Mundialista · Términos · Privacidad
+          © 2026 Golgana · Términos · Privacidad
         </div>
       </aside>
 

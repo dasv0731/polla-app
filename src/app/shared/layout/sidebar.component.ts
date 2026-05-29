@@ -22,8 +22,8 @@ import { ConfirmDialogService } from '../ui/confirm-dialog.service';
   template: `
     <aside class="lsb" aria-label="Navegación principal">
       <a class="lsb__logo" routerLink="/home" aria-label="Inicio">
-        <img src="assets/logo-golgana.png" alt="" width="199" height="98">
-        <strong>POLLA</strong>
+        <img src="assets/logo-golgana.png" alt="" width="199" height="98" class="brand-logo--sm">
+        <strong class="lsb__brand-sub">Polla Mundialista 2026</strong>
       </a>
 
       <a routerLink="/home" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
@@ -124,13 +124,17 @@ import { ConfirmDialogService } from '../ui/confirm-dialog.service';
       justify-content: flex-start;
       display: flex; align-items: center; gap: 10px;
     }
-    .lsb__logo img { height: 28px; }
-    .lsb__logo strong {
+    .lsb__logo img { height: var(--logo-size-sm, 24px); width: auto; }
+    .lsb__brand-sub {
       display: none;
-      color: #fff; font-family: var(--font-display);
-      font-size: 18px; letter-spacing: 0.04em;
+      color: #fff;
+      font-family: var(--font-primary);
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+      white-space: nowrap;
     }
-    .lsb:hover .lsb__logo strong { display: block; }
+    .lsb:hover .lsb__brand-sub { display: block; }
 
     .lsb a {
       color: rgba(255,255,255,0.7);

@@ -91,7 +91,7 @@ import { humanizeError } from '../../core/notifications/domain-errors';
             <div class="email-preview__head">
               <img src="assets/logo-golgana.png" alt="Golgana" width="199" height="98">
               <div class="email-preview__head-info">
-                <strong>Polla Mundialista</strong>
+                <strong>Polla Mundialista 2026</strong>
                 <small>polla&#64;golgana.net · Para: {{ emails()[0] ?? 'amigo@ejemplo.com' }}</small>
               </div>
             </div>
@@ -100,7 +100,7 @@ import { humanizeError } from '../../core/notifications/domain-errors';
                 {{ '@' + (currentHandle() ?? 'tu') }} te invitó
               </p>
               <h2>Te invitan a "{{ g.name }}"</h2>
-              <p>{{ '@' + (currentHandle() ?? 'tu') }} armó un grupo en la <strong>Polla Mundial 2026</strong> y quiere que estés. Es gratis y solo pide email + password.</p>
+              <p>{{ '@' + (currentHandle() ?? 'tu') }} armó un grupo en la <strong>Polla Mundialista 2026</strong> y quiere que estés. Es gratis y solo pide email + password.</p>
               @if (message.trim()) {
                 <p style="font-style: italic; padding: var(--space-sm) var(--space-md); border-left: 3px solid var(--color-primary-green); background: var(--color-green-5);">
                   "{{ message }}"

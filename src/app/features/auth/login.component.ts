@@ -12,8 +12,8 @@ import { AuthService } from '../../core/auth/auth.service';
       <!-- Panel de marca (solo desktop ≥992) -->
       <aside class="auth-brand">
         <div class="auth-brand__top">
-          <img src="assets/logo-golgana.png" alt="" width="199" height="98" class="auth-brand__logo-img" style="height:32px;width:auto;">
-          <span class="auth-brand__title">GOLGANA · MUNDIAL 2026</span>
+          <img src="assets/logo-golgana.png" alt="Golgana" width="199" height="98" class="auth-brand__logo-img brand-logo">
+          <span class="auth-brand__title">Polla Mundialista 2026</span>
         </div>
 
         <div>
@@ -43,7 +43,7 @@ import { AuthService } from '../../core/auth/auth.service';
         </div>
 
         <div class="auth-brand__foot">
-          © 2026 Polla Mundialista · Términos · Privacidad
+          © 2026 Golgana · Términos · Privacidad
         </div>
       </aside>
 
@@ -53,9 +53,9 @@ import { AuthService } from '../../core/auth/auth.service';
 
           <!-- Header mobile -->
           <div class="auth-mobile-head">
-            <div class="auth-mobile-head__logo">⚽</div>
-            <h1 class="auth-mobile-head__title">Polla Mundialista</h1>
-            <div class="auth-mobile-head__kicker">Mundial 2026</div>
+            <img src="assets/logo-golgana.png" alt="" class="auth-mobile-head__logo brand-logo--sm">
+            <h1 class="auth-mobile-head__title">Golgana</h1>
+            <div class="auth-mobile-head__kicker">Polla Mundialista 2026</div>
           </div>
 
           <!-- Header desktop -->

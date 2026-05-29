@@ -22,8 +22,8 @@ interface GroupSummary {
     <div class="auth-shell">
       <header class="auth-header">
         <div class="auth-header__inner">
-          <a routerLink="/picks" class="auth-header__logo" aria-label="Polla Mundial 2026">
-            <img src="assets/logo-golgana.png" alt="Golgana" width="199" height="98">
+          <a routerLink="/home" class="auth-header__logo" aria-label="Golgana">
+            <img src="assets/logo-golgana.png" alt="Golgana" width="199" height="98" class="brand-logo">
           </a>
           <a routerLink="/groups" class="auth-header__back">← Mis grupos</a>
         </div>

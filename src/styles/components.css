@@ -4,6 +4,24 @@
    ============================================================ */
 
 /* ============================================================
+   Brand logo utility (A5 size unification)
+   Single token --logo-size-md aplicado cross-app vía clase.
+   Variantes --sm / --lg para usos secundarios.
+   ============================================================ */
+.brand-logo {
+  height: var(--logo-size-md, 32px);
+  width: auto;
+}
+.brand-logo--sm {
+  height: var(--logo-size-sm, 24px);
+  width: auto;
+}
+.brand-logo--lg {
+  height: var(--logo-size-lg, 48px);
+  width: auto;
+}
+
+/* ============================================================
    Botón primario (CTA)
    Fondo verde, texto blanco, borde verde, radius-md
    UPPERCASE, font-weight 600

@@ -17,9 +17,9 @@ import { ConfirmDialogService } from '../ui/confirm-dialog.service';
     <footer class="site-footer">
       <div class="site-footer__grid">
         <div class="site-footer__brand">
-          <img src="assets/logo-golgana.png" alt="Golgana" width="199" height="98">
+          <img src="assets/logo-golgana.png" alt="Golgana" width="199" height="98" class="brand-logo">
           <p>
-            Polla Mundialista — sub-módulo de
+            Polla Mundialista 2026 — sub-módulo de
             <a href="https://golgana.net" style="color: var(--color-primary-green);">Golgana</a>
             para la FIFA World Cup 2026. Gratis, sin gambling, sin trampas.
           </p>
@@ -46,7 +46,7 @@ import { ConfirmDialogService } from '../ui/confirm-dialog.service';
         </div>
       </div>
       <hr class="site-footer__divider">
-      <p class="site-footer__copy">© {{ year }} Golgana — Polla Mundialista</p>
+      <p class="site-footer__copy">© {{ year }} Golgana — Polla Mundialista 2026</p>
     </footer>
   `,
 })
