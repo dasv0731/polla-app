@@ -2,6 +2,7 @@ import { Component, OnInit, computed, inject } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { GroupActionsService } from '../../core/groups/group-actions.service';
+import { IconComponent } from '../../shared/ui/icon/icon.component';
 
 /**
  * Onboarding post-registro. Pantalla única con 3 CTAs:
@@ -19,7 +20,7 @@ import { GroupActionsService } from '../../core/groups/group-actions.service';
 @Component({
   selector: 'app-onboarding',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, IconComponent],
   template: `
     <div class="onb-shell">
       <div class="onb-card">
@@ -32,8 +33,11 @@ import { GroupActionsService } from '../../core/groups/group-actions.service';
           </a>
         </div>
 
-        <div class="onb-hero onb-hero--ready" aria-hidden="true">⚽</div>
-        <div class="kicker">Bienvenido</div>
+        <div class="onb-hero onb-hero--brand">
+          <img src="assets/logo-golgana.png" alt="" aria-hidden="true"
+               class="brand-logo brand-logo--lg">
+        </div>
+        <div class="kicker">Polla Mundialista 2026</div>
         <h1 class="onb-title">
           Hola,<br><span translate="no">{{ '@' + (handle() ?? 'jugador') }}</span>
         </h1>
@@ -43,13 +47,13 @@ import { GroupActionsService } from '../../core/groups/group-actions.service';
         </p>
 
         <div class="onb-actions" style="display:flex;flex-direction:column;gap:10px;">
-          <button class="btn-wf btn-wf--block btn-wf--primary" type="button"
+          <button class="btn-wf btn-wf--block btn-wf--primary onb-cta" type="button"
                   (click)="onCreate()">
-            <span aria-hidden="true">＋ </span>Crear un grupo
+            <app-icon name="plus" size="md" />Crear un grupo
           </button>
-          <button class="btn-wf btn-wf--block btn-wf--ink" type="button"
+          <button class="btn-wf btn-wf--block btn-wf--ink onb-cta" type="button"
                   (click)="onJoin()">
-            <span aria-hidden="true">→ </span>Unirme con código
+            <app-icon name="arrow-right" size="md" />Unirme con código
           </button>
           <button class="btn-wf btn-wf--block onb-secondary" type="button"
                   (click)="onSkip()">
@@ -66,6 +70,22 @@ import { GroupActionsService } from '../../core/groups/group-actions.service';
   `,
   styles: [`
     :host { display: block; }
+
+    /* Hero con brand graphic (reemplazó ⚽ emoji). Centrado, padding amplio. */
+    .onb-hero--brand {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: var(--space-md) 0;
+    }
+
+    /* CTAs con icon alineado a la izquierda + label. */
+    .onb-cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
 
     .onb-secondary {
       background: transparent;
