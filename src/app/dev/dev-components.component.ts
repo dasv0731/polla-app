@@ -1,7 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { IconComponent } from '../shared/ui/icon/icon.component';
 import { EmptyBlockComponent } from '../shared/ui/empty-block/empty-block.component';
 import { SkeletonComponent } from '../shared/ui/skeleton/skeleton.component';
+import { ModalComponent } from '../shared/ui/modal/modal.component';
+import { ConfirmDialogService } from '../shared/ui/confirm-dialog.service';
 import { ICON_NAMES } from '../shared/ui/icon/icon-map';
 
 /**
@@ -14,7 +16,7 @@ import { ICON_NAMES } from '../shared/ui/icon/icon-map';
 @Component({
   standalone: true,
   selector: 'app-dev-components',
-  imports: [IconComponent, EmptyBlockComponent, SkeletonComponent],
+  imports: [IconComponent, EmptyBlockComponent, SkeletonComponent, ModalComponent],
   template: `
     <main style="padding: 32px; max-width: 1100px; margin: 0 auto;">
       <h1 style="font-family: var(--font-display); margin-bottom: 24px;">
@@ -77,9 +79,60 @@ import { ICON_NAMES } from '../shared/ui/icon/icon-map';
           </div>
         </div>
       </section>
+
+      <section style="margin-bottom: 48px;">
+        <h2 style="margin-bottom: 16px;">Modal variants</h2>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" (click)="showSm.set(true)">Open sm</button>
+          <button type="button" (click)="showMd.set(true)">Open md</button>
+          <button type="button" (click)="showLg.set(true)">Open lg</button>
+          <button type="button" (click)="confirmDanger()">Confirm (danger)</button>
+        </div>
+
+        <app-modal [open]="showSm()" title="Sample sm modal" description="A short description" size="sm" (close)="showSm.set(false)">
+          <div slot="body">Body content for small modal.</div>
+          <div slot="footer">
+            <button type="button" (click)="showSm.set(false)">Close</button>
+          </div>
+        </app-modal>
+
+        <app-modal [open]="showMd()" title="Sample md modal (default)" description="Medium size with description for aria-describedby benchmark" size="md" (close)="showMd.set(false)">
+          <div slot="body">Body content for medium modal.</div>
+          <div slot="footer">
+            <button type="button" (click)="showMd.set(false)">Close</button>
+          </div>
+        </app-modal>
+
+        <app-modal [open]="showLg()" title="Sample lg modal" size="lg" (close)="showLg.set(false)">
+          <div slot="body">
+            <p>Body content for large modal.</p>
+            <p>More content here to demonstrate scroll behavior.</p>
+          </div>
+          <div slot="footer">
+            <button type="button" (click)="showLg.set(false)">Cancel</button>
+            <button type="button" (click)="showLg.set(false)">OK</button>
+          </div>
+        </app-modal>
+      </section>
     </main>
   `,
 })
 export class DevComponentsComponent {
   iconNames = [...ICON_NAMES] as Array<typeof ICON_NAMES[number]>;
+
+  showSm = signal(false);
+  showMd = signal(false);
+  showLg = signal(false);
+
+  private confirmDialog = inject(ConfirmDialogService);
+
+  async confirmDanger() {
+    const ok = await this.confirmDialog.ask({
+      title: 'Eliminar item',
+      message: 'Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      danger: true,
+    });
+    console.log('Confirm result:', ok);
+  }
 }
