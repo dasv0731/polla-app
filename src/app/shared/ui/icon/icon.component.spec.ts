@@ -52,4 +52,32 @@ describe('IconComponent', () => {
     svg = fixture.nativeElement.querySelector('svg');
     expect(svg.getAttribute('width')).toBe('32');
   });
+
+  it('sets aria-hidden=true when decorative (default)', () => {
+    fixture.componentRef.setInput('name', 'bell');
+    fixture.detectChanges();
+    const lucideIcon = fixture.nativeElement.querySelector('[lucideIcon]') ?? fixture.nativeElement.querySelector('svg');
+    expect(lucideIcon.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  // Lucide internally binds `[attr.aria-hidden]="!title()"`, so a semantic
+  // icon (decorative=false) ends up with aria-hidden="false" + a <title>
+  // child for screen readers. Either form (absent or "false") is valid ARIA.
+  it('exposes accessible name when decorative=false (semantic icon)', () => {
+    fixture.componentRef.setInput('name', 'bell');
+    fixture.componentRef.setInput('decorative', false);
+    fixture.detectChanges();
+    const svg = fixture.nativeElement.querySelector('svg');
+    expect(svg.getAttribute('aria-hidden')).not.toBe('true');
+    expect(svg.querySelector('title')?.textContent).toBe('bell');
+  });
+
+  it('uses custom label as accessible name when provided', () => {
+    fixture.componentRef.setInput('name', 'bell');
+    fixture.componentRef.setInput('decorative', false);
+    fixture.componentRef.setInput('label', 'Notificaciones');
+    fixture.detectChanges();
+    const svg = fixture.nativeElement.querySelector('svg');
+    expect(svg.querySelector('title')?.textContent).toBe('Notificaciones');
+  });
 });
