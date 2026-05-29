@@ -201,6 +201,14 @@ export class LoginComponent implements OnInit {
       // confirmó el OTP. Lo mandamos al flow de register paso 'confirm'
       // con email pre-llenado para que pueda completar el código.
       if (err?.name === 'UserNotConfirmedException') {
+        // Bug #4 fix: el flow original perdía el password al redirigir a
+        // /register?confirm=1. El submitConfirm allá hacía
+        // `auth.login(email, '')` y fallaba silenciosamente. Stash el
+        // password en sessionStorage para que register.component lo lea
+        // post-OTP. Se borra apenas se completa el login (success path).
+        try {
+          sessionStorage.setItem('pending-confirm-password', this.password);
+        } catch { /* sessionStorage puede estar deshabilitado */ }
         // Reenviar el código para que el user reciba uno nuevo (el
         // original puede haber expirado).
         try { await this.auth.resend(this.email); } catch { /* ignore */ }

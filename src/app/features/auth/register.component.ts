@@ -483,8 +483,30 @@ export class RegisterComponent implements OnInit {
     let loggedIn = false;
     try {
       await this.auth.confirm(this.email, this.code());
-      await this.auth.login(this.email, this.password);
+
+      // Bug #4 fix: si llegamos vía deep-link desde login (UserNotConfirmedException),
+      // this.password está vacío porque la component se acaba de instanciar.
+      // login.component lo dejó en sessionStorage; lo recogemos acá.
+      let passwordToUse = this.password;
+      if (!passwordToUse) {
+        try {
+          passwordToUse = sessionStorage.getItem('pending-confirm-password') ?? '';
+        } catch { /* sessionStorage deshabilitado */ }
+      }
+      if (!passwordToUse) {
+        // Edge case: la sesión expiró o sessionStorage se limpió. Redirigir
+        // al user al login para que reingrese sus credenciales.
+        this.error.set('Sesión expirada. Volvé a iniciar sesión.');
+        try { sessionStorage.removeItem('pending-confirm-password'); } catch { /* ignore */ }
+        void this.router.navigate(['/login'], { queryParams: { email: this.email } });
+        return;
+      }
+
+      await this.auth.login(this.email, passwordToUse);
       loggedIn = true;
+
+      // Cleanup del stash una vez login OK — el password ya no es necesario.
+      try { sessionStorage.removeItem('pending-confirm-password'); } catch { /* ignore */ }
 
       const u = this.auth.user();
       if (u) {
