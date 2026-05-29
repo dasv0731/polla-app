@@ -43,6 +43,7 @@ type TournamentPhase = 'pre' | 'live' | 'post';
 interface ContextualCta {
   label: string;
   routerLink: string | (string | number)[];
+  queryParams?: Record<string, string>;
 }
 
 /**
@@ -58,7 +59,7 @@ interface ContextualCta {
  * único + percentil visual (sin duplicar puntos/aciertos del hero).
  *
  * **CTA contextual**: el hero CTA es uno solo y varía según phase:
- * - Pre-torneo: "Predecí clasificados →" → /picks/group-stage/predict
+ * - Pre-torneo: "Predecí clasificados →" → /picks/group-stage?view=pred
  * - Durante: "Hacé pick del próximo partido →" → /picks/match/:id (o /picks fallback)
  * - Post-final: "Ver mi ranking final →" → /ranking
  *
@@ -113,7 +114,7 @@ interface ContextualCta {
               </div>
             }
           </div>
-          <a [routerLink]="contextualCta().routerLink" class="hero__cta">
+          <a [routerLink]="contextualCta().routerLink" [queryParams]="contextualCta().queryParams ?? null" class="hero__cta">
             {{ contextualCta().label }} <span aria-hidden="true">→</span>
           </a>
         </div>
@@ -505,7 +506,7 @@ export class HomeComponent implements OnInit {
   contextualCta = computed<ContextualCta>(() => {
     const phase = this.tournamentPhase();
     if (phase === 'pre') {
-      return { label: 'Predecí clasificados', routerLink: '/picks/group-stage/predict' };
+      return { label: 'Predecí clasificados', routerLink: '/picks/group-stage', queryParams: { view: 'pred' } };
     }
     if (phase === 'post') {
       return { label: 'Ver mi ranking final', routerLink: '/ranking' };

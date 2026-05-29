@@ -193,7 +193,7 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
               <li>
                 <span aria-hidden="true">⚠ </span>Faltan posiciones en {{ miss.groupsWithoutFullStanding.length }} grupo(s):
                 {{ miss.groupsWithoutFullStanding.join(', ') }}
-                <a routerLink="/picks/group-stage/predict" class="btn-wf btn-wf--sm">
+                <a routerLink="/picks/group-stage" [queryParams]="{ view: 'pred' }" class="btn-wf btn-wf--sm">
                   Ir a tabla de grupos <span aria-hidden="true">→</span>
                 </a>
               </li>

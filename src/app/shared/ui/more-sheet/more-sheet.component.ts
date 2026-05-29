@@ -19,7 +19,7 @@ import { A11yModule } from '@angular/cdk/a11y';
  *
  * Usage:
  *   <app-more-sheet [open]="moreOpen()" (close)="moreOpen.set(false)">
- *     <a routerLink="/picks/group-stage/predict">Mundial 2026</a>
+ *     <a routerLink="/picks/group-stage" [queryParams]="{ view: 'pred' }">Mundial 2026</a>
  *     <a routerLink="/comodines">Comodines</a>
  *     ...
  *   </app-more-sheet>

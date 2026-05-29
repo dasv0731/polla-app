@@ -49,10 +49,6 @@ export const routes: Routes = [
         loadComponent: () => import('./features/picks/picks-tabla-grupos.component').then((m) => m.PicksTablaGruposComponent),
       },
       {
-        path: 'picks/group-stage/predict',
-        loadComponent: () => import('./features/picks/group-stage-picks.component').then((m) => m.GroupStagePicksComponent),
-      },
-      {
         path: 'picks/bracket',
         loadComponent: () => import('./features/picks/bracket-picks.component').then((m) => m.BracketPicksComponent),
       },

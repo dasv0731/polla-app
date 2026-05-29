@@ -213,7 +213,7 @@ export class TourOverlayComponent {
       title: 'Predicciones de clasificados',
       body: 'Antes del Mundial: arma cómo crees que terminará cada grupo. ' +
             'Aquí encuentras "Clasificados" y "Llaves".',
-      spotlight: '.lsb a[href="/picks/group-stage/predict"]',
+      spotlight: '.lsb a[data-tour="mundial"]',
     },
     {
       num: 3,

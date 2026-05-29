@@ -41,7 +41,7 @@ import { MoreSheetComponent } from '../ui/more-sheet/more-sheet.component';
         <a routerLink="/ranking" routerLinkActive="active">
           <app-icon name="trophy" size="md" /><span class="lsb__t">Ranking</span>
         </a>
-        <a routerLink="/picks/group-stage/predict" routerLinkActive="active">
+        <a routerLink="/picks/group-stage" [queryParams]="{ view: 'pred' }" routerLinkActive="active" data-tour="mundial">
           <app-icon name="globe" size="md" /><span class="lsb__t">Mundial 2026</span>
         </a>
         @if (isAdmin()) {
@@ -125,7 +125,7 @@ import { MoreSheetComponent } from '../ui/more-sheet/more-sheet.component';
     </aside>
 
     <app-more-sheet [open]="moreOpen()" (close)="moreOpen.set(false)">
-      <a class="more-sheet__item" routerLink="/picks/group-stage/predict" (click)="moreOpen.set(false)">
+      <a class="more-sheet__item" routerLink="/picks/group-stage" [queryParams]="{ view: 'pred' }" (click)="moreOpen.set(false)">
         <app-icon name="globe" size="md" />
         <span>Mundial 2026</span>
       </a>
