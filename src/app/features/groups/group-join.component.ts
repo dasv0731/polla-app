@@ -107,7 +107,7 @@ interface GroupSummary {
       </main>
 
       <footer class="auth-footer">
-        © 2026 Golgana — <a href="#">Reglas</a> · <a href="#">Privacidad</a>
+        © 2026 Golgana — <a href="https://polla.golgana.net/reglas" target="_blank" rel="noopener noreferrer">Reglas</a> · <a href="https://polla.golgana.net/privacidad" target="_blank" rel="noopener noreferrer">Privacidad</a>
       </footer>
     </div>
   `,

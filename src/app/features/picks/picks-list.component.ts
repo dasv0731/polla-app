@@ -211,7 +211,7 @@ interface TriviaInfo {
                     <div class="ad-feed__title">Coca-Cola refresca tu Mundial</div>
                     <div class="ad-feed__sponsor">COCA-COLA · Patrocinador oficial</div>
                   </div>
-                  <a href="#" class="ad-feed__cta" (click)="$event.preventDefault()">Ver promo</a>
+                  <button type="button" class="ad-feed__cta">Ver promo</button>
                 </div>
               }
               @if (dayIdx === 2) {
@@ -222,7 +222,7 @@ interface TriviaInfo {
                     <div class="ad-feed__title">adidas — Equípate para el Mundial</div>
                     <div class="ad-feed__sponsor">ADIDAS · Sponsor oficial</div>
                   </div>
-                  <a href="#" class="ad-feed__cta" (click)="$event.preventDefault()">Ver colección</a>
+                  <button type="button" class="ad-feed__cta">Ver colección</button>
                 </div>
               }
             }

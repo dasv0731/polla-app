@@ -133,7 +133,7 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
               <label class="auth-check">
                 <input type="checkbox" name="terms" required [(ngModel)]="acceptTerms">
                 <span>
-                  Acepto los <a href="#">Términos</a> y la <a href="#">Privacidad</a>
+                  Acepto los <a href="https://polla.golgana.net/terminos" target="_blank" rel="noopener noreferrer">Términos</a> y la <a href="https://polla.golgana.net/privacidad" target="_blank" rel="noopener noreferrer">Privacidad</a>
                 </span>
               </label>
 
