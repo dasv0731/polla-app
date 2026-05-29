@@ -7,7 +7,11 @@ frontend:
         # src/amplify_outputs.json). Tenemos el archivo committeado en raíz;
         # acá lo copiamos a src/ antes del build para que el import resuelva.
         - cp amplify_outputs.json src/amplify_outputs.json
-        - npm ci --cache .npm --prefer-offline
+        # NOTE: npm install (not npm ci) because @aws-amplify/backend pulls deps
+        # with zod peer-dep ERESOLVE conflicts that prevent npm ci from working
+        # cleanly. .npmrc has legacy-peer-deps=true to make resolution consistent.
+        # 5 previous "refresh lockfile" commits were band-aids; this is the real fix.
+        - npm install --no-audit --no-fund --prefer-offline --cache .npm
     build:
       commands:
         - npm run build
