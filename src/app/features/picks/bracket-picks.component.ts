@@ -215,7 +215,7 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
       } @else {
         @if (isProjected()) {
           <div class="info-banner" style="margin-bottom:14px;padding:10px 12px;background:rgba(0,200,100,0.08);border:1px solid rgba(0,200,100,0.25);border-radius:8px;font-size:13px;color:var(--wf-ink-2);">
-            <span aria-hidden="true">🔮 </span>Bracket armado desde tus predicciones de grupos.
+            <app-icon name="star" size="sm" /> Bracket armado desde tus predicciones de grupos.
             Tus elecciones aquí se quedan fijas — los resultados reales
             del Mundial puntúan tu BracketPick comparando equipos por fase.
           </div>
@@ -236,7 +236,7 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
                   @let fm = finalMatch();
                   @if (fm) {
                     <div class="bracket-final-card">
-                      <div class="bracket-final-card__title"><span aria-hidden="true">🏆 </span>FINAL</div>
+                      <div class="bracket-final-card__title"><app-icon name="trophy" size="sm" /> FINAL</div>
                       <ng-container *ngTemplateOutlet="slotTpl; context: {match: fm, side: 'home'}"></ng-container>
                       <ng-container *ngTemplateOutlet="slotTpl; context: {match: fm, side: 'away'}"></ng-container>
                       @let champ = champion();
@@ -248,7 +248,7 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
                     </div>
                   } @else {
                     <div class="bracket-final-card">
-                      <div class="bracket-final-card__title"><span aria-hidden="true">🏆 </span>FINAL</div>
+                      <div class="bracket-final-card__title"><app-icon name="trophy" size="sm" /> FINAL</div>
                       <div class="text-mute" style="text-align:center;font-size:11px;padding:8px 4px;">
                         Aún sin definir
                       </div>
@@ -317,7 +317,7 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
               @let fm = finalMatch();
               @if (fm) {
                 <div class="bracket-final-card">
-                  <div class="bracket-final-card__title"><span aria-hidden="true">🏆 </span>FINAL</div>
+                  <div class="bracket-final-card__title"><app-icon name="trophy" size="sm" /> FINAL</div>
                   <ng-container *ngTemplateOutlet="slotTpl; context: {match: fm, side: 'home'}"></ng-container>
                   <ng-container *ngTemplateOutlet="slotTpl; context: {match: fm, side: 'away'}"></ng-container>
                   @let champ = champion();
@@ -329,7 +329,7 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
                 </div>
               } @else {
                 <div class="bracket-final-card">
-                  <div class="bracket-final-card__title"><span aria-hidden="true">🏆 </span>FINAL</div>
+                  <div class="bracket-final-card__title"><app-icon name="trophy" size="sm" /> FINAL</div>
                   <div class="text-mute" style="text-align:center;font-size:11px;padding:8px 4px;">
                     Aún sin definir
                   </div>

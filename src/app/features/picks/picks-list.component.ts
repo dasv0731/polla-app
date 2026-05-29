@@ -128,7 +128,7 @@ interface TriviaInfo {
       <div class="picks-actions">
         <button type="button" class="btn-wf btn-wf--ink"
                 (click)="openRandomizer()">
-          <span aria-hidden="true">🎲 </span>Aleatorio
+          <app-icon name="dice" size="sm" /> Aleatorio
         </button>
       </div>
 
@@ -463,7 +463,7 @@ interface TriviaInfo {
     <button type="button" class="canjear-fab" (click)="openRedeemModal()"
             aria-label="Canjear código de sponsor"
             title="Canjear código de sponsor">
-      <span aria-hidden="true">🎁 </span><span>Canjear código</span>
+      <app-icon name="gift" size="sm" /> <span>Canjear código</span>
     </button>
 
     <!-- Modal de "Picks aleatorios" (oculto hasta que openRandomizer fire) -->

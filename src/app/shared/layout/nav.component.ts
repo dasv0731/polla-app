@@ -4,11 +4,12 @@ import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { PicksSyncService } from '../../core/sync/picks-sync.service';
 import { UserAvatarComponent } from '../user-avatar/user-avatar.component';
+import { IconComponent } from '../ui/icon/icon.component';
 
 @Component({
   standalone: true,
   selector: 'app-nav',
-  imports: [RouterLink, UserAvatarComponent],
+  imports: [RouterLink, UserAvatarComponent, IconComponent],
   template: `
     <!-- ============ MOBILE TOPBAR (<768px) ============ -->
     <header class="app-topbar">
@@ -29,7 +30,7 @@ import { UserAvatarComponent } from '../user-avatar/user-avatar.component';
           </button>
         }
         <a routerLink="/notificaciones" class="app-topbar__bell" aria-label="Notificaciones">
-          🔔
+          <app-icon name="bell" size="md" />
           @if (unreadCount() > 0) { <span class="badge">{{ unreadCount() }}</span> }
         </a>
         <a class="app-topbar__avatar" routerLink="/profile" aria-label="Mi perfil">

@@ -8,6 +8,7 @@ import { PicksSyncService } from '../../core/sync/picks-sync.service';
 import { GroupActionsService } from '../../core/groups/group-actions.service';
 import { ConfirmDialogService } from '../../shared/ui/confirm-dialog.service';
 import { EmptyBlockComponent } from '../../shared/ui/empty-block/empty-block.component';
+import { IconComponent } from '../../shared/ui/icon/icon.component';
 import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
 
 type GameMode = 'SIMPLE' | 'COMPLETE';
@@ -37,7 +38,7 @@ interface ServerIdMap {
 @Component({
   standalone: true,
   selector: 'app-group-stage-picks',
-  imports: [CdkDropListGroup, CdkDropList, CdkDrag, EmptyBlockComponent, TeamFlagComponent],
+  imports: [CdkDropListGroup, CdkDropList, CdkDrag, EmptyBlockComponent, TeamFlagComponent, IconComponent],
   template: `
     <!-- Header propio: solo cuando NO está embebido (en tabla-grupos
          el page__header del parent ya cubre el title). -->
@@ -136,7 +137,7 @@ interface ServerIdMap {
                     } @else if (idx === 2) {
                       <span class="gs-item__tag gs-item__tag--maybe">3°</span>
                     } @else {
-                      <span class="gs-item__tag gs-item__tag--out">✕ Eliminado</span>
+                      <span class="gs-item__tag gs-item__tag--out"><app-icon name="close" size="sm" /> Eliminado</span>
                     }
                   </li>
                 }

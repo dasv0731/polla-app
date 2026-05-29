@@ -4,6 +4,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { UserModesService } from '../../core/user/user-modes.service';
 import { TriviaModalService } from '../../core/trivia/trivia-modal.service';
 import { ModalComponent } from '../../shared/ui/modal/modal.component';
+import { IconComponent } from '../../shared/ui/icon/icon.component';
 
 const TOURNAMENT_ID = 'mundial-2026';
 const POLL_MS = 60_000;
@@ -57,13 +58,13 @@ interface ActiveQuestion {
 @Component({
   standalone: true,
   selector: 'app-trivia-popup',
-  imports: [ModalComponent],
+  imports: [ModalComponent, IconComponent],
   template: `
     @if (showFab()) {
       <button type="button" class="trivia-fab"
               aria-label="Jugar trivia"
               (click)="modal.open()">
-        <span class="trivia-fab__icon">⚡</span>
+        <span class="trivia-fab__icon" aria-hidden="true"><app-icon name="zap" size="sm" /></span>
         <span>Trivia · +10 pts</span>
         @if (queueRemaining() > 1) {
           <span class="trivia-fab__time">{{ queueRemaining() }}</span>
@@ -131,9 +132,9 @@ interface ActiveQuestion {
                   <span class="trivia-option__letter">{{ opt.key }}</span>
                   <span class="trivia-option__text">{{ q[opt.field] }}</span>
                   @if (isCorrect) {
-                    <span class="trivia-option__badge trivia-option__badge--correct">✓</span>
+                    <span class="trivia-option__badge trivia-option__badge--correct"><app-icon name="check" size="sm" /></span>
                   } @else if (isUserWrong) {
-                    <span class="trivia-option__badge trivia-option__badge--wrong">✕</span>
+                    <span class="trivia-option__badge trivia-option__badge--wrong"><app-icon name="close" size="sm" /></span>
                   }
                 </button>
               }
@@ -142,11 +143,11 @@ interface ActiveQuestion {
             @if (revealed()) {
               @if (picked() === q.correctOption) {
                 <div class="trivia-reveal trivia-reveal--ok">
-                  ✓ ¡Acertaste! +10 pts
+                  <app-icon name="check" size="sm" /> ¡Acertaste! +10 pts
                 </div>
               } @else if (picked() && picked() !== q.correctOption) {
                 <div class="trivia-reveal trivia-reveal--bad">
-                  ✕ Respuesta correcta: <strong>{{ q.correctOption }}</strong>
+                  <app-icon name="close" size="sm" /> Respuesta correcta: <strong>{{ q.correctOption }}</strong>
                 </div>
               } @else {
                 <div class="trivia-reveal trivia-reveal--skip">

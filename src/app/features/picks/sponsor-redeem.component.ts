@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { IconComponent } from '../../shared/ui/icon/icon.component';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
@@ -58,7 +59,7 @@ const COMODIN_IMPACT: Record<string, string> = {
 @Component({
   standalone: true,
   selector: 'app-sponsor-redeem',
-  imports: [FormsModule],
+  imports: [FormsModule, IconComponent],
   template: `
     <section class="sr">
       <header class="sr__head">
@@ -99,7 +100,7 @@ const COMODIN_IMPACT: Record<string, string> = {
                 <strong translate="no">{{ r.codeText }}</strong>
                 @if (r.comodinName) {
                   <small style="display: block; color: var(--color-primary-green); font-weight: var(--fw-semibold); margin-top: 2px;">
-                    🃏 {{ r.comodinName }}
+                    <app-icon name="gift" size="sm" /> {{ r.comodinName }}
                   </small>
                   @if (r.comodinImpact) {
                     <small style="display: block; color: var(--color-text-muted); line-height: 1.3; margin-top: 2px;">
