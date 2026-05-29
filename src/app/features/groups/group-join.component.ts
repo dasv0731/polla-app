@@ -74,7 +74,7 @@ interface GroupSummary {
                 <h4>Grupo lleno</h4>
                 <p>
                   Este grupo ya alcanzó su límite de {{ MAX_MEMBERS }} miembros.
-                  Pedile al admin que elimine a alguien inactivo o creá un grupo nuevo.
+                  Pídele al admin que elimine a alguien inactivo o crea un grupo nuevo.
                 </p>
               </div>
             } @else if (err !== null) {

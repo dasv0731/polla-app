@@ -85,7 +85,7 @@ interface GroupEdit {
                    [disabled]="uploading()"
                    (change)="onFileSelected($event)">
             <span class="form-card__hint">
-              {{ uploading() ? 'Subiendo…' : (imageKey() ? 'Imagen cargada · podés cambiarla' : 'Imagen opcional · JPG/PNG hasta 5 MB') }}
+              {{ uploading() ? 'Subiendo…' : (imageKey() ? 'Imagen cargada · puedes cambiarla' : 'Imagen opcional · JPG/PNG hasta 5 MB') }}
             </span>
           </div>
 

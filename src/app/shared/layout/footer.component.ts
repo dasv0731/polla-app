@@ -60,7 +60,7 @@ export class FooterComponent {
   async logout() {
     const ok = await this.confirmDialog.ask({
       title: 'Cerrar sesión',
-      message: '¿Querés cerrar sesión? Vas a salir de tu cuenta y regresarás al login.',
+      message: '¿Quieres cerrar sesión? Vas a salir de tu cuenta y regresarás al login.',
       confirmLabel: 'Cerrar sesión',
       cancelLabel: 'Cancelar',
     });

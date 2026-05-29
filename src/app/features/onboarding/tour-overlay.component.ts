@@ -203,7 +203,7 @@ export class TourOverlayComponent {
       num: 1,
       title: 'Crea o únete a un grupo',
       body: 'Tu polla vive dentro de un grupo (panas, oficina, familia). ' +
-            'Usá los botones del menú lateral o la pantalla de Mis grupos.',
+            'Usa los botones del menú lateral o la pantalla de Mis grupos.',
       // Sidebar v3 `.lsb` link a /groups. En mobile la sidebar se transforma
       // en bottom-nav pero el href sigue siendo el mismo.
       spotlight: '.lsb a[href="/groups"]',
@@ -212,7 +212,7 @@ export class TourOverlayComponent {
       num: 2,
       title: 'Predicciones de clasificados',
       body: 'Antes del Mundial: arma cómo crees que terminará cada grupo. ' +
-            'Aquí encontrás "Clasificados" y "Llaves".',
+            'Aquí encuentras "Clasificados" y "Llaves".',
       spotlight: '.lsb a[href="/picks/group-stage/predict"]',
     },
     {

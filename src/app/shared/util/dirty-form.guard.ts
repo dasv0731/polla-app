@@ -26,7 +26,7 @@ export const dirtyFormGuard: CanDeactivateFn<DirtyAware> = (component) => {
   const confirmDialog = inject(ConfirmDialogService);
   return confirmDialog.ask({
     title: 'Salir sin guardar',
-    message: 'Tenés cambios sin guardar. Si salís ahora se pierden.',
+    message: 'Tienes cambios sin guardar. Si sales ahora se pierden.',
     confirmLabel: 'Salir sin guardar',
     cancelLabel: 'Seguir editando',
     danger: true,

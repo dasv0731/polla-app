@@ -81,12 +81,12 @@ const TYPE_INFO: Record<ComodinType, { name: string; impact: string; window: str
   },
   GROUP_SAFE_PICK: {
     name: 'Pick seguro de grupos',
-    impact: 'Si fallás 1 posición específica, recibís 50% de los puntos.',
+    impact: 'Si fallas 1 posición específica, recibes 50% de los puntos.',
     window: 'Asignar antes del primer partido del torneo.',
   },
   BRACKET_SAFE_PICK: {
     name: 'Pick seguro de llaves',
-    impact: 'Si fallás 1 equipo en una fase, recibís 50% de los puntos.',
+    impact: 'Si fallas 1 equipo en una fase, recibes 50% de los puntos.',
     window: 'Asignar antes del kickoff de la fase elegida. Caduca al inicio de la final.',
   },
   REASSIGN_CHAMP_RUNNER: {
@@ -111,7 +111,7 @@ const TYPE_INFO: Record<ComodinType, { name: string; impact: string; window: str
   },
   ANTI_PENALTY: {
     name: 'Anti-penalización',
-    impact: 'Anula la penalización del Pick seguro de llaves: 100% en vez de 50% si fallás.',
+    impact: 'Anula la penalización del Pick seguro de llaves: 100% en vez de 50% si fallas.',
     window: 'Asignar al Pick seguro de llaves antes del kickoff de su fase.',
   },
 };
@@ -358,7 +358,7 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
         <header class="com-catalog__head">
           <h2 class="com-catalog__title">Tipos disponibles</h2>
           <p class="com-catalog__sub">
-            Los 9 tipos de comodines que existen y qué hace cada uno. Los que ya tenés
+            Los 9 tipos de comodines que existen y qué hace cada uno. Los que ya tienes
             se marcan con un check.
           </p>
         </header>
@@ -751,7 +751,7 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
           </header>
           <p class="form-card__hint">
             Otorgado por <strong>{{ sourceLabel(pending.source) }}</strong>.
-            Elegí uno de los 9 tipos. Los que ya tenés activos están deshabilitados.
+            Elige uno de los 9 tipos. Los que ya tienes activos están deshabilitados.
             La elección es <strong>vinculante</strong> — no se puede cambiar después.
           </p>
           <ul class="claim-options">
@@ -765,7 +765,7 @@ const STATUS_LABEL: Record<ComodinStatus, string> = {
                   <strong>{{ typeInfo(t).name }}</strong>
                   <span>{{ typeInfo(t).impact }}</span>
                   @if (owned) {
-                    <small style="color: var(--color-lost, #c33);">Ya tenés este tipo</small>
+                    <small style="color: var(--color-lost, #c33);">Ya tienes este tipo</small>
                   }
                 </button>
               </li>

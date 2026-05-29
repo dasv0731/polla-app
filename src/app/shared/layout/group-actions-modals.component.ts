@@ -146,7 +146,7 @@ type GameMode = 'SIMPLE' | 'COMPLETE';
           <header class="picks-modal__head">
             <div>
               <div class="title" id="join-group-title">Unirme con código</div>
-              <div class="meta">Pegá el código de 6 caracteres que te compartieron</div>
+              <div class="meta">Pega el código de 6 caracteres que te compartieron</div>
             </div>
             <button type="button" class="close" aria-label="Cerrar"
                     (click)="closeJoin()">✕</button>

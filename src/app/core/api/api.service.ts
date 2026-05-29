@@ -410,7 +410,7 @@ export class ApiService {
     if (typeof m !== 'function') {
       return Promise.reject(new Error(
         'BACKEND_PENDING: la mutation leaveGroup aún no está desplegada. ' +
-        'Pedile al admin del torneo que te elimine.',
+        'Pídele al admin del torneo que te elimine.',
       ));
     }
     return m({ groupId });

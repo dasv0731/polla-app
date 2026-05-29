@@ -374,7 +374,7 @@ export class AdminResultsComponent implements OnInit {
       message:
         `Vas a calcular los puntos de ${targets.length} partido${targets.length === 1 ? '' : 's'}. ` +
         'Guarda los resultados en la base de datos y procesa los picks de TODOS los usuarios. ' +
-        'Idempotente — si la repetís no duplica.',
+        'Idempotente — si la repites no duplica.',
       confirmLabel: 'Calcular puntos',
     });
     if (!confirmed) return;

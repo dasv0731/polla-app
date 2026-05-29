@@ -161,7 +161,7 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
               <h1>Elige otro usuario</h1>
               <p>
                 Tu cuenta está creada pero <strong>{{ '@' + handle }}</strong>
-                ya está en uso por otra persona. Pickeá uno distinto y
+                ya está en uso por otra persona. Elige uno distinto y
                 terminamos.
               </p>
             </div>

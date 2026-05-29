@@ -302,7 +302,7 @@ interface RankRow {
                 <span aria-hidden="true">🚪 </span>Abandonar grupo
               </button>
               <p class="text-mute" style="font-size:11px;line-height:1.4;margin:6px 0 0;">
-                Si abandonás, tu score acumulado en este grupo se borra.
+                Si abandonas, tu score acumulado en este grupo se borra.
                 Tus picks del torneo no se ven afectados.
               </p>
             </div>
@@ -321,7 +321,7 @@ interface RankRow {
               <header class="picks-modal__head">
                 <div>
                   <div class="title" id="transfer-admin-title">Transferir admin</div>
-                  <div class="meta">El nuevo admin podrá editar, invitar y eliminar el grupo. Vos pasás a ser miembro normal.</div>
+                  <div class="meta">El nuevo admin podrá editar, invitar y eliminar el grupo. Tú pasas a ser miembro normal.</div>
                 </div>
                 <button type="button" class="close" aria-label="Cerrar"
                         (click)="closeTransferAdmin()">

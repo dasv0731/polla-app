@@ -63,7 +63,7 @@ import { PreferencesService } from '../../core/preferences/preferences.service';
           <label class="prefs-row">
             <div class="prefs-row__body">
               <div class="prefs-row__title">🕐 Hora local del browser</div>
-              <div class="prefs-row__sub">Muestra los kickoffs en tu zona horaria. Si lo apagás, se usa la hora del estadio.</div>
+              <div class="prefs-row__sub">Muestra los kickoffs en tu zona horaria. Si lo apagas, se usa la hora del estadio.</div>
             </div>
             <input type="checkbox"
                    class="prefs-toggle"

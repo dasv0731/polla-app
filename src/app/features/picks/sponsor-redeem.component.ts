@@ -46,12 +46,12 @@ const COMODIN_NAMES: Record<string, string> = {
 const COMODIN_IMPACT: Record<string, string> = {
   MULTIPLIER_X2: 'Duplica los puntos en 1 partido (grupos / R32 / R16).',
   PHASE_BOOST: 'x1.5 a marcadores de toda una fase (octavos o cuartos).',
-  GROUP_SAFE_PICK: '50% si fallás 1 posición de un grupo (en vez de 0).',
+  GROUP_SAFE_PICK: '50% si fallas 1 posición de un grupo (en vez de 0).',
   BRACKET_SAFE_PICK: '50% si tu equipo no llega a la fase predicha.',
-  REASSIGN_CHAMP_RUNNER: 'Cambiás campeón/subcampeón post-grupos. Paga 50%.',
+  REASSIGN_CHAMP_RUNNER: 'Cambias campeón/subcampeón post-grupos. Paga 50%.',
   LATE_EDIT: 'Editar marcador hasta 15 min post-kickoff. Paga 50%.',
-  BRACKET_RESET: 'Reescribís todos los picks de una fase. Paga 60%.',
-  GROUP_RESET: 'Reordenás un grupo post-J1. Paga 50%.',
+  BRACKET_RESET: 'Reescribes todos los picks de una fase. Paga 60%.',
+  GROUP_RESET: 'Reordenas un grupo post-J1. Paga 50%.',
   ANTI_PENALTY: 'Anula el descuento del Pick seguro de llaves: paga 100%.',
 };
 

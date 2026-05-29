@@ -38,8 +38,8 @@ import { GroupActionsService } from '../../core/groups/group-actions.service';
           Hola,<br><span translate="no">{{ '@' + (handle() ?? 'jugador') }}</span>
         </h1>
         <p class="onb-sub">
-          El Mundial 2026 está a la vuelta. Para empezar, creá un grupo con tus
-          panas o unite con un código que te compartieron.
+          El Mundial 2026 está a la vuelta. Para empezar, crea un grupo con tus
+          panas o únete con un código que te compartieron.
         </p>
 
         <div class="onb-actions" style="display:flex;flex-direction:column;gap:10px;">
@@ -58,7 +58,7 @@ import { GroupActionsService } from '../../core/groups/group-actions.service';
         </div>
 
         <p class="onb-helper">
-          Podés crear o unirte a un grupo desde la sidebar en cualquier momento.
+          Puedes crear o unirte a un grupo desde la sidebar en cualquier momento.
         </p>
 
       </div>

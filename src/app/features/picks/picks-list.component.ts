@@ -162,7 +162,7 @@ interface TriviaInfo {
           @if (!hasComplete()) {
             <div class="hint-banner">
               <strong>Modo completo no activo.</strong>
-              Podés ver el calendario, pero los marcadores que predigás
+              Puedes ver el calendario, pero los marcadores que predigas
               acá no contarán hasta que estés en un grupo modo completo.
               <button type="button" class="link-green link-green--btn"
                       (click)="groupActions.openCreate()">Crear grupo →</button>
