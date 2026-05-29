@@ -93,9 +93,12 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
 
       <!-- Mode switch (si el user tiene > 1 modo) -->
       @if (availableModes().length > 1) {
-        <div class="seg" style="max-width:280px;margin-bottom:14px;">
+        <div class="seg" style="max-width:280px;margin-bottom:14px;"
+             role="tablist" aria-label="Modo de juego">
           @for (m of availableModes(); track m) {
             <button type="button" class="seg__item"
+                    role="tab"
+                    [attr.aria-selected]="mode() === m"
                     [class.is-active]="mode() === m"
                     (click)="switchMode(m)">
               {{ m === 'COMPLETE' ? 'Modo completo' : 'Modo simple' }}
