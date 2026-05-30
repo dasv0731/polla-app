@@ -757,6 +757,130 @@
 }
 
 /* ============================================================
+   CHIPS FILTER (design polla-picks.html .chips/.chip) — horizontal
+   row of filter chips, exactly one active at a time. Use for
+   multi-option filters (Pendientes / Próximos 24h / Todos / Por fase).
+   Includes .chip--green for the green-active variant used in the
+   design when the active filter has urgency (pendientes con count).
+   ============================================================ */
+.chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid var(--color-line);
+  font-size: 12px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: .04em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .15s;
+  font-family: var(--font-primary);
+  color: var(--color-primary-black);
+}
+.chip:hover { border-color: rgba(2, 204, 116, 0.4); }
+.chip.active {
+  background: var(--color-primary-black);
+  color: #fff;
+  border-color: var(--color-primary-black);
+}
+.chip--green.active {
+  background: var(--color-primary-green);
+  border-color: var(--color-primary-green);
+}
+.chip:focus-visible {
+  outline: 2px solid var(--color-primary-green);
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   STICKY DAY HEADERS — promote .day-kicker (picks list day
+   separators) to the design's .dayh treatment: bigger Bebas
+   Neue font, sticky top with cream background, subtle border
+   bottom. Makes day groupings visually anchor as user scrolls.
+   ============================================================ */
+.day-kicker {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--color-bg-cream);
+  padding: 10px 2px;
+  font-family: var(--font-display);
+  font-size: 16px;
+  letter-spacing: .02em;
+  border-bottom: 1px solid var(--color-line);
+  text-transform: none;
+  color: var(--color-primary-black);
+  font-weight: var(--fw-regular);
+  margin: 16px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.day-kicker:first-child { margin-top: 0; }
+
+/* ============================================================
+   FAB — global floating action button (Trivia · Comodín).
+   The design polla-picks.html and polla-home.html both show a
+   bottom-right pill button. We define the visual; the actual
+   button lives wherever it's invoked (commonly a sponsored or
+   trivia trigger).
+   ============================================================ */
+.fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 60;
+}
+.fab__btn {
+  background: linear-gradient(135deg, var(--color-primary-green), var(--color-primary-green-dark));
+  color: #fff;
+  border: 0;
+  cursor: pointer;
+  padding: 13px 20px;
+  border-radius: 999px;
+  box-shadow: 0 12px 30px rgba(2, 204, 116, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-primary);
+  font-weight: var(--fw-semibold);
+  font-size: 12px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  animation: fab-pulse 2.5s infinite;
+}
+@keyframes fab-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.04); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fab__btn { animation: none; }
+}
+.fab__i {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  background: #fff;
+  color: var(--color-primary-green);
+  border-radius: 50%;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+@media (max-width: 767px) {
+  .fab { bottom: calc(var(--bp-bottom-nav, 64px) + 16px); right: 14px; }
+  .fab__text { display: none; }
+}
+
+/* ============================================================
    PAGE TABS — subtabs entre las vistas de picks (Partidos /
    Fase de grupos / Bracket) — alinear con la familia .subtabs
    del diseño (polla-picks.html). Es el patrón cross-sub-page
