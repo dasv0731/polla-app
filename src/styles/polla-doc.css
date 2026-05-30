@@ -495,3 +495,23 @@
 .tbl td {
   font-variant-numeric: tabular-nums;
 }
+
+/* Section header — Home defines .sh inline as a local mirror of .sec.
+   Promote .sh to the shared .sec letter-spacing so the SEE-ALL link
+   reads identical to every other section title across the app. */
+.sh a {
+  letter-spacing: .16em;
+}
+
+/* Button hit-target — accessibility floor across every .btn-wf occurrence.
+   Apple HIG 44pt, Material 48dp. We standardize at 44px which is also
+   the value used by the design's .btn. Pure addition: existing layouts
+   that depend on natural button height are unaffected as long as their
+   padding already pushes height past 44px (most do); the rest simply
+   gain a bit of vertical bias to meet the spec.
+
+   Excludes .btn-wf--sm explicitly so dense secondary toolbars (admin
+   tables, compact action rows) keep their compact look. */
+.btn-wf:not(.btn-wf--sm) {
+  min-height: var(--hit-target-min);
+}
