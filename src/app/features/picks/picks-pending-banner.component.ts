@@ -27,6 +27,108 @@ const BROADCAST_CHANNEL = 'picks-pending-banner';
   standalone: true,
   selector: 'app-picks-pending-banner',
   imports: [RouterLink, IconComponent, SkeletonComponent],
+  styles: [`
+    :host { display: block; margin-bottom: 14px; }
+
+    /* Dark editorial banner — matches the design's .card--dark + the
+       Home .pp picks-pending block so the visual is unified whether
+       the banner appears on /home or /picks. */
+    .app-pending-banner {
+      position: relative;
+      overflow: hidden;
+      background: #0a0a0a;
+      color: #fff;
+      border-radius: 14px;
+      padding: 18px 20px;
+      display: grid;
+      grid-template-columns: auto 1fr auto auto;
+      gap: 16px;
+      align-items: center;
+    }
+    .app-pending-banner::before {
+      content: "";
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 240px;
+      height: 240px;
+      background: radial-gradient(circle, rgba(2,204,116,0.18), transparent 70%);
+      pointer-events: none;
+    }
+    .app-pending-banner--loading {
+      grid-template-columns: 1fr;
+      padding: 14px 18px;
+    }
+
+    .app-pending-banner__icon {
+      position: relative;
+      font-family: var(--font-display);
+      font-size: 44px;
+      line-height: 1;
+      color: var(--color-primary-green);
+      font-variant-numeric: tabular-nums;
+    }
+    .app-pending-banner__body { position: relative; min-width: 0; }
+    .app-pending-banner__title {
+      font-family: var(--font-display);
+      font-size: 18px;
+      letter-spacing: .01em;
+      line-height: 1;
+      margin: 0 0 4px;
+    }
+    .app-pending-banner__lead {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+      margin: 0;
+      line-height: 1.4;
+    }
+    .app-pending-banner__actions {
+      position: relative;
+      display: flex;
+      gap: 8px;
+    }
+    .app-pending-banner__actions .btn {
+      white-space: nowrap;
+    }
+    .app-pending-banner__close {
+      position: relative;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 0;
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.85);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: background-color .15s ease;
+    }
+    .app-pending-banner__close:hover {
+      background: rgba(255, 255, 255, 0.16);
+    }
+    .app-pending-banner__close:focus-visible {
+      outline: 2px solid var(--color-primary-green);
+      outline-offset: 2px;
+    }
+
+    /* Mobile: stack actions + close below the body, scale the count
+       down a bit so the layout doesn't overflow. */
+    @media (max-width: 640px) {
+      .app-pending-banner {
+        grid-template-columns: auto 1fr auto;
+        gap: 12px;
+        padding: 14px 16px;
+      }
+      .app-pending-banner__icon { font-size: 36px; }
+      .app-pending-banner__title { font-size: 16px; }
+      .app-pending-banner__actions {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        justify-self: stretch;
+      }
+      .app-pending-banner__actions .btn { flex: 1; text-align: center; }
+    }
+  `],
   template: `
     @if (loading()) {
       <aside class="app-pending-banner app-pending-banner--loading" role="status" aria-busy="true">
