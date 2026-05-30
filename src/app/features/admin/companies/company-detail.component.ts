@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, inject, signal } from '@angular/core';
+import { Component, Input, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../../core/api/api.service';
@@ -208,7 +208,55 @@ type Tab = 'general' | 'admins' | 'groups' | 'branding';
             }
           </div>
         }
-        @if (tab() === 'branding') { <p class="text-mute">(Task 19)</p> }
+        @if (tab() === 'branding') {
+          <div class="form-card">
+            <div class="cd-brand__notice">
+              <strong>Vista previa</strong>
+              <p>Por ahora solo puedes ver la configuración de marca. La edición (logo + colores) llega en la próxima entrega.</p>
+            </div>
+
+            <h2 class="cd-brand__h2">Logo</h2>
+            @if (brandingView().hasLogo) {
+              <p class="text-mute">Logo cargado · <code>{{ brandingView().logoKey }}</code></p>
+            } @else {
+              <p class="text-mute">Sin logo configurado</p>
+            }
+
+            <h2 class="cd-brand__h2">Colores</h2>
+            <div class="cd-brand__swatches">
+              <div class="cd-brand__sw">
+                <div class="cd-brand__chip"
+                     [class.cd-brand__chip--empty]="!brandingView().primary"
+                     [style.background]="brandingView().primary || '#e5e7eb'"
+                     aria-hidden="true"></div>
+                <div class="cd-brand__lbl">
+                  <strong>Primario</strong>
+                  <code>{{ brandingView().primary ?? 'Sin color' }}</code>
+                </div>
+              </div>
+              <div class="cd-brand__sw">
+                <div class="cd-brand__chip"
+                     [class.cd-brand__chip--empty]="!brandingView().primaryDark"
+                     [style.background]="brandingView().primaryDark || '#e5e7eb'"
+                     aria-hidden="true"></div>
+                <div class="cd-brand__lbl">
+                  <strong>Primario oscuro</strong>
+                  <code>{{ brandingView().primaryDark ?? 'Sin color' }}</code>
+                </div>
+              </div>
+              <div class="cd-brand__sw">
+                <div class="cd-brand__chip"
+                     [class.cd-brand__chip--empty]="!brandingView().accent"
+                     [style.background]="brandingView().accent || '#e5e7eb'"
+                     aria-hidden="true"></div>
+                <div class="cd-brand__lbl">
+                  <strong>Acento</strong>
+                  <code>{{ brandingView().accent ?? 'Sin color' }}</code>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
       }
 
       @if (showCreateGroup() && company(); as c) {
@@ -235,6 +283,16 @@ type Tab = 'general' | 'admins' | 'groups' | 'branding';
     .cd-grupos__row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: #fff; border: 1px solid var(--color-line); border-radius: var(--radius-md); }
     .cd-grupos__info { flex: 1; min-width: 0; }
     .cd-grupos__info > strong { display: block; font-size: 14px; }
+    .cd-brand__notice { background: var(--color-info-soft, #eff6ff); border: 1px solid var(--color-info, #bfdbfe); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 16px; }
+    .cd-brand__notice > strong { display: block; margin-bottom: 4px; }
+    .cd-brand__notice > p { margin: 0; color: var(--color-mute); font-size: 14px; }
+    .cd-brand__h2 { margin: 14px 0 6px; font-size: 16px; }
+    .cd-brand__swatches { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 8px; }
+    .cd-brand__sw { display: flex; align-items: center; gap: 10px; padding: 10px; background: #fff; border: 1px solid var(--color-line); border-radius: var(--radius-md); }
+    .cd-brand__chip { width: 40px; height: 40px; border-radius: 6px; border: 1px solid var(--color-line); flex-shrink: 0; }
+    .cd-brand__chip--empty { background-image: repeating-linear-gradient(45deg, #e5e7eb 0 6px, #f3f4f6 6px 12px) !important; }
+    .cd-brand__lbl > strong { display: block; font-size: 13px; }
+    .cd-brand__lbl > code { font-size: 12px; color: var(--color-mute); }
   `],
 })
 export class CompanyDetailComponent implements OnInit {
@@ -259,6 +317,17 @@ export class CompanyDetailComponent implements OnInit {
   groups = signal<GroupRow[]>([]);
   loadingGroups = signal(false);
   showCreateGroup = signal(false);
+
+  brandingView = computed(() => {
+    const c = this.company();
+    return {
+      hasLogo: !!c?.logoKey,
+      logoKey: c?.logoKey ?? null,
+      primary: c?.brandPrimary ?? null,
+      primaryDark: c?.brandPrimaryDark ?? null,
+      accent: c?.brandAccent ?? null,
+    };
+  });
 
   name = '';
   contactEmail = '';
