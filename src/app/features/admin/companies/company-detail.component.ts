@@ -10,6 +10,7 @@ import { IconComponent } from '../../../shared/ui/icon/icon.component';
 import { SkeletonComponent } from '../../../shared/ui/skeleton/skeleton.component';
 import { UserAvatarComponent } from '../../../shared/user-avatar/user-avatar.component';
 import { AdminPickerComponent, PickerUser } from './admin-picker.component';
+import { CreateCompanyGroupModalComponent } from './create-company-group-modal.component';
 
 interface CompanyDetail {
   id: string;
@@ -33,6 +34,13 @@ interface AdminRow {
   invitedAt: string;
 }
 
+interface GroupRow {
+  id: string;
+  name: string;
+  category: string | null;
+  memberCount: number | null;
+}
+
 type Tab = 'general' | 'admins' | 'groups' | 'branding';
 
 /**
@@ -43,7 +51,7 @@ type Tab = 'general' | 'admins' | 'groups' | 'branding';
 @Component({
   standalone: true,
   selector: 'app-company-detail',
-  imports: [FormsModule, RouterLink, IconComponent, SkeletonComponent, AdminPickerComponent, UserAvatarComponent],
+  imports: [FormsModule, RouterLink, IconComponent, SkeletonComponent, AdminPickerComponent, UserAvatarComponent, CreateCompanyGroupModalComponent],
   template: `
     <section class="page">
       <header class="page__header">
@@ -167,8 +175,46 @@ type Tab = 'general' | 'admins' | 'groups' | 'branding';
             }
           </div>
         }
-        @if (tab() === 'groups')   { <p class="text-mute">(Task 18)</p> }
+        @if (tab() === 'groups') {
+          <div class="form-card">
+            <header class="cd-grupos__head">
+              <h2>Grupos</h2>
+              <button type="button" class="btn-wf btn-wf--sm"
+                      (click)="showCreateGroup.set(true)">+ Crear grupo</button>
+            </header>
+
+            @if (loadingGroups()) {
+              <app-skeleton variant="list" [count]="2" />
+            } @else if (groups().length === 0) {
+              <p class="text-mute">Esta empresa todavía no tiene grupos. Crea el primero.</p>
+            } @else {
+              <ul class="cd-grupos__list" role="list">
+                @for (g of groups(); track g.id) {
+                  <li class="cd-grupos__row">
+                    <div class="cd-grupos__info">
+                      <strong>{{ g.name }}</strong>
+                      <div class="text-mute">
+                        {{ categoryLabel(g.category) }} ·
+                        {{ g.memberCount !== null ? g.memberCount + ' miembros' : '— miembros' }}
+                      </div>
+                    </div>
+                    <button type="button" class="btn-wf btn-wf--sm btn-wf--ghost"
+                            (click)="editGroup(g)">Editar</button>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        }
         @if (tab() === 'branding') { <p class="text-mute">(Task 19)</p> }
+      }
+
+      @if (showCreateGroup() && company(); as c) {
+        <app-create-company-group-modal
+          [companyId]="id"
+          [companyName]="c.name"
+          (cancel)="showCreateGroup.set(false)"
+          (created)="onGroupCreated($event)" />
       }
     </section>
   `,
@@ -181,6 +227,12 @@ type Tab = 'general' | 'admins' | 'groups' | 'branding';
     .adm-list__info > strong { display: block; font-size: 14px; }
     .cd-admins__head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 4px; }
     .cd-admins__head h2 { margin: 0; font-size: 16px; }
+    .cd-grupos__head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 4px; }
+    .cd-grupos__head h2 { margin: 0; font-size: 16px; }
+    .cd-grupos__list { list-style: none; padding: 0; margin: 10px 0 0; display: flex; flex-direction: column; gap: 8px; }
+    .cd-grupos__row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: #fff; border: 1px solid var(--color-line); border-radius: var(--radius-md); }
+    .cd-grupos__info { flex: 1; min-width: 0; }
+    .cd-grupos__info > strong { display: block; font-size: 14px; }
   `],
 })
 export class CompanyDetailComponent implements OnInit {
@@ -201,6 +253,10 @@ export class CompanyDetailComponent implements OnInit {
   admins = signal<AdminRow[]>([]);
   loadingAdmins = signal(false);
   showPicker = signal(false);
+
+  groups = signal<GroupRow[]>([]);
+  loadingGroups = signal(false);
+  showCreateGroup = signal(false);
 
   name = '';
   contactEmail = '';
@@ -227,8 +283,48 @@ export class CompanyDetailComponent implements OnInit {
       this.contactEmail = c.contactEmail ?? '';
       this.description = c.description ?? '';
       await this.loadAdmins();
+      await this.loadGroups();
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  private async loadGroups(): Promise<void> {
+    this.loadingGroups.set(true);
+    try {
+      const res = await this.api.listCompanyGroups(this.id);
+      const rows = (res.data ?? []) as Array<{
+        id: string;
+        name: string;
+        category?: string | null;
+        memberCount?: number | null;
+      }>;
+      this.groups.set(rows.map((r) => ({
+        id: r.id,
+        name: r.name,
+        category: r.category ?? null,
+        memberCount: r.memberCount ?? null,
+      })));
+    } finally {
+      this.loadingGroups.set(false);
+    }
+  }
+
+  async onGroupCreated(_g: { id: string }): Promise<void> {
+    this.showCreateGroup.set(false);
+    await this.loadGroups();
+  }
+
+  editGroup(g: GroupRow): void {
+    this.router.navigate(['/admin/groups/edit', g.id]);
+  }
+
+  categoryLabel(cat: string | null): string {
+    switch (cat) {
+      case 'futbol': return 'Fútbol';
+      case 'baloncesto': return 'Baloncesto';
+      case 'otros': return 'Otros';
+      default: return 'Sin categoría';
     }
   }
 
