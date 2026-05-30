@@ -757,6 +757,38 @@
 }
 
 /* ============================================================
+   PAGE TABS — subtabs entre las vistas de picks (Partidos /
+   Fase de grupos / Bracket) — alinear con la familia .subtabs
+   del diseño (polla-picks.html). Es el patrón cross-sub-page
+   más visible del bracket y picks list.
+
+   Cambios respecto al estilo anterior:
+   - Container border-bottom 1px → 2px (más definido)
+   - Items: padding 10px 0 → 12px 16px (más tap area + visual
+     grouping via padding en vez de gap)
+   - Gap: 18px → 4px (compacta, el spacing viene del padding)
+   - Active border-bottom: 2px → 3px (más prominent)
+   - Letter-spacing: 0 → .04em (editorial brand-forward sutil)
+   ============================================================ */
+.page-tabs {
+  gap: 4px;
+  border-bottom-width: 2px;
+}
+.page-tabs__item {
+  padding: 12px 16px;
+  letter-spacing: .04em;
+  border-bottom-width: 3px;
+}
+.page-tabs__item.is-active {
+  border-bottom-width: 3px;
+}
+/* Hover state — verde sutil para que el feedback de interacción
+   sea consistente con el resto de elementos navegables. */
+.page-tabs__item:not(.is-active):hover {
+  color: var(--color-primary-green);
+}
+
+/* ============================================================
    PROFILE STATS as KPI STRIP — adopt the design's .kpis grid look.
    The existing .profile-hero__stats was a 4-cell flex with a top
    border. Promote to the data-dashboard pattern: grid with 1px
