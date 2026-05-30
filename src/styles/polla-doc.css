@@ -357,15 +357,26 @@
   color: var(--color-text-muted);
 }
 
-/* ===== INFO BLOCK (callouts/disclosures cortos) ===== */
+/* ===== INFO BLOCK (callouts/disclosures cortos) =====
+   Base neutral cream. Variantes tinted para contextos específicos:
+   .info--green (positivo / info-de-marca) y .info--mute (gris suave).
+*/
 .info {
   background: #fafaf6;
   border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
-  padding: 12px;
-  font-size: 12px;
+  padding: 10px 12px;
+  font-size: 13px;
   color: var(--color-text-muted);
   line-height: 1.5;
+}
+.info--green {
+  background: rgba(2, 204, 116, 0.08);
+  border-color: rgba(2, 204, 116, 0.25);
+}
+.info--mute {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.10);
 }
 
 /* ===== TRIVIA TOAST / GLOBAL BANNER pattern (.ttoast) =====

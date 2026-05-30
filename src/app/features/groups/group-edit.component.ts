@@ -190,14 +190,12 @@ interface GroupEdit {
               <label class="form-card__label">Comodines</label>
               <div>
                 @if (group()!.comodinesEnabled !== false) {
-                  <span class="pill pill--accent"
-                        style="display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 10px;border-radius:999px;background:rgba(0,200,100,0.15);color:var(--color-primary-green);border:1px solid rgba(0,200,100,0.4);">
+                  <span class="pill pill--green">
                     <app-icon name="dice" size="sm" [decorative]="true" />
                     Activados
                   </span>
                 } @else {
-                  <span class="pill pill--mute"
-                        style="display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 10px;border-radius:999px;background:rgba(160,160,160,0.12);color:var(--wf-ink-2);border:1px solid rgba(160,160,160,0.35);">
+                  <span class="pill pill--grey">
                     <app-icon name="dice" size="sm" [decorative]="true" />
                     Desactivados
                   </span>

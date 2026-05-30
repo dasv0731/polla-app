@@ -214,7 +214,7 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
         </div>
       } @else {
         @if (isProjected()) {
-          <div class="info-banner" style="margin-bottom:14px;padding:10px 12px;background:rgba(0,200,100,0.08);border:1px solid rgba(0,200,100,0.25);border-radius:8px;font-size:13px;color:var(--wf-ink-2);">
+          <div class="info info--green" style="margin-bottom:14px;">
             <app-icon name="star" size="sm" /> Bracket armado desde tus predicciones de grupos.
             Tus elecciones aquí se quedan fijas — los resultados reales
             del Mundial puntúan tu BracketPick comparando equipos por fase.

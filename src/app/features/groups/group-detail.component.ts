@@ -233,8 +233,7 @@ interface RankRow {
           </header>
 
           @if (g.mode === 'COMPLETE' && g.comodinesEnabled === false) {
-            <div class="info-banner info-banner--mute"
-                 style="margin:10px 0;padding:10px 12px;background:rgba(160,160,160,0.10);border:1px solid rgba(160,160,160,0.30);border-radius:8px;font-size:13px;color:var(--wf-ink-2);">
+            <div class="info info--mute" style="margin:10px 0;">
               ℹ Los puntos de este grupo se computan sin efectos de comodines.
               Tu posición global (ranking del torneo) sigue incluyéndolos.
             </div>
