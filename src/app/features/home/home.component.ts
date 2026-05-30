@@ -103,9 +103,21 @@ interface ContextualCta {
                 }
               }
             </div>
-            <div class="hero__s">
-              {{ totals().points }} pts · {{ myGroupsCount() }} grupos activos
-              @if (accuracyPct() !== null) { · {{ accuracyPct() }}% de aciertos }
+            <div class="hero__kpis">
+              <div class="hero__kpi">
+                <span class="hero__kpi-v">{{ totals().points }}</span>
+                <span class="hero__kpi-l">pts</span>
+              </div>
+              <div class="hero__kpi">
+                <span class="hero__kpi-v">{{ myGroupsCount() }}</span>
+                <span class="hero__kpi-l">grupos</span>
+              </div>
+              @if (accuracyPct() !== null) {
+                <div class="hero__kpi">
+                  <span class="hero__kpi-v">{{ accuracyPct() }}%</span>
+                  <span class="hero__kpi-l">aciertos</span>
+                </div>
+              }
             </div>
             @if (pendingPicksCount() > 0 && nextDeadlineLabel()) {
               <div class="hero__alert" role="status">
@@ -290,10 +302,33 @@ interface ContextualCta {
       font-size: 20px;
       color: #fff;
     }
-    .hero__k { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.55); margin-bottom: 4px; }
-    .hero__t { font-family: var(--font-display); font-size: 24px; line-height: 1.05; }
+    .hero__k { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255,255,255,0.55); margin-bottom: 4px; font-weight: 700; }
+    .hero__t { font-family: var(--font-display); font-size: clamp(28px, 4vw, 40px); line-height: 1; letter-spacing: .01em; }
     .hero__t strong { color: var(--color-primary-green); font-style: normal; }
-    .hero__s { font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 4px; }
+    .hero__kpis {
+      display: flex;
+      gap: 28px;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.15);
+      flex-wrap: wrap;
+    }
+    .hero__kpi { display: flex; flex-direction: column; align-items: flex-start; }
+    .hero__kpi-v {
+      font-family: var(--font-display);
+      font-size: 24px;
+      line-height: 1;
+      color: var(--color-primary-green);
+      font-variant-numeric: tabular-nums;
+    }
+    .hero__kpi-l {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      color: rgba(255,255,255,0.65);
+      margin-top: 4px;
+      font-weight: 600;
+    }
     .hero__alert {
       background: rgba(220,38,38,0.18);
       border: 1px solid rgba(220,38,38,0.45);
@@ -323,6 +358,8 @@ interface ContextualCta {
       .hero__av { width: 42px; height: 42px; font-size: 16px; align-self: start; }
       .hero__t { font-size: 20px; }
       .hero__cta { grid-column: 1 / -1; text-align: center; padding: 10px; font-size: 11px; }
+      .hero__kpis { gap: 18px; margin-top: 12px; padding-top: 10px; }
+      .hero__kpi-v { font-size: 20px; }
     }
 
     /* Picks pendientes dark */
