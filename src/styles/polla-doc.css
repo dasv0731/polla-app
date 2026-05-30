@@ -625,6 +625,37 @@
 }
 
 /* ============================================================
+   COMODINES HEADER — align with the cross-app editorial rhythm.
+   The screen has its own .com-header pattern (kicker + title + sub
+   + right-side stat strip) that predated the cross-screen kit.
+   Bring its typography in line with .page__title / .ph__t / .sec h2.
+   ============================================================ */
+.com-header__title {
+  font-size: clamp(28px, 4vw, 42px);
+  letter-spacing: .01em;
+}
+.com-header__sub {
+  line-height: 1.5;
+  max-width: 60ch;
+}
+.com-header__stat .lbl {
+  letter-spacing: .12em;
+}
+
+/* ============================================================
+   CUSTOM HERO TITLES — align letter-spacing with the editorial .01em
+   rhythm used by .page__title / .ph__t. Sizes preserved (each hero
+   has its own context-specific scale: smaller in dense list cards,
+   bigger in standalone pages).
+   ============================================================ */
+.profile-hero__name-block h1 {
+  letter-spacing: .01em;
+}
+.group-hero__name {
+  letter-spacing: .01em;
+}
+
+/* ============================================================
    Editorial label tracking — small section / overline labels.
    The design uses .12em-.16em letter-spacing for every "small
    uppercase muted label" pattern. Promote the app's existing
