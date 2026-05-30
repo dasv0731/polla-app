@@ -20,6 +20,12 @@ interface GroupEdit {
   comodinesEnabled: boolean | null;
   entryFeeEnabled: boolean | null;
   entryFeeInstructions: string | null;
+  /** Empresas Sub-1: si el grupo fue creado vía `createCompanyGroup`,
+   *  trae el companyId. Las ediciones se enrutan al Lambda
+   *  `updateCompanyGroup` (sparse payload) en vez del `updateGroup`
+   *  directo, porque el Lambda valida que el caller sea admin de la
+   *  empresa. Null/undefined = grupo legacy. */
+  companyId: string | null;
 }
 
 /**
@@ -56,6 +62,11 @@ interface GroupEdit {
           <a class="link-green" [routerLink]="['/groups', id]">← Volver</a>
         </p>
       } @else if (group()) {
+        @if (isCompanyOwned()) {
+          <p class="ge-company__hint" data-testid="ge-company-hint">
+            Editando grupo de empresa
+          </p>
+        }
         <form class="form-card" (ngSubmit)="save()">
           <h2 class="form-card__title">Datos del grupo</h2>
           <p class="form-card__lead">
@@ -342,6 +353,19 @@ interface GroupEdit {
       border: 1px solid rgba(220, 38, 38, 0.2);
       margin: 0;
     }
+
+    /* Empresas Sub-1: banner que indica que el grupo pertenece a una
+       empresa. Prefijo ge-company__ único para evitar colisiones con
+       clases globales (.hint, .banner chocan en otros temas). */
+    .ge-company__hint {
+      margin: 0 0 12px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: var(--color-primary-green, #00c864);
+      background: rgba(0, 200, 100, 0.08);
+      border: 1px solid rgba(0, 200, 100, 0.25);
+      border-radius: 6px;
+    }
   `],
 })
 export class GroupEditComponent implements OnInit, DirtyAware {
@@ -388,6 +412,11 @@ export class GroupEditComponent implements OnInit, DirtyAware {
     return g?.adminUserId === (this.auth.user()?.sub ?? '');
   });
 
+  /** Empresas Sub-1: true cuando el grupo tiene companyId. Determina
+   *  si el save() enruta a `updateCompanyGroup` (Lambda con auth a
+   *  nivel empresa) en vez del `updateGroup` directo. */
+  isCompanyOwned = computed(() => !!this.group()?.companyId);
+
   modeLabel = computed(() => this.mode === 'COMPLETE' ? 'Completo' : 'Simple');
   /** Template helper — el field `mode` es privado y los templates Angular
    *  no pueden leer privates en strict mode. */
@@ -428,6 +457,10 @@ export class GroupEditComponent implements OnInit, DirtyAware {
         (d as { entryFeeEnabled?: boolean | null }).entryFeeEnabled ?? null;
       const entryFeeInstructions =
         (d as { entryFeeInstructions?: string | null }).entryFeeInstructions ?? null;
+      // companyId opcional — Sub-1 lo agregó al schema, cast hasta que
+      // schema.d.ts se regenere en sandbox.
+      const companyId =
+        (d as { companyId?: string | null }).companyId ?? null;
       this.group.set({
         id: d.id,
         name: d.name,
@@ -437,6 +470,7 @@ export class GroupEditComponent implements OnInit, DirtyAware {
         comodinesEnabled,
         entryFeeEnabled,
         entryFeeInstructions,
+        companyId,
       });
       this.name = d.name;
       this.description = (d as { description?: string | null }).description ?? '';
@@ -563,14 +597,25 @@ export class GroupEditComponent implements OnInit, DirtyAware {
 
     this.saving.set(true);
     try {
-      const res = await this.api.updateGroup({
-        id: this.id,
-        name: this.name.trim(),
-        description: this.description.trim() || null,
-        imageKey: this.imageKey().trim() || null,
-        entryFeeEnabled: this.entryFeeEnabled(),
-        entryFeeInstructions: feeInstructionsForPayload,
-      });
+      // Empresas Sub-1: si el grupo pertenece a una empresa, las
+      // ediciones pasan por el Lambda `updateCompanyGroup` (Task 10
+      // backend) que valida que el caller sea admin de la empresa.
+      // Payload sparse — solo campos que cambiaron respecto al snapshot
+      // cargado, igual que el contrato del Lambda. Para grupos legacy
+      // (companyId null) mantenemos el `updateGroup` directo y el
+      // payload completo que usaba antes.
+      const res = this.isCompanyOwned()
+        ? await this.api.updateCompanyGroup(
+            this.buildCompanyGroupPayload(this.group(), feeInstructionsForPayload),
+          )
+        : await this.api.updateGroup({
+            id: this.id,
+            name: this.name.trim(),
+            description: this.description.trim() || null,
+            imageKey: this.imageKey().trim() || null,
+            entryFeeEnabled: this.entryFeeEnabled(),
+            entryFeeInstructions: feeInstructionsForPayload,
+          });
       if (res.errors && res.errors.length > 0) {
         const msg = res.errors[0]?.message ?? 'Error al guardar';
         this.error.set(humanizeError(new Error(msg)));
@@ -603,6 +648,7 @@ export class GroupEditComponent implements OnInit, DirtyAware {
         imageKey: this.imageKey().trim() || null,
         entryFeeEnabled: this.entryFeeEnabled(),
         entryFeeInstructions: feeInstructionsForPayload,
+        // companyId no cambia con la edición — preservamos el snapshot.
       });
       void this.router.navigate(['/groups', this.id]);
     } catch (e) {
@@ -610,5 +656,36 @@ export class GroupEditComponent implements OnInit, DirtyAware {
     } finally {
       this.saving.set(false);
     }
+  }
+
+  /** Construye el sparse payload para `updateCompanyGroup`. Solo incluye
+   *  los campos que cambiaron respecto al snapshot cargado, mismo
+   *  contrato que el Lambda backend (Task 10): si un campo no viene,
+   *  el handler no lo toca. `id` siempre va. */
+  private buildCompanyGroupPayload(
+    prev: GroupEdit | null,
+    feeInstructionsForPayload: string | null,
+  ): Parameters<ApiService['updateCompanyGroup']>[0] {
+    const payload: Parameters<ApiService['updateCompanyGroup']>[0] = { id: this.id };
+    const trimmedName = this.name.trim();
+    if (!prev || trimmedName !== prev.name) {
+      payload.name = trimmedName;
+    }
+    const nextDesc = this.description.trim() || null;
+    if (!prev || nextDesc !== (prev.description ?? null)) {
+      payload.description = nextDesc;
+    }
+    const nextImage = this.imageKey().trim() || null;
+    if (!prev || nextImage !== (prev.imageKey ?? null)) {
+      payload.imageKey = nextImage;
+    }
+    const nextFeeEnabled = this.entryFeeEnabled();
+    if (!prev || nextFeeEnabled !== (prev.entryFeeEnabled === true)) {
+      payload.entryFeeEnabled = nextFeeEnabled;
+    }
+    if (!prev || feeInstructionsForPayload !== (prev.entryFeeInstructions ?? null)) {
+      payload.entryFeeInstructions = feeInstructionsForPayload;
+    }
+    return payload;
   }
 }
