@@ -400,6 +400,112 @@ export class ApiService {
   markEntryFeePaid(input: { groupId: string; userId: string; paid: boolean }) {
     return apiClient.mutations.markEntryFeePaid(input as never);
   }
+
+  // ===== Empresas — Sub-1 =====
+
+  createCompany(input: {
+    name: string;
+    contactEmail?: string;
+    description?: string;
+    firstAdminUserId: string;
+  }) {
+    return apiClient.mutations.createCompany(input);
+  }
+
+  updateCompany(input: {
+    id: string;
+    name?: string;
+    contactEmail?: string | null;
+    description?: string | null;
+    logoKey?: string | null;
+    brandPrimary?: string | null;
+    brandPrimaryDark?: string | null;
+    brandAccent?: string | null;
+  }) {
+    return apiClient.mutations.updateCompany(input);
+  }
+
+  setCompanyStatus(input: { id: string; status: 'ACTIVE' | 'DISABLED' }) {
+    return apiClient.mutations.setCompanyStatus(input);
+  }
+
+  addCompanyAdmin(input: { companyId: string; userId: string }) {
+    return apiClient.mutations.addCompanyAdmin(input);
+  }
+
+  removeCompanyAdmin(input: { companyId: string; userId: string }) {
+    return apiClient.mutations.removeCompanyAdmin(input);
+  }
+
+  createCompanyGroup(input: {
+    companyId: string;
+    name: string;
+    tournamentId: string;
+    mode: 'SIMPLE' | 'COMPLETE';
+    category?: string;
+    description?: string;
+    adminUserId?: string;
+  }) {
+    return apiClient.mutations.createCompanyGroup(input);
+  }
+
+  updateCompanyGroup(input: {
+    id: string;
+    name?: string;
+    description?: string | null;
+    imageKey?: string | null;
+    category?: string | null;
+    entryFeeEnabled?: boolean;
+    entryFeeInstructions?: string | null;
+    prize1st?: string | null;
+    prize2nd?: string | null;
+    prize3rd?: string | null;
+    adminUserId?: string;
+  }) {
+    return apiClient.mutations.updateCompanyGroup(input);
+  }
+
+  /** List all Companies (super-admin surface uses this). */
+  listCompanies() {
+    return apiClient.models.Company.list();
+  }
+
+  getCompany(id: string) {
+    return apiClient.models.Company.get({ id });
+  }
+
+  /** List CompanyMember rows for a given company. */
+  listCompanyMembers(companyId: string) {
+    return apiClient.models.CompanyMember.list({
+      filter: { companyId: { eq: companyId } },
+    });
+  }
+
+  /** List Groups belonging to a company via the groupsByCompany GSI. */
+  listCompanyGroups(companyId: string) {
+    return apiClient.models.Group.list({
+      filter: { companyId: { eq: companyId } },
+    });
+  }
+
+  /** Search Users by handle prefix or email substring. Returns up to 10
+   *  matches. Used by the AdminPickerComponent. */
+  searchUsers(query: string) {
+    const q = query.trim();
+    if (q.length < 2) {
+      return Promise.resolve({ data: [] as Array<{ sub: string; handle: string; email: string; avatarKey: string | null }> });
+    }
+    return apiClient.models.User.list({
+      filter: {
+        or: [
+          { handle: { beginsWith: q } },
+          { email: { contains: q } },
+        ],
+      },
+      limit: 10,
+    });
+  }
+
   joinGroup(code: string) {
     return apiClient.mutations.joinGroup({ code });
   }

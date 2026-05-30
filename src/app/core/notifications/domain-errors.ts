@@ -16,6 +16,10 @@ export const DOMAIN_ERROR_COPY: Record<string, string> = {
   ENTRY_FEE_INSTRUCTIONS_REQUIRED: 'Las instrucciones son obligatorias si activás la cuota.',
   ENTRY_FEE_INSTRUCTIONS_TOO_LONG: 'Las instrucciones no pueden superar los 500 caracteres.',
   ENTRY_FEE_NOT_GROUP_ADMIN: 'Solo el admin del grupo puede marcar cuotas.',
+  COMPANY_NOT_FOUND: 'Esta empresa no existe.',
+  COMPANY_DISABLED: 'La empresa está desactivada. Reactivala antes de hacer cambios.',
+  NOT_COMPANY_ADMIN: 'No tenés permisos para gestionar esta empresa.',
+  LAST_COMPANY_ADMIN: 'No podés remover al último admin. Agregá otro admin antes.',
 };
 
 export function humanizeError(e: unknown): string {
