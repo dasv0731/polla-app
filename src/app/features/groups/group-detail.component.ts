@@ -317,7 +317,7 @@ interface RankRow {
                       <td class="cuota-col">
                         @if (r.userId === currentUserId) {
                           <span class="cuota-tag cuota-tag--paid" aria-label="Cuota pagada">
-                            <app-icon name="check" [decorative]="true" [size]="14"></app-icon>
+                            <app-icon name="check" [decorative]="true" size="sm"></app-icon>
                             Pagada
                           </span>
                         } @else {
@@ -329,7 +329,7 @@ interface RankRow {
                                   [title]="r.entryFeePaidAt !== null ? 'Quitar marca' : 'Marcar como pagada'"
                                   (click)="toggleEntryFeePaid(r.userId, r.entryFeePaidAt !== null)">
                             @if (r.entryFeePaidAt !== null) {
-                              <app-icon name="check" [decorative]="true" [size]="14"></app-icon>
+                              <app-icon name="check" [decorative]="true" size="sm"></app-icon>
                               Pagada
                             } @else {
                               Marcar pagada
