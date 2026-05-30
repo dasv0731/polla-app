@@ -137,6 +137,7 @@ export class AdminShellComponent {
       label: 'Cuentas',
       items: [
         { path: '/admin/users', label: 'Usuarios' },
+        { path: '/admin/companies', label: 'Empresas' },
       ],
     },
   ];

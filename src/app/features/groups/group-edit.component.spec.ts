@@ -17,12 +17,18 @@ function groupRow(overrides: Record<string, unknown> = {}) {
 describe('GroupEditComponent — entry fee', () => {
   let fixture: ComponentFixture<GroupEditComponent>;
   let component: GroupEditComponent;
-  let apiMock: { updateGroup: jest.Mock; markEntryFeePaid: jest.Mock; getGroup: jest.Mock };
+  let apiMock: {
+    updateGroup: jest.Mock;
+    updateCompanyGroup: jest.Mock;
+    markEntryFeePaid: jest.Mock;
+    getGroup: jest.Mock;
+  };
 
   function build(initial: Record<string, unknown> = {}) {
     apiMock = {
       getGroup: jest.fn().mockResolvedValue({ data: groupRow(initial), errors: undefined }),
       updateGroup: jest.fn().mockResolvedValue({ data: {}, errors: undefined }),
+      updateCompanyGroup: jest.fn().mockResolvedValue({ data: {}, errors: undefined }),
       markEntryFeePaid: jest.fn().mockResolvedValue({ data: { ok: true, message: 'ok', paidAt: '2026-05-29T00:00:00Z' }, errors: undefined }),
     };
     TestBed.configureTestingModule({
@@ -119,5 +125,88 @@ describe('GroupEditComponent — entry fee', () => {
     await component.ngOnInit();
     component.entryFeeInstructions = 'New';
     expect(component.dirty()).toBe(true);
+  });
+});
+
+describe('GroupEditComponent — Empresas Sub-1 (companyId routing)', () => {
+  let fixture: ComponentFixture<GroupEditComponent>;
+  let component: GroupEditComponent;
+  let apiMock: {
+    updateGroup: jest.Mock;
+    updateCompanyGroup: jest.Mock;
+    markEntryFeePaid: jest.Mock;
+    getGroup: jest.Mock;
+  };
+
+  function build(initial: Record<string, unknown> = {}) {
+    apiMock = {
+      getGroup: jest.fn().mockResolvedValue({ data: groupRow(initial), errors: undefined }),
+      updateGroup: jest.fn().mockResolvedValue({ data: {}, errors: undefined }),
+      updateCompanyGroup: jest.fn().mockResolvedValue({ data: {}, errors: undefined }),
+      markEntryFeePaid: jest.fn().mockResolvedValue({ data: { ok: true, message: 'ok', paidAt: '2026-05-29T00:00:00Z' }, errors: undefined }),
+    };
+    TestBed.configureTestingModule({
+      imports: [GroupEditComponent],
+      providers: [
+        provideRouter([]),
+        { provide: ApiService, useValue: apiMock },
+        { provide: AuthService, useValue: { user: () => ({ sub: 'admin-sub' }) } },
+        { provide: ToastService, useValue: { success: jest.fn(), error: jest.fn() } },
+      ],
+    });
+    fixture = TestBed.createComponent(GroupEditComponent);
+    component = fixture.componentInstance;
+    component.id = 'g1';
+  }
+
+  it('isCompanyOwned() reflects loaded group — null companyId → false', async () => {
+    build({ companyId: null });
+    await component.ngOnInit();
+    expect(component.isCompanyOwned()).toBe(false);
+  });
+
+  it('isCompanyOwned() reflects loaded group — set companyId → true', async () => {
+    build({ companyId: 'c1' });
+    await component.ngOnInit();
+    expect(component.isCompanyOwned()).toBe(true);
+  });
+
+  it('legacy group (companyId null): save calls updateGroup, not updateCompanyGroup', async () => {
+    build({ companyId: null });
+    await component.ngOnInit();
+    component.name = 'New name';
+    await component.save();
+    expect(apiMock.updateGroup).toHaveBeenCalledTimes(1);
+    expect(apiMock.updateCompanyGroup).not.toHaveBeenCalled();
+  });
+
+  it('company-owned group: save calls updateCompanyGroup, not updateGroup', async () => {
+    build({ companyId: 'c1' });
+    await component.ngOnInit();
+    component.name = 'New name';
+    await component.save();
+    expect(apiMock.updateCompanyGroup).toHaveBeenCalledTimes(1);
+    expect(apiMock.updateGroup).not.toHaveBeenCalled();
+    // Sparse payload — solo `id` y `name` cambiaron respecto al snapshot.
+    const payload = apiMock.updateCompanyGroup.mock.calls[0][0] as Record<string, unknown>;
+    expect(payload['id']).toBe('g1');
+    expect(payload['name']).toBe('New name');
+  });
+
+  it('template: hint absent when companyId is null', async () => {
+    build({ companyId: null });
+    await component.ngOnInit();
+    fixture.detectChanges();
+    const hint = fixture.nativeElement.querySelector('[data-testid="ge-company-hint"]');
+    expect(hint).toBeNull();
+  });
+
+  it('template: hint "Editando grupo de empresa" visible when companyId is set', async () => {
+    build({ companyId: 'c1' });
+    await component.ngOnInit();
+    fixture.detectChanges();
+    const hint = fixture.nativeElement.querySelector('[data-testid="ge-company-hint"]');
+    expect(hint).not.toBeNull();
+    expect(hint?.textContent?.trim()).toBe('Editando grupo de empresa');
   });
 });
