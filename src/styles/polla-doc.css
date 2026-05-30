@@ -732,6 +732,31 @@
 }
 
 /* ============================================================
+   TRIVIA POPUP — small label tracking aligned with editorial rhythm.
+   Same intent as the .kicker / .profile-section__title bumps.
+   Sizes preserved (trivia overlay is dense).
+   ============================================================ */
+.trivia-step {
+  letter-spacing: .12em;
+}
+.trivia-sponsor__kicker {
+  letter-spacing: .14em;
+}
+
+/* ============================================================
+   SPONSOR REDEEM — heading + kicker alignment with the cross-app
+   editorial typography. The brown / amber theme is preserved; only
+   tracking is touched so the form heading reads with the same
+   rhythm as the rest of the app.
+   ============================================================ */
+.sr h2 {
+  letter-spacing: .01em;
+}
+.sr__kicker {
+  letter-spacing: .12em;
+}
+
+/* ============================================================
    PROFILE STATS as KPI STRIP — adopt the design's .kpis grid look.
    The existing .profile-hero__stats was a 4-cell flex with a top
    border. Promote to the data-dashboard pattern: grid with 1px
