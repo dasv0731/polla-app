@@ -25,6 +25,16 @@ export interface PublicStats {
   standalone: true,
   selector: 'app-auth-brand-panel',
   imports: [SkeletonComponent],
+  styles: [`
+    /* display: contents makes <app-auth-brand-panel> "invisible" for
+       layout, so the <aside class="auth-brand"> inside becomes the
+       direct flex child of .auth-shell — receiving flex: 1.1 + the
+       100vh stretch that .auth-shell { display: flex; min-height: 100vh }
+       expects. Without this, the custom element defaults to display:
+       inline and the brand panel renders at content height instead of
+       full viewport height. */
+    :host { display: contents; }
+  `],
   template: `
     <aside class="auth-brand">
       <div class="auth-brand__top">
