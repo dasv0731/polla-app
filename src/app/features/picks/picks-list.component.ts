@@ -123,6 +123,55 @@ interface TriviaInfo {
         }
       </header>
 
+      <!-- Featured next match — diseño polla-picks.html .nm card.
+           Dark editorial card con countdown + teams + tu pick + edit. -->
+      @if (nextMatch(); as nm) {
+        <article class="nm">
+          <div class="nm__bg"></div>
+          <div class="nm__in">
+            <div class="nm__top">
+              <span class="nm__live">
+                @if (nm.pick) { Próximo partido · {{ countdown(nm.kickoffAt) }} }
+                @else { Tu próximo pick · {{ countdown(nm.kickoffAt) }} }
+              </span>
+              <span class="nm__tag">{{ nm.phaseLabel }}</span>
+            </div>
+            <div class="nm__grid">
+              <div>
+                <div class="nm__cd">
+                  <span class="nm__cd-c"><b>{{ nextMatchCountdown().d }}</b><s>Días</s></span>
+                  <span class="nm__cd-c"><b>{{ nextMatchCountdown().h }}</b><s>Hrs</s></span>
+                  <span class="nm__cd-c"><b>{{ nextMatchCountdown().m }}</b><s>Min</s></span>
+                  <span class="nm__cd-c"><b>{{ nextMatchCountdown().s }}</b><s>Seg</s></span>
+                </div>
+                <div class="nm__t">
+                  <div class="nm__tm">
+                    <div class="nm__fl"><span class="fi fi-{{ nm.homeFlag.toLowerCase() }}" aria-hidden="true"></span></div>
+                    <div class="nm__nm">{{ nm.homeTeamName }}</div>
+                  </div>
+                  <div class="nm__vs">VS</div>
+                  <div class="nm__tm">
+                    <div class="nm__fl"><span class="fi fi-{{ nm.awayFlag.toLowerCase() }}" aria-hidden="true"></span></div>
+                    <div class="nm__nm">{{ nm.awayTeamName }}</div>
+                  </div>
+                </div>
+              </div>
+              <div class="nm__side">
+                <div class="nm__venue">{{ formatKickoff(nm.kickoffAt) }} · Cierra {{ countdown(nm.kickoffAt) }}</div>
+                @if (nm.pick) {
+                  <div class="nm__pk"><span>Tu pick: <b>{{ nm.pick.homeScorePred }} – {{ nm.pick.awayScorePred }}</b></span></div>
+                } @else {
+                  <div class="nm__pk nm__pk--empty"><span>Sin pick aún</span></div>
+                }
+                <a [routerLink]="['/picks/match', nm.id]" class="btn-wf btn-wf--primary btn-wf--block btn-wf--sm">
+                  {{ nm.pick ? 'Editar pick →' : 'Hacer pick →' }}
+                </a>
+              </div>
+            </div>
+          </div>
+        </article>
+      }
+
       <!-- Botón Aleatorio: abre modal con selector de partidos + sliders
            para asignar marcadores random masivamente. -->
       <div class="picks-actions">
@@ -472,6 +521,195 @@ interface TriviaInfo {
   styles: [`
     :host { display: block; }
 
+    /* Featured next match card (.nm) — diseño polla-picks.html.
+       Dark editorial card with countdown + teams + your pick + edit. */
+    .nm {
+      position: relative;
+      background: #0a0a0a;
+      color: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(2, 204, 116, 0.3);
+      margin-bottom: 16px;
+    }
+    .nm__bg {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(160deg, #0a0a0a, #0a3d20 60%, #067a4a 130%);
+    }
+    .nm__bg::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(80% 50% at 50% 0%, rgba(2, 204, 116, 0.4), transparent 65%);
+    }
+    .nm__in { position: relative; padding: 20px; }
+    .nm__top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .nm__live {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(2, 204, 116, 0.18);
+      border: 1px solid rgba(2, 204, 116, 0.4);
+      border-radius: 999px;
+      padding: 4px 11px;
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--color-primary-green);
+    }
+    .nm__live::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--color-primary-green);
+      animation: nm-tp 1.5s infinite;
+    }
+    @keyframes nm-tp {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50%      { transform: scale(1.5); opacity: .6; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .nm__live::before { animation: none; }
+    }
+    .nm__tag {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.55);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .nm__grid {
+      display: grid;
+      grid-template-columns: 1fr 220px;
+      gap: 20px;
+      align-items: center;
+    }
+    @media (max-width: 640px) {
+      .nm__grid { grid-template-columns: 1fr; }
+    }
+    .nm__cd {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+      margin-bottom: 14px;
+    }
+    .nm__cd-c {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 8px 0;
+      text-align: center;
+      display: block;
+    }
+    .nm__cd-c b {
+      font-family: var(--font-display);
+      font-size: 22px;
+      display: block;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .nm__cd-c s {
+      font-size: 8px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.55);
+      margin-top: 3px;
+      display: block;
+      text-decoration: none;
+    }
+    .nm__t {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 12px;
+      align-items: center;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .nm__tm {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+    }
+    .nm__fl {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      display: grid;
+      place-items: center;
+      border: 2px solid rgba(255, 255, 255, 0.18);
+      overflow: hidden;
+    }
+    .nm__fl .fi {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background-size: cover;
+      background-position: center;
+    }
+    .nm__nm {
+      font-family: var(--font-display);
+      font-size: 15px;
+      line-height: 1;
+      letter-spacing: .01em;
+    }
+    .nm__vs {
+      font-family: var(--font-display);
+      color: var(--color-primary-green);
+      font-size: 18px;
+    }
+    .nm__side {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border-left: 1px solid rgba(255, 255, 255, 0.1);
+      padding-left: 20px;
+    }
+    @media (max-width: 640px) {
+      .nm__side {
+        border-left: 0;
+        padding-left: 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-top: 14px;
+      }
+    }
+    .nm__venue {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.6);
+      line-height: 1.4;
+    }
+    .nm__pk {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 12px;
+      background: rgba(2, 204, 116, 0.18);
+      border: 1px solid rgba(2, 204, 116, 0.4);
+      border-radius: 8px;
+      font-size: 11px;
+    }
+    .nm__pk--empty {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.18);
+      color: rgba(255, 255, 255, 0.7);
+    }
+    .nm__pk b {
+      font-family: var(--font-display);
+      font-size: 16px;
+    }
+
     /* Pager días: 2 botones + indicador centro */
     .days-pager {
       display: grid;
@@ -720,6 +958,7 @@ export class PicksListComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     if (this.triviaTickTimer) clearInterval(this.triviaTickTimer);
+    if (this.countdownTimer) clearInterval(this.countdownTimer);
   }
   private api = inject(ApiService);
   private redeemModal = inject(RedeemModalService);
@@ -1072,6 +1311,39 @@ export class PicksListComponent implements OnInit, OnDestroy {
   upcomingCount = computed(() => this.matches().filter((m) => !this.time.isPast(m.kickoffAt)).length);
   playedCount = computed(() => this.matches().filter((m) => this.time.isPast(m.kickoffAt)).length);
 
+  /** Próximo partido del usuario — el más cercano upcoming. Usado por el
+   *  featured next match card del diseño (polla-picks.html `.nm`). */
+  nextMatch = computed<MatchWithMeta | null>(() => {
+    const upcoming = this.matches()
+      .filter((m) => !this.time.isPast(m.kickoffAt))
+      .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt));
+    return upcoming[0] ?? null;
+  });
+
+  /** Cuenta regresiva al kickoff del nextMatch — 4 dígitos D/H/M/S. */
+  nextMatchCountdown = signal<{ d: string; h: string; m: string; s: string }>({ d: '00', h: '00', m: '00', s: '00' });
+
+  private countdownTimer: ReturnType<typeof setInterval> | null = null;
+
+  private updateCountdown(): void {
+    const m = this.nextMatch();
+    if (!m) {
+      this.nextMatchCountdown.set({ d: '00', h: '00', m: '00', s: '00' });
+      return;
+    }
+    const ms = Date.parse(m.kickoffAt) - Date.now();
+    if (ms <= 0) {
+      this.nextMatchCountdown.set({ d: '00', h: '00', m: '00', s: '00' });
+      return;
+    }
+    const d = Math.floor(ms / 86_400_000);
+    const h = Math.floor((ms % 86_400_000) / 3_600_000);
+    const min = Math.floor((ms % 3_600_000) / 60_000);
+    const s = Math.floor((ms % 60_000) / 1000);
+    const pad = (n: number) => (n < 10 ? '0' + n : String(n));
+    this.nextMatchCountdown.set({ d: pad(d), h: pad(h), m: pad(min), s: pad(s) });
+  }
+
   /** Aplica filtros (solo-pendientes + grupo) en el lado próximos. */
   private upcomingSorted = computed(() => {
     const onlyPending = this.filterPending();
@@ -1196,6 +1468,9 @@ export class PicksListComponent implements OnInit, OnDestroy {
     // se actualice en tiempo real. CPU cost: trivial — re-eval de un
     // par de filters sobre arrays chicos.
     this.triviaTickTimer = setInterval(() => this.nowTick.set(Date.now()), 1000);
+    // Featured next match countdown (1 Hz, 4-digit D/H/M/S display).
+    this.updateCountdown();
+    this.countdownTimer = setInterval(() => this.updateCountdown(), 1000);
 
     const userId = this.auth.user()?.sub;
     if (!userId) {
