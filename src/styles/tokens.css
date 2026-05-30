@@ -6,11 +6,12 @@
 
 :root {
   /* -------- Colores de marca -------- */
-  --color-primary-green: #02CC74;
-  --color-primary-black: #0A0A0A;   /* design v3 sidebar/dark blocks */
-  --color-ink-soft:      #1A1A1A;   /* previous wireframe ink, preserved for text where needed */
-  --color-primary-white: #FFFFFF;
-  --color-primary-grey:  #E0E0E0;
+  --color-primary-green:      #02CC74;
+  --color-primary-green-dark: #016B3D;   /* gradiente verde de cards/avatares/FAB */
+  --color-primary-black:      #0A0A0A;   /* design v3 sidebar/dark blocks */
+  --color-ink-soft:           #1A1A1A;   /* previous wireframe ink, preserved for text where needed */
+  --color-primary-white:      #FFFFFF;
+  --color-primary-grey:       #E0E0E0;
 
   /* -------- Colores semánticos (resultados) -------- */
   --color-win:  #02CC74;

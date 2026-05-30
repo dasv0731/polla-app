@@ -8,6 +8,7 @@
 @import './styles/page-shell.css';
 @import './styles/wireframe.css';
 @import './styles/app.css';
+@import './styles/polla-doc.css';
 
 /* Real country flags (ISO-2). Adds .fi .fi-<code> classes used by TeamFlagComponent. */
 @import 'flag-icons/css/flag-icons.min.css';
