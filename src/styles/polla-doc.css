@@ -527,6 +527,15 @@
   min-height: var(--hit-target-min);
 }
 
+/* .btn-wf--lg — large variant for primary auth CTAs (login submit,
+   register continue, forgot password reset). Mirrors the design's .btn--lg:
+   bigger padding + slightly bigger font for the primary affordance on
+   forms that have one decisive action. */
+.btn-wf--lg {
+  padding: 14px 24px;
+  font-size: 14px;
+}
+
 /* ============================================================
    Editorial label tracking — small section / overline labels.
    The design uses .12em-.16em letter-spacing for every "small

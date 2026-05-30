@@ -73,8 +73,8 @@ import { OtpInputComponent } from '../../shared/ui/otp-input/otp-input.component
 
               <button
                 type="submit"
-                class="btn-wf btn-wf--block btn-wf--primary"
-                style="padding:14px;font-size:14px;margin-top:14px;"
+                class="btn-wf btn-wf--block btn-wf--primary btn-wf--lg"
+                style="margin-top:14px;"
                 [disabled]="requesting() || !email">
                 {{ requesting() ? 'Enviando…' : 'Enviar código →' }}
               </button>
@@ -164,8 +164,8 @@ import { OtpInputComponent } from '../../shared/ui/otp-input/otp-input.component
 
               <button
                 type="submit"
-                class="btn-wf btn-wf--block btn-wf--primary"
-                style="padding:14px;font-size:14px;margin-top:14px;"
+                class="btn-wf btn-wf--block btn-wf--primary btn-wf--lg"
+                style="margin-top:14px;"
                 [disabled]="resetting() || code().length !== 6 || !passwordIsValid() || !passwordsMatch()">
                 {{ resetting() ? 'Actualizando…' : 'Actualizar contraseña →' }}
               </button>

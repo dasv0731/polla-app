@@ -128,8 +128,8 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
 
               <button
                 type="submit"
-                class="btn-wf btn-wf--block btn-wf--primary"
-                style="padding:14px;font-size:14px;margin-top:14px;"
+                class="btn-wf btn-wf--block btn-wf--primary btn-wf--lg"
+                style="margin-top:14px;"
                 [disabled]="loading() || !canSubmit()">
                 {{ loading() ? 'Creando…' : 'Continuar →' }}
               </button>
@@ -188,8 +188,8 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
 
               <button
                 type="submit"
-                class="btn-wf btn-wf--block btn-wf--primary"
-                style="padding:14px;font-size:14px;margin-top:14px;"
+                class="btn-wf btn-wf--block btn-wf--primary btn-wf--lg"
+                style="margin-top:14px;"
                 [disabled]="loading() || handleStatus() !== 'available'">
                 {{ loading() ? 'Guardando…' : 'Confirmar usuario' }}
               </button>
@@ -235,8 +235,8 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
 
             <button
               type="button"
-              class="btn-wf btn-wf--block btn-wf--primary"
-              style="padding:14px;font-size:14px;margin-top:14px;"
+              class="btn-wf btn-wf--block btn-wf--primary btn-wf--lg"
+              style="margin-top:14px;"
               [disabled]="loading() || code().length !== 6"
               (click)="submitConfirm()">
               {{ loading() ? 'Verificando…' : 'Verificar →' }}

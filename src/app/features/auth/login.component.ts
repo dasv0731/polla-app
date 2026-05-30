@@ -79,8 +79,8 @@ import { IconComponent } from '../../shared/ui/icon/icon.component';
 
             <button
               type="submit"
-              class="btn-wf btn-wf--block btn-wf--primary"
-              style="padding:14px;font-size:14px;margin-top:4px;"
+              class="btn-wf btn-wf--block btn-wf--primary btn-wf--lg"
+              style="margin-top:4px;"
               [disabled]="loading()">
               {{ loading() ? 'Entrando…' : 'Entrar' }}
             </button>
