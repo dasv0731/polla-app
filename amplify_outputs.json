@@ -1312,6 +1312,20 @@
               "isRequired": false,
               "attributes": []
             },
+            "entryFeeEnabled": {
+              "name": "entryFeeEnabled",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": false,
+              "attributes": []
+            },
+            "entryFeeInstructions": {
+              "name": "entryFeeInstructions",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
             "updatedAt": {
               "name": "updatedAt",
               "isArray": false,
@@ -1433,6 +1447,13 @@
               "isArray": false,
               "type": "AWSDateTime",
               "isRequired": true,
+              "attributes": []
+            },
+            "entryFeePaidAt": {
+              "name": "entryFeePaidAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
               "attributes": []
             },
             "createdAt": {
@@ -3724,6 +3745,32 @@
             }
           }
         },
+        "MarkEntryFeePaidReturnType": {
+          "name": "MarkEntryFeePaidReturnType",
+          "fields": {
+            "ok": {
+              "name": "ok",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": true,
+              "attributes": []
+            },
+            "message": {
+              "name": "message",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "paidAt": {
+              "name": "paidAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": []
+            }
+          }
+        },
         "EmailGroupInviteReturnType": {
           "name": "EmailGroupInviteReturnType",
           "fields": {
@@ -4148,6 +4195,18 @@
               "isArray": false,
               "type": "Boolean",
               "isRequired": false
+            },
+            "entryFeeEnabled": {
+              "name": "entryFeeEnabled",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": false
+            },
+            "entryFeeInstructions": {
+              "name": "entryFeeInstructions",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false
             }
           }
         },
@@ -4386,6 +4445,34 @@
               "name": "userId",
               "isArray": false,
               "type": "ID",
+              "isRequired": true
+            }
+          }
+        },
+        "markEntryFeePaid": {
+          "name": "markEntryFeePaid",
+          "isArray": false,
+          "type": {
+            "nonModel": "MarkEntryFeePaidReturnType"
+          },
+          "isRequired": false,
+          "arguments": {
+            "groupId": {
+              "name": "groupId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            },
+            "userId": {
+              "name": "userId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            },
+            "paid": {
+              "name": "paid",
+              "isArray": false,
+              "type": "Boolean",
               "isRequired": true
             }
           }
