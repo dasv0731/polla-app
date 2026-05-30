@@ -537,6 +537,75 @@
 }
 
 /* ============================================================
+   AUTH-BRAND PANEL — editorial gradient from the design handoff.
+   Adopts the .auth__brand visual values for the existing
+   <app-auth-brand-panel> shared component (login, register,
+   forgot-password). Keeps the same DOM, just swaps the look.
+   ============================================================ */
+
+/* Editorial dark→forest→emerald gradient with a green radial highlight
+   in the top-right corner. Replaces the previous flat green gradient
+   so the brand panel feels more premium and matches the design. */
+.auth-brand {
+  background: linear-gradient(160deg, #0a0a0a 0%, #0a3d20 60%, #067a4a 120%);
+  position: relative;
+  overflow: hidden;
+}
+.auth-brand::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(60% 50% at 80% 20%, rgba(2, 204, 116, 0.30), transparent 60%);
+  pointer-events: none;
+}
+.auth-brand > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Tighten the brand headline to the editorial .01em used everywhere
+   else in the design and let it scale up on desktop. */
+.auth-brand__h1 {
+  font-size: clamp(40px, 4vw, 60px);
+  letter-spacing: .01em;
+  line-height: 0.95;
+}
+
+/* Brand title (logo line) and stats labels adopt the .16em / .14em
+   editorial tracking used by the design's .ph__k / .auth__stat-l. */
+.auth-brand__title {
+  letter-spacing: .04em;
+}
+.auth-brand__stats .lbl {
+  letter-spacing: .14em;
+}
+
+/* Stats numbers in green so the eye lands on them first against the
+   dark gradient (matches .auth__stat-v in the design). */
+.auth-brand__stats .num {
+  color: var(--color-primary-green);
+}
+
+/* ============================================================
+   ONBOARDING — title tightening so it reads with the same editorial
+   rhythm as .ph__t / .page__title / .section-heading h2. .kicker
+   already inherits the green editorial bump from the global alias.
+   ============================================================ */
+.onb-title {
+  letter-spacing: .01em;
+  font-size: clamp(28px, 4vw, 36px);
+}
+
+/* ============================================================
+   AUTH STEP HEADER — login / register step titles (.auth-step-head h1)
+   currently use .04em letter-spacing. Align with the design's .01em
+   so step headers read consistent with every other title in the app.
+   ============================================================ */
+.auth-step-head h1 {
+  letter-spacing: .01em;
+}
+
+/* ============================================================
    Editorial label tracking — small section / overline labels.
    The design uses .12em-.16em letter-spacing for every "small
    uppercase muted label" pattern. Promote the app's existing
