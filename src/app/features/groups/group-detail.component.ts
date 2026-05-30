@@ -248,7 +248,7 @@ interface RankRow {
           </div>
 
           <div class="rank-table-wrap">
-            <table class="rank-table">
+            <table class="rank-table tbl">
               <thead>
                 <tr>
                   <th>

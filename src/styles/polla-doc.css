@@ -405,3 +405,73 @@
   color: var(--color-primary-green);
   font-weight: var(--fw-semibold);
 }
+
+/* ============================================================
+   ADOPTION ALIASES — apply the design's exact visual values to
+   the class names ALREADY USED across the main screens so they
+   pick up the unified style without template rewrites.
+   Covers: Home (page-level), Picks list, Ranking, Groups list,
+   Group detail (members table), Profile (where applicable).
+   Source: design's .ph / .ph__t / .ph__k / .tbl tokens.
+   ============================================================ */
+
+/* .page__header (Picks, Ranking, Groups list) → adopts .ph layout */
+.page__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+/* .page__title (same surfaces) → adopts .ph__t scaling + tightness */
+.page__title {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 4vw, 42px);
+  line-height: 1;
+  letter-spacing: .01em;
+  margin: 0;
+}
+
+/* .kicker (global; cross-surface) → adopts .ph__k brand-forward look.
+   Subtle bump from 10/.08em to 11/.16em — same color (green), wider
+   tracking for editorial feel matching the polla-app handoff.
+   `.text-mute .kicker` inside cards stays neutral via more specific
+   overrides in their own component CSS. */
+.kicker {
+  font-size: 11px;
+  letter-spacing: .16em;
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  color: var(--color-primary-green);
+}
+
+/* Subtitle line that often sits below .page__title (ranking, picks).
+   Surfaces use `<p class="text-sm text-mute">` — we add the design's
+   recommended max-width + line-height so it reads consistently. */
+.page__header p.text-sm,
+.page__header p.text-mute {
+  max-width: 60ch;
+  line-height: 1.5;
+  margin: 6px 0 0;
+}
+
+/* Ranking + group leaderboard tables → tighter typography matching .tbl
+   recommendations. Apply to .rank-table-full (Ranking) and any future
+   `.tbl` class. Existing rank-table-full styles override layout-specific
+   bits (column widths, mobile rules); this only touches typography +
+   borders so the visual feels unified with .tbl. */
+.rank-table-full thead th,
+.rank-table thead th,
+.tbl thead th {
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  font-weight: var(--fw-semibold);
+}
+.rank-table-full td,
+.rank-table td,
+.tbl td {
+  font-variant-numeric: tabular-nums;
+}

@@ -269,7 +269,7 @@ const RELATIVE_FMT = new Intl.RelativeTimeFormat('es-EC', { numeric: 'auto' });
         <!-- ============== DESKTOP: tabla completa con sort por columnas ============== -->
 
         <div class="rank-table-wrap rank-only-desk">
-          <table class="rank-table-full">
+          <table class="rank-table-full tbl">
             <thead>
               <tr>
                 <th>
