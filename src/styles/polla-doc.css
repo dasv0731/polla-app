@@ -538,3 +538,22 @@
 .page-header__counts small {
   letter-spacing: .12em;
 }
+
+/* .section-heading (used by Pick detail "Polla en vivo" / "Datos del
+   partido" sections and any in-content section header) → adopt the .sec
+   look so every section title and "see-all" CTA across the app reads
+   with the same rhythm.
+   - Title size: 24px → 20px Bebas Neue with .01em tracking (matches .sec h2)
+   - CTA link: 12px sentence-case → 11px UPPERCASE .08em (matches .sec a)
+*/
+.section-heading__text h2,
+.section-heading__text .h2 {
+  font-size: 20px;
+  letter-spacing: .01em;
+}
+.section-heading__cta {
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-weight: var(--fw-semibold);
+}
