@@ -606,6 +606,25 @@
 }
 
 /* ============================================================
+   FORM INPUT FOCUS HALO — unify every form field across the app.
+   .auth-input already has the design's halo (3px green soft). Mirror
+   it on the other input families so the focus interaction reads the
+   same whether you are filling out the create-group modal, editing
+   your group prizes, joining a group with a code, or filtering a
+   ranking dropdown.
+   Excluded: .score__input (pick score editor) and .otp__d (OTP digit
+   inputs) keep their bespoke focus states because they live in much
+   denser, special-purpose layouts.
+   ============================================================ */
+.form-card__input:focus-visible,
+.form-card__select:focus-visible,
+.form-card__textarea:focus-visible,
+.join-form input:focus-visible,
+.filters__select:focus-visible {
+  box-shadow: 0 0 0 3px rgba(2, 204, 116, 0.15);
+}
+
+/* ============================================================
    Editorial label tracking — small section / overline labels.
    The design uses .12em-.16em letter-spacing for every "small
    uppercase muted label" pattern. Promote the app's existing
