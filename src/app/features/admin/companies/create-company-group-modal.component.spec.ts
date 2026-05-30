@@ -34,7 +34,7 @@ describe('CreateCompanyGroupModalComponent', () => {
     expect(component.canSave()).toBe(false);
   });
 
-  it('canSave true once name is provided', () => {
+  it('canSave true once name is provided (>=3 chars)', () => {
     component.name = 'Mundialista 2026';
     expect(component.canSave()).toBe(true);
   });
@@ -44,7 +44,22 @@ describe('CreateCompanyGroupModalComponent', () => {
     expect(component.canSave()).toBe(false);
   });
 
-  it('save() builds sparse payload omitting empty optionals', async () => {
+  it('canSave false when name < 3 chars', () => {
+    component.name = 'ab';
+    expect(component.canSave()).toBe(false);
+  });
+
+  it('canSave false when name > 40 chars', () => {
+    component.name = 'a'.repeat(41);
+    expect(component.canSave()).toBe(false);
+  });
+
+  it('canSave true at exactly 40 chars', () => {
+    component.name = 'a'.repeat(40);
+    expect(component.canSave()).toBe(true);
+  });
+
+  it('save() includes required tournamentId + mode, omits empty optionals', async () => {
     component.name = 'Mundialista 2026';
     component.category = '';
     component.description = '';
@@ -53,6 +68,8 @@ describe('CreateCompanyGroupModalComponent', () => {
     expect(apiMock.createCompanyGroup).toHaveBeenCalledWith({
       companyId: 'c1',
       name: 'Mundialista 2026',
+      tournamentId: 'mundial-2026',
+      mode: 'SIMPLE',
     });
   });
 
@@ -61,10 +78,13 @@ describe('CreateCompanyGroupModalComponent', () => {
     component.category = 'futbol';
     component.description = 'Polla del torneo';
     component.adminUserId = 'u-bob';
+    component.mode = 'COMPLETE';
     await component.save();
     expect(apiMock.createCompanyGroup).toHaveBeenCalledWith({
       companyId: 'c1',
       name: 'Mundialista 2026',
+      tournamentId: 'mundial-2026',
+      mode: 'COMPLETE',
       category: 'futbol',
       description: 'Polla del torneo',
       adminUserId: 'u-bob',

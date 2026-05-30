@@ -33,21 +33,36 @@ import { AdminPickerComponent, PickerUser } from './admin-picker.component';
       <div slot="body">
         <div class="f">
           <label for="ccgm-name">Nombre</label>
-          <input id="ccgm-name" class="auth-input" type="text" maxlength="60"
-                 [(ngModel)]="name" [disabled]="saving()"
+          <input id="ccgm-name" class="auth-input" type="text" maxlength="40"
+                 [(ngModel)]="name" name="name" [disabled]="saving()"
                  placeholder="Mundialista 2026">
           <div class="ccgm__hint-row">
-            <small class="f__hint">Hasta 60 caracteres.</small>
-            <small class="ccgm__counter" [class.is-near-limit]="name.length >= 54">
-              {{ name.length }}/60
+            <small class="f__hint">3-40 caracteres.</small>
+            <small class="ccgm__counter" [class.is-near-limit]="name.length >= 36">
+              {{ name.length }}/40
             </small>
           </div>
         </div>
 
+        <label class="f">
+          <span>Torneo</span>
+          <select class="auth-input" [(ngModel)]="tournamentId" name="tournamentId" [disabled]="saving()">
+            <option value="mundial-2026">Mundial 2026</option>
+          </select>
+        </label>
+
+        <label class="f">
+          <span>Modo</span>
+          <select class="auth-input" [(ngModel)]="mode" name="mode" [disabled]="saving()">
+            <option value="SIMPLE">Simple — solo ganador</option>
+            <option value="COMPLETE">Completo — marcador</option>
+          </select>
+        </label>
+
         <div class="f">
           <label for="ccgm-cat">Categoría (opcional)</label>
           <select id="ccgm-cat" class="auth-input"
-                  [(ngModel)]="category" [disabled]="saving()">
+                  [(ngModel)]="category" name="category" [disabled]="saving()">
             @for (c of categories; track c.value) {
               <option [value]="c.value">{{ c.label }}</option>
             }
@@ -57,7 +72,7 @@ import { AdminPickerComponent, PickerUser } from './admin-picker.component';
         <div class="f">
           <label for="ccgm-desc">Descripción (opcional)</label>
           <textarea id="ccgm-desc" class="auth-input" rows="3" maxlength="200"
-                    [(ngModel)]="description" [disabled]="saving()"
+                    [(ngModel)]="description" name="description" [disabled]="saving()"
                     placeholder="Detalle del grupo, premios, reglas, etc."></textarea>
           <div class="ccgm__hint-row">
             <small class="f__hint">Hasta 200 caracteres.</small>
@@ -116,6 +131,10 @@ export class CreateCompanyGroupModalComponent {
   category = '';
   description = '';
   adminUserId = '';
+  // Required by backend (createCompanyGroup mutation). Only one tournament
+  // available right now; mode defaults to SIMPLE.
+  tournamentId = 'mundial-2026';
+  mode: 'SIMPLE' | 'COMPLETE' = 'SIMPLE';
   adminUser = signal<PickerUser | null>(null);
   saving = signal(false);
 
@@ -127,7 +146,8 @@ export class CreateCompanyGroupModalComponent {
   ];
 
   canSave(): boolean {
-    return this.name.trim().length > 0;
+    const trimmed = this.name.trim();
+    return trimmed.length >= 3 && trimmed.length <= 40 && !this.saving();
   }
 
   onPickAdmin(user: PickerUser | null): void {
@@ -145,36 +165,33 @@ export class CreateCompanyGroupModalComponent {
   }
 
   async save(): Promise<void> {
-    if (!this.canSave() || this.saving()) return;
+    if (!this.canSave()) return;
     this.saving.set(true);
     try {
-      const name = this.name.trim();
-      const cat = this.category.trim();
-      const desc = this.description.trim();
+      const trimmedName = this.name.trim();
+      const trimmedDesc = this.description.trim();
       const adminId = this.adminUserId.trim();
       const payload: {
         companyId: string;
         name: string;
+        tournamentId: string;
+        mode: 'SIMPLE' | 'COMPLETE';
         category?: string;
         description?: string;
         adminUserId?: string;
       } = {
         companyId: this.companyId,
-        name,
-        ...(cat ? { category: cat } : {}),
-        ...(desc ? { description: desc } : {}),
-        ...(adminId ? { adminUserId: adminId } : {}),
+        name: trimmedName,
+        tournamentId: this.tournamentId,
+        mode: this.mode,
       };
-      // Cast: the API client type requires tournamentId/mode for the legacy
-      // group-create surface; the company-group create handler accepts the
-      // sparse payload above and defaults the rest server-side (Task 18).
-      const res = await this.api.createCompanyGroup(payload as unknown as Parameters<ApiService['createCompanyGroup']>[0]);
-      const id = (res as { data?: { id?: string } }).data?.id;
-      if (!id) {
-        this.toast.error('No se pudo crear el grupo. Intenta de nuevo.');
-        return;
-      }
-      this.toast.success(`Grupo "${name}" creado`);
+      if (this.category) payload.category = this.category;
+      if (trimmedDesc) payload.description = trimmedDesc;
+      if (adminId) payload.adminUserId = adminId;
+
+      const res = await this.api.createCompanyGroup(payload);
+      const id = (res as { data?: { id?: string } }).data?.id ?? '';
+      this.toast.success(`Grupo "${trimmedName}" creado`);
       this.created.emit({ id });
     } catch (e) {
       this.toast.error(humanizeError(e));

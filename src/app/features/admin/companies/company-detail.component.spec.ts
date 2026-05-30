@@ -338,15 +338,17 @@ describe('CompanyDetailComponent — Tab Grupos', () => {
     component.id = 'c1';
   }
 
-  it('ngOnInit loads groups and populates groups() signal', async () => {
+  it('ngOnInit loads groups and populates groups() signal with mode', async () => {
     setup([
-      { id: 'g1', name: 'Mundialista', category: 'futbol', memberCount: 12 },
-      { id: 'g2', name: 'NBA', category: 'baloncesto', memberCount: null },
+      { id: 'g1', name: 'Mundialista', mode: 'SIMPLE', category: 'futbol', memberCount: 12 },
+      { id: 'g2', name: 'NBA', mode: 'COMPLETE', category: 'baloncesto', memberCount: null },
     ]);
     await component.ngOnInit();
     expect(apiMock.listCompanyGroups).toHaveBeenCalledWith('c1');
     expect(component.groups().length).toBe(2);
     expect(component.groups()[0].name).toBe('Mundialista');
+    expect(component.groups()[0].mode).toBe('SIMPLE');
+    expect(component.groups()[1].mode).toBe('COMPLETE');
   });
 
   it('editGroup navigates to /admin/groups/edit/:id', async () => {

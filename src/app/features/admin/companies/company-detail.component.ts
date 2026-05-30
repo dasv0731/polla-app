@@ -37,6 +37,7 @@ interface AdminRow {
 interface GroupRow {
   id: string;
   name: string;
+  mode: 'SIMPLE' | 'COMPLETE' | null;
   category: string | null;
   memberCount: number | null;
 }
@@ -194,6 +195,7 @@ type Tab = 'general' | 'admins' | 'groups' | 'branding';
                     <div class="cd-grupos__info">
                       <strong>{{ g.name }}</strong>
                       <div class="text-mute">
+                        {{ g.mode === 'COMPLETE' ? 'Completo' : 'Simple' }} ·
                         {{ categoryLabel(g.category) }} ·
                         {{ g.memberCount !== null ? g.memberCount + ' miembros' : '— miembros' }}
                       </div>
@@ -296,12 +298,15 @@ export class CompanyDetailComponent implements OnInit {
       const rows = (res.data ?? []) as Array<{
         id: string;
         name: string;
+        mode?: 'SIMPLE' | 'COMPLETE' | null;
         category?: string | null;
         memberCount?: number | null;
       }>;
+      // TODO(follow-up): add category filter chips here (plan line 789).
       this.groups.set(rows.map((r) => ({
         id: r.id,
         name: r.name,
+        mode: (r as { mode?: 'SIMPLE' | 'COMPLETE' }).mode ?? null,
         category: r.category ?? null,
         memberCount: r.memberCount ?? null,
       })));
