@@ -433,6 +433,26 @@
   margin: 0;
 }
 
+/* .page-header (Notifications, Special picks, Group edit, Group prizes
+   edit, Group invite, admin/*) — same scaling as .page__title so all
+   headers across the app share one typography rhythm. */
+.page-header__title h1 {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 4vw, 42px);
+  line-height: 1;
+  letter-spacing: .01em;
+}
+/* The small label above .page-header h1 was a muted "tag" line.
+   Promote it to the brand-forward green kicker so it matches .ph__k
+   and the .kicker class used in every other surface. */
+.page-header__title small {
+  font-size: 11px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--color-primary-green);
+  font-weight: var(--fw-bold);
+}
+
 /* .kicker (global; cross-surface) → adopts .ph__k brand-forward look.
    Subtle bump from 10/.08em to 11/.16em — same color (green), wider
    tracking for editorial feel matching the polla-app handoff.
