@@ -309,7 +309,7 @@ interface TriviaInfo {
                   @if (isLive(m)) {
                     <span class="live">EN VIVO</span>
                   } @else if (isAwaitingResult(m)) {
-                    <span class="pill" style="background:rgba(212,165,0,0.15);color:#7a5d00;border-color:rgba(212,165,0,0.3);">Esperando resultado</span>
+                    <span class="pill pill--gold">Esperando resultado</span>
                   } @else if (isPlayed(m)) {
                     <span class="text-mute">Final</span>
                   } @else {
@@ -390,7 +390,7 @@ interface TriviaInfo {
                     </span>
                   } @else if (upcoming && hasAnyPick) {
                     @if (pickPending) {
-                      <span class="pill" style="background:rgba(212,165,0,0.15);color:#7a5d00;border-color:rgba(212,165,0,0.3);">● Pendiente</span>
+                      <span class="pill pill--gold">● Pendiente</span>
                     } @else {
                       <span class="pill pill--green">
                         <app-icon name="check" size="sm" />Guardado

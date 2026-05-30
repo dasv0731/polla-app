@@ -309,7 +309,7 @@ interface Totals {
                     } @else if (isLive) {
                       <span class="pill pill--live">EN VIVO</span>
                     } @else if (isAwaiting) {
-                      <span class="pill" style="background:rgba(212,165,0,0.15);color:#7a5d00;border-color:rgba(212,165,0,0.3);">Esperando resultado</span>
+                      <span class="pill pill--gold">Esperando resultado</span>
                     } @else {
                       <span class="pill">PRÓX · {{ countdown(m.kickoffAt) }}</span>
                     }
@@ -363,7 +363,7 @@ interface Totals {
                   @if (isUpcoming && hasAnyPick) {
                     <div class="match-card__pills">
                       @if (pickPending) {
-                        <span class="pill" style="background:rgba(212,165,0,0.15);color:#7a5d00;border-color:rgba(212,165,0,0.3);"><span aria-hidden="true">● </span>Pendiente</span>
+                        <span class="pill pill--gold"><span aria-hidden="true">● </span>Pendiente</span>
                       } @else {
                         <span class="pill pill--green"><app-icon name="check" size="sm" />Guardado</span>
                       }

@@ -153,7 +153,7 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
           } @else if (saveStatus() === 'dirty') {
             <span class="pill pill--warn"><span aria-hidden="true">● </span>Cambios sin guardar</span>
           } @else if (saveStatus() === 'error') {
-            <span class="pill" role="alert" style="background:rgba(195,51,51,0.1);color:#c33;border-color:rgba(195,51,51,0.3);">
+            <span class="pill pill--red" role="alert">
               <app-icon name="alert" size="sm" />Error
             </span>
           }
