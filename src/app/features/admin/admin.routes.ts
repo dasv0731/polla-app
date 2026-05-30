@@ -80,6 +80,14 @@ export const adminRoutes: Routes = [
         path: 'users',
         loadComponent: () => import('./admin-users.component').then((m) => m.AdminUsersComponent),
       },
+      {
+        path: 'companies',
+        loadComponent: () => import('./companies/companies-list.component').then((m) => m.CompaniesListComponent),
+      },
+      {
+        path: 'companies/:id',
+        loadComponent: () => import('./companies/company-detail.component').then((m) => m.CompanyDetailComponent),
+      },
     ],
   },
 ];
