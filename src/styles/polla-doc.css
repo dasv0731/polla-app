@@ -698,10 +698,37 @@
 @media (prefers-reduced-motion: reduce) {
   .match-card:hover,
   .com-catalog__card:hover,
-  .profile-list-item:hover {
+  .profile-list-item:hover,
+  .notif-card:hover,
+  .special-pick:hover {
     transform: none;
     box-shadow: none;
   }
+}
+
+/* Extend the same hover polish to more interactive cards across the
+   notifications + special-picks surfaces so the feedback feels unified
+   with the picks / comodines families. Both already had green-border
+   hover from their own component CSS — we add the lift + soft shadow
+   so they animate the same way. */
+.notif-card,
+.special-pick {
+  transition:
+    border-color .15s ease,
+    background-color .15s ease,
+    transform .15s ease,
+    box-shadow .15s ease;
+}
+.notif-card:hover,
+.special-pick:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* notifications group heading — bump letter-spacing to .12em editorial
+   so it reads consistent with .ph__k, .profile-section__title, etc. */
+.notif-group__heading {
+  letter-spacing: .12em;
 }
 
 /* ============================================================
