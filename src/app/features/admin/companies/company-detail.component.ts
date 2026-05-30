@@ -129,7 +129,7 @@ type Tab = 'general' | 'admins' | 'groups' | 'branding';
 
         @if (tab() === 'admins') {
           <div class="form-card">
-            <header class="sec">
+            <header class="cd-admins__head">
               <h2>Company-admins</h2>
               <button type="button" class="btn-wf btn-wf--sm"
                       (click)="showPicker.set(!showPicker())">
@@ -159,7 +159,7 @@ type Tab = 'general' | 'admins' | 'groups' | 'branding';
                     </div>
                     <button type="button" class="btn-wf btn-wf--sm btn-wf--danger"
                             [disabled]="admins().length <= 1"
-                            [title]="admins().length <= 1 ? 'Es el último admin — agregá otro antes' : ''"
+                            [title]="admins().length <= 1 ? 'Es el último admin — agrega otro antes' : ''"
                             (click)="removeAdmin(a)">Remover</button>
                   </li>
                 }
@@ -179,8 +179,8 @@ type Tab = 'general' | 'admins' | 'groups' | 'branding';
     .adm-list__row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: #fff; border: 1px solid var(--color-line); border-radius: var(--radius-md); }
     .adm-list__info { flex: 1; min-width: 0; }
     .adm-list__info > strong { display: block; font-size: 14px; }
-    .sec { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 4px; }
-    .sec h2 { margin: 0; font-size: 16px; }
+    .cd-admins__head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 4px; }
+    .cd-admins__head h2 { margin: 0; font-size: 16px; }
   `],
 })
 export class CompanyDetailComponent implements OnInit {
