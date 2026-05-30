@@ -515,3 +515,26 @@
 .btn-wf:not(.btn-wf--sm) {
   min-height: var(--hit-target-min);
 }
+
+/* ============================================================
+   Editorial label tracking — small section / overline labels.
+   The design uses .12em-.16em letter-spacing for every "small
+   uppercase muted label" pattern. Promote the app's existing
+   label classes so the editorial rhythm is consistent.
+   ============================================================ */
+
+/* Profile section titles ("Mi juego", "Comunicaciones", "Cuenta") */
+.profile-section__title {
+  letter-spacing: .16em;
+}
+
+/* KPI/stat overline labels inside cards (Home, Profile, Ranking). The
+   .num + .lbl pattern in profile-stat already exists; align .lbl. */
+.profile-stat .lbl {
+  letter-spacing: .12em;
+}
+
+/* "page-header__counts" legacy small labels (used by group-stage). */
+.page-header__counts small {
+  letter-spacing: .12em;
+}
