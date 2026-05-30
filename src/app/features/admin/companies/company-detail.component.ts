@@ -2,11 +2,14 @@ import { Component, Input, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../../core/api/api.service';
+import { AuthService } from '../../../core/auth/auth.service';
 import { humanizeError } from '../../../core/notifications/domain-errors';
 import { ToastService } from '../../../core/notifications/toast.service';
 import { ConfirmDialogService } from '../../../shared/ui/confirm-dialog.service';
 import { IconComponent } from '../../../shared/ui/icon/icon.component';
 import { SkeletonComponent } from '../../../shared/ui/skeleton/skeleton.component';
+import { UserAvatarComponent } from '../../../shared/user-avatar/user-avatar.component';
+import { AdminPickerComponent, PickerUser } from './admin-picker.component';
 
 interface CompanyDetail {
   id: string;
@@ -21,6 +24,15 @@ interface CompanyDetail {
   createdAt: string;
 }
 
+interface AdminRow {
+  id: string;          // CompanyMember row id (for delete)
+  userId: string;
+  handle: string;
+  email: string;
+  avatarKey: string | null;
+  invitedAt: string;
+}
+
 type Tab = 'general' | 'admins' | 'groups' | 'branding';
 
 /**
@@ -31,7 +43,7 @@ type Tab = 'general' | 'admins' | 'groups' | 'branding';
 @Component({
   standalone: true,
   selector: 'app-company-detail',
-  imports: [FormsModule, RouterLink, IconComponent, SkeletonComponent],
+  imports: [FormsModule, RouterLink, IconComponent, SkeletonComponent, AdminPickerComponent, UserAvatarComponent],
   template: `
     <section class="page">
       <header class="page__header">
@@ -115,7 +127,46 @@ type Tab = 'general' | 'admins' | 'groups' | 'branding';
           </form>
         }
 
-        @if (tab() === 'admins')   { <p class="text-mute">(Task 17)</p> }
+        @if (tab() === 'admins') {
+          <div class="form-card">
+            <header class="sec">
+              <h2>Company-admins</h2>
+              <button type="button" class="btn-wf btn-wf--sm"
+                      (click)="showPicker.set(!showPicker())">
+                {{ showPicker() ? 'Cancelar' : '+ Agregar admin' }}
+              </button>
+            </header>
+
+            @if (showPicker()) {
+              <div style="margin: 10px 0;">
+                <app-admin-picker (userSelected)="onPickAdmin($event)" />
+              </div>
+            }
+
+            @if (loadingAdmins()) {
+              <app-skeleton variant="list" [count]="2" />
+            } @else if (admins().length === 0) {
+              <p class="text-mute">Esta empresa no tiene admins.</p>
+            } @else {
+              <ul class="adm-list" role="list">
+                @for (a of admins(); track a.id) {
+                  <li class="adm-list__row">
+                    <app-user-avatar [sub]="a.userId" [handle]="a.handle"
+                                     [avatarKey]="a.avatarKey" size="md" />
+                    <div class="adm-list__info">
+                      <strong translate="no">{{ '@' + a.handle }}</strong>
+                      <div class="text-mute">{{ a.email }} · agregado {{ formatDate(a.invitedAt) }}</div>
+                    </div>
+                    <button type="button" class="btn-wf btn-wf--sm btn-wf--danger"
+                            [disabled]="admins().length <= 1"
+                            [title]="admins().length <= 1 ? 'Es el último admin — agregá otro antes' : ''"
+                            (click)="removeAdmin(a)">Remover</button>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        }
         @if (tab() === 'groups')   { <p class="text-mute">(Task 18)</p> }
         @if (tab() === 'branding') { <p class="text-mute">(Task 19)</p> }
       }
@@ -124,6 +175,12 @@ type Tab = 'general' | 'admins' | 'groups' | 'branding';
   styles: [`
     :host { display: block; }
     .cd__status-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .adm-list { list-style: none; padding: 0; margin: 10px 0 0; display: flex; flex-direction: column; gap: 8px; }
+    .adm-list__row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: #fff; border: 1px solid var(--color-line); border-radius: var(--radius-md); }
+    .adm-list__info { flex: 1; min-width: 0; }
+    .adm-list__info > strong { display: block; font-size: 14px; }
+    .sec { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 4px; }
+    .sec h2 { margin: 0; font-size: 16px; }
   `],
 })
 export class CompanyDetailComponent implements OnInit {
@@ -133,12 +190,17 @@ export class CompanyDetailComponent implements OnInit {
   private router = inject(Router);
   private confirm = inject(ConfirmDialogService);
   private toast = inject(ToastService);
+  private auth = inject(AuthService);
 
   company = signal<CompanyDetail | null>(null);
   loading = signal(true);
   saving = signal(false);
   tab = signal<Tab>('general');
   error = signal<string | null>(null);
+
+  admins = signal<AdminRow[]>([]);
+  loadingAdmins = signal(false);
+  showPicker = signal(false);
 
   name = '';
   contactEmail = '';
@@ -164,8 +226,80 @@ export class CompanyDetailComponent implements OnInit {
       this.name = c.name;
       this.contactEmail = c.contactEmail ?? '';
       this.description = c.description ?? '';
+      await this.loadAdmins();
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  private async loadAdmins(): Promise<void> {
+    this.loadingAdmins.set(true);
+    try {
+      const res = await this.api.listCompanyMembers(this.id);
+      const members = (res.data ?? []) as Array<{ id: string; userId: string; role: string; invitedAt: string }>;
+      const adminRows = members.filter((m) => m.role === 'ADMIN');
+      const enriched = await Promise.all(adminRows.map(async (m) => {
+        const u = await this.api.getUser(m.userId);
+        const userData = (u as { data?: { handle?: string; email?: string; avatarKey?: string | null } }).data;
+        return {
+          id: m.id,
+          userId: m.userId,
+          handle: userData?.handle ?? m.userId.slice(0, 6),
+          email: userData?.email ?? '',
+          avatarKey: userData?.avatarKey ?? null,
+          invitedAt: m.invitedAt,
+        } as AdminRow;
+      }));
+      this.admins.set(enriched);
+    } finally {
+      this.loadingAdmins.set(false);
+    }
+  }
+
+  async onPickAdmin(user: PickerUser | null): Promise<void> {
+    if (!user) {
+      this.showPicker.set(false);
+      return;
+    }
+    try {
+      await this.api.addCompanyAdmin({ companyId: this.id, userId: user.sub });
+      await this.loadAdmins();
+      this.showPicker.set(false);
+      this.toast.success('Admin agregado');
+    } catch (e) {
+      this.toast.error(humanizeError(e));
+    }
+  }
+
+  async removeAdmin(a: AdminRow): Promise<void> {
+    const isSelf = a.userId === (this.auth.user()?.sub ?? '');
+    const ok = await this.confirm.ask({
+      title: 'Remover admin',
+      message: isSelf
+        ? 'Vas a perder acceso al panel de esta empresa después de removerte. ¿Continuar?'
+        : 'Removerá a este usuario como company-admin.',
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await this.api.removeCompanyAdmin({ companyId: this.id, userId: a.userId });
+      await this.loadAdmins();
+      this.toast.success('Admin removido');
+    } catch (e) {
+      this.toast.error(humanizeError(e));
+    }
+  }
+
+  formatDate(iso: string): string {
+    try {
+      return new Intl.DateTimeFormat('es-EC', {
+        timeZone: 'America/Guayaquil',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      }).format(new Date(iso));
+    } catch {
+      return iso;
     }
   }
 

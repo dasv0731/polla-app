@@ -4,6 +4,7 @@ import { CompanyDetailComponent } from './company-detail.component';
 import { ApiService } from '../../../core/api/api.service';
 import { ConfirmDialogService } from '../../../shared/ui/confirm-dialog.service';
 import { ToastService } from '../../../core/notifications/toast.service';
+import { AuthService } from '../../../core/auth/auth.service';
 
 const baseCompany = {
   id: 'c1', name: 'Coca-Cola', status: 'ACTIVE',
@@ -19,9 +20,12 @@ describe('CompanyDetailComponent — shell + Tab General', () => {
     getCompany: jest.Mock;
     updateCompany: jest.Mock;
     setCompanyStatus: jest.Mock;
+    listCompanyMembers: jest.Mock;
+    getUser: jest.Mock;
   };
   let confirmMock: { ask: jest.Mock };
   let toastMock: { success: jest.Mock; error: jest.Mock };
+  let authMock: { user: () => { sub: string } | null };
 
   function setup(opts: { company?: Record<string, unknown> | null } = {}) {
     const initialCompany = opts.company === undefined ? baseCompany : opts.company;
@@ -29,9 +33,12 @@ describe('CompanyDetailComponent — shell + Tab General', () => {
       getCompany: jest.fn().mockResolvedValue({ data: initialCompany }),
       updateCompany: jest.fn().mockResolvedValue({ data: { ok: true, message: 'Cambios guardados' } }),
       setCompanyStatus: jest.fn().mockResolvedValue({ data: { ok: true } }),
+      listCompanyMembers: jest.fn().mockResolvedValue({ data: [] }),
+      getUser: jest.fn().mockResolvedValue({ data: null }),
     };
     confirmMock = { ask: jest.fn().mockResolvedValue(true) };
     toastMock = { success: jest.fn(), error: jest.fn() };
+    authMock = { user: () => ({ sub: 'u-caller' }) };
     TestBed.configureTestingModule({
       imports: [CompanyDetailComponent],
       providers: [
@@ -39,6 +46,7 @@ describe('CompanyDetailComponent — shell + Tab General', () => {
         { provide: ApiService, useValue: apiMock },
         { provide: ConfirmDialogService, useValue: confirmMock },
         { provide: ToastService, useValue: toastMock },
+        { provide: AuthService, useValue: authMock },
       ],
     });
     fixture = TestBed.createComponent(CompanyDetailComponent);
@@ -128,5 +136,150 @@ describe('CompanyDetailComponent — shell + Tab General', () => {
     expect(component.tab()).toBe('general');
     component.tab.set('admins');
     expect(component.tab()).toBe('admins');
+  });
+});
+
+const baseAdmin = {
+  id: 'm1', companyId: 'c1', userId: 'u-bob', role: 'ADMIN',
+  invitedAt: '2026-02-10T00:00:00Z',
+};
+
+describe('CompanyDetailComponent — Tab Admins', () => {
+  let fixture: ComponentFixture<CompanyDetailComponent>;
+  let component: CompanyDetailComponent;
+  let apiMock: {
+    getCompany: jest.Mock;
+    listCompanyMembers: jest.Mock;
+    getUser: jest.Mock;
+    addCompanyAdmin: jest.Mock;
+    removeCompanyAdmin: jest.Mock;
+  };
+  let confirmMock: { ask: jest.Mock };
+  let toastMock: { success: jest.Mock; error: jest.Mock };
+  let authMock: { user: () => { sub: string } | null };
+
+  const baseCompany = {
+    id: 'c1', name: 'Coca-Cola', status: 'ACTIVE',
+    contactEmail: null, description: null,
+    logoKey: null, brandPrimary: null, brandPrimaryDark: null, brandAccent: null,
+    createdAt: '2026-01-15T00:00:00Z',
+  };
+
+  function setup(admins: Array<Record<string, unknown>>, opts: { callerSub?: string } = {}) {
+    apiMock = {
+      getCompany: jest.fn().mockResolvedValue({ data: baseCompany }),
+      listCompanyMembers: jest.fn().mockResolvedValue({ data: admins }),
+      getUser: jest.fn().mockImplementation((sub: string) => Promise.resolve({
+        data: { sub, handle: sub.replace('u-', ''), email: sub + '@x.com', avatarKey: null },
+      })),
+      addCompanyAdmin: jest.fn().mockResolvedValue({ data: { ok: true, message: 'Admin agregado' } }),
+      removeCompanyAdmin: jest.fn().mockResolvedValue({ data: { ok: true, message: 'Admin removido' } }),
+    };
+    confirmMock = { ask: jest.fn().mockResolvedValue(true) };
+    toastMock = { success: jest.fn(), error: jest.fn() };
+    authMock = { user: () => ({ sub: opts.callerSub ?? 'u-caller' }) };
+
+    TestBed.configureTestingModule({
+      imports: [CompanyDetailComponent],
+      providers: [
+        provideRouter([]),
+        { provide: ApiService, useValue: apiMock },
+        { provide: ConfirmDialogService, useValue: confirmMock },
+        { provide: ToastService, useValue: toastMock },
+        { provide: AuthService, useValue: authMock },
+      ],
+    });
+    fixture = TestBed.createComponent(CompanyDetailComponent);
+    component = fixture.componentInstance;
+    component.id = 'c1';
+  }
+
+  it('ngOnInit loads admins and populates admins() signal', async () => {
+    setup([{ ...baseAdmin, userId: 'u-alice' }, { ...baseAdmin, id: 'm2', userId: 'u-bob' }]);
+    await component.ngOnInit();
+    expect(apiMock.listCompanyMembers).toHaveBeenCalledWith('c1');
+    expect(component.admins().length).toBe(2);
+    expect(component.admins().map(a => a.userId).sort()).toEqual(['u-alice', 'u-bob']);
+  });
+
+  it('filters out MEMBER rows, keeps only ADMIN', async () => {
+    setup([
+      { ...baseAdmin, userId: 'u-alice', role: 'ADMIN' },
+      { ...baseAdmin, id: 'm2', userId: 'u-member', role: 'MEMBER' },
+    ]);
+    await component.ngOnInit();
+    expect(component.admins().length).toBe(1);
+    expect(component.admins()[0].userId).toBe('u-alice');
+  });
+
+  it('onPickAdmin with null is a no-op (just closes picker)', async () => {
+    setup([{ ...baseAdmin, userId: 'u-alice' }]);
+    await component.ngOnInit();
+    component.showPicker.set(true);
+    await component.onPickAdmin(null);
+    expect(apiMock.addCompanyAdmin).not.toHaveBeenCalled();
+    expect(component.showPicker()).toBe(false);
+  });
+
+  it('onPickAdmin calls addCompanyAdmin + reloads + closes picker', async () => {
+    setup([{ ...baseAdmin, userId: 'u-alice' }]);
+    await component.ngOnInit();
+    component.showPicker.set(true);
+    await component.onPickAdmin({ sub: 'u-new', handle: 'new', email: 'new@x.com', avatarKey: null });
+    expect(apiMock.addCompanyAdmin).toHaveBeenCalledWith({ companyId: 'c1', userId: 'u-new' });
+    expect(apiMock.listCompanyMembers).toHaveBeenCalledTimes(2);
+    expect(component.showPicker()).toBe(false);
+  });
+
+  it('removeAdmin with self shows special confirm copy', async () => {
+    setup(
+      [
+        { ...baseAdmin, userId: 'u-caller' },
+        { ...baseAdmin, id: 'm2', userId: 'u-bob' },
+      ],
+      { callerSub: 'u-caller' },
+    );
+    await component.ngOnInit();
+    const self = component.admins().find(a => a.userId === 'u-caller')!;
+    await component.removeAdmin(self);
+    expect(confirmMock.ask).toHaveBeenCalled();
+    const askArg = confirmMock.ask.mock.calls[0][0];
+    expect(askArg.message.toLowerCase()).toContain('vas a perder acceso');
+  });
+
+  it('removeAdmin calls removeCompanyAdmin + reloads', async () => {
+    setup([
+      { ...baseAdmin, userId: 'u-alice' },
+      { ...baseAdmin, id: 'm2', userId: 'u-bob' },
+    ]);
+    await component.ngOnInit();
+    const bob = component.admins().find(a => a.userId === 'u-bob')!;
+    await component.removeAdmin(bob);
+    expect(apiMock.removeCompanyAdmin).toHaveBeenCalledWith({ companyId: 'c1', userId: 'u-bob' });
+    expect(apiMock.listCompanyMembers).toHaveBeenCalledTimes(2);
+  });
+
+  it('removeAdmin cancels when confirm rejected', async () => {
+    setup([
+      { ...baseAdmin, userId: 'u-alice' },
+      { ...baseAdmin, id: 'm2', userId: 'u-bob' },
+    ]);
+    confirmMock.ask.mockResolvedValueOnce(false);
+    await component.ngOnInit();
+    const bob = component.admins().find(a => a.userId === 'u-bob')!;
+    await component.removeAdmin(bob);
+    expect(apiMock.removeCompanyAdmin).not.toHaveBeenCalled();
+  });
+
+  it('removeAdmin handles LAST_COMPANY_ADMIN error via toast', async () => {
+    setup([
+      { ...baseAdmin, userId: 'u-alice' },
+      { ...baseAdmin, id: 'm2', userId: 'u-bob' },
+    ]);
+    apiMock.removeCompanyAdmin.mockRejectedValueOnce(new Error('LAST_COMPANY_ADMIN'));
+    await component.ngOnInit();
+    const bob = component.admins().find(a => a.userId === 'u-bob')!;
+    await component.removeAdmin(bob);
+    expect(toastMock.error).toHaveBeenCalled();
   });
 });
