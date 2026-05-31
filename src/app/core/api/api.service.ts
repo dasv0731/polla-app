@@ -427,8 +427,16 @@ export class ApiService {
     brandPrimary?: string | null;
     brandPrimaryDark?: string | null;
     brandAccent?: string | null;
+    prize1st?: string | null;
+    prize2nd?: string | null;
+    prize3rd?: string | null;
+    deptPrize1st?: string | null;
+    deptPrize2nd?: string | null;
+    deptPrize3rd?: string | null;
   }) {
-    return apiClient.mutations.updateCompany(input);
+    return (apiClient as unknown as {
+      mutations: { updateCompany: (i: typeof input) => Promise<{ data?: { ok: boolean; message: string } | null }> };
+    }).mutations.updateCompany(input);
   }
 
   setCompanyStatus(input: { id: string; status: 'ACTIVE' | 'DISABLED' }) {
@@ -509,6 +517,34 @@ export class ApiService {
         ],
       },
       limit: 10,
+    });
+  }
+
+  /** Invita a un jefe de departamento por email. Devuelve inviteId + code. */
+  inviteDepartmentHead(input: { companyId: string; email: string }) {
+    return (apiClient as unknown as {
+      mutations: { inviteDepartmentHead: (i: { companyId: string; email: string }) => Promise<{ data?: { ok: boolean; inviteId: string; code: string } | null }> };
+    }).mutations.inviteDepartmentHead(input);
+  }
+
+  /** Revoca una invitación de jefe (PENDING → REVOKED). */
+  revokeDepartmentInvite(inviteId: string) {
+    return (apiClient as unknown as {
+      mutations: { revokeDepartmentInvite: (i: { inviteId: string }) => Promise<{ data?: { ok: boolean } | null }> };
+    }).mutations.revokeDepartmentInvite({ inviteId });
+  }
+
+  /** Invitaciones de jefe de una empresa. */
+  listDepartmentInvites(companyId: string) {
+    return (apiClient as unknown as {
+      models: { DepartmentInvite: { list: (i: { filter: { companyId: { eq: string } } }) => Promise<{ data?: Array<{ id: string; companyId: string; invitedEmail: string; code: string; status: string; createdAt: string }> | null }> } };
+    }).models.DepartmentInvite.list({ filter: { companyId: { eq: companyId } } });
+  }
+
+  /** Empresas donde `userId` es company-admin (role ADMIN). */
+  listMyCompanyAdminships(userId: string) {
+    return apiClient.models.CompanyMember.list({
+      filter: { and: [{ userId: { eq: userId } }, { role: { eq: 'ADMIN' } }] },
     });
   }
 
