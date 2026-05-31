@@ -104,6 +104,10 @@ export const routes: Routes = [
         loadChildren: () => import('./features/empresa/empresa.routes').then((m) => m.empresaRoutes),
       },
       {
+        path: 'mi-empresa',
+        loadComponent: () => import('./features/empresa/mi-empresa.component').then((m) => m.MiEmpresaComponent),
+      },
+      {
         path: 'admin',
         loadChildren: () => import('./features/admin/admin.routes').then((m) => m.adminRoutes),
       },
