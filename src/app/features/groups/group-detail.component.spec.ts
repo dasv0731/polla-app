@@ -23,6 +23,8 @@ describe('GroupDetailComponent — entry fee column (admin)', () => {
     groupMembers: jest.Mock;
     groupLeaderboard: jest.Mock;
     getUser: jest.Mock;
+    listPhases: jest.Mock;
+    listMatches: jest.Mock;
     markEntryFeePaid: jest.Mock;
   };
 
@@ -42,6 +44,8 @@ describe('GroupDetailComponent — entry fee column (admin)', () => {
         { userId: 'other-sub', points: 5, exactCount: 0, resultCount: 1 },
       ] }),
       getUser: jest.fn().mockImplementation((sub: string) => Promise.resolve({ data: { handle: sub, avatarKey: null } })),
+      listPhases: jest.fn().mockResolvedValue({ data: [] }),
+      listMatches: jest.fn().mockResolvedValue({ data: [] }),
       markEntryFeePaid: jest.fn().mockResolvedValue({ data: { ok: true, message: 'ok', paidAt: '2026-05-29T00:00:00Z' }, errors: undefined }),
     };
     TestBed.configureTestingModule({
@@ -143,6 +147,8 @@ describe('GroupDetailComponent — floating reminder', () => {
     groupMembers: jest.Mock;
     groupLeaderboard: jest.Mock;
     getUser: jest.Mock;
+    listPhases: jest.Mock;
+    listMatches: jest.Mock;
     markEntryFeePaid: jest.Mock;
   };
 
@@ -165,6 +171,8 @@ describe('GroupDetailComponent — floating reminder', () => {
         { userId: 'other-sub', points: 5, exactCount: 0, resultCount: 1 },
       ] }),
       getUser: jest.fn().mockImplementation((sub: string) => Promise.resolve({ data: { handle: sub, avatarKey: null } })),
+      listPhases: jest.fn().mockResolvedValue({ data: [] }),
+      listMatches: jest.fn().mockResolvedValue({ data: [] }),
       markEntryFeePaid: jest.fn(),
     };
     TestBed.configureTestingModule({
@@ -248,5 +256,61 @@ describe('GroupDetailComponent — floating reminder', () => {
     await Promise.resolve();
     await Promise.resolve();
     expect(apiMock.groupMembers).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('GroupDetailComponent — jornada actual (Sub-1)', () => {
+  function buildWith(phases: unknown[], matches: unknown[]) {
+    const apiMock = {
+      getGroup: jest.fn().mockResolvedValue({ data: {
+        id: 'g1', name: 'G', adminUserId: 'me', mode: 'COMPLETE',
+        joinCode: 'ABC123', createdAt: '2026-01-01',
+        prize1st: null, prize2nd: null, prize3rd: null,
+        entryFeeEnabled: false, entryFeeInstructions: null,
+      } }),
+      groupLeaderboard: jest.fn().mockResolvedValue({ data: [] }),
+      groupMembers: jest.fn().mockResolvedValue({ data: [] }),
+      getUser: jest.fn().mockResolvedValue({ data: { handle: 'me', avatarKey: null } }),
+      listPhases: jest.fn().mockResolvedValue({ data: phases }),
+      listMatches: jest.fn().mockResolvedValue({ data: matches }),
+      markEntryFeePaid: jest.fn(),
+    };
+    TestBed.configureTestingModule({
+      imports: [GroupDetailComponent],
+      providers: [
+        provideRouter([]),
+        { provide: ApiService, useValue: apiMock },
+        { provide: AuthService, useValue: { user: () => ({ sub: 'me' }) } },
+        { provide: ToastService, useValue: { success: jest.fn(), error: jest.fn() } },
+      ],
+    });
+    const fixture = TestBed.createComponent(GroupDetailComponent);
+    fixture.componentInstance.id = 'g1';
+    return fixture;
+  }
+
+  it('jornada actual = primera phase (por order) con match no-FINAL', async () => {
+    const fixture = buildWith(
+      [{ id: 'p1', order: 1, name: 'Fecha 1' }, { id: 'p2', order: 2, name: 'Fecha 2' }],
+      [
+        { id: 'm1', phaseId: 'p1', status: 'FINAL', kickoffAt: '2026-06-11T19:00:00Z' },
+        { id: 'm2', phaseId: 'p2', status: 'SCHEDULED', kickoffAt: '2026-06-15T19:00:00Z' },
+      ],
+    );
+    fixture.detectChanges();
+    await fixture.componentInstance.ngOnInit();
+    await fixture.whenStable();
+    const j = fixture.componentInstance.currentJornada();
+    expect(j?.order).toBe(2);
+    expect(j?.label).toBe('J2');
+    expect(j?.totalJornadas).toBe(2);
+  });
+
+  it('sin matches → currentJornada null', async () => {
+    const fixture = buildWith([], []);
+    fixture.detectChanges();
+    await fixture.componentInstance.ngOnInit();
+    await fixture.whenStable();
+    expect(fixture.componentInstance.currentJornada()).toBeNull();
   });
 });
