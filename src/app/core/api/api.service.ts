@@ -582,6 +582,12 @@ export class ApiService {
       queries: { groupChampionDistribution: (i: { groupId: string }) => Promise<{ data?: Array<{ teamId: string; teamName: string; flagCode: string; count: number; pct: number }> | null }> };
     }).queries.groupChampionDistribution({ groupId });
   }
+  /** Actividad reciente de un grupo. Trae hasta 50 y el front ordena/recorta. */
+  listGroupActivity(groupId: string) {
+    return (apiClient as unknown as {
+      models: { GroupActivity: { list: (i: { filter: { groupId: { eq: string } }; limit?: number }) => Promise<{ data?: Array<{ groupId: string; kind: string; userId: string; payload: string | null; createdAt: string }> | null }> } };
+    }).models.GroupActivity.list({ filter: { groupId: { eq: groupId } }, limit: 50 });
+  }
   /** Admin: escribe snapshots de standings de una jornada (Phase order). */
   snapshotStandings(tournamentId: string, phaseOrder: number) {
     return (apiClient as unknown as {
