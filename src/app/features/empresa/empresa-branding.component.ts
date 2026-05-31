@@ -10,26 +10,58 @@ import { humanizeError } from '../../core/notifications/domain-errors';
   selector: 'app-empresa-branding',
   imports: [FormsModule],
   template: `
-    <h2 class="page__title">Branding</h2>
-    <p class="kicker">Estos colores se aplican a la vista "Mi empresa" de tus empleados.</p>
-
-    <div [style.--pa-brand]="primary" style="border:1px solid rgba(0,0,0,.1);border-radius:12px;padding:16px;margin:12px 0">
-      <div style="display:flex;gap:10px;align-items:center">
-        <span style="width:42px;height:42px;border-radius:10px;display:inline-block" [style.background]="primary"></span>
-        <span style="width:42px;height:42px;border-radius:10px;display:inline-block" [style.background]="primaryDark"></span>
-        <span style="width:42px;height:42px;border-radius:10px;display:inline-block" [style.background]="accent"></span>
-        <strong style="margin-left:8px">Vista previa</strong>
+    <header class="emp-head">
+      <div>
+        <div class="kicker">MARCA</div>
+        <h2 class="emp-head__title">Branding</h2>
       </div>
-    </div>
+    </header>
+    <p class="text-mute emp-help">Estos colores se aplican a la vista "Mi empresa" de tus empleados.</p>
 
-    <label>Color primario <input type="color" [(ngModel)]="primary" /></label>
-    <label>Primario oscuro <input type="color" [(ngModel)]="primaryDark" /></label>
-    <label>Acento <input type="color" [(ngModel)]="accent" /></label>
+    <form class="emp-brand" (ngSubmit)="save()">
+      <div class="emp-brand__preview" [style.--pa-brand]="primary">
+        <span class="emp-brand__chip" [style.background]="primary"></span>
+        <span class="emp-brand__chip" [style.background]="primaryDark"></span>
+        <span class="emp-brand__chip" [style.background]="accent"></span>
+        <strong class="emp-brand__preview-label">Vista previa</strong>
+      </div>
 
-    <button type="button" [disabled]="saving()" (click)="save()">
-      {{ saving() ? 'Guardando…' : 'Guardar branding' }}
-    </button>
+      <div class="emp-brand__grid">
+        <div class="form-card__field">
+          <label class="form-card__label" for="b-primary">Color primario</label>
+          <input class="emp-brand__color" id="b-primary" name="primary" type="color" [(ngModel)]="primary">
+        </div>
+        <div class="form-card__field">
+          <label class="form-card__label" for="b-dark">Primario oscuro</label>
+          <input class="emp-brand__color" id="b-dark" name="primaryDark" type="color" [(ngModel)]="primaryDark">
+        </div>
+        <div class="form-card__field">
+          <label class="form-card__label" for="b-accent">Acento</label>
+          <input class="emp-brand__color" id="b-accent" name="accent" type="color" [(ngModel)]="accent">
+        </div>
+      </div>
+
+      <button type="submit" class="btn-wf btn-wf--primary" [disabled]="saving()">
+        {{ saving() ? 'Guardando…' : 'Guardar branding' }}
+      </button>
+    </form>
   `,
+  styles: [`
+    :host { display: block; }
+    .emp-head { margin-bottom: 4px; }
+    .emp-head__title { font-family: var(--wf-display); font-size: 24px; letter-spacing: .03em; margin: 2px 0 0; }
+    .emp-help { font-size: 12px; margin: 0 0 16px; }
+    .emp-brand { display: flex; flex-direction: column; gap: 18px; max-width: 560px; }
+    .emp-brand__preview {
+      display: flex; gap: 10px; align-items: center;
+      border: 1px solid var(--wf-line); border-radius: 12px; padding: 16px;
+      background: var(--color-primary-white);
+    }
+    .emp-brand__chip { width: 42px; height: 42px; border-radius: 10px; display: inline-block; border: 1px solid var(--wf-line); }
+    .emp-brand__preview-label { margin-left: 8px; }
+    .emp-brand__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
+    .emp-brand__color { width: 100%; height: 42px; border: 1.5px solid var(--wf-line); border-radius: 8px; background: var(--color-primary-white); cursor: pointer; padding: 4px; }
+  `],
 })
 export class EmpresaBrandingComponent implements OnInit {
   private route = inject(ActivatedRoute);

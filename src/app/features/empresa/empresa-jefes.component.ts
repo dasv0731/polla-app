@@ -12,33 +12,73 @@ interface InviteRow { id: string; invitedEmail: string; code: string; status: st
   selector: 'app-empresa-jefes',
   imports: [FormsModule],
   template: `
-    <h2 class="page__title">Jefes de departamento</h2>
-    <div class="invite-box">
-      <input type="email" [(ngModel)]="email" placeholder="email@empresa.com" />
-      <button type="button" [disabled]="sending()" (click)="invite()">
-        {{ sending() ? 'Invitando…' : 'Invitar jefe' }}
+    <header class="emp-head">
+      <div>
+        <div class="kicker">EQUIPO</div>
+        <h2 class="emp-head__title">Jefes de departamento</h2>
+      </div>
+    </header>
+
+    <form class="invite-box" (ngSubmit)="invite()">
+      <input class="form-card__input invite-box__input" type="email"
+             [(ngModel)]="email" name="email" placeholder="email@empresa.com" />
+      <button type="submit" class="btn-wf btn-wf--primary" [disabled]="sending() || !email.trim()">
+        {{ sending() ? 'Invitando…' : '+ Invitar jefe' }}
       </button>
-    </div>
-    @if (loading()) { <p>Cargando…</p> }
-    @else if (rows().length === 0) { <p>No hay invitaciones todavía.</p> }
-    @else {
-      <table>
-        <tr><th>Email</th><th>Código</th><th>Estado</th><th></th></tr>
+    </form>
+
+    @if (loading()) {
+      <p class="text-mute">Cargando…</p>
+    } @else if (rows().length === 0) {
+      <div class="emp-empty">
+        <strong>No hay invitaciones todavía</strong>
+        <p class="text-mute">Invita a un jefe por email para que cree y administre su departamento.</p>
+      </div>
+    } @else {
+      <ul class="emp-list" role="list">
         @for (r of rows(); track r.id) {
-          <tr>
-            <td>{{ r.invitedEmail }}</td>
-            <td><code>{{ r.code }}</code></td>
-            <td>{{ r.status }}</td>
-            <td>
-              @if (r.status === 'PENDING') {
-                <button type="button" (click)="revoke(r.id)">Revocar</button>
-              }
-            </td>
-          </tr>
+          <li class="emp-row">
+            <div class="emp-row__info">
+              <strong>{{ r.invitedEmail }}</strong>
+              <button type="button" class="code-chip" title="Copiar código"
+                      (click)="copy(r.code)">
+                <code>{{ r.code }}</code>
+                <span aria-hidden="true">⧉</span>
+              </button>
+            </div>
+            <span class="pill"
+                  [class.pill--green]="r.status === 'ACCEPTED'"
+                  [class.pill--warn]="r.status === 'PENDING'">
+              {{ statusLabel(r.status) }}
+            </span>
+            @if (r.status === 'PENDING') {
+              <button type="button" class="btn-wf btn-wf--sm btn-wf--danger"
+                      (click)="revoke(r.id)">Revocar</button>
+            }
+          </li>
         }
-      </table>
+      </ul>
     }
   `,
+  styles: [`
+    :host { display: block; }
+    .emp-head { margin-bottom: 14px; }
+    .emp-head__title { font-family: var(--wf-display); font-size: 24px; letter-spacing: .03em; margin: 2px 0 0; }
+    .invite-box { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+    .invite-box__input { max-width: 280px; }
+    .emp-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+    .emp-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--color-primary-white); border: 1px solid var(--wf-line); border-radius: 12px; }
+    .emp-row__info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+    .emp-row__info > strong { font-size: 14px; }
+    .code-chip {
+      display: inline-flex; align-items: center; gap: 8px; align-self: flex-start;
+      padding: 3px 10px; border-radius: 999px;
+      background: var(--wf-fill); border: 1px solid var(--wf-line);
+      cursor: pointer; font-family: var(--wf-mono); font-size: 12px; color: var(--wf-ink);
+    }
+    .code-chip:hover { background: var(--wf-green-soft); border-color: var(--wf-green); }
+    .code-chip code { font-family: inherit; }
+  `],
 })
 export class EmpresaJefesComponent implements OnInit {
   private route = inject(ActivatedRoute);
@@ -61,6 +101,24 @@ export class EmpresaJefesComponent implements OnInit {
     const res = await this.api.listDepartmentInvites(this.companyId);
     this.rows.set((res.data ?? []) as InviteRow[]);
     this.loading.set(false);
+  }
+
+  statusLabel(status: string): string {
+    switch (status) {
+      case 'PENDING': return 'Pendiente';
+      case 'ACCEPTED': return 'Aceptada';
+      case 'REVOKED': return 'Revocada';
+      default: return status;
+    }
+  }
+
+  async copy(code: string) {
+    try {
+      await navigator.clipboard.writeText(code);
+      this.toast.success('Código copiado');
+    } catch {
+      this.toast.error('No se pudo copiar el código');
+    }
   }
 
   async invite() {
