@@ -577,6 +577,11 @@ export class ApiService {
   pendingMatches(tournamentId: string, beforeHours: number) {
     return apiClient.queries.pendingMatches({ tournamentId, beforeHours });
   }
+  groupChampionDistribution(groupId: string) {
+    return (apiClient as unknown as {
+      queries: { groupChampionDistribution: (i: { groupId: string }) => Promise<{ data?: Array<{ teamId: string; teamName: string; flagCode: string; count: number; pct: number }> | null }> };
+    }).queries.groupChampionDistribution({ groupId });
+  }
 
   // ----- Admin mutations -----
   scoreMatch(matchId: string) {

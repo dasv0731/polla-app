@@ -85,13 +85,13 @@ interface NewsItemVm {
            va? + actividad son datos de EJEMPLO (sin fuente real client-side);
            el próximo partido de abajo sí es real. -->
       @if (onGroupDetail()) {
+        @if (champDist().length > 0) {
         <div class="rr-card">
           <div class="rr-card__h">
             <h2>¿A quién le va el grupo?</h2>
-            <span class="rr-demo">Ejemplo</span>
           </div>
           <div class="rr-card__sub">Picks de campeón</div>
-          @for (c of demoChampDist; track c.flag) {
+          @for (c of champDist(); track c.flag) {
             <div class="rr-champ">
               <span class="rr-champ__f"><span class="fi fi-{{ c.flag }}"></span></span>
               <div class="rr-champ__b">
@@ -102,6 +102,7 @@ interface NewsItemVm {
             </div>
           }
         </div>
+        }
 
         <div class="rr-card">
           <div class="rr-card__h">
@@ -613,16 +614,14 @@ export class RightRailComponent implements OnInit, OnDestroy {
   onGroupDetail = signal(false);
   private routerSub?: Subscription;
 
-  /** Datos de EJEMPLO para las cards del rail de grupo. La distribución de
-   *  campeón (picks de otros miembros) es owner-private y el feed de actividad
-   *  no existe en backend, así que se muestran como demo hasta que haya un
-   *  resolver/agregado server-side. Marcadas con el badge "Ejemplo". */
-  readonly demoChampDist: ReadonlyArray<{ flag: string; name: string; count: number; pct: number }> = [
-    { flag: 'ar', name: 'Argentina', count: 5, pct: 42 },
-    { flag: 'br', name: 'Brasil', count: 3, pct: 25 },
-    { flag: 'fr', name: 'Francia', count: 2, pct: 17 },
-    { flag: 'ec', name: 'Ecuador', count: 2, pct: 16 },
-  ];
+  /** Distribución real de picks de campeón del grupo, desde el resolver
+   *  server-side groupChampionDistribution(groupId). Se carga al entrar a
+   *  /groups/:id y se limpia al salir. La card se oculta si queda vacía. */
+  champDist = signal<Array<{ flag: string; name: string; count: number; pct: number }>>([]);
+
+  /** Datos de EJEMPLO para la card de actividad del rail de grupo. El feed de
+   *  actividad no existe en backend, así que se muestra como demo hasta que
+   *  haya un agregado server-side. Marcado con el badge "Ejemplo". */
   readonly demoActivity: ReadonlyArray<{ icon: IconName; text: string; time: string }> = [
     { icon: 'check', text: '@andrea_m acertó un marcador exacto', time: 'hace 2 h' },
     { icon: 'zap', text: '@carlos23 usó un comodín ×2', time: 'hace 5 h' },
@@ -679,7 +678,22 @@ export class RightRailComponent implements OnInit, OnDestroy {
 
   private applyRoute(url: string): void {
     this.onPicksPage.set(this.isPicksUrl(url));
-    this.onGroupDetail.set(this.isGroupDetailUrl(url));
+    const onGroup = this.isGroupDetailUrl(url);
+    this.onGroupDetail.set(onGroup);
+    if (onGroup) {
+      const id = (url.split('?')[0].split('#')[0].split('/')[2] ?? '');
+      if (id) void this.loadChampDist(id);
+    } else {
+      this.champDist.set([]);
+    }
+  }
+
+  private async loadChampDist(groupId: string) {
+    try {
+      const res = await this.api.groupChampionDistribution(groupId);
+      this.champDist.set(((res.data ?? []) as Array<{ teamName: string; flagCode: string; count: number; pct: number }>)
+        .map((r) => ({ flag: (r.flagCode || '').toLowerCase(), name: r.teamName, count: r.count, pct: r.pct })));
+    } catch (e) { console.warn('[right-rail] champ dist failed', e); this.champDist.set([]); }
   }
 
   private async loadNextAndUpcoming() {
