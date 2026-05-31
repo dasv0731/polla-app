@@ -534,6 +534,13 @@ export class ApiService {
     }).mutations.revokeDepartmentInvite({ inviteId });
   }
 
+  /** El jefe acepta su invitación con el código y crea su departamento. */
+  acceptDepartmentInvite(input: { code: string; name: string; mode: 'SIMPLE' | 'COMPLETE'; category?: string | null }) {
+    return (apiClient as unknown as {
+      mutations: { acceptDepartmentInvite: (i: typeof input) => Promise<{ data?: { groupId: string; joinCode: string } | null }> };
+    }).mutations.acceptDepartmentInvite(input);
+  }
+
   /** Invitaciones de jefe de una empresa. */
   listDepartmentInvites(companyId: string) {
     return (apiClient as unknown as {
