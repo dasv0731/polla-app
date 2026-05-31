@@ -21,6 +21,7 @@ export const empresaRoutes: Routes = [
       { path: 'departamentos', loadComponent: () => import('./empresa-departamentos.component').then((m) => m.EmpresaDepartamentosComponent) },
       { path: 'jefes', loadComponent: () => import('./empresa-jefes.component').then((m) => m.EmpresaJefesComponent) },
       { path: 'premios', loadComponent: () => import('./empresa-premios.component').then((m) => m.EmpresaPremiosComponent) },
+      { path: 'branding', loadComponent: () => import('./empresa-branding.component').then((m) => m.EmpresaBrandingComponent) },
     ],
   },
 ];

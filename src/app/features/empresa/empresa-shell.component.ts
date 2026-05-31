@@ -16,6 +16,7 @@ import { map } from 'rxjs';
           <a [routerLink]="['/empresa', id(), 'departamentos']" routerLinkActive="is-active" class="admin-subnav__item">Departamentos</a>
           <a [routerLink]="['/empresa', id(), 'jefes']" routerLinkActive="is-active" class="admin-subnav__item">Jefes</a>
           <a [routerLink]="['/empresa', id(), 'premios']" routerLinkActive="is-active" class="admin-subnav__item">Premios</a>
+          <a [routerLink]="['/empresa', id(), 'branding']" routerLinkActive="is-active" class="admin-subnav__item">Branding</a>
         </div>
       </nav>
       <router-outlet />
