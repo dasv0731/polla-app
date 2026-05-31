@@ -109,7 +109,7 @@ describe('GroupEditComponent — entry fee', () => {
     await component.save();
 
     expect(apiMock.updateGroup).not.toHaveBeenCalled();
-    expect(component.entryFeeError()).toBe('Las instrucciones son obligatorias si activás la cuota.');
+    expect(component.entryFeeError()).toBe('Las instrucciones son obligatorias si activas la cuota.');
   });
 
   it('dirty: returns true when entryFeeEnabled changes', async () => {

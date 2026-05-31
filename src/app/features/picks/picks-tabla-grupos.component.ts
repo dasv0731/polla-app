@@ -102,11 +102,11 @@ interface Totals {
 
 
       <nav class="page-tabs" aria-label="Vistas de picks">
-        <a class="page-tabs__item" routerLink="/picks"
-           routerLinkActive="is-active" [routerLinkActiveOptions]="{exact: true}">Cronológico</a>
-        <a class="page-tabs__item is-active" routerLink="/picks/group-stage">Tabla grupos</a>
+        <a class="page-tabs__item is-active" routerLink="/picks/group-stage">Grupos</a>
         <a class="page-tabs__item" routerLink="/picks/bracket"
            routerLinkActive="is-active">Bracket</a>
+        <a class="page-tabs__item" routerLink="/picks"
+           routerLinkActive="is-active" [routerLinkActiveOptions]="{exact: true}">Partidos</a>
       </nav>
 
       <!-- Intro: descripción + tabs (Tabla real / Mi predicción).
@@ -143,23 +143,17 @@ interface Totals {
         }
         <!-- Mi predicción · embebido inline (no nueva página).
              [embedded]=true suprime el header propio del componente
-             porque acá ya tenemos el page__header del tabla-grupos. -->
+             porque acá ya tenemos el page__header del tabla-grupos.
+             El CTA "Ver mis Brackets" vive dentro del componente embebido
+             (guarda + redirige al bracket). -->
         <app-group-stage-picks [embedded]="true" />
-        <!-- Link al bracket basado en mi predicción -->
-        <div class="pred-bracket-link">
-          <a routerLink="/picks/bracket" [queryParams]="{ mode: 'pred' }">
-            <app-icon name="trophy" size="sm" />
-            Ver bracket basado en mi predicción
-            <span aria-hidden="true">→</span>
-          </a>
-        </div>
       } @else if (loading()) {
         <app-skeleton variant="card" [count]="4" />
       } @else if (!hasAnyPlayed() && groups().length > 0) {
         <!-- Pre-torneo empty state en Tabla real (todos los grupos 0-0-0) -->
         <app-empty-block iconName="clock"
                          title="El Mundial aún no empieza"
-                         sub="Cuando se jueguen los primeros partidos, la tabla se actualizará automáticamente. Mientras tanto, podés hacer tu predicción.">
+                         sub="Cuando se jueguen los primeros partidos, la tabla se actualizará automáticamente. Mientras tanto, puedes hacer tu predicción.">
           <button type="button" class="empty-cta empty-cta--primary"
                   (click)="onViewChange('pred')">
             Hacer mi predicción →
@@ -515,7 +509,9 @@ export class PicksTablaGruposComponent implements OnInit {
   sync = inject(PicksSyncService);
   private route = inject(ActivatedRoute);
 
-  view = signal<'real' | 'pred'>('real');
+  // Default 'pred' (Mi predicción): la tab Grupos es la primera que se ve y
+  // arranca en el editor de predicción. ?view=real lo override.
+  view = signal<'real' | 'pred'>('pred');
   loading = signal(true);
 
   totals = signal<Totals>({ points: 0, exactCount: 0, resultCount: 0, globalRank: null });

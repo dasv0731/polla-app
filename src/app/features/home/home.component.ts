@@ -59,8 +59,8 @@ interface ContextualCta {
  * único + percentil visual (sin duplicar puntos/aciertos del hero).
  *
  * **CTA contextual**: el hero CTA es uno solo y varía según phase:
- * - Pre-torneo: "Predecí clasificados →" → /picks/group-stage?view=pred
- * - Durante: "Hacé pick del próximo partido →" → /picks/match/:id (o /picks fallback)
+ * - Pre-torneo: "Predice clasificados →" → /picks/group-stage?view=pred
+ * - Durante: "Haz pick del próximo partido →" → /picks/match/:id (o /picks fallback)
  * - Post-final: "Ver mi ranking final →" → /ranking
  *
  * Source visual: polla-app/design-input/prueba-gg/project/polla-v3.html
@@ -526,7 +526,7 @@ export class HomeComponent implements OnInit {
   contextualCta = computed<ContextualCta>(() => {
     const phase = this.tournamentPhase();
     if (phase === 'pre') {
-      return { label: 'Predecí clasificados', routerLink: '/picks/group-stage', queryParams: { view: 'pred' } };
+      return { label: 'Predice clasificados', routerLink: '/picks/group-stage', queryParams: { view: 'pred' } };
     }
     if (phase === 'post') {
       return { label: 'Ver mi ranking final', routerLink: '/ranking' };
@@ -534,7 +534,7 @@ export class HomeComponent implements OnInit {
     // live: si tenemos next match, link específico; sino /picks como fallback
     const next = this.nextMatchId();
     if (next) {
-      return { label: 'Hacé pick del próximo partido', routerLink: ['/picks/match', next] };
+      return { label: 'Haz pick del próximo partido', routerLink: ['/picks/match', next] };
     }
     return { label: 'Hacer picks', routerLink: '/picks' };
   });
@@ -621,7 +621,11 @@ export class HomeComponent implements OnInit {
       const allMatches = ((matchesRes.data ?? []) as ReadonlyArray<MRow>)
         .filter((m): m is { id: string; kickoffAt: string; status?: string | null } => !!m?.id && !!m?.kickoffAt);
 
-      const pickIds = new Set(((picksRes.data ?? []) as ReadonlyArray<{ matchId: string }>).map((p) => p.matchId));
+      // Amplify puede devolver items null (auth a nivel de campo). Saneamos
+      // una vez antes de mapear para no reventar en p.matchId.
+      const picks = ((picksRes.data ?? []) as ReadonlyArray<{ matchId: string; pointsEarned?: number | null } | null>)
+        .filter((p): p is { matchId: string; pointsEarned?: number | null } => !!p?.matchId);
+      const pickIds = new Set(picks.map((p) => p.matchId));
       const now = Date.now();
       const cutoff = now + 48 * 3600 * 1000;
       const pending = allMatches.filter((m) => {
@@ -646,7 +650,7 @@ export class HomeComponent implements OnInit {
       const candidateMatchId = pending[0]?.id ?? futureMatches[0]?.id ?? null;
       this.nextMatchId.set(candidateMatchId);
 
-      const finalPicks = ((picksRes.data ?? []) as ReadonlyArray<{ matchId: string; pointsEarned?: number | null }>)
+      const finalPicks = picks
         .filter((p) => {
           const match = allMatches.find((m) => m.id === p.matchId);
           return match?.status === 'FINAL';

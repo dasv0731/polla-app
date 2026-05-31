@@ -123,6 +123,23 @@ interface TriviaInfo {
         }
       </header>
 
+      <!-- Page tabs (Grupos / Bracket / Partidos) · directo bajo el header
+           para que queden fijas arriba y el banner no las empuje. -->
+      <nav class="page-tabs" aria-label="Vistas de picks">
+        <a class="page-tabs__item" routerLink="/picks/group-stage"
+           routerLinkActive="is-active">
+          Grupos
+        </a>
+        <a class="page-tabs__item" routerLink="/picks/bracket"
+           routerLinkActive="is-active">
+          Bracket
+        </a>
+        <a class="page-tabs__item" routerLink="/picks"
+           routerLinkActive="is-active" [routerLinkActiveOptions]="{exact: true}">
+          Partidos
+        </a>
+      </nav>
+
       <!-- Featured next match — diseño polla-picks.html .nm card.
            Dark editorial card con countdown + teams + tu pick + edit. -->
       @if (nextMatch(); as nm) {
@@ -181,21 +198,6 @@ interface TriviaInfo {
         </button>
       </div>
 
-      <!-- Page tabs (Cronológico / Tabla grupos / Bracket) -->
-      <nav class="page-tabs" aria-label="Vistas de picks">
-        <a class="page-tabs__item" routerLink="/picks"
-           routerLinkActive="is-active" [routerLinkActiveOptions]="{exact: true}">
-          Cronológico
-        </a>
-        <a class="page-tabs__item" routerLink="/picks/group-stage"
-           routerLinkActive="is-active">
-          Tabla grupos
-        </a>
-        <a class="page-tabs__item" routerLink="/picks/bracket"
-           routerLinkActive="is-active">
-          Bracket
-        </a>
-      </nav>
 
       <!-- Contenido principal · el rail (premios/comodines/canjear) vive
            globalmente en el shell, no acá. -->
@@ -269,7 +271,7 @@ interface TriviaInfo {
               @if (allUpcomingDays().length > 0) {
                 <app-empty-block iconName="filter"
                                  title="No hay partidos en este rango"
-                                 sub="Probá cargando los próximos días o ajustá los filtros.">
+                                 sub="Prueba cargando los próximos días o ajusta los filtros.">
                   @if (filterPending() || filterGroup()) {
                     <button type="button" class="empty-cta" (click)="clearFilters()">
                       Limpiar filtros
@@ -452,7 +454,7 @@ interface TriviaInfo {
                   <a class="match-card__pick-cta"
                      [routerLink]="['/picks/match', m.id]"
                      (click)="$event.stopPropagation()">
-                    Predecí <span aria-hidden="true">→</span>
+                    Predice <span aria-hidden="true">→</span>
                   </a>
                 }
                 <!-- Botón "Ver detalles": navegar al partido. Antes el

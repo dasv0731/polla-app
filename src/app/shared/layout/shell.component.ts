@@ -9,6 +9,7 @@ import { ToastHostComponent } from '../../core/notifications/toast-host.componen
 import { TriviaPopupComponent } from '../../features/trivia/trivia-popup.component';
 import { GroupActionsModalsComponent } from './group-actions-modals.component';
 import { RedeemModalComponent } from './redeem-modal.component';
+import { QuickPickModalComponent } from './quick-pick-modal.component';
 
 /**
  * Shell global design-v3. Layout:
@@ -30,7 +31,7 @@ import { RedeemModalComponent } from './redeem-modal.component';
     RouterOutlet, NavComponent, SidebarComponent, TriviaToastComponent,
     RightRailComponent, FooterComponent,
     ToastHostComponent, TriviaPopupComponent,
-    GroupActionsModalsComponent, RedeemModalComponent,
+    GroupActionsModalsComponent, RedeemModalComponent, QuickPickModalComponent,
   ],
   template: `
     <div class="app-shell">
@@ -49,6 +50,7 @@ import { RedeemModalComponent } from './redeem-modal.component';
     <app-trivia-popup />
     <app-group-actions-modals />
     <app-redeem-modal />
+    <app-quick-pick-modal />
   `,
   styles: [`
     :host { display: block; }

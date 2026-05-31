@@ -48,7 +48,7 @@ import { ICON_NAMES } from '../shared/ui/icon/icon-map';
           <app-empty-block
             iconName="users"
             title="Sin grupos"
-            sub="Crea uno para empezar a competir con tus panas." />
+            sub="Crea uno para empezar a competir con tus amigos." />
           <app-empty-block
             iconName="trophy"
             title="Sin ranking"

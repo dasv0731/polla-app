@@ -1,10 +1,13 @@
-import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { NavigationEnd, Router, RouterLink } from '@angular/router';
+import { Subscription, filter } from 'rxjs';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { QuickPickModalService } from '../../core/picks/quick-pick-modal.service';
+import { GolganaEditorialService } from '../../core/editorial/golgana-editorial.service';
 import { IconComponent } from '../ui/icon/icon.component';
+import type { IconName } from '../ui/icon/icon-map';
 import { SkeletonComponent } from '../ui/skeleton/skeleton.component';
-import { getUrl } from 'aws-amplify/storage';
 
 const TOURNAMENT_ID = 'mundial-2026';
 const NEWS_HUB_URL = 'https://golgana.net/news';
@@ -33,6 +36,15 @@ interface UpcomingPickRow {
   hasPick: boolean;
   pickLabel: string | null;
   countdownLabel: string | null;
+  // Datos para abrir el modal de pick rápido sin navegar al partido.
+  homeName: string;
+  awayName: string;
+  homeFlag: string;
+  awayFlag: string;
+  homeInitials: string;
+  awayInitials: string;
+  kickoffAt: string;
+  pick: { home: number; away: number } | null;
 }
 
 interface NewsItemVm {
@@ -69,6 +81,50 @@ interface NewsItemVm {
   template: `
     <aside class="side">
 
+      <!-- Rail del grupo (/groups/:id): reemplaza el rail global. ¿A quién le
+           va? + actividad son datos de EJEMPLO (sin fuente real client-side);
+           el próximo partido de abajo sí es real. -->
+      @if (onGroupDetail()) {
+        <div class="rr-card">
+          <div class="rr-card__h">
+            <h2>¿A quién le va el grupo?</h2>
+            <span class="rr-demo">Ejemplo</span>
+          </div>
+          <div class="rr-card__sub">Picks de campeón</div>
+          @for (c of demoChampDist; track c.flag) {
+            <div class="rr-champ">
+              <span class="rr-champ__f"><span class="fi fi-{{ c.flag }}"></span></span>
+              <div class="rr-champ__b">
+                <div class="rr-champ__n">{{ c.name }}</div>
+                <div class="rr-champ__bar"><i [style.width.%]="c.pct"></i></div>
+              </div>
+              <span class="rr-champ__v">{{ c.count }} · {{ c.pct }}%</span>
+            </div>
+          }
+        </div>
+
+        <div class="rr-card">
+          <div class="rr-card__h">
+            <h2>Actividad reciente</h2>
+            <span class="rr-demo">Ejemplo</span>
+          </div>
+          @for (a of demoActivity; track a.text) {
+            <div class="rr-act">
+              <span class="rr-act__i"><app-icon [name]="a.icon" size="sm" [decorative]="true" /></span>
+              <div class="rr-act__t">
+                {{ a.text }}
+                <div class="rr-act__time">{{ a.time }}</div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Solo en la tab Cronológico (/picks) el próximo partido y los
+           siguientes picks ya viven en el componente principal (.nm + lista).
+           Ahí se ocultan para no duplicar y el bloque editorial sube al tope.
+           En las demás tabs/pantallas ambos bloques se conservan. -->
+      @if (!onPicksPage()) {
       @if (loadingNext()) {
         <div class="np np--skeleton"><app-skeleton variant="card" /></div>
       } @else {
@@ -130,10 +186,10 @@ interface NewsItemVm {
                     @if (m.myPick.winnerName) { <em>{{ m.myPick.winnerName }}</em> }
                   </strong>
                 </div>
-                <a class="np__pk__e" [routerLink]="['/picks/match', m.id]">Editar</a>
+                <button type="button" class="np__pk__e" (click)="openQuickPickNext()">Editar</button>
               </div>
             } @else {
-              <a class="np__pk np__pk--cta" [routerLink]="['/picks/match', m.id]">
+              <button type="button" class="np__pk np__pk--cta" (click)="openQuickPickNext()">
                 <div>
                   <span class="np__pk__l">Sin pick</span>
                   <strong>
@@ -141,7 +197,7 @@ interface NewsItemVm {
                     <app-icon name="arrow-right" size="sm" />
                   </strong>
                 </div>
-              </a>
+              </button>
             }
 
             <a class="np__cta" [routerLink]="['/picks/match', m.id]">
@@ -153,9 +209,9 @@ interface NewsItemVm {
         }
       }
 
-      @if (loadingUpcoming()) {
+      @if (!onGroupDetail() && loadingUpcoming()) {
         <div class="up up--skeleton"><app-skeleton variant="list" [count]="4" /></div>
-      } @else if (upcoming().length > 0) {
+      } @else if (!onGroupDetail() && upcoming().length > 0) {
         <div class="up">
           <div class="up__h">
             <span>Siguientes picks</span>
@@ -165,7 +221,7 @@ interface NewsItemVm {
             </a>
           </div>
           @for (r of upcoming(); track r.id) {
-            <a class="up__r" [routerLink]="['/picks/match', r.id]">
+            <button type="button" class="up__r" (click)="openQuickPickRow(r)">
               <div class="up__r__h">
                 <span>{{ r.dateLabel }} · {{ r.matchLabel }}</span>
                 @if (r.hasPick) {
@@ -183,11 +239,13 @@ interface NewsItemVm {
               <div class="up__r__t" [class.m]="!r.hasPick">
                 {{ r.hasPick ? r.pickLabel : 'Pendiente' }}
               </div>
-            </a>
+            </button>
           }
         </div>
       }
+      }
 
+      @if (!onGroupDetail()) {
       @if (loadingNews()) {
         <div class="news news--skeleton"><app-skeleton variant="card" /></div>
       } @else {
@@ -224,6 +282,7 @@ interface NewsItemVm {
           }
         </div>
         }
+      }
       }
     </aside>
   `,
@@ -358,6 +417,9 @@ interface NewsItemVm {
       outline-offset: 2px;
       background: rgba(2,204,116,0.25);
     }
+    /* Resets para los CTAs que ahora son <button> (abren el modal de pick). */
+    button.np__pk { width: 100%; box-sizing: border-box; font: inherit; cursor: pointer; text-align: left; }
+    button.np__pk__e { font: inherit; cursor: pointer; }
     .np__cta {
       display: flex; align-items: center; justify-content: center; gap: 6px;
       width: 100%; padding: 10px;
@@ -403,6 +465,17 @@ interface NewsItemVm {
       display: flex; flex-direction: column; gap: 3px;
     }
     .up__r:last-child { border-bottom: 0; }
+    /* La fila ahora es <button> (abre el modal de pick rápido). */
+    button.up__r {
+      background: none;
+      border: 0;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      width: 100%;
+      box-sizing: border-box;
+      font: inherit;
+      cursor: pointer;
+      text-align: left;
+    }
     .up__r__h { display: flex; justify-content: space-between; font-size: 10px; color: var(--color-text-muted); }
     .up__r__h .ok,
     .up__r__h .pe { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; }
@@ -467,13 +540,95 @@ interface NewsItemVm {
       text-decoration: none;
       font-weight: 600;
     }
+
+    /* ---- Rail de grupo (/groups/:id) ---- */
+    .rr-card { background: var(--color-primary-white, #fff); border: 1px solid var(--color-line); border-radius: 14px; padding: 16px; }
+    .rr-card__h { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .rr-card__h h2 { font-size: 15px; margin: 0; }
+    .rr-card__sub { font-size: 11px; color: var(--color-text-muted); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; }
+    .rr-demo { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; color: var(--color-text-muted); background: rgba(0,0,0,0.06); padding: 2px 7px; border-radius: 999px; flex-shrink: 0; }
+    .rr-champ { display: flex; align-items: center; gap: 10px; padding: 7px 0; font-size: 13px; }
+    .rr-champ__f { width: 26px; text-align: center; flex-shrink: 0; }
+    .rr-champ__f .fi { width: 20px; height: 14px; border-radius: 2px; display: inline-block; background-size: cover; background-position: center; }
+    .rr-champ__b { flex: 1; min-width: 0; }
+    .rr-champ__n { font-weight: 600; }
+    .rr-champ__bar { height: 8px; background: #f0efe9; border-radius: 999px; overflow: hidden; margin-top: 3px; }
+    .rr-champ__bar i { display: block; height: 100%; background: var(--color-primary-green); border-radius: 999px; }
+    .rr-champ__v { font-size: 12px; color: var(--color-text-muted); width: 54px; text-align: right; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+    .rr-act { display: flex; gap: 11px; padding: 11px 0; border-bottom: 1px solid var(--color-line); font-size: 13px; align-items: flex-start; }
+    .rr-act:last-child { border-bottom: 0; }
+    .rr-act__i { width: 30px; height: 30px; border-radius: 8px; background: rgba(2,204,116,0.12); color: var(--color-primary-green); display: grid; place-items: center; flex-shrink: 0; }
+    .rr-act__t { line-height: 1.35; }
+    .rr-act__time { font-size: 11px; color: var(--color-text-muted); margin-top: 2px; }
   `],
 })
 export class RightRailComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  private router = inject(Router);
+  private quickPick = inject(QuickPickModalService);
+  private golganaEditorial = inject(GolganaEditorialService);
 
   readonly newsHubUrl = NEWS_HUB_URL;
+
+  /** Abre el modal de pick rápido para el próximo partido (card del rail). */
+  openQuickPickNext() {
+    const m = this.nextMatch();
+    if (!m) return;
+    this.quickPick.open({
+      matchId: m.id,
+      homeName: m.homeName,
+      awayName: m.awayName,
+      homeFlag: m.homeFlag,
+      awayFlag: m.awayFlag,
+      homeInitials: m.homeInitials,
+      awayInitials: m.awayInitials,
+      kickoffAt: m.kickoffAt,
+      pick: m.myPick ? { home: m.myPick.home, away: m.myPick.away } : null,
+    });
+  }
+
+  /** Abre el modal de pick rápido para una fila de "Siguientes picks". */
+  openQuickPickRow(r: UpcomingPickRow) {
+    this.quickPick.open({
+      matchId: r.id,
+      homeName: r.homeName,
+      awayName: r.awayName,
+      homeFlag: r.homeFlag,
+      awayFlag: r.awayFlag,
+      homeInitials: r.homeInitials,
+      awayInitials: r.awayInitials,
+      kickoffAt: r.kickoffAt,
+      pick: r.pick,
+    });
+  }
+
+  /** True SOLO en la tab Cronológico (URL exacta /picks). Ahí el próximo
+   *  partido y los siguientes picks viven en el componente principal, así que
+   *  el rail los oculta y deja sólo el bloque editorial. */
+  onPicksPage = signal(false);
+  /** True en el detalle de un grupo (/groups/:id). Ahí el rail global se
+   *  reemplaza por el rail del grupo: ¿a quién le va? + actividad + próximo
+   *  partido (oculta upcoming picks y noticias). */
+  onGroupDetail = signal(false);
+  private routerSub?: Subscription;
+
+  /** Datos de EJEMPLO para las cards del rail de grupo. La distribución de
+   *  campeón (picks de otros miembros) es owner-private y el feed de actividad
+   *  no existe en backend, así que se muestran como demo hasta que haya un
+   *  resolver/agregado server-side. Marcadas con el badge "Ejemplo". */
+  readonly demoChampDist: ReadonlyArray<{ flag: string; name: string; count: number; pct: number }> = [
+    { flag: 'ar', name: 'Argentina', count: 5, pct: 42 },
+    { flag: 'br', name: 'Brasil', count: 3, pct: 25 },
+    { flag: 'fr', name: 'Francia', count: 2, pct: 17 },
+    { flag: 'ec', name: 'Ecuador', count: 2, pct: 16 },
+  ];
+  readonly demoActivity: ReadonlyArray<{ icon: IconName; text: string; time: string }> = [
+    { icon: 'check', text: '@andrea_m acertó un marcador exacto', time: 'hace 2 h' },
+    { icon: 'zap', text: '@carlos23 usó un comodín ×2', time: 'hace 5 h' },
+    { icon: 'users', text: '@juancho se unió al grupo', time: 'ayer' },
+    { icon: 'trophy', text: 'Tomaste el 1° lugar del grupo', time: 'ayer' },
+  ];
 
   nextMatch = signal<NextMatchVm | null>(null);
   upcoming = signal<UpcomingPickRow[]>([]);
@@ -488,6 +643,11 @@ export class RightRailComponent implements OnInit, OnDestroy {
   private rawNext: { kickoffAt: string } | null = null;
 
   async ngOnInit() {
+    this.applyRoute(this.router.url);
+    this.routerSub = this.router.events
+      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+      .subscribe((e) => this.applyRoute(e.urlAfterRedirects));
+
     // TODO(A6): replace these parallel calls (listMatches + listTeams +
     // myPicks + listPublishedArticles + N×getUrl) with single
     // getMyRightRail() call when polla-backend lambda deployed.
@@ -498,27 +658,59 @@ export class RightRailComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.tickerId) clearInterval(this.tickerId);
+    this.routerSub?.unsubscribe();
+  }
+
+  /** SOLO la tab Cronológico (URL exacta /picks): ahí el componente principal
+   *  ya muestra el .nm próximo-partido + la lista, así que el rail los oculta.
+   *  En group-stage, bracket, match/:id y el resto de pantallas el rail
+   *  conserva ambos bloques. */
+  private isPicksUrl(url: string): boolean {
+    const path = url.split('?')[0]?.split('#')[0] ?? '';
+    return path === '/picks';
+  }
+
+  /** /groups/:id exacto (detalle). Excluye /groups y subrutas como
+   *  /groups/:id/edit · invite · prizes. */
+  private isGroupDetailUrl(url: string): boolean {
+    const path = url.split('?')[0]?.split('#')[0] ?? '';
+    return /^\/groups\/[^/]+$/.test(path);
+  }
+
+  private applyRoute(url: string): void {
+    this.onPicksPage.set(this.isPicksUrl(url));
+    this.onGroupDetail.set(this.isGroupDetailUrl(url));
   }
 
   private async loadNextAndUpcoming() {
     const userId = this.auth.user()?.sub ?? '';
-    let nextLoaded = false;
-    let upcomingLoaded = false;
     try {
-      const [matchesRes, teamsRes, picksRes] = await Promise.all([
+      // Matches + teams son lecturas públicas (apiKey). myPicks es Cognito y
+      // puede fallar/estar vacío; va aparte para que un fallo suyo NO borre
+      // los partidos reales del rail.
+      const [matchesRes, teamsRes] = await Promise.all([
         this.api.listMatches(TOURNAMENT_ID),
         this.api.listTeams(TOURNAMENT_ID),
-        userId
-          ? this.api.myPicks(userId)
-          : Promise.resolve({ data: [] as ReadonlyArray<{ matchId: string; homeScorePred: number; awayScorePred: number }> }),
       ]);
+      let picksRes: { data: ReadonlyArray<{ matchId: string; homeScorePred: number; awayScorePred: number }> } = { data: [] };
+      if (userId) {
+        try {
+          picksRes = await this.api.myPicks(userId) as typeof picksRes;
+        } catch (e) {
+          console.warn('[right-rail] myPicks failed (rail still shows matches)', e);
+        }
+      }
 
       const teamMap = new Map<string, { name: string; flag: string }>();
       for (const t of (teamsRes.data ?? [])) {
         if (t?.slug) teamMap.set(t.slug, { name: t.name ?? t.slug, flag: t.flagCode ?? '' });
       }
       const pickMap = new Map<string, { home: number; away: number }>();
-      for (const p of ((picksRes.data ?? []) as ReadonlyArray<{ matchId: string; homeScorePred: number; awayScorePred: number }>)) {
+      for (const p of ((picksRes.data ?? []) as ReadonlyArray<{ matchId: string; homeScorePred: number; awayScorePred: number } | null>)) {
+        // Amplify puede devolver items null (filas que fallan auth a nivel de
+        // campo vienen como null + error). Sin este guard, p.matchId revienta
+        // y tumba toda la carga del rail.
+        if (!p?.matchId) continue;
         pickMap.set(p.matchId, { home: p.homeScorePred, away: p.awayScorePred });
       }
 
@@ -571,7 +763,6 @@ export class RightRailComponent implements OnInit, OnDestroy {
           isStartingNow,
           myPick: myPick ? { home: myPick.home, away: myPick.away, winnerName } : null,
         });
-        nextLoaded = true;
       }
 
       const upcomingRows: UpcomingPickRow[] = all.slice(1, 5).map((m) => {
@@ -588,127 +779,46 @@ export class RightRailComponent implements OnInit, OnDestroy {
             ? `${myPick.home}-${myPick.away} ${myPick.home >= myPick.away ? home.name : away.name}`
             : null,
           countdownLabel: !myPick ? this.formatCountdownLabel(ko.getTime() - Date.now()) : null,
+          homeName: home.name,
+          awayName: away.name,
+          homeFlag: home.flag,
+          awayFlag: away.flag,
+          homeInitials: this.initials(home.name),
+          awayInitials: this.initials(away.name),
+          kickoffAt: m.kickoffAt,
+          pick: myPick ? { home: myPick.home, away: myPick.away } : null,
         };
       });
       this.upcoming.set(upcomingRows);
-      if (upcomingRows.length > 0) upcomingLoaded = true;
     } catch (e) {
       console.warn('[right-rail] load next/upcoming failed', e);
     }
-    // Fallback: si la API no devolvió un próximo partido o una lista de
-    // upcoming (caso típico de sandbox sin fixtures), sembramos mocks
-    // para que ambos bloques sean visibles. Cuando el admin cargue
-    // partidos reales, este fallback no se activa.
-    if (!nextLoaded) {
-      const seed = this.seedNextMatch();
-      this.rawNext = { kickoffAt: seed.kickoffAt };
-      this.nextMatch.set(seed);
-    }
-    if (!upcomingLoaded) {
-      this.upcoming.set(this.seedUpcoming());
-    }
+    // Sin partidos cargados → nextMatch/upcoming quedan vacíos y los bloques
+    // se ocultan (ver @if del template). Ya no sembramos mocks: el rail
+    // refleja exactamente los partidos reales del torneo.
     this.loadingNext.set(false);
     this.loadingUpcoming.set(false);
   }
 
-  /** Próximo partido mock — visible cuando no hay fixtures cargados. */
-  private seedNextMatch(): NextMatchVm {
-    const ko = new Date(Date.now() + 3 * 86_400_000 + 5 * 3_600_000);
-    return {
-      id: 'seed-next',
-      homeName: 'México',
-      awayName: 'Argentina',
-      homeFlag: 'mx',
-      awayFlag: 'ar',
-      homeInitials: this.initials('México'),
-      awayInitials: this.initials('Argentina'),
-      kickoffAt: ko.toISOString(),
-      venue: 'Estadio Azteca · Ciudad de México',
-      phaseLabel: 'Mundial 2026 · Grupo A',
-      countdown: this.computeCountdown(ko.getTime(), Date.now()),
-      isLive: false,
-      isStartingNow: false,
-      myPick: null,
-    };
-  }
-
-  /** Lista de siguientes picks mock — 4 filas. */
-  private seedUpcoming(): UpcomingPickRow[] {
-    const now = Date.now();
-    const items: Array<{ home: string; away: string; hoursAhead: number; hasPick: boolean; pickH?: number; pickA?: number }> = [
-      { home: 'Brasil', away: 'España', hoursAhead: 28, hasPick: true, pickH: 2, pickA: 1 },
-      { home: 'Francia', away: 'Inglaterra', hoursAhead: 50, hasPick: false },
-      { home: 'Países Bajos', away: 'Croacia', hoursAhead: 74, hasPick: true, pickH: 1, pickA: 1 },
-      { home: 'Portugal', away: 'Uruguay', hoursAhead: 96, hasPick: false },
-    ];
-    return items.map((m, i) => {
-      const ko = new Date(now + m.hoursAhead * 3_600_000);
-      return {
-        id: `seed-up-${i}`,
-        dateLabel: this.formatShortDate(ko),
-        matchLabel: `${this.shortCode(m.home)} vs ${this.shortCode(m.away)}`,
-        hasPick: m.hasPick,
-        pickLabel: m.hasPick
-          ? `${m.pickH}-${m.pickA} ${m.pickH! >= m.pickA! ? m.home : m.away}`
-          : null,
-        countdownLabel: m.hasPick ? null : this.formatCountdownLabel(m.hoursAhead * 3_600_000),
-      };
-    });
-  }
-
+  /** Noticias desde golgana (fuente canónica del contenido editorial). */
   private async loadNews() {
     let enriched: NewsItemVm[] = [];
     try {
-      const res = await this.api.listPublishedArticles(4);
-      const rows = ((res.data ?? []) as ReadonlyArray<{
-        id: string; title: string; externalUrl: string; imageKey?: string | null; publishedAt: string;
-      }>).slice();
-      enriched = await Promise.all(rows.map(async (a): Promise<NewsItemVm> => {
-        let resolvedImageUrl: string | null = null;
-        if (a.imageKey) {
-          try {
-            const { url } = await getUrl({ path: a.imageKey, options: { expiresIn: 3600 } });
-            resolvedImageUrl = url.toString();
-          } catch { /* ignore */ }
-        }
-        return {
-          id: a.id,
-          title: a.title,
-          externalUrl: a.externalUrl,
-          resolvedImageUrl,
-          relativeTime: this.formatRelative(a.publishedAt),
-        };
+      const noticias = await this.golganaEditorial.listNoticias(4);
+      enriched = noticias.map((n) => ({
+        id: n.slug,
+        title: n.title,
+        externalUrl: n.url,
+        resolvedImageUrl: n.imageUrl,
+        relativeTime: this.formatRelative(n.publishedAt),
       }));
     } catch (e) {
-      console.warn('[right-rail] load news failed', e);
-    }
-    // Fallback a noticias seed para que el bloque tenga contenido visible
-    // hasta que el admin publique noticias reales o conectemos una fuente
-    // externa (RSS / news API). Remover cuando haya feed productivo.
-    if (enriched.length === 0) {
-      enriched = this.seedNews();
+      // Si golgana no responde, el bloque editorial queda oculto (sin mock).
+      console.warn('[right-rail] golgana editorial failed', e);
     }
     this.newsHero.set(enriched[0] ?? null);
     this.newsList.set(enriched.slice(1));
     this.loadingNews.set(false);
-  }
-
-  /** Noticias mock — visibles hasta que existan Article reales en DB. */
-  private seedNews(): NewsItemVm[] {
-    const now = Date.now();
-    const items: Array<{ title: string; hoursAgo: number }> = [
-      { title: 'Sorteo confirmado: México estrena el Mundial en Estadio Azteca', hoursAgo: 4 },
-      { title: 'Mbappé llega tocado al microciclo de Francia: alerta en la concentración', hoursAgo: 14 },
-      { title: 'Argentina anuncia su lista preliminar de 35 con sorpresas', hoursAgo: 28 },
-      { title: 'Análisis: el grupo de la muerte que nadie quiere enfrentar', hoursAgo: 50 },
-    ];
-    return items.map((item, idx) => ({
-      id: `seed-${idx}`,
-      title: item.title,
-      externalUrl: NEWS_HUB_URL,
-      resolvedImageUrl: null,
-      relativeTime: this.formatRelative(new Date(now - item.hoursAgo * 3_600_000).toISOString()),
-    }));
   }
 
   private refreshCountdown() {

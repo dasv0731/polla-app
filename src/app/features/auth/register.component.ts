@@ -72,7 +72,7 @@ type HandleStatus = 'idle' | 'checking' | 'available' | 'taken';
                     <span class="auth-input-pill pill-checking">verificando…</span>
                   }
                 </div>
-                <div class="auth-helper">Sin &#64; — solo letras, números y guión bajo. Así te verán tus panas en el ranking.</div>
+                <div class="auth-helper">Sin &#64; — solo letras, números y guión bajo. Así te verán tus amigos en el ranking.</div>
               </div>
 
               <div class="auth-field">
@@ -449,7 +449,7 @@ export class RegisterComponent implements OnInit {
       if (!passwordToUse) {
         // Edge case: la sesión expiró o sessionStorage se limpió. Redirigir
         // al user al login para que reingrese sus credenciales.
-        this.error.set('Sesión expirada. Volvé a iniciar sesión.');
+        this.error.set('Sesión expirada. Vuelve a iniciar sesión.');
         try { sessionStorage.removeItem('pending-confirm-password'); } catch { /* ignore */ }
         void this.router.navigate(['/login'], { queryParams: { email: this.email } });
         return;

@@ -206,7 +206,7 @@ export class TourOverlayComponent {
     {
       num: 1,
       title: 'Crea o únete a un grupo',
-      body: 'Tu polla vive dentro de un grupo (panas, oficina, familia). ' +
+      body: 'Tu polla vive dentro de un grupo (amigos, oficina, familia). ' +
             'Usa los botones del menú lateral o la pantalla de Mis grupos.',
       // Targets [data-tour="groups"] en sidebar (desktop + mobile bottom-nav).
       spotlight: '[data-tour="groups"]',

@@ -4,10 +4,8 @@ import { CdkDrag, CdkDragDrop, CdkDropList, CdkDropListGroup, moveItemInArray } 
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ToastService } from '../../core/notifications/toast.service';
-import { PicksSyncService } from '../../core/sync/picks-sync.service';
 import { GroupActionsService } from '../../core/groups/group-actions.service';
 import { ConfirmDialogService } from '../../shared/ui/confirm-dialog.service';
-import { EmptyBlockComponent } from '../../shared/ui/empty-block/empty-block.component';
 import { IconComponent } from '../../shared/ui/icon/icon.component';
 import { TeamFlagComponent } from '../../shared/ui/team-flag.component';
 
@@ -38,7 +36,7 @@ interface ServerIdMap {
 @Component({
   standalone: true,
   selector: 'app-group-stage-picks',
-  imports: [CdkDropListGroup, CdkDropList, CdkDrag, EmptyBlockComponent, TeamFlagComponent, IconComponent],
+  imports: [CdkDropListGroup, CdkDropList, CdkDrag, TeamFlagComponent, IconComponent],
   template: `
     <!-- Header propio: solo cuando NO está embebido (en tabla-grupos
          el page__header del parent ya cubre el title). -->
@@ -51,17 +49,22 @@ interface ServerIdMap {
       </header>
     }
 
-    <!-- Empty state cuando no hay grupos privados: reemplaza .form-card__hint
-         legacy por <app-empty-block> unificado (A1). -->
+    <!-- Sin grupos privados: NO bloqueamos la pantalla. Mostramos los equipos
+         como vista previa (arrastrable, persistida local) con una nota slim
+         que invita a unirse/crear un grupo para que la predicción cuente. -->
     @if (availableModes().length === 0 && !modesLoading()) {
-      <app-empty-block iconName="users"
-                       title="Necesitas un grupo privado"
-                       sub="Para que tus predicciones cuenten, primero únete o crea un grupo.">
-        <button type="button" class="empty-cta empty-cta--primary"
-                (click)="groupActions.openCreate()">Crear grupo</button>
-        <button type="button" class="empty-cta"
-                (click)="groupActions.openJoin()">Unirme con código</button>
-      </app-empty-block>
+      <div class="gs-preview-note">
+        <span class="gs-preview-note__text">
+          <app-icon name="users" size="sm" />
+          Vista previa · arrastra para predecir. Únete o crea un grupo privado para que tu predicción cuente.
+        </span>
+        <span class="gs-preview-note__cta">
+          <button type="button" class="empty-cta empty-cta--primary"
+                  (click)="groupActions.openCreate()">Crear grupo</button>
+          <button type="button" class="empty-cta"
+                  (click)="groupActions.openJoin()">Unirme con código</button>
+        </span>
+      </div>
     } @else if (availableModes().length > 1) {
       <!-- Mode switch unificado (role=tablist + aria-selected, igual que
            special-picks post-A8c). switchMode pide confirm si hay picks. -->
@@ -96,7 +99,7 @@ interface ServerIdMap {
            automáticamente" + "Pulsa Guardar"). El botón final sigue pero
            se llama "Guardar y sincronizar" para clarificar su rol). -->
       <p class="form-card__hint">
-        Arrastrá los equipos para predecir cómo terminará cada grupo.
+        Arrastra los equipos para predecir cómo terminará cada grupo.
         Tus cambios se <strong>guardan automáticamente</strong> mientras editás.
         Sincronizá con la base al final para que cuenten en el scoring.
       </p>
@@ -187,7 +190,7 @@ interface ServerIdMap {
                   style="width: 100%; margin-top: var(--space-md);"
                   [disabled]="saving() || !!lockedAt()"
                   (click)="saveAll()">
-            {{ saving() ? 'Sincronizando…' : 'Sincronizar con la base' }}
+            {{ saving() ? 'Guardando…' : 'Ver mis Brackets' }}
           </button>
 
           @if (lastSavedAt()) {
@@ -402,7 +405,33 @@ interface ServerIdMap {
       background: rgba(0,0,0,0.06);
     }
 
-    /* Empty state CTAs (en <app-empty-block>) */
+    /* Nota slim "vista previa" cuando el user no tiene grupo privado */
+    .gs-preview-note {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-md);
+      flex-wrap: wrap;
+      padding: 12px 14px;
+      margin: var(--space-md) var(--section-x-mobile, var(--space-md)) 0;
+      background: rgba(2, 204, 116, 0.06);
+      border: 1px solid rgba(2, 204, 116, 0.3);
+      border-radius: 10px;
+      font-size: 13px;
+      color: var(--wf-ink-2, #333);
+    }
+    .gs-preview-note__text {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .gs-preview-note__cta {
+      display: inline-flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Empty state CTAs */
     .empty-cta {
       background: transparent;
       border: 1px solid var(--color-primary-green);
@@ -435,7 +464,6 @@ export class GroupStagePicksComponent implements OnInit {
   private toast = inject(ToastService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private sync = inject(PicksSyncService);
   private confirmDialog = inject(ConfirmDialogService);
   groupActions = inject(GroupActionsService);
 
@@ -512,11 +540,11 @@ export class GroupStagePicksComponent implements OnInit {
       return;
     }
     await this.discoverModes();
-    if (this.mode()) {
-      await this.load();
-    } else {
-      this.loading.set(false);
-    }
+    // Cargamos SIEMPRE: los equipos se muestran exista o no un grupo/modo.
+    // Antes load() sólo corría con mode() seteado, así que sin grupo privado
+    // el grid renderizaba 12 tarjetas vacías (sin equipos). load() ahora trae
+    // los equipos siempre y sólo el fetch de picks guardadas depende del modo.
+    await this.load();
   }
 
   /**
@@ -566,7 +594,7 @@ export class GroupStagePicksComponent implements OnInit {
     if (this.hasAnyPicks()) {
       const ok = await this.confirmDialog.ask({
         title: 'Cambiar modo',
-        message: 'Tus selecciones actuales NO se aplican al otro modo. Las predicciones del modo destino se cargan desde su propia colección — las podés recuperar volviendo al modo actual.',
+        message: 'Tus selecciones actuales NO se aplican al otro modo. Las predicciones del modo destino se cargan desde su propia colección — las puedes recuperar volviendo al modo actual.',
         confirmLabel: 'Cambiar modo',
         cancelLabel: 'Cancelar',
       });
@@ -584,15 +612,15 @@ export class GroupStagePicksComponent implements OnInit {
   }
 
   async load() {
-    const currentMode = this.mode();
-    if (!currentMode) return;
+    const currentMode = this.mode();   // puede ser null (sin grupo) → igual cargamos equipos
     this.loading.set(true);
     try {
-      const [teamsRes, matchesRes, standingsRes, thirdsRes] = await Promise.all([
+      // Equipos + partidos son lecturas públicas (apiKey) y siempre deben
+      // poblar el grid. Van en su propio Promise.all para que las picks
+      // guardadas (owner-scoped, Cognito) no puedan bloquearlos.
+      const [teamsRes, matchesRes] = await Promise.all([
         this.api.listTeams(TOURNAMENT_ID),
         this.api.listMatches(TOURNAMENT_ID),
-        this.api.listGroupStandingPicks(this.currentUserId, currentMode),
-        this.api.getBestThirdsPick(this.currentUserId, TOURNAMENT_ID, currentMode),
       ]);
 
       const tm = new Map<string, TeamLite>();
@@ -618,17 +646,28 @@ export class GroupStagePicksComponent implements OnInit {
         this.lockedAt.set(new Date(firstKickoffMs).toISOString());
       }
 
-      // Cargar de DB las picks existentes
+      // Picks guardadas en DB: sólo si hay modo (vienen de un grupo privado).
+      // Aparte y tolerante a fallos para no impedir mostrar los equipos.
       const dbState: StagedState = { groups: {}, advancing: [] };
-      for (const p of standingsRes.data ?? []) {
-        if (!p.groupLetter) continue;
-        dbState.groups[p.groupLetter] = [p.pos1, p.pos2, p.pos3, p.pos4];
-        this.serverIds.standings[p.groupLetter] = p.id;
-      }
-      const thirdsRow = (thirdsRes.data ?? [])[0];
-      if (thirdsRow) {
-        dbState.advancing = (thirdsRow.advancing ?? []).filter((s: string | null): s is string => !!s);
-        this.serverIds.thirds = thirdsRow.id;
+      if (currentMode) {
+        try {
+          const [standingsRes, thirdsRes] = await Promise.all([
+            this.api.listGroupStandingPicks(this.currentUserId, currentMode),
+            this.api.getBestThirdsPick(this.currentUserId, TOURNAMENT_ID, currentMode),
+          ]);
+          for (const p of standingsRes.data ?? []) {
+            if (!p?.groupLetter) continue;
+            dbState.groups[p.groupLetter] = [p.pos1, p.pos2, p.pos3, p.pos4];
+            this.serverIds.standings[p.groupLetter] = p.id;
+          }
+          const thirdsRow = (thirdsRes.data ?? [])[0];
+          if (thirdsRow) {
+            dbState.advancing = (thirdsRow.advancing ?? []).filter((s: string | null): s is string => !!s);
+            this.serverIds.thirds = thirdsRow.id;
+          }
+        } catch (e) {
+          console.warn('[group-stage-picks] load saved picks failed', e);
+        }
       }
 
       // Si no hay state guardado para un grupo, default = orden alfabético de equipos del grupo
@@ -647,7 +686,7 @@ export class GroupStagePicksComponent implements OnInit {
       }
 
       // Cargar de localStorage si existe (sobreescribe DB porque es lo más reciente del user)
-      const lsRaw = localStorage.getItem(STORAGE_KEY(this.currentUserId, currentMode));
+      const lsRaw = localStorage.getItem(this.storageKey());
       if (lsRaw) {
         try {
           const ls = JSON.parse(lsRaw) as StagedState;
@@ -705,11 +744,16 @@ export class GroupStagePicksComponent implements OnInit {
     return this.teamGroup().get(slug) ?? '—';
   }
 
+  /** Clave de localStorage por modo. Sin grupo/modo (preview) usamos una
+   *  clave 'PREVIEW' aparte para no pisar las predicciones reales SIMPLE/COMPLETE. */
+  private storageKey(): string {
+    return STORAGE_KEY(this.currentUserId, this.mode() ?? ('PREVIEW' as GameMode));
+  }
+
   private persistLocal() {
-    const m = this.mode();
-    if (!this.currentUserId || !m) return;
+    if (!this.currentUserId) return;
     try {
-      localStorage.setItem(STORAGE_KEY(this.currentUserId, m), JSON.stringify(this.staged()));
+      localStorage.setItem(this.storageKey(), JSON.stringify(this.staged()));
     } catch { /* localStorage might be full or disabled — silently degrade */ }
   }
 
@@ -726,7 +770,12 @@ export class GroupStagePicksComponent implements OnInit {
   async saveAll() {
     if (this.lockedAt()) return;
     const currentMode = this.mode();
-    if (!currentMode) return;
+    if (!currentMode) {
+      // Sin grupo privado no hay colección (SIMPLE/COMPLETE) donde guardar.
+      // El arrastre sigue funcionando como vista previa (persistida local).
+      this.toast.error('Únete o crea un grupo privado para guardar tu predicción.');
+      return;
+    }
 
     // Validación completa antes de pegarle a la API: detectamos terceros
     // incompletos y grupos con < 4 equipos rankeados, y devolvemos un
@@ -759,33 +808,47 @@ export class GroupStagePicksComponent implements OnInit {
     this.saving.set(true);
     try {
       const state = this.staged();
-      // Encolamos al sync service: 1 enqueue por GroupStandingPick (12)
-      // + 1 para BestThirdsPick. El sync deduplica por key y los manda
-      // en paralelo cuando flush corre. Forzamos syncNow() para flush
-      // inmediato (este es el botón "Guardar en la base" — el user
-      // espera ver el resultado ya).
+      // Guardado DIRECTO (awaited), no via sync service: este botón guarda y
+      // redirige al bracket, que proyecta leyendo estas filas desde la base.
+      // Necesitamos garantizar persistencia ANTES de navegar, así que
+      // esperamos los upserts en vez de encolarlos en background.
+      const writes: Promise<unknown>[] = [];
       for (const g of GROUP_LETTERS) {
         const arr = state.groups[g] ?? [];
         if (arr.length !== 4) continue;   // skip grupos incompletos
-        this.sync.enqueue('group-standing', `${this.currentUserId}:${currentMode}:${g}`, {
+        writes.push(this.api.upsertGroupStandingPick({
           id: this.serverIds.standings[g],
           userId: this.currentUserId,
           tournamentId: TOURNAMENT_ID,
           mode: currentMode,
           groupLetter: g,
           pos1: arr[0]!, pos2: arr[1]!, pos3: arr[2]!, pos4: arr[3]!,
-        });
+        }));
       }
-      this.sync.enqueue('best-thirds', `${this.currentUserId}:${currentMode}`, {
+      writes.push(this.api.upsertBestThirdsPick({
         id: this.serverIds.thirds ?? undefined,
         userId: this.currentUserId,
         tournamentId: TOURNAMENT_ID,
         mode: currentMode,
         advancing: state.advancing,
-      });
-      this.sync.syncNow();
+      }));
+
+      const results = await Promise.all(writes);
+      const failed = (results as Array<{ errors?: readonly unknown[] }>)
+        .find((r) => Array.isArray(r?.errors) && r.errors.length > 0);
+      if (failed) throw new Error(JSON.stringify(failed.errors![0]));
+
       this.lastSavedAt.set(new Date().toISOString());
-      this.toast.success('Predicciones encoladas — sincronizando…');
+      this.persistLocal();
+      this.toast.success('Predicción guardada');
+      // Redirige al bracket armado desde esta predicción.
+      await this.router.navigate(['/picks/bracket']);
+    } catch (e) {
+      const msg = 'No se pudo guardar la predicción. Intenta de nuevo.';
+      this.saveError.set(msg);
+      this.toast.error(msg);
+      // eslint-disable-next-line no-console
+      console.warn('[group-stage-picks] saveAll failed', e);
     } finally {
       this.saving.set(false);
     }

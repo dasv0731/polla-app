@@ -31,6 +31,9 @@ interface GroupRow {
   /** Storage key del logo. null si no hay. URL signed se resuelve en
    *  imageUrl signal map. */
   imageKey: string | null;
+  prize1st: string | null;
+  prize2nd: string | null;
+  prize3rd: string | null;
 }
 
 @Component({
@@ -46,72 +49,41 @@ interface GroupRow {
         </div>
       </header>
 
-      <!-- Acciones (crear / unirme): visibles solo en mobile.
-           Desktop tiene los mismos botones en el sidebar. Ambos disparan
-           los mismos modales globales vía GroupActionsService. -->
-      <div class="groups-list-actions">
-        <button type="button" class="btn-wf btn-wf--primary"
-                (click)="actions.openCreate()">
-          + Crear grupo
-        </button>
-        <button type="button" class="btn-wf"
-                (click)="actions.openJoin()">
-          → Unirme con código
-        </button>
-      </div>
-
       @if (loading()) {
-        <!-- Skeleton cards mientras cargamos memberships + leaderboards.
-             Reemplaza el "Cargando…" plain text (G11 cross-cutting). -->
-        <div class="groups-list">
+        <div class="gh-cards">
           <app-skeleton variant="card" [count]="3" />
         </div>
       } @else if (groups().length === 0) {
-        <!-- Bug #7 fix: design v3 oculta los topnav buttons en desktop, así que
-             un first-time user no veía dónde crear/unirse. Reemplazamos el
-             texto "Usa los botones de arriba" con CTAs explícitos visibles
-             siempre vía <app-empty-block>. -->
         <app-empty-block
           iconName="users"
           title="Sin grupos"
-          sub="Crea uno o únete con un código para empezar a competir con tus panas.">
-          <button class="btn-wf btn-wf--primary" type="button"
-                  (click)="actions.openCreate()">
+          sub="Crea uno o únete con un código para empezar a competir con tus amigos.">
+          <button class="btn-wf btn-wf--primary" type="button" (click)="actions.openCreate()">
             + Crear grupo
           </button>
-          <button class="btn-wf" type="button"
-                  (click)="actions.openJoin()">
+          <button class="btn-wf" type="button" (click)="actions.openJoin()">
             → Unirme con código
           </button>
         </app-empty-block>
       } @else {
         <!-- TODO(A6): backend lambda myGroupsWithStats reemplazaría el fan-out
-             N+1 (getGroup + groupMembers + groupLeaderboard por cada
-             membership). En el meantime cacheamos en el client. -->
+             N+1 (getGroup + groupMembers + groupLeaderboard por cada membership). -->
 
         <!-- Controls: sort + search (>5) + mode filter (mixed modes).
-             Aparecen solo si hacen falta para evitar clutter en el caso
-             típico (1-3 grupos). -->
+             Aparecen solo si hacen falta para evitar clutter (1-3 grupos). -->
         @if (showControls()) {
           <div class="groups-list__controls">
             @if (showSearch()) {
               <label class="groups-list__search">
                 <app-icon name="search" size="sm" [decorative]="true" />
-                <input
-                  type="search"
-                  placeholder="Buscar grupo…"
-                  [ngModel]="search()"
-                  (ngModelChange)="search.set($event)"
-                  aria-label="Buscar grupo por nombre"
-                />
+                <input type="search" placeholder="Buscar grupo…"
+                  [ngModel]="search()" (ngModelChange)="search.set($event)"
+                  aria-label="Buscar grupo por nombre" />
               </label>
             }
             <label class="groups-list__sort">
               <span class="visually-hidden">Ordenar por</span>
-              <select
-                [ngModel]="sortKey()"
-                (ngModelChange)="sortKey.set($event)"
-                aria-label="Ordenar grupos">
+              <select [ngModel]="sortKey()" (ngModelChange)="sortKey.set($event)" aria-label="Ordenar grupos">
                 <option value="lastActivity">Actividad reciente</option>
                 <option value="myRank">Mi posición</option>
                 <option value="memberCount">Más miembros</option>
@@ -121,85 +93,77 @@ interface GroupRow {
             </label>
             @if (showModeFilter()) {
               <div class="groups-list__mode-filter" role="group" aria-label="Filtrar por modo">
-                <button type="button"
-                        [attr.aria-pressed]="modeFilter() === 'all'"
-                        (click)="modeFilter.set('all')">
-                  Todos
-                </button>
-                <button type="button"
-                        [attr.aria-pressed]="modeFilter() === 'COMPLETE'"
-                        (click)="modeFilter.set('COMPLETE')">
-                  Completo
-                </button>
-                <button type="button"
-                        [attr.aria-pressed]="modeFilter() === 'SIMPLE'"
-                        (click)="modeFilter.set('SIMPLE')">
-                  Simple
-                </button>
+                <button type="button" [attr.aria-pressed]="modeFilter() === 'all'" (click)="modeFilter.set('all')">Todos</button>
+                <button type="button" [attr.aria-pressed]="modeFilter() === 'COMPLETE'" (click)="modeFilter.set('COMPLETE')">Completo</button>
+                <button type="button" [attr.aria-pressed]="modeFilter() === 'SIMPLE'" (click)="modeFilter.set('SIMPLE')">Simple</button>
               </div>
             }
           </div>
         }
 
         @if (visibleGroups().length === 0) {
-          <app-empty-block
-            iconName="search"
-            title="Sin coincidencias"
-            sub="Probá con otro término o ajustá el filtro." />
+          <app-empty-block iconName="search" title="Sin coincidencias"
+            sub="Prueba con otro término o ajusta el filtro." />
         } @else {
-          <div class="groups-list">
+          <div class="gh-cards">
             @for (g of visibleGroups(); track g.id) {
-              <a class="group-card" [routerLink]="['/groups', g.id]">
-                @if (imageUrls()[g.id]) {
-                  <img class="group-card__icon group-card__icon--image"
-                       [src]="imageUrls()[g.id]!" alt=""
-                       [attr.aria-label]="g.isAdmin ? 'Admin del grupo' : 'Miembro'">
-                } @else {
-                  <span class="group-card__icon" [class.group-card__icon--admin]="g.isAdmin"
-                        [attr.aria-label]="g.isAdmin ? 'Admin del grupo' : 'Miembro'">
-                    {{ icon(g) }}
-                  </span>
-                }
-                <div class="group-card__body">
-                  <div class="group-card__name-row">
-                    <span class="group-card__name">{{ g.name }}</span>
-                    <span class="pill"
-                          [class.pill--green]="g.mode === 'COMPLETE'"
-                          [class.pill--warn]="g.mode !== 'COMPLETE'">
-                      {{ g.mode === 'COMPLETE' ? 'Completo' : 'Simple' }}
+              <a class="gh-card" [routerLink]="['/groups', g.id]">
+                <div class="gh-card__h">
+                  @if (imageUrls()[g.id]) {
+                    <img class="gh-card__av gh-card__av--img" [src]="imageUrls()[g.id]!" alt="">
+                  } @else {
+                    <span class="gh-card__av" [style.background]="avatarGradient(g)">{{ initials(g.name) }}</span>
+                  }
+                  @if (g.myRank !== null) {
+                    <span class="pill" [class]="'pill ' + rankPillClass(g.myRank)">#{{ g.myRank }} de {{ g.members }}</span>
+                  } @else {
+                    <span class="pill pill--grey">Sin ranking</span>
+                  }
+                </div>
+
+                <div>
+                  <div class="gh-card__n">{{ g.name }}</div>
+                  <div class="gh-card__m">
+                    <span class="gh-card__chip">
+                      <app-icon name="users" size="sm" [decorative]="true" />
+                      {{ g.members }} {{ g.members === 1 ? 'jugador' : 'jugadores' }}
                     </span>
-                    @if (g.mode === 'COMPLETE' && g.comodinesEnabled) {
-                      <span class="pill pill--comodines" title="Comodines habilitados">
-                        Comodines
-                      </span>
-                    }
-                  </div>
-                  <div class="group-card__meta">
-                    {{ g.members }} {{ g.members === 1 ? 'miembro' : 'miembros' }}
-                    @if (g.isAdmin) { · Eres <strong>admin</strong> }
-                    @else if (g.adminHandle) { · creado por <strong>{{ '@' + g.adminHandle }}</strong> }
-                  </div>
-                  <div class="group-card__meta group-card__meta--secondary">
-                    <span class="group-card__pts">{{ g.myTotalPts }} pts</span>
-                    @if (g.lastActivity) {
-                      · Activo {{ relativeTime(g.lastActivity) }}
-                    } @else if (g.createdAt) {
-                      · creado el {{ formatDate(g.createdAt) }}
-                    }
+                    <span aria-hidden="true">·</span>
+                    <span>{{ g.mode === 'COMPLETE' ? 'COMPLETO' : 'SIMPLE' }}</span>
+                    @if (g.isAdmin) { <span aria-hidden="true">·</span> <span>Admin</span> }
                   </div>
                 </div>
-                <div class="group-card__pos">
-                  <div class="num">
-                    @if (g.myRank !== null) {
-                      #{{ g.myRank }}
-                    } @else {
-                      <span class="group-card__pos-skeleton" aria-hidden="true">·</span>
-                    }
-                  </div>
-                  <div class="lbl">de {{ g.members }}</div>
+
+                <div class="gh-card__bar" [attr.aria-hidden]="true">
+                  <i [style.width.%]="barPct(g)"></i>
+                </div>
+
+                <div class="gh-card__foot">
+                  @if (prizeLabel(g); as prize) {
+                    <span class="gh-card__prize">Premio: <b>{{ prize }}</b></span>
+                  } @else {
+                    <span class="gh-card__pts">{{ g.myTotalPts }} pts</span>
+                  }
+                  @if (g.lastActivity) {
+                    <span class="gh-card__activity">Activo {{ relativeTime(g.lastActivity) }}</span>
+                  }
                 </div>
               </a>
             }
+
+            <!-- Tarjeta de acción: crear / unirse (sin botón en el top bar) -->
+            <div class="gh-card gh-card--add">
+              <div class="gh-card__add-icon" aria-hidden="true">+</div>
+              <div class="gh-card__add-title">Nuevo grupo</div>
+              <div class="gh-card__add-actions">
+                <button type="button" class="btn-wf btn-wf--primary btn-wf--sm" (click)="actions.openCreate()">
+                  Crear grupo
+                </button>
+                <button type="button" class="btn-wf btn-wf--sm" (click)="actions.openJoin()">
+                  Unirme con código
+                </button>
+              </div>
+            </div>
           </div>
         }
       }
@@ -209,174 +173,93 @@ interface GroupRow {
     :host { display: block; }
 
     .visually-hidden {
-      position: absolute;
-      width: 1px; height: 1px;
-      padding: 0; margin: -1px;
-      overflow: hidden; clip: rect(0, 0, 0, 0);
-      white-space: nowrap; border: 0;
-    }
-
-    /* Acciones para mobile (en desktop quedan ocultas: el sidebar
-       ya tiene los mismos botones en "Mis grupos"). */
-    .groups-list-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 18px;
-    }
-    .groups-list-actions .btn-wf { width: 100%; justify-content: center; }
-    @media (min-width: 992px) {
-      .groups-list-actions { display: none; }
+      position: absolute; width: 1px; height: 1px;
+      padding: 0; margin: -1px; overflow: hidden;
+      clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
     }
 
     .groups-list__controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 14px;
-      align-items: center;
+      display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; align-items: center;
     }
     .groups-list__search {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex: 1 1 200px;
-      min-width: 0;
-      background: var(--wf-paper);
-      border: 1px solid var(--wf-line);
-      border-radius: 8px;
-      padding: 8px 12px;
+      display: flex; align-items: center; gap: 8px; flex: 1 1 200px; min-width: 0;
+      background: var(--wf-paper); border: 1px solid var(--wf-line); border-radius: 8px; padding: 8px 12px;
     }
     .groups-list__search input {
-      flex: 1;
-      border: 0;
-      background: transparent;
-      outline: none;
-      font: inherit;
-      color: inherit;
-      min-width: 0;
+      flex: 1; border: 0; background: transparent; outline: none; font: inherit; color: inherit; min-width: 0;
     }
     .groups-list__sort select {
-      background: var(--wf-paper);
-      border: 1px solid var(--wf-line);
-      border-radius: 8px;
-      padding: 8px 12px;
-      font: inherit;
-      color: inherit;
+      background: var(--wf-paper); border: 1px solid var(--wf-line); border-radius: 8px;
+      padding: 8px 12px; font: inherit; color: inherit;
     }
-    .groups-list__mode-filter {
-      display: inline-flex;
-      border: 1px solid var(--wf-line);
-      border-radius: 8px;
-      overflow: hidden;
-    }
+    .groups-list__mode-filter { display: inline-flex; border: 1px solid var(--wf-line); border-radius: 8px; overflow: hidden; }
     .groups-list__mode-filter button {
-      background: var(--wf-paper);
-      border: 0;
-      padding: 8px 12px;
-      font: inherit;
-      cursor: pointer;
-      color: var(--wf-ink-3);
-      min-height: var(--hit-target-min, 44px);
+      background: var(--wf-paper); border: 0; padding: 8px 12px; font: inherit; cursor: pointer;
+      color: var(--wf-ink-3); min-height: var(--hit-target-min, 44px);
     }
     .groups-list__mode-filter button + button { border-left: 1px solid var(--wf-line); }
     .groups-list__mode-filter button[aria-pressed="true"] {
-      background: var(--wf-green-soft);
-      color: var(--wf-green-ink);
-      font-weight: 600;
+      background: var(--wf-green-soft); color: var(--wf-green-ink); font-weight: 600;
     }
 
-    .groups-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+    /* ---- Card grid (rediseño polla-groups) ---- */
+    .gh-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    @media (max-width: 767px) { .gh-cards { grid-template-columns: 1fr; } }
+
+    .gh-card {
+      background: var(--color-primary-white, #fff);
+      border: 1px solid var(--color-line);
+      border-radius: 14px;
+      padding: 20px;
+      display: flex; flex-direction: column; gap: 14px;
+      text-decoration: none; color: inherit;
+      transition: border-color .2s, transform .2s, box-shadow .2s;
     }
-    .group-card {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 14px 16px;
-      background: var(--wf-paper);
-      border: 1px solid var(--wf-line);
-      border-radius: 10px;
-      text-decoration: none;
-      color: inherit;
-      transition: border-color .15s, box-shadow .15s;
+    .gh-card:hover {
+      border-color: rgba(2, 204, 116, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.06);
     }
-    .group-card:hover {
-      border-color: var(--wf-green);
-      box-shadow: 0 4px 14px rgba(0, 200, 100, .08);
+    .gh-card__h { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+    .gh-card__av {
+      width: 48px; height: 48px; border-radius: 12px; flex-shrink: 0;
+      display: grid; place-items: center; color: #fff;
+      font-family: var(--font-display); font-size: 22px;
     }
-    .group-card__icon {
-      width: 40px; height: 40px;
-      border-radius: 8px;
-      background: var(--wf-fill);
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--wf-display);
-      font-size: 18px;
-      flex-shrink: 0;
+    .gh-card__av--img { object-fit: cover; }
+    .gh-card__n { font-family: var(--font-display); font-size: 22px; line-height: 1; }
+    .gh-card__m {
+      font-size: 12px; color: var(--color-text-muted);
+      margin-top: 6px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
     }
-    .group-card__icon--admin {
-      background: var(--wf-green-soft);
-      color: var(--wf-green-ink);
+    .gh-card__chip { display: inline-flex; align-items: center; gap: 4px; }
+    .gh-card__bar { height: 4px; background: #f3f4f6; border-radius: 999px; overflow: hidden; }
+    .gh-card__bar i { display: block; height: 100%; background: var(--color-primary-green); border-radius: 999px; }
+    .gh-card__foot {
+      display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+      font-size: 12px; color: var(--color-text-muted); flex-wrap: wrap;
     }
-    .group-card__icon--image {
-      object-fit: cover;
-      background: transparent;
-      padding: 0;
+    .gh-card__prize b { color: var(--color-text); font-family: var(--font-display); font-size: 14px; }
+    .gh-card__pts { font-family: var(--font-display); color: var(--color-text); }
+    .gh-card__activity { font-size: 11px; opacity: 0.85; margin-left: auto; }
+
+    /* Add card */
+    .gh-card--add {
+      border: 2px dashed rgba(2, 204, 116, 0.3);
+      background: linear-gradient(135deg, rgba(2, 204, 116, 0.04), transparent);
+      align-items: center; justify-content: center; text-align: center;
+      min-height: 180px; gap: 8px;
     }
-    .group-card__body { flex: 1; min-width: 0; }
-    .group-card__name-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
+    .gh-card--add:hover { border-color: var(--color-primary-green); transform: none; box-shadow: none; }
+    .gh-card__add-icon {
+      font-size: 28px; line-height: 1; color: var(--color-primary-green);
+      font-family: var(--font-display);
     }
-    .group-card__name {
-      font-family: var(--wf-display);
-      font-size: 18px;
-      letter-spacing: .03em;
+    .gh-card__add-title {
+      font-family: var(--font-display); font-size: 18px; color: var(--color-primary-green);
     }
-    .pill--comodines {
-      background: var(--wf-purple-soft, #eee8ff);
-      color: var(--wf-purple-ink, #5a40b0);
-      border: 1px solid var(--wf-purple-line, #d6c8ff);
-    }
-    .group-card__meta {
-      font-size: 12px;
-      color: var(--wf-ink-3);
-      margin-top: 4px;
-      line-height: 1.5;
-    }
-    .group-card__meta--secondary { font-size: 11px; opacity: 0.85; }
-    .group-card__pts {
-      font-family: var(--wf-display);
-      color: var(--wf-ink-1);
-    }
-    .group-card__pos {
-      text-align: center;
-      flex-shrink: 0;
-      min-width: 60px;
-    }
-    .group-card__pos .num {
-      font-family: var(--wf-display);
-      font-size: 22px;
-      line-height: 1;
-    }
-    .group-card__pos-skeleton {
-      display: inline-block;
-      width: 28px; height: 22px;
-      background: rgba(0,0,0,.06);
-      border-radius: 4px;
-      vertical-align: middle;
-    }
-    .group-card__pos .lbl {
-      font-size: 10px;
-      color: var(--wf-ink-3);
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      margin-top: 2px;
-    }
+    .gh-card__add-actions { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 220px; margin-top: 4px; }
+    .gh-card__add-actions .btn-wf { width: 100%; justify-content: center; }
   `],
 })
 export class GroupsListComponent implements OnInit {
@@ -385,8 +268,7 @@ export class GroupsListComponent implements OnInit {
   actions = inject(GroupActionsService);
 
   groups = signal<GroupRow[]>([]);
-  /** Map de groupId → signed URL del logo. Se popula async post-load
-   *  para no bloquear el render de la lista. */
+  /** Map de groupId → signed URL del logo. Se popula async post-load. */
   imageUrls = signal<Record<string, string>>({});
   loading = signal(true);
 
@@ -395,19 +277,26 @@ export class GroupsListComponent implements OnInit {
   sortKey = signal<SortKey>('lastActivity');
   modeFilter = signal<ModeFilter>('all');
 
+  /** Paleta de gradientes para el avatar (cuando no hay logo). Determinista
+   *  por id del grupo para que cada grupo conserve su color. */
+  private static readonly GRADIENTS = [
+    'linear-gradient(135deg,#067a4a,#02cc74)',
+    'linear-gradient(135deg,#3b82f6,#1d4ed8)',
+    'linear-gradient(135deg,#f59e0b,#b45309)',
+    'linear-gradient(135deg,#8b5cf6,#6d28d9)',
+    'linear-gradient(135deg,#ec4899,#be185d)',
+    'linear-gradient(135deg,#0ea5e9,#0369a1)',
+  ];
+
   countLabel = computed(() => {
     const n = this.groups().length;
     if (n === 0) return 'Aún no estás en ningún grupo';
     return n === 1 ? '1 grupo activo' : `${n} grupos activos`;
   });
 
-  // Mostramos controles desde el grupo 4+; debajo de eso no aportan.
   showControls = computed(() => this.groups().length >= 4);
   showSearch = computed(() => this.groups().length > 5);
-  showModeFilter = computed(() => {
-    const modes = new Set(this.groups().map((g) => g.mode));
-    return modes.size > 1;
-  });
+  showModeFilter = computed(() => new Set(this.groups().map((g) => g.mode)).size > 1);
 
   visibleGroups = computed(() => {
     const q = this.search().trim().toLowerCase();
@@ -421,11 +310,9 @@ export class GroupsListComponent implements OnInit {
     switch (key) {
       case 'lastActivity':
         sorted.sort((a, b) =>
-          (b.lastActivity ?? b.createdAt ?? '').localeCompare(a.lastActivity ?? a.createdAt ?? ''),
-        );
+          (b.lastActivity ?? b.createdAt ?? '').localeCompare(a.lastActivity ?? a.createdAt ?? ''));
         break;
       case 'myRank':
-        // Nulls al final
         sorted.sort((a, b) => {
           if (a.myRank === null && b.myRank === null) return 0;
           if (a.myRank === null) return 1;
@@ -454,9 +341,6 @@ export class GroupsListComponent implements OnInit {
       return;
     }
     try {
-      // TODO(A6): reemplazar este fan-out N+1 con un endpoint
-      // `myGroupsWithStats(userId)` que devuelva membership + group + members count +
-      // myRank + myTotalPts + lastActivity en una sola call.
       const memberships = (await this.api.myGroups(userId)).data ?? [];
       const enriched = await Promise.all(
         memberships.map(async (m): Promise<GroupRow | null> => {
@@ -466,8 +350,6 @@ export class GroupsListComponent implements OnInit {
             this.api.groupLeaderboard(m.groupId),
           ]);
           if (!grp.data) return null;
-          // Sort §8 — mismo comparator que /ranking para que la posición
-          // que mostramos acá coincida con la que el user ve adentro.
           const lbData = lb.data ?? [];
           const sorted = [...lbData].sort(compareRankable);
           const myRank = sorted.findIndex((t) => t.userId === userId);
@@ -479,19 +361,13 @@ export class GroupsListComponent implements OnInit {
             try {
               const owner = await this.api.getUser(grp.data.adminUserId);
               adminHandle = owner.data?.handle ?? null;
-            } catch {
-              // ignore
-            }
+            } catch { /* ignore */ }
           }
 
-          // Actividad reciente = max(updatedAt) sobre las rows del leaderboard.
-          // Es aproximación: refleja último scoring corrido en este grupo.
           let lastActivity: string | null = null;
           for (const r of lbData) {
             const ts = (r as { updatedAt?: string | null }).updatedAt ?? null;
-            if (ts && (lastActivity === null || ts > lastActivity)) {
-              lastActivity = ts;
-            }
+            if (ts && (lastActivity === null || ts > lastActivity)) lastActivity = ts;
           }
 
           return {
@@ -507,13 +383,14 @@ export class GroupsListComponent implements OnInit {
             mode: ((grp.data.mode as GameMode | null | undefined) ?? 'COMPLETE'),
             comodinesEnabled: (grp.data as { comodinesEnabled?: boolean | null }).comodinesEnabled === true,
             imageKey: (grp.data as { imageKey?: string | null }).imageKey ?? null,
+            prize1st: grp.data.prize1st ?? null,
+            prize2nd: grp.data.prize2nd ?? null,
+            prize3rd: grp.data.prize3rd ?? null,
           };
         }),
       );
       const rows = enriched.filter((x): x is GroupRow => x !== null);
       this.groups.set(rows);
-      // Resolver signed URLs en background. Cada uno es independiente,
-      // así si una falla las otras siguen.
       void this.resolveImageUrls(rows);
     } finally {
       this.loading.set(false);
@@ -526,23 +403,58 @@ export class GroupsListComponent implements OnInit {
       try {
         const out = await getUrl({ path: r.imageKey, options: { expiresIn: 3600 } });
         this.imageUrls.update((m) => ({ ...m, [r.id]: out.url.toString() }));
-      } catch {
-        /* skip — fallback a inicial */
-      }
+      } catch { /* skip — fallback a gradiente */ }
     }
   }
 
-  icon(g: GroupRow): string {
-    if (g.isAdmin) return '★';
-    return (g.name[0] ?? '·').toUpperCase();
+  /** Iniciales (2 letras) del nombre del grupo para el avatar gradiente. */
+  initials(name: string): string {
+    const clean = (name ?? '').trim();
+    if (!clean) return '··';
+    const parts = clean.split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return clean.slice(0, 2).toUpperCase();
+  }
+
+  /** Gradiente determinista por id del grupo. */
+  avatarGradient(g: GroupRow): string {
+    let h = 0;
+    for (let i = 0; i < g.id.length; i++) h = (h * 31 + g.id.charCodeAt(i)) >>> 0;
+    return GroupsListComponent.GRADIENTS[h % GroupsListComponent.GRADIENTS.length]!;
+  }
+
+  /** Color del pill de posición: oro #1, bronce top-3, gris el resto. */
+  rankPillClass(rank: number): string {
+    if (rank === 1) return 'pill--gold';
+    if (rank <= 3) return 'pill--bronze';
+    return 'pill--grey';
+  }
+
+  /** Ancho de la barra = percentil desde arriba (mejor posición → más llena). */
+  barPct(g: GroupRow): number {
+    if (g.myRank === null || g.members <= 0) return 6;
+    const pct = Math.round(((g.members - g.myRank + 1) / g.members) * 100);
+    return Math.max(6, Math.min(100, pct));
+  }
+
+  /** Premio headline del grupo: suma $ si todos son numéricos, sino el 1° definido. */
+  prizeLabel(g: GroupRow): string | null {
+    const raws = [g.prize1st, g.prize2nd, g.prize3rd].filter((v): v is string => !!v);
+    if (raws.length === 0) return null;
+    const nums = raws.map((s) => {
+      const m = s.match(/\$\s*(\d[\d.,]*)/);
+      return m ? parseFloat(m[1].replace(/,/g, '')) : null;
+    });
+    if (nums.every((n) => n !== null)) {
+      return `$${Math.round((nums as number[]).reduce((a, n) => a + n, 0))}`;
+    }
+    return raws[0]!;
   }
 
   formatDate(iso: string): string {
     try {
       return new Date(iso).toLocaleDateString('es-EC', { day: '2-digit', month: 'short' });
-    } catch {
-      return '—';
-    }
+    } catch { return '—'; }
   }
 
   /** "hace 2 días", "hace 4 h", "hoy". Aproximación, no precisión clock. */
@@ -562,8 +474,6 @@ export class GroupsListComponent implements OnInit {
       if (weeks < 5) return `hace ${weeks} sem`;
       const months = Math.floor(days / 30);
       return `hace ${months} mes${months === 1 ? '' : 'es'}`;
-    } catch {
-      return '—';
-    }
+    } catch { return '—'; }
   }
 }

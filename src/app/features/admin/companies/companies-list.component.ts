@@ -53,7 +53,7 @@ interface CompanyRow {
       } @else if (companies().length === 0) {
         <app-empty-block iconName="users"
                          title="No hay empresas todavía"
-                         sub="Creá la primera empresa para arrancar.">
+                         sub="Crea la primera empresa para arrancar.">
           <button type="button" class="empty-cta empty-cta--primary"
                   (click)="showCreate.set(true)">
             <app-icon name="plus" size="sm" /> Crear primera empresa

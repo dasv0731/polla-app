@@ -55,7 +55,7 @@ describe('GroupActionsModalsComponent — create with entry fee', () => {
     component.entryFeeInstructions = '   ';
     await component.submitCreate();
     expect(apiMock.createGroup).not.toHaveBeenCalled();
-    expect(component.entryFeeError()).toBe('Las instrucciones son obligatorias si activás la cuota.');
+    expect(component.entryFeeError()).toBe('Las instrucciones son obligatorias si activas la cuota.');
   });
 
   it('submit with toggle on + valid instructions: payload includes both fields, trimmed', async () => {

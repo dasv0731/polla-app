@@ -176,9 +176,9 @@ const RELATIVE_FMT = new Intl.RelativeTimeFormat('es-EC', { numeric: 'auto' });
         } @else {
           <app-empty-block iconName="trophy"
                            title="Aún no hay datos de ranking"
-                           sub="El ranking se actualiza cuando se publican los resultados de los partidos. Asegurate de tener tus picks listos.">
+                           sub="El ranking se actualiza cuando se publican los resultados de los partidos. Asegúrate de tener tus picks listos.">
             <button type="button" class="btn-wf btn-wf--primary"
-                    (click)="goToPicks()">Hacé tus picks</button>
+                    (click)="goToPicks()">Haz tus picks</button>
             <button type="button" class="btn-wf btn-wf--ghost"
                     (click)="groupActions.openJoin()">Unirme con código</button>
           </app-empty-block>

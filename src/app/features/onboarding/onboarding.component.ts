@@ -43,7 +43,7 @@ import { IconComponent } from '../../shared/ui/icon/icon.component';
         </h1>
         <p class="onb-sub">
           El Mundial 2026 está a la vuelta. Para empezar, crea un grupo con tus
-          panas o únete con un código que te compartieron.
+          amigos o únete con un código que te compartieron.
         </p>
 
         <div class="onb-actions" style="display:flex;flex-direction:column;gap:10px;">

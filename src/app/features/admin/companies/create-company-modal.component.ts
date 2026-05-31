@@ -98,7 +98,7 @@ export class CreateCompanyModalComponent {
 
   async submit(): Promise<void> {
     if (!this.canSubmit()) {
-      this.error.set('Completá nombre y primer admin.');
+      this.error.set('Completa nombre y primer admin.');
       return;
     }
     this.error.set(null);
@@ -121,7 +121,7 @@ export class CreateCompanyModalComponent {
       const res = await this.api.createCompany(payload);
       const id = (res as { data?: { id?: string } }).data?.id;
       if (!id) {
-        this.error.set('No se pudo crear la empresa. Intentá de nuevo.');
+        this.error.set('No se pudo crear la empresa. Intenta de nuevo.');
         return;
       }
       this.created.emit(id);

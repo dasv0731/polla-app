@@ -492,7 +492,7 @@ export class CompanyDetailComponent implements OnInit {
       const res = await this.api.updateCompany(payload);
       const ok = (res as { data?: { ok?: boolean } }).data?.ok;
       if (!ok) {
-        this.error.set('No se pudo guardar. Intentá de nuevo.');
+        this.error.set('No se pudo guardar. Intenta de nuevo.');
         return;
       }
       this.company.set({

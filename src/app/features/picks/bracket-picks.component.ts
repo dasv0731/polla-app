@@ -84,11 +84,11 @@ const STORAGE_KEY = (userId: string, mode: GameMode) => `polla-bracket-winners-$
 
 
       <nav class="page-tabs" aria-label="Vistas de picks">
-        <a class="page-tabs__item" routerLink="/picks"
-           routerLinkActive="is-active" [routerLinkActiveOptions]="{exact: true}">Cronológico</a>
         <a class="page-tabs__item" routerLink="/picks/group-stage"
-           routerLinkActive="is-active">Tabla grupos</a>
+           routerLinkActive="is-active">Grupos</a>
         <a class="page-tabs__item is-active" routerLink="/picks/bracket">Bracket</a>
+        <a class="page-tabs__item" routerLink="/picks"
+           routerLinkActive="is-active" [routerLinkActiveOptions]="{exact: true}">Partidos</a>
       </nav>
 
       <!-- Mode switch (si el user tiene > 1 modo) -->
@@ -928,7 +928,7 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
     if (this.hasUserPicks()) {
       const ok = await this.confirmDialog.ask({
         title: 'Cambiar modo',
-        message: 'Tu bracket actual NO se aplica al otro modo. El bracket del modo destino se carga desde su propia colección — lo podés recuperar volviendo al modo actual.',
+        message: 'Tu bracket actual NO se aplica al otro modo. El bracket del modo destino se carga desde su propia colección — lo puedes recuperar volviendo al modo actual.',
         confirmLabel: 'Cambiar modo',
         cancelLabel: 'Cancelar',
       });
@@ -982,9 +982,22 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
           pos3: s.pos3 ?? '',
           pos4: s.pos4 ?? '',
         }));
-      const advancing = new Set<string>(
-        (thirdsRes.data?.[0]?.advancing ?? []).filter((l): l is string => !!l),
-      );
+      // BestThirdsPick.advancing se guarda como SLUGS de equipo (así lo
+      // consume el scoring backend). Pero projectKnockoutTree espera LETRAS
+      // de grupo (la matriz FIFA Anexo C se indexa por combinación de grupos
+      // cuyo 3° avanza). Mapeamos cada slug a la letra del grupo cuyo pos3
+      // es ese equipo. Sin esta conversión, validate() marca los slugs como
+      // invalidThirds y el bracket nunca proyecta.
+      const thirdSlugToLetter = new Map<string, string>();
+      for (const s of standings) {
+        if (s.pos3) thirdSlugToLetter.set(s.pos3, s.groupLetter);
+      }
+      const advancing = new Set<string>();
+      for (const slug of (thirdsRes.data?.[0]?.advancing ?? [])) {
+        if (!slug) continue;
+        const letter = thirdSlugToLetter.get(slug);
+        if (letter) advancing.add(letter);
+      }
       const result = projectKnockoutTree({
         groupStandings: standings,
         advancingThirds: advancing,
@@ -1042,7 +1055,9 @@ export class BracketPicksComponent implements OnInit, OnDestroy {
 
       // Totals + global rank
       const myTotal = (totalsRes.data ?? [])[0];
-      const sorted = (leaderboardRes.data ?? []).sort((a, b) => (b.points ?? 0) - (a.points ?? 0));
+      const sorted = ((leaderboardRes.data ?? []) as ReadonlyArray<{ userId: string; points?: number } | null>)
+        .filter((t): t is { userId: string; points?: number } => !!t)
+        .sort((a, b) => (b.points ?? 0) - (a.points ?? 0));
       const rankIdx = sorted.findIndex((t) => t.userId === this.currentUserId);
       this.totals.set({
         points: myTotal?.points ?? 0,

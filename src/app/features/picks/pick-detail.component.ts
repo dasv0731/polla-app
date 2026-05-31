@@ -130,7 +130,7 @@ interface AggregateStats { exactPct: number; resultPct: number; total: number; }
                       <app-icon name="check" size="sm" />Guardado
                     </span>
                   } @else {
-                    <span class="mh__pick-state mh__pick-state--muted">Sin pick · escribí un marcador</span>
+                    <span class="mh__pick-state mh__pick-state--muted">Sin pick · escribe un marcador</span>
                   }
                 </div>
               </div>

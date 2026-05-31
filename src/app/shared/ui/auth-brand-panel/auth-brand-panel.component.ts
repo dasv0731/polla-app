@@ -45,7 +45,7 @@ export interface PublicStats {
       <div>
         <h1 class="auth-brand__h1">
           Predice cada partido.<br>
-          Gana contra tus panas.
+          Gana contra tus amigos.
         </h1>
         <p class="auth-brand__sub">
           Crea grupos privados, asigna premios, gana comodines y demuestra

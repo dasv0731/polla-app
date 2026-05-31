@@ -33,7 +33,7 @@ import { UserAvatarComponent } from '../user-avatar/user-avatar.component';
         <a routerLink="/home" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
           <app-icon name="home" size="md" /><span class="lsb__t">Inicio</span>
         </a>
-        <a routerLink="/picks" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" data-tour="picks">
+        <a routerLink="/picks/group-stage" routerLinkActive="active" data-tour="picks">
           <app-icon name="dice" size="md" /><span class="lsb__t">Mis picks</span>
         </a>
         <a routerLink="/groups" routerLinkActive="active" data-tour="groups">
@@ -108,7 +108,7 @@ import { UserAvatarComponent } from '../user-avatar/user-avatar.component';
           <app-icon name="home" size="md" />
           <span>Inicio</span>
         </a>
-        <a routerLink="/picks" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+        <a routerLink="/picks/group-stage" routerLinkActive="active">
           <app-icon name="dice" size="md" />
           <span>Picks</span>
         </a>
