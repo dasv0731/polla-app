@@ -82,8 +82,8 @@ interface NewsItemVm {
     <aside class="side">
 
       <!-- Rail del grupo (/groups/:id): reemplaza el rail global. ¿A quién le
-           va? + actividad son datos de EJEMPLO (sin fuente real client-side);
-           el próximo partido de abajo sí es real. -->
+           va? + actividad reciente son datos reales del grupo; el próximo
+           partido de abajo también. -->
       @if (onGroupDetail()) {
         @if (champDist().length > 0) {
         <div class="rr-card">
@@ -104,12 +104,12 @@ interface NewsItemVm {
         </div>
         }
 
+        @if (activity().length) {
         <div class="rr-card">
           <div class="rr-card__h">
             <h2>Actividad reciente</h2>
-            <span class="rr-demo">Ejemplo</span>
           </div>
-          @for (a of demoActivity; track a.text) {
+          @for (a of activity(); track a.text) {
             <div class="rr-act">
               <span class="rr-act__i"><app-icon [name]="a.icon" size="sm" [decorative]="true" /></span>
               <div class="rr-act__t">
@@ -119,6 +119,7 @@ interface NewsItemVm {
             </div>
           }
         </div>
+        }
       }
 
       <!-- Solo en la tab Cronológico (/picks) el próximo partido y los
@@ -547,7 +548,6 @@ interface NewsItemVm {
     .rr-card__h { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
     .rr-card__h h2 { font-size: 15px; margin: 0; }
     .rr-card__sub { font-size: 11px; color: var(--color-text-muted); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; }
-    .rr-demo { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; color: var(--color-text-muted); background: rgba(0,0,0,0.06); padding: 2px 7px; border-radius: 999px; flex-shrink: 0; }
     .rr-champ { display: flex; align-items: center; gap: 10px; padding: 7px 0; font-size: 13px; }
     .rr-champ__f { width: 26px; text-align: center; flex-shrink: 0; }
     .rr-champ__f .fi { width: 20px; height: 14px; border-radius: 2px; display: inline-block; background-size: cover; background-position: center; }
@@ -619,15 +619,8 @@ export class RightRailComponent implements OnInit, OnDestroy {
    *  /groups/:id y se limpia al salir. La card se oculta si queda vacía. */
   champDist = signal<Array<{ flag: string; name: string; count: number; pct: number }>>([]);
 
-  /** Datos de EJEMPLO para la card de actividad del rail de grupo. El feed de
-   *  actividad no existe en backend, así que se muestra como demo hasta que
-   *  haya un agregado server-side. Marcado con el badge "Ejemplo". */
-  readonly demoActivity: ReadonlyArray<{ icon: IconName; text: string; time: string }> = [
-    { icon: 'check', text: '@andrea_m acertó un marcador exacto', time: 'hace 2 h' },
-    { icon: 'zap', text: '@carlos23 usó un comodín ×2', time: 'hace 5 h' },
-    { icon: 'users', text: '@juancho se unió al grupo', time: 'ayer' },
-    { icon: 'trophy', text: 'Tomaste el 1° lugar del grupo', time: 'ayer' },
-  ];
+  /** Feed de actividad real del grupo (solo en /groups/:id). */
+  activity = signal<Array<{ icon: IconName; text: string; time: string }>>([]);
 
   nextMatch = signal<NextMatchVm | null>(null);
   upcoming = signal<UpcomingPickRow[]>([]);
@@ -682,9 +675,10 @@ export class RightRailComponent implements OnInit, OnDestroy {
     this.onGroupDetail.set(onGroup);
     if (onGroup) {
       const id = (url.split('?')[0].split('#')[0].split('/')[2] ?? '');
-      if (id) void this.loadChampDist(id);
+      if (id) { void this.loadChampDist(id); void this.loadActivity(id); }
     } else {
       this.champDist.set([]);
+      this.activity.set([]);
     }
   }
 
@@ -694,6 +688,38 @@ export class RightRailComponent implements OnInit, OnDestroy {
       this.champDist.set(((res.data ?? []) as Array<{ teamName: string; flagCode: string; count: number; pct: number }>)
         .map((r) => ({ flag: (r.flagCode || '').toLowerCase(), name: r.teamName, count: r.count, pct: r.pct })));
     } catch (e) { console.warn('[right-rail] champ dist failed', e); this.champDist.set([]); }
+  }
+
+  private mapActivity(kind: string, who: string): { icon: IconName; text: string } {
+    switch (kind) {
+      case 'JOINED': return { icon: 'users', text: `${who} se unió al grupo` };
+      case 'COMODIN': return { icon: 'zap', text: `${who} usó un comodín` };
+      case 'EXACT_SCORE': return { icon: 'check', text: `${who} acertó un marcador exacto` };
+      case 'LEADER_CHANGE': return { icon: 'trophy', text: `${who} tomó el 1° lugar del grupo` };
+      default: return { icon: 'users', text: `${who} · actividad` };
+    }
+  }
+
+  private async loadActivity(groupId: string) {
+    try {
+      const res = await this.api.listGroupActivity(groupId);
+      const rows = ((res.data ?? []) as Array<{ kind: string; userId: string; payload: string | null; createdAt: string }>)
+        .slice()
+        .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
+        .slice(0, 4);
+      const mapped = await Promise.all(rows.map(async (r) => {
+        let handle = '';
+        try { handle = JSON.parse(r.payload ?? '{}')?.handle ?? ''; } catch { handle = ''; }
+        if (!handle) {
+          try { handle = ((await this.api.getUser(r.userId)).data as { handle?: string } | undefined)?.handle ?? ''; }
+          catch { handle = ''; }
+        }
+        const who = handle ? '@' + handle : 'Alguien';
+        const m = this.mapActivity(r.kind, who);
+        return { icon: m.icon, text: m.text, time: this.formatRelative(r.createdAt) };
+      }));
+      this.activity.set(mapped);
+    } catch (e) { console.warn('[right-rail] activity failed', e); this.activity.set([]); }
   }
 
   private async loadNextAndUpcoming() {
