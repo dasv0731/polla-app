@@ -341,6 +341,7 @@ export class ApiService {
     comodinesEnabled?: boolean;
     entryFeeEnabled?: boolean;
     entryFeeInstructions?: string;
+    entryFeeAmount?: number;
   }): ReturnType<typeof apiClient.mutations.createGroup>;
   createGroup(
     name: string,
@@ -359,6 +360,7 @@ export class ApiService {
       comodinesEnabled?: boolean;
       entryFeeEnabled?: boolean;
       entryFeeInstructions?: string;
+      entryFeeAmount?: number;
     },
     tournamentId?: string,
     mode?: 'SIMPLE' | 'COMPLETE',
@@ -383,6 +385,9 @@ export class ApiService {
       ...('entryFeeInstructions' in input && input.entryFeeInstructions !== undefined
         ? { entryFeeInstructions: input.entryFeeInstructions }
         : {}),
+      ...('entryFeeAmount' in input && input.entryFeeAmount !== undefined
+        ? { entryFeeAmount: input.entryFeeAmount }
+        : {}),
     } as never);
   }
   updateGroup(input: {
@@ -392,6 +397,7 @@ export class ApiService {
     imageKey?: string | null;
     entryFeeEnabled?: boolean;
     entryFeeInstructions?: string | null;
+    entryFeeAmount?: number | null;
   }) {
     return apiClient.models.Group.update(input as never);
   }
