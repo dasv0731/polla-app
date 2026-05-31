@@ -53,11 +53,10 @@ interface Duel {
  * Detalle de grupo — layout del diseño polla-group-detail.html, cableado con
  * DATOS REALES donde existen (grupo, miembros, leaderboard, premios, cuota).
  *
- * FALTA (hardcodeado como ejemplo hasta tener backend): puntos por jornada
- * (J1), % de acierto y movimiento (Mov) en el leaderboard; el subtítulo de
- * movimiento y la card "Jornada" del KPI strip; la narrativa del duelo; el
- * "$X por persona" y la fecha exacta de reparto del podio. Cada uno marcado
- * con un comentario `FALTA:` en el template / helpers.
+ * FALTA (hardcodeado como ejemplo hasta tener scoring por jornada en backend):
+ * puntos por jornada (J1) y movimiento (Mov) en el leaderboard; el subtítulo de
+ * movimiento del KPI "Tu posición"; y la narrativa del duelo. Cada uno marcado
+ * con un comentario `FALTA:`. (Ya reales: Jornada, Acierto%, $/persona y fecha.)
  */
 @Component({
   standalone: true,
@@ -174,7 +173,7 @@ interface Duel {
                   <tr [class.me]="r.userId === currentUserId">
                     <td class="pos" [style.color]="r.userId === currentUserId ? 'var(--pa-green)' : null">{{ i + 1 }}</td>
                     <td><div class="tbl__team"><span class="av av--sm" [style.background]="r.userId === currentUserId ? 'var(--pa-green)' : null">{{ ini(r.handle) }}</span><span translate="no">&#64;{{ r.handle }}</span>@if (r.userId === currentUserId) { <span style="color:var(--pa-muted)">&nbsp;(tú)</span> }</div></td>
-                    <!-- FALTA: J1 (puntos por jornada), Acierto (% de acierto) y Mov (movimiento) -->
+                    <!-- FALTA: J1 (puntos por jornada) y Mov (movimiento) — Acierto ya es real -->
                     <td class="num">{{ jornadaPts(r) }}</td>
                     <td class="pts" [style.color]="r.userId === currentUserId ? 'var(--pa-green-d)' : null">{{ r.points }}</td>
                     <td class="num">{{ acierto(r) }}</td>
@@ -205,8 +204,8 @@ interface Duel {
               </tbody>
             </table>
           </div>
-          <!-- FALTA: J1/Acierto/Mov son de ejemplo hasta tener scoring por jornada -->
-          <div class="info" style="margin-top:10px"><b>J1</b> (puntos de jornada), <b>Acierto</b> y <b>Mov</b> son valores de ejemplo hasta tener cortes por jornada en el backend.</div>
+          <!-- FALTA: J1 y Mov son de ejemplo hasta tener scoring por jornada -->
+          <div class="info" style="margin-top:10px"><b>J1</b> (puntos de jornada) y <b>Mov</b> (movimiento) son valores de ejemplo hasta tener cortes por jornada en el backend.</div>
         }
 
         <!-- TAB Miembros (REAL) -->
