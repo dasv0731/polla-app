@@ -100,6 +100,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/profile/special-picks.component').then((m) => m.SpecialPicksComponent),
       },
       {
+        path: 'empresa',
+        loadChildren: () => import('./features/empresa/empresa.routes').then((m) => m.empresaRoutes),
+      },
+      {
         path: 'admin',
         loadChildren: () => import('./features/admin/admin.routes').then((m) => m.adminRoutes),
       },
