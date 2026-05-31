@@ -10,6 +10,8 @@ import { getUrl } from 'aws-amplify/storage';
 
 type GroupTab = 'lb' | 'mb' | 'pr';
 
+const TOURNAMENT_END_ISO = '2026-07-19T20:00:00-04:00'; // fin Mundial 2026
+
 interface GroupHeader {
   id: string;
   name: string;
@@ -25,6 +27,7 @@ interface GroupHeader {
   prize3rd: string | null;
   entryFeeEnabled: boolean | null;
   entryFeeInstructions: string | null;
+  entryFeeAmount: number | null;
 }
 
 interface RankRow {
@@ -240,10 +243,13 @@ interface Duel {
                 <div class="pod pod--3"><div class="pod__pos">3°</div><div class="pod__amt" [style.font-size]="isShort(g.prize3rd) ? null : '24px'">{{ g.prize3rd || '—' }}</div><div class="pod__lbl">Tercer lugar</div>@if (rows()[2]; as r3) { <div class="pod__who"><span class="av av--sm" style="width:18px;height:18px;font-size:9px">{{ ini(r3.handle) }}</span><span translate="no">&#64;{{ r3.handle }}</span></div> }</div>
               </div>
               <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--pa-line);font-size:12px;color:var(--pa-muted);flex-wrap:wrap;gap:8px">
-                <!-- FALTA: "$X por persona" (no se guarda monto de cuota) -->
-                <span>@if (g.entryFeeEnabled) { 👥 {{ paidCount() }} de {{ rows().length }} pagaron la cuota } @else { Reparto según el ranking final }</span>
-                <!-- FALTA: fecha exacta de reparto (hardcodeada al fin del Mundial) -->
-                <span>Se reparte al final del Mundial · <b style="color:var(--pa-ink)">19 jul</b></span>
+                <span>
+                  @if (g.entryFeeEnabled) {
+                    👥 {{ paidCount() }} de {{ rows().length }} pagaron
+                    @if (g.entryFeeAmount) { · 💳 \${{ g.entryFeeAmount }} por persona }
+                  } @else { Reparto según el ranking final }
+                </span>
+                <span>Se reparte al final del Mundial · <b style="color:var(--pa-ink)">{{ distributionDate }}</b></span>
               </div>
             } @else {
               <p style="color:var(--pa-muted);font-size:13px;padding:8px 0">
@@ -498,6 +504,8 @@ export class GroupDetailComponent implements OnInit, OnChanges {
   removingUserId = signal<string | null>(null);
   currentUserId = '';
 
+  readonly distributionDate = new Intl.DateTimeFormat('es-EC', { day: 'numeric', month: 'short' }).format(new Date(TOURNAMENT_END_ISO));
+
   isAdminOfGroup = computed(() => this.group()?.adminUserId === this.currentUserId);
 
   hasPrizes = computed(() => {
@@ -686,6 +694,7 @@ export class GroupDetailComponent implements OnInit, OnChanges {
           prize3rd: grp.data.prize3rd ?? null,
           entryFeeEnabled: (grp.data as { entryFeeEnabled?: boolean | null }).entryFeeEnabled ?? null,
           entryFeeInstructions: (grp.data as { entryFeeInstructions?: string | null }).entryFeeInstructions ?? null,
+          entryFeeAmount: (grp.data as { entryFeeAmount?: number | null }).entryFeeAmount ?? null,
         });
         if (imageKey) {
           (async () => {
