@@ -541,6 +541,28 @@ export class ApiService {
     }).mutations.acceptDepartmentInvite(input);
   }
 
+  /** Ranking corporativo (3 niveles) de una empresa. */
+  companyRanking(companyId: string) {
+    return (apiClient as unknown as {
+      queries: { companyRanking: (i: { companyId: string }) => Promise<{ data?: {
+        individual: Array<{ userId: string; handle: string; points: number; department: string }>;
+        departments: Array<{ groupId: string; name: string; points: number; members: number }>;
+      } | null }> };
+    }).queries.companyRanking({ companyId });
+  }
+
+  /** Detecta la empresa del empleado: su grupo con companyId. Devuelve el companyId o null. */
+  async findMyCompanyId(userId: string): Promise<string | null> {
+    const ms = (await apiClient.models.Membership.list({ filter: { userId: { eq: userId } } })).data ?? [];
+    for (const m of ms) {
+      const gid = (m as { groupId?: string } | null)?.groupId;
+      if (!gid) continue;
+      const g = (await apiClient.models.Group.get({ id: gid })).data as { companyId?: string | null } | null;
+      if (g?.companyId) return g.companyId;
+    }
+    return null;
+  }
+
   /** Invitaciones de jefe de una empresa. */
   listDepartmentInvites(companyId: string) {
     return (apiClient as unknown as {
