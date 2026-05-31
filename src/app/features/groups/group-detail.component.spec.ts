@@ -275,6 +275,7 @@ describe('GroupDetailComponent — jornada actual (Sub-1)', () => {
       listMatches: jest.fn().mockResolvedValue({ data: matches }),
       markEntryFeePaid: jest.fn(),
     };
+    TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       imports: [GroupDetailComponent],
       providers: [
@@ -304,6 +305,27 @@ describe('GroupDetailComponent — jornada actual (Sub-1)', () => {
     expect(j?.order).toBe(2);
     expect(j?.label).toBe('J2');
     expect(j?.totalJornadas).toBe(2);
+  });
+
+  it('acierto% = (exact+result)/partidosFINAL', async () => {
+    const fixture = buildWith(
+      [{ id: 'p1', order: 1, name: 'Fecha 1' }],
+      [
+        { id: 'm1', phaseId: 'p1', status: 'FINAL', kickoffAt: '2026-06-11T19:00:00Z' },
+        { id: 'm2', phaseId: 'p1', status: 'FINAL', kickoffAt: '2026-06-12T19:00:00Z' },
+        { id: 'm3', phaseId: 'p1', status: 'FINAL', kickoffAt: '2026-06-13T19:00:00Z' },
+        { id: 'm4', phaseId: 'p1', status: 'SCHEDULED', kickoffAt: '2026-06-14T19:00:00Z' },
+      ],
+    );
+    fixture.detectChanges();
+    await fixture.componentInstance.ngOnInit();
+    await fixture.whenStable();
+    // 2 aciertos (1 exacto + 1 resultado) sobre 3 FINAL = 67%
+    expect(fixture.componentInstance.acierto({ exactCount: 1, resultCount: 1 } as never)).toBe('67%');
+
+    const none = buildWith([{ id: 'p1', order: 1, name: 'F1' }], [{ id: 'm1', phaseId: 'p1', status: 'SCHEDULED', kickoffAt: '2026-06-14T19:00:00Z' }]);
+    none.detectChanges(); await none.componentInstance.ngOnInit(); await none.whenStable();
+    expect(none.componentInstance.acierto({ exactCount: 0, resultCount: 0 } as never)).toBe('—');
   });
 
   it('sin matches → currentJornada null', async () => {

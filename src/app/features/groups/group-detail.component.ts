@@ -118,12 +118,19 @@ interface Duel {
             <div class="kpi__v">{{ hasPrizes() ? prizesTotalLabel() : rows().length }}</div>
             <div class="kpi__d">{{ boteSub() }}</div>
           </div>
-          <!-- FALTA: jornada actual / countdown (sin calendario de jornadas en backend) -->
-          <div class="kpi">
-            <div class="kpi__l">Jornada</div>
-            <div class="kpi__v">J1 <small>/8</small></div>
-            <div class="kpi__d">Arranca pronto</div>
-          </div>
+          @if (currentJornada(); as j) {
+            <div class="kpi">
+              <div class="kpi__l">Jornada</div>
+              <div class="kpi__v">{{ j.label }} <small>/{{ j.totalJornadas }}</small></div>
+              <div class="kpi__d">{{ j.startsInDays === null ? 'En curso' : (j.startsInDays === 0 ? 'Arranca hoy' : 'Arranca en ' + j.startsInDays + (j.startsInDays === 1 ? ' día' : ' días')) }}</div>
+            </div>
+          } @else {
+            <div class="kpi">
+              <div class="kpi__l">Jornada</div>
+              <div class="kpi__v">—</div>
+              <div class="kpi__d">Sin fixture cargado</div>
+            </div>
+          }
         </div>
 
         <!-- duelo por la cima (sides REALES) -->
@@ -615,8 +622,15 @@ export class GroupDetailComponent implements OnInit, OnChanges {
   // ---- FALTA: placeholders hasta tener scoring por jornada en backend ----
   /** FALTA: puntos de la jornada. Placeholder determinista desde los totales. */
   jornadaPts(r: RankRow): string { return '+' + Math.max(0, Math.round(r.points / 8)); }
-  /** FALTA: % de acierto. Placeholder desde exactos/resultados. */
-  acierto(r: RankRow): string { return Math.min(99, 40 + r.exactCount * 4 + r.resultCount * 2) + '%'; }
+  /** Partidos con resultado publicado (denominador del acierto). */
+  finalMatchesCount = computed(() => this.matches().filter((m) => m.status === 'FINAL').length);
+
+  /** % de acierto del miembro = (exactos + resultados) / partidos jugados. */
+  acierto(r: RankRow): string {
+    const played = this.finalMatchesCount();
+    if (played === 0) return '—';
+    return Math.round(((r.exactCount + r.resultCount) / played) * 100) + '%';
+  }
   /** FALTA: movimiento vs jornada anterior. Placeholder determinista. */
   movement(r: RankRow): { l: string; c: string } {
     const i = this.rows().findIndex((x) => x.userId === r.userId);
