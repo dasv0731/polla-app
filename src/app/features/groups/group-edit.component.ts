@@ -20,6 +20,7 @@ interface GroupEdit {
   comodinesEnabled: boolean | null;
   entryFeeEnabled: boolean | null;
   entryFeeInstructions: string | null;
+  entryFeeAmount: number | null;
   /** Empresas Sub-1: si el grupo fue creado vía `createCompanyGroup`,
    *  trae el companyId. Las ediciones se enrutan al Lambda
    *  `updateCompanyGroup` (sparse payload) en vez del `updateGroup`
@@ -168,7 +169,7 @@ interface GroupEdit {
               <span>
                 <strong>Cobrar cuota de ingreso al grupo</strong><br>
                 <small style="color: var(--color-text-muted);">
-                  Si la activás, los miembros sin pagar verán un recordatorio en la pantalla del grupo.
+                  Si la activas, los miembros sin pagar verán un recordatorio en la pantalla del grupo.
                 </small>
               </span>
             </label>
@@ -192,6 +193,19 @@ interface GroupEdit {
                 @if (entryFeeError(); as err) {
                   <p class="modal-error" role="alert" style="margin-top: 8px;">{{ err }}</p>
                 }
+              </div>
+
+              <div class="form-card__field" style="margin-top: 12px;">
+                <label class="form-card__label" for="edit-entry-fee-amount">Monto por persona ($)</label>
+                <input id="edit-entry-fee-amount" name="entryFeeAmount" type="number"
+                       class="form-card__input"
+                       min="0" step="1"
+                       [ngModel]="entryFeeAmount()"
+                       (ngModelChange)="entryFeeAmount.set($event === null || $event === '' ? null : +$event)"
+                       placeholder="Ej: 20">
+                <div class="form-card__hint-row">
+                  <span class="form-card__hint">Opcional. Se muestra en el podio del grupo.</span>
+                </div>
               </div>
             }
           </div>
@@ -402,6 +416,9 @@ export class GroupEditComponent implements OnInit, DirtyAware {
    *  computed re-evaluates because `entryFeeEnabled` (signal) typically
    *  changes alongside, but we still read it via plain reference. */
   entryFeeInstructions = '';
+  /** Monto de cuota por persona ($). Signal so `dirty` re-evaluates.
+   *  null = sin monto definido (campo opcional). */
+  entryFeeAmount = signal<number | null>(null);
   /** Inline validation error for the entry-fee textarea (e.g. empty
    *  when toggle is on). Cleared at the start of every save(). */
   entryFeeError = signal<string | null>(null);
@@ -432,7 +449,8 @@ export class GroupEditComponent implements OnInit, DirtyAware {
       || this.description !== (g.description ?? '')
       || this.imageKey() !== (g.imageKey ?? '')
       || this.entryFeeEnabled() !== (g.entryFeeEnabled === true)
-      || this.entryFeeInstructions !== (g.entryFeeInstructions ?? '');
+      || this.entryFeeInstructions !== (g.entryFeeInstructions ?? '')
+      || this.entryFeeAmount() !== (g.entryFeeAmount ?? null);
   });
 
   /** DirtyAware contract — usado por `dirtyFormGuard` para confirmar
@@ -457,6 +475,8 @@ export class GroupEditComponent implements OnInit, DirtyAware {
         (d as { entryFeeEnabled?: boolean | null }).entryFeeEnabled ?? null;
       const entryFeeInstructions =
         (d as { entryFeeInstructions?: string | null }).entryFeeInstructions ?? null;
+      const entryFeeAmount =
+        (d as { entryFeeAmount?: number | null }).entryFeeAmount ?? null;
       // companyId opcional — Sub-1 lo agregó al schema, cast hasta que
       // schema.d.ts se regenere en sandbox.
       const companyId =
@@ -470,6 +490,7 @@ export class GroupEditComponent implements OnInit, DirtyAware {
         comodinesEnabled,
         entryFeeEnabled,
         entryFeeInstructions,
+        entryFeeAmount,
         companyId,
       });
       this.name = d.name;
@@ -478,6 +499,7 @@ export class GroupEditComponent implements OnInit, DirtyAware {
       this.imageKey.set(initialKey);
       this.entryFeeEnabled.set(entryFeeEnabled === true);
       this.entryFeeInstructions = entryFeeInstructions ?? '';
+      this.entryFeeAmount.set(entryFeeAmount);
       // Si ya hay imagen, resolver signed URL para preview.
       if (initialKey) {
         try {
@@ -585,7 +607,7 @@ export class GroupEditComponent implements OnInit, DirtyAware {
     if (this.entryFeeEnabled()) {
       const trimmed = this.entryFeeInstructions.trim();
       if (trimmed.length === 0) {
-        this.entryFeeError.set('Las instrucciones son obligatorias si activás la cuota.');
+        this.entryFeeError.set('Las instrucciones son obligatorias si activas la cuota.');
         return;
       }
       if (trimmed.length > 500) {
@@ -615,6 +637,7 @@ export class GroupEditComponent implements OnInit, DirtyAware {
             imageKey: this.imageKey().trim() || null,
             entryFeeEnabled: this.entryFeeEnabled(),
             entryFeeInstructions: feeInstructionsForPayload,
+            entryFeeAmount: this.entryFeeAmount() ?? null,
           });
       if (res.errors && res.errors.length > 0) {
         const msg = res.errors[0]?.message ?? 'Error al guardar';
@@ -648,6 +671,7 @@ export class GroupEditComponent implements OnInit, DirtyAware {
         imageKey: this.imageKey().trim() || null,
         entryFeeEnabled: this.entryFeeEnabled(),
         entryFeeInstructions: feeInstructionsForPayload,
+        entryFeeAmount: this.entryFeeAmount() ?? null,
         // companyId no cambia con la edición — preservamos el snapshot.
       });
       void this.router.navigate(['/groups', this.id]);

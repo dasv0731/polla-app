@@ -108,7 +108,7 @@ type GameMode = 'SIMPLE' | 'COMPLETE';
               <span>
                 <strong>Cobrar cuota de ingreso al grupo</strong><br>
                 <small style="color: var(--color-text-muted);">
-                  Si la activás, cada miembro verá un recordatorio hasta que lo marques como pagado.
+                  Si la activas, cada miembro verá un recordatorio hasta que lo marques como pagado.
                 </small>
               </span>
             </label>
@@ -131,6 +131,19 @@ type GameMode = 'SIMPLE' | 'COMPLETE';
                 @if (entryFeeError(); as err) {
                   <p class="modal-error" role="alert" style="margin-top: 8px;">{{ err }}</p>
                 }
+              </div>
+
+              <div class="entry-fee-field">
+                <label for="grp-entry-fee-amount">Monto por persona ($)</label>
+                <input id="grp-entry-fee-amount" name="entryFeeAmount" type="number"
+                       class="auth-input"
+                       min="0" step="1"
+                       [ngModel]="entryFeeAmount()"
+                       (ngModelChange)="entryFeeAmount.set($event === null || $event === '' ? null : +$event)"
+                       placeholder="Ej: 20">
+                <div class="entry-fee-field__hint">
+                  <small style="color: var(--color-text-muted);">Opcional. Se muestra en el podio del grupo.</small>
+                </div>
               </div>
             }
 
@@ -299,6 +312,7 @@ export class GroupActionsModalsComponent {
   comodinesEnabled = signal(true);
   entryFeeEnabled = signal(false);
   entryFeeInstructions = '';
+  entryFeeAmount = signal<number | null>(null);
   entryFeeError = signal<string | null>(null);
   // Unirse
   code = '';
@@ -324,6 +338,7 @@ export class GroupActionsModalsComponent {
     this.comodinesEnabled.set(true);
     this.entryFeeEnabled.set(false);
     this.entryFeeInstructions = '';
+    this.entryFeeAmount.set(null);
     this.entryFeeError.set(null);
     this.error.set(null);
   }
@@ -347,7 +362,7 @@ export class GroupActionsModalsComponent {
     if (this.entryFeeEnabled()) {
       feeInstructionsTrimmed = this.entryFeeInstructions.trim();
       if (feeInstructionsTrimmed.length === 0) {
-        this.entryFeeError.set('Las instrucciones son obligatorias si activás la cuota.');
+        this.entryFeeError.set('Las instrucciones son obligatorias si activas la cuota.');
         return;
       }
       if (feeInstructionsTrimmed.length > 500) {
@@ -370,6 +385,7 @@ export class GroupActionsModalsComponent {
         ...(this.entryFeeEnabled() ? {
           entryFeeEnabled: true,
           entryFeeInstructions: feeInstructionsTrimmed,
+          entryFeeAmount: this.entryFeeAmount() ?? undefined,
         } : {}),
       });
       const data = (res as { data?: { id?: string } | null })?.data;
