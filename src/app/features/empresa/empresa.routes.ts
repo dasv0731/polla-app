@@ -4,6 +4,10 @@ import { EmpresaShellComponent } from './empresa-shell.component';
 
 export const empresaRoutes: Routes = [
   {
+    path: 'invitacion',
+    loadComponent: () => import('./aceptar-invitacion.component').then((m) => m.AceptarInvitacionComponent),
+  },
+  {
     path: '',
     canActivate: [companyAdminGuard],
     loadComponent: () => import('./empresa-home.component').then((m) => m.EmpresaHomeComponent),
