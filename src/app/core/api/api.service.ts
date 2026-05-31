@@ -582,6 +582,18 @@ export class ApiService {
       queries: { groupChampionDistribution: (i: { groupId: string }) => Promise<{ data?: Array<{ teamId: string; teamName: string; flagCode: string; count: number; pct: number }> | null }> };
     }).queries.groupChampionDistribution({ groupId });
   }
+  /** Admin: escribe snapshots de standings de una jornada (Phase order). */
+  snapshotStandings(tournamentId: string, phaseOrder: number) {
+    return (apiClient as unknown as {
+      mutations: { snapshotStandings: (i: { tournamentId: string; phaseOrder: number }) => Promise<{ data?: { updated: number } | null }> };
+    }).mutations.snapshotStandings({ tournamentId, phaseOrder });
+  }
+  /** Snapshots de standings de un grupo (para J1/Mov). */
+  listGroupStandingSnapshots(groupId: string) {
+    return (apiClient as unknown as {
+      models: { GroupStandingSnapshot: { list: (i: { filter: { groupId: { eq: string } } }) => Promise<{ data?: Array<{ groupId: string; phaseOrder: number; rows: string }> | null }> } };
+    }).models.GroupStandingSnapshot.list({ filter: { groupId: { eq: groupId } } });
+  }
 
   // ----- Admin mutations -----
   scoreMatch(matchId: string) {
