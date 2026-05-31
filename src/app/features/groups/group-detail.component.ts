@@ -53,10 +53,9 @@ interface Duel {
  * Detalle de grupo — layout del diseño polla-group-detail.html, cableado con
  * DATOS REALES donde existen (grupo, miembros, leaderboard, premios, cuota).
  *
- * FALTA (hardcodeado como ejemplo hasta tener scoring por jornada en backend):
- * puntos por jornada (J1) y movimiento (Mov) en el leaderboard; el subtítulo de
- * movimiento del KPI "Tu posición"; y la narrativa del duelo. Cada uno marcado
- * con un comentario `FALTA:`. (Ya reales: Jornada, Acierto%, $/persona y fecha.)
+ * J1 (puntos por jornada) y Mov (movimiento) ya son reales: se computan desde
+ * los dos últimos GroupStandingSnapshot. Lo único que queda como demo es el
+ * feed de actividad (Sub-5).
  */
 @Component({
   standalone: true,
@@ -107,7 +106,6 @@ interface Duel {
           <div class="kpi kpi--g">
             <div class="kpi__l">Tu posición</div>
             <div class="kpi__v">{{ myPos() ? myPos() + '°' : '—' }} <small>/{{ rows().length }}</small></div>
-            <!-- FALTA: movimiento por jornada (sin cortes de jornada en backend) -->
             <div class="kpi__d">{{ myPos() === 1 ? 'Lideras el grupo' : 'En carrera' }}</div>
           </div>
           <div class="kpi">
@@ -159,7 +157,7 @@ interface Duel {
           <button [class.on]="tab() === 'pr'" (click)="tab.set('pr')">Premios</button>
         </div>
 
-        <!-- TAB Leaderboard (filas REALES; J1/Acierto/Mov hardcodeados) -->
+        <!-- TAB Leaderboard (REAL: filas, J1, Acierto, Mov) -->
         @if (tab() === 'lb') {
           <div class="card card--pad0">
             <table class="tbl">
@@ -173,7 +171,6 @@ interface Duel {
                   <tr [class.me]="r.userId === currentUserId">
                     <td class="pos" [style.color]="r.userId === currentUserId ? 'var(--pa-green)' : null">{{ i + 1 }}</td>
                     <td><div class="tbl__team"><span class="av av--sm" [style.background]="r.userId === currentUserId ? 'var(--pa-green)' : null">{{ ini(r.handle) }}</span><span translate="no">&#64;{{ r.handle }}</span>@if (r.userId === currentUserId) { <span style="color:var(--pa-muted)">&nbsp;(tú)</span> }</div></td>
-                    <!-- FALTA: J1 (puntos por jornada) y Mov (movimiento) — Acierto ya es real -->
                     <td class="num">{{ jornadaPts(r) }}</td>
                     <td class="pts" [style.color]="r.userId === currentUserId ? 'var(--pa-green-d)' : null">{{ r.points }}</td>
                     <td class="num">{{ acierto(r) }}</td>
@@ -204,8 +201,6 @@ interface Duel {
               </tbody>
             </table>
           </div>
-          <!-- FALTA: J1 y Mov son de ejemplo hasta tener scoring por jornada -->
-          <div class="info" style="margin-top:10px"><b>J1</b> (puntos de jornada) y <b>Mov</b> (movimiento) son valores de ejemplo hasta tener cortes por jornada en el backend.</div>
         }
 
         <!-- TAB Miembros (REAL) -->
@@ -498,6 +493,7 @@ export class GroupDetailComponent implements OnInit, OnChanges {
   rows = signal<RankRow[]>([]);
   phases = signal<Array<{ id: string; order: number; name: string }>>([]);
   matches = signal<Array<{ phaseId: string; status: string; kickoffAt: string }>>([]);
+  snapshots = signal<Array<{ phaseOrder: number; rows: Array<{ userId: string; position: number; points: number }> }>>([]);
   loading = signal(true);
   copied = signal(false);
   removingUserId = signal<string | null>(null);
@@ -626,9 +622,20 @@ export class GroupDetailComponent implements OnInit, OnChanges {
   /** Premio "corto" (≤6 chars, ej. "$40") usa el tamaño grande del podio. */
   isShort(v: string | null): boolean { return !!v && v.trim().length <= 6; }
 
-  // ---- FALTA: placeholders hasta tener scoring por jornada en backend ----
-  /** FALTA: puntos de la jornada. Placeholder determinista desde los totales. */
-  jornadaPts(r: RankRow): string { return '+' + Math.max(0, Math.round(r.points / 8)); }
+  private lastTwoSnapshots() {
+    const s = [...this.snapshots()].sort((a, b) => a.phaseOrder - b.phaseOrder);
+    return { prev: s.length >= 2 ? s[s.length - 2] : null, last: s.length >= 1 ? s[s.length - 1] : null };
+  }
+
+  /** J1 = puntos ganados en la última jornada con snapshot. */
+  jornadaPts(r: RankRow): string {
+    const { prev, last } = this.lastTwoSnapshots();
+    if (!last) return '—';
+    const lp = last.rows.find((x) => x.userId === r.userId)?.points ?? 0;
+    const pp = prev?.rows.find((x) => x.userId === r.userId)?.points ?? 0;
+    const j1 = lp - pp;
+    return (j1 >= 0 ? '+' : '') + j1;
+  }
   /** Partidos con resultado publicado (denominador del acierto). */
   finalMatchesCount = computed(() => this.matches().filter((m) => m.status === 'FINAL').length);
 
@@ -638,13 +645,16 @@ export class GroupDetailComponent implements OnInit, OnChanges {
     if (played === 0) return '—';
     return Math.round(((r.exactCount + r.resultCount) / played) * 100) + '%';
   }
-  /** FALTA: movimiento vs jornada anterior. Placeholder determinista. */
+  /** Mov = cambio de posición entre los dos últimos snapshots. */
   movement(r: RankRow): { l: string; c: string } {
-    const i = this.rows().findIndex((x) => x.userId === r.userId);
-    if (i === 0) return { l: '▲2', c: 'mv--up' };
-    const h = [...r.userId].reduce((a, c) => a + c.charCodeAt(0), 0) % 3;
-    if (h === 0) return { l: '▲1', c: 'mv--up' };
-    if (h === 1) return { l: '▼1', c: 'mv--dn' };
+    const { prev, last } = this.lastTwoSnapshots();
+    if (!prev || !last) return { l: '=', c: 'mv--eq' };
+    const pPrev = prev.rows.find((x) => x.userId === r.userId)?.position;
+    const pLast = last.rows.find((x) => x.userId === r.userId)?.position;
+    if (pPrev == null || pLast == null) return { l: '=', c: 'mv--eq' };
+    const delta = pPrev - pLast; // >0 = subió
+    if (delta > 0) return { l: '▲' + delta, c: 'mv--up' };
+    if (delta < 0) return { l: '▼' + (-delta), c: 'mv--dn' };
     return { l: '=', c: 'mv--eq' };
   }
 
@@ -668,14 +678,21 @@ export class GroupDetailComponent implements OnInit, OnChanges {
     this.rows.set([]);
     this.phases.set([]);
     this.matches.set([]);
+    this.snapshots.set([]);
     try {
-      const [grp, totals, members, phasesRes, matchesRes] = await Promise.all([
+      const [grp, totals, members, phasesRes, matchesRes, snapsRes] = await Promise.all([
         this.api.getGroup(this.id),
         this.api.groupLeaderboard(this.id),
         this.api.groupMembers(this.id),
         this.api.listPhases('mundial-2026'),
         this.api.listMatches('mundial-2026'),
+        this.api.listGroupStandingSnapshots(this.id),
       ]);
+      this.snapshots.set(((snapsRes.data ?? []) as Array<{ phaseOrder: number; rows: string }>)
+        .map((s) => ({
+          phaseOrder: s.phaseOrder,
+          rows: (() => { try { return JSON.parse(s.rows); } catch { return []; } })(),
+        })));
       if (grp.data) {
         const imageKey = (grp.data as { imageKey?: string | null }).imageKey ?? null;
         this.group.set({

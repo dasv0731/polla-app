@@ -47,6 +47,7 @@ describe('GroupDetailComponent — entry fee column (admin)', () => {
       listPhases: jest.fn().mockResolvedValue({ data: [] }),
       listMatches: jest.fn().mockResolvedValue({ data: [] }),
       markEntryFeePaid: jest.fn().mockResolvedValue({ data: { ok: true, message: 'ok', paidAt: '2026-05-29T00:00:00Z' }, errors: undefined }),
+      listGroupStandingSnapshots: jest.fn().mockResolvedValue({ data: [] }),
     };
     TestBed.configureTestingModule({
       imports: [GroupDetailComponent],
@@ -174,6 +175,7 @@ describe('GroupDetailComponent — floating reminder', () => {
       listPhases: jest.fn().mockResolvedValue({ data: [] }),
       listMatches: jest.fn().mockResolvedValue({ data: [] }),
       markEntryFeePaid: jest.fn(),
+      listGroupStandingSnapshots: jest.fn().mockResolvedValue({ data: [] }),
     };
     TestBed.configureTestingModule({
       imports: [GroupDetailComponent],
@@ -274,6 +276,7 @@ describe('GroupDetailComponent — jornada actual (Sub-1)', () => {
       listPhases: jest.fn().mockResolvedValue({ data: phases }),
       listMatches: jest.fn().mockResolvedValue({ data: matches }),
       markEntryFeePaid: jest.fn(),
+      listGroupStandingSnapshots: jest.fn().mockResolvedValue({ data: [] }),
     };
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -334,5 +337,67 @@ describe('GroupDetailComponent — jornada actual (Sub-1)', () => {
     await fixture.componentInstance.ngOnInit();
     await fixture.whenStable();
     expect(fixture.componentInstance.currentJornada()).toBeNull();
+  });
+});
+
+describe('GroupDetailComponent — J1/Mov desde snapshots (Sub-4)', () => {
+  function buildWith(snapshots: unknown[]) {
+    const apiMock = {
+      getGroup: jest.fn().mockResolvedValue({ data: {
+        id: 'g1', name: 'G', adminUserId: 'me', mode: 'COMPLETE',
+        joinCode: 'ABC123', createdAt: '2026-01-01',
+        prize1st: null, prize2nd: null, prize3rd: null,
+        entryFeeEnabled: false, entryFeeInstructions: null,
+      } }),
+      groupLeaderboard: jest.fn().mockResolvedValue({ data: [] }),
+      groupMembers: jest.fn().mockResolvedValue({ data: [] }),
+      getUser: jest.fn().mockResolvedValue({ data: { handle: 'me', avatarKey: null } }),
+      listPhases: jest.fn().mockResolvedValue({ data: [] }),
+      listMatches: jest.fn().mockResolvedValue({ data: [] }),
+      markEntryFeePaid: jest.fn(),
+      listGroupStandingSnapshots: jest.fn().mockResolvedValue({ data: snapshots }),
+    };
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [GroupDetailComponent],
+      providers: [
+        provideRouter([]),
+        { provide: ApiService, useValue: apiMock },
+        { provide: AuthService, useValue: { user: () => ({ sub: 'me' }) } },
+        { provide: ToastService, useValue: { success: jest.fn(), error: jest.fn() } },
+      ],
+    });
+    const fixture = TestBed.createComponent(GroupDetailComponent);
+    fixture.componentInstance.id = 'g1';
+    return fixture;
+  }
+
+  it('J1/Mov reales desde snapshots', async () => {
+    const fixture = buildWith([
+      { groupId: 'g1', phaseOrder: 1, rows: JSON.stringify([
+        { userId: 'u1', position: 1, points: 10 },
+        { userId: 'u2', position: 2, points: 5 },
+      ]) },
+      { groupId: 'g1', phaseOrder: 2, rows: JSON.stringify([
+        { userId: 'u1', position: 2, points: 18 },
+        { userId: 'u2', position: 1, points: 22 },
+      ]) },
+    ]);
+    fixture.detectChanges();
+    await fixture.componentInstance.ngOnInit();
+    await fixture.whenStable();
+    const c = fixture.componentInstance;
+    expect(c.jornadaPts({ userId: 'u1' } as never)).toBe('+8'); // 18 - 10
+    expect(c.movement({ userId: 'u2' } as never)).toEqual({ l: '▲1', c: 'mv--up' }); // pos 2 -> 1
+  });
+
+  it('sin snapshots → J1 "—" y Mov "="', async () => {
+    const fixture = buildWith([]);
+    fixture.detectChanges();
+    await fixture.componentInstance.ngOnInit();
+    await fixture.whenStable();
+    const c = fixture.componentInstance;
+    expect(c.jornadaPts({ userId: 'u1' } as never)).toBe('—');
+    expect(c.movement({ userId: 'u1' } as never)).toEqual({ l: '=', c: 'mv--eq' });
   });
 });
