@@ -953,4 +953,31 @@ export class ApiService {
   deleteArticle(id: string) {
     return apiClient.models.Article.delete({ id });
   }
+
+  // ----- Empresas — Retos / Trivia (SP-5) -----
+
+  /** RRHH crea un reto/trivia de empresa. */
+  createCompanyTrivia(input: { companyId: string; prompt: string; optionA: string; optionB: string; optionC: string; optionD: string; correctOption: string; points: number }) {
+    return (apiClient as unknown as {
+      mutations: { createCompanyTrivia: (i: typeof input) => Promise<{ data?: { ok: boolean; id: string } | null }> };
+    }).mutations.createCompanyTrivia(input);
+  }
+  /** RRHH: lista los retos de su empresa (incluye correctOption). */
+  listCompanyTrivia(companyId: string) {
+    return (apiClient as unknown as {
+      models: { CompanyTrivia: { list: (i: { filter: { companyId: { eq: string } } }) => Promise<{ data?: Array<{ id: string; prompt: string; optionA: string; optionB: string; optionC: string; optionD: string; correctOption: string; points: number }> | null }> } };
+    }).models.CompanyTrivia.list({ filter: { companyId: { eq: companyId } } });
+  }
+  /** Empleado: retos abiertos de su empresa (sin la respuesta). */
+  listOpenCompanyTrivia(companyId: string) {
+    return (apiClient as unknown as {
+      queries: { listOpenCompanyTrivia: (i: { companyId: string }) => Promise<{ data?: Array<{ id: string; prompt: string; optionA: string; optionB: string; optionC: string; optionD: string; points: number; answered: boolean }> | null }> };
+    }).queries.listOpenCompanyTrivia({ companyId });
+  }
+  /** Empleado: responde un reto (auto-score server-side). */
+  answerCompanyTrivia(input: { questionId: string; selectedOption: string }) {
+    return (apiClient as unknown as {
+      mutations: { answerCompanyTrivia: (i: typeof input) => Promise<{ data?: { isCorrect: boolean; pointsEarned: number } | null }> };
+    }).mutations.answerCompanyTrivia(input);
+  }
 }
