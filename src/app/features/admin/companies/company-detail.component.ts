@@ -1,6 +1,6 @@
-import { Component, Input, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, Input, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { ApiService } from '../../../core/api/api.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { humanizeError } from '../../../core/notifications/domain-errors';
@@ -10,7 +10,6 @@ import { IconComponent } from '../../../shared/ui/icon/icon.component';
 import { SkeletonComponent } from '../../../shared/ui/skeleton/skeleton.component';
 import { UserAvatarComponent } from '../../../shared/user-avatar/user-avatar.component';
 import { AdminPickerComponent, PickerUser } from './admin-picker.component';
-import { CreateCompanyGroupModalComponent } from './create-company-group-modal.component';
 
 interface CompanyDetail {
   id: string;
@@ -34,25 +33,17 @@ interface AdminRow {
   invitedAt: string;
 }
 
-interface GroupRow {
-  id: string;
-  name: string;
-  mode: 'SIMPLE' | 'COMPLETE' | null;
-  category: string | null;
-  memberCount: number | null;
-}
-
-type Tab = 'general' | 'admins' | 'groups' | 'branding';
+type Tab = 'general' | 'admins';
 
 /**
- * /admin/companies/:id — super-admin company detail with 4 tabs.
- * This file implements Tab General (sparse save + status toggle).
- * Tasks 17/18/19 fill in tabs Admins / Grupos / Branding.
+ * /admin/companies/:id — super-admin company detail (provisioning only).
+ * Two tabs: General (sparse save + status toggle) and Admins (assign RRHH).
+ * Detailed company config (Grupos/Branding) lives in the /empresa RRHH portal.
  */
 @Component({
   standalone: true,
   selector: 'app-company-detail',
-  imports: [FormsModule, RouterLink, IconComponent, SkeletonComponent, AdminPickerComponent, UserAvatarComponent, CreateCompanyGroupModalComponent],
+  imports: [FormsModule, RouterLink, IconComponent, SkeletonComponent, AdminPickerComponent, UserAvatarComponent],
   template: `
     <section class="page">
       <header class="page__header">
@@ -70,12 +61,6 @@ type Tab = 'general' | 'admins' | 'groups' | 'branding';
         <button type="button" class="page-tabs__item"
                 [class.is-active]="tab() === 'admins'"
                 (click)="tab.set('admins')">Admins</button>
-        <button type="button" class="page-tabs__item"
-                [class.is-active]="tab() === 'groups'"
-                (click)="tab.set('groups')">Grupos</button>
-        <button type="button" class="page-tabs__item"
-                [class.is-active]="tab() === 'branding'"
-                (click)="tab.set('branding')">Branding</button>
       </nav>
 
       @if (loading()) {
@@ -129,6 +114,11 @@ type Tab = 'general' | 'admins' | 'groups' | 'branding';
               <p class="modal-error" role="alert">{{ e }}</p>
             }
 
+            <div class="cd__portal-row">
+              <a class="btn-wf btn-wf--sm btn-wf--ghost"
+                 [routerLink]="['/empresa', id]">Abrir portal de empresa →</a>
+            </div>
+
             <button type="submit" class="btn-wf btn-wf--primary"
                     [disabled]="!dirty() || saving()">
               {{ saving() ? 'Guardando…' : 'Guardar cambios' }}
@@ -176,95 +166,6 @@ type Tab = 'general' | 'admins' | 'groups' | 'branding';
             }
           </div>
         }
-        @if (tab() === 'groups') {
-          <div class="form-card">
-            <header class="cd-grupos__head">
-              <h2>Grupos</h2>
-              <button type="button" class="btn-wf btn-wf--sm"
-                      (click)="showCreateGroup.set(true)">+ Crear grupo</button>
-            </header>
-
-            @if (loadingGroups()) {
-              <app-skeleton variant="list" [count]="2" />
-            } @else if (groups().length === 0) {
-              <p class="text-mute">Esta empresa todavía no tiene grupos. Crea el primero.</p>
-            } @else {
-              <ul class="cd-grupos__list" role="list">
-                @for (g of groups(); track g.id) {
-                  <li class="cd-grupos__row">
-                    <div class="cd-grupos__info">
-                      <strong>{{ g.name }}</strong>
-                      <div class="text-mute">
-                        {{ g.mode === 'COMPLETE' ? 'Completo' : 'Simple' }} ·
-                        {{ categoryLabel(g.category) }} ·
-                        {{ g.memberCount !== null ? g.memberCount + ' miembros' : '— miembros' }}
-                      </div>
-                    </div>
-                    <button type="button" class="btn-wf btn-wf--sm btn-wf--ghost"
-                            (click)="editGroup(g)">Editar</button>
-                  </li>
-                }
-              </ul>
-            }
-          </div>
-        }
-        @if (tab() === 'branding') {
-          <div class="form-card">
-            <div class="cd-brand__notice">
-              <strong>Vista previa</strong>
-              <p>Por ahora solo puedes ver la configuración de marca. La edición (logo + colores) llega en la próxima entrega.</p>
-            </div>
-
-            <h2 class="cd-brand__h2">Logo</h2>
-            @if (brandingView().hasLogo) {
-              <p class="text-mute">Logo cargado · <code>{{ brandingView().logoKey }}</code></p>
-            } @else {
-              <p class="text-mute">Sin logo configurado</p>
-            }
-
-            <h2 class="cd-brand__h2">Colores</h2>
-            <div class="cd-brand__swatches">
-              <div class="cd-brand__sw">
-                <div class="cd-brand__chip"
-                     [class.cd-brand__chip--empty]="!brandingView().primary"
-                     [style.background]="brandingView().primary || '#e5e7eb'"
-                     aria-hidden="true"></div>
-                <div class="cd-brand__lbl">
-                  <strong>Primario</strong>
-                  <code>{{ brandingView().primary ?? 'Sin color' }}</code>
-                </div>
-              </div>
-              <div class="cd-brand__sw">
-                <div class="cd-brand__chip"
-                     [class.cd-brand__chip--empty]="!brandingView().primaryDark"
-                     [style.background]="brandingView().primaryDark || '#e5e7eb'"
-                     aria-hidden="true"></div>
-                <div class="cd-brand__lbl">
-                  <strong>Primario oscuro</strong>
-                  <code>{{ brandingView().primaryDark ?? 'Sin color' }}</code>
-                </div>
-              </div>
-              <div class="cd-brand__sw">
-                <div class="cd-brand__chip"
-                     [class.cd-brand__chip--empty]="!brandingView().accent"
-                     [style.background]="brandingView().accent || '#e5e7eb'"
-                     aria-hidden="true"></div>
-                <div class="cd-brand__lbl">
-                  <strong>Acento</strong>
-                  <code>{{ brandingView().accent ?? 'Sin color' }}</code>
-                </div>
-              </div>
-            </div>
-          </div>
-        }
-      }
-
-      @if (showCreateGroup() && company(); as c) {
-        <app-create-company-group-modal
-          [companyId]="id"
-          [companyName]="c.name"
-          (cancel)="showCreateGroup.set(false)"
-          (created)="onGroupCreated($event)" />
       }
     </section>
   `,
@@ -277,29 +178,13 @@ type Tab = 'general' | 'admins' | 'groups' | 'branding';
     .adm-list__info > strong { display: block; font-size: 14px; }
     .cd-admins__head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 4px; }
     .cd-admins__head h2 { margin: 0; font-size: 16px; }
-    .cd-grupos__head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 4px; }
-    .cd-grupos__head h2 { margin: 0; font-size: 16px; }
-    .cd-grupos__list { list-style: none; padding: 0; margin: 10px 0 0; display: flex; flex-direction: column; gap: 8px; }
-    .cd-grupos__row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: #fff; border: 1px solid var(--color-line); border-radius: var(--radius-md); }
-    .cd-grupos__info { flex: 1; min-width: 0; }
-    .cd-grupos__info > strong { display: block; font-size: 14px; }
-    .cd-brand__notice { background: var(--color-info-soft, #eff6ff); border: 1px solid var(--color-info, #bfdbfe); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 16px; }
-    .cd-brand__notice > strong { display: block; margin-bottom: 4px; }
-    .cd-brand__notice > p { margin: 0; color: var(--color-mute); font-size: 14px; }
-    .cd-brand__h2 { margin: 14px 0 6px; font-size: 16px; }
-    .cd-brand__swatches { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 8px; }
-    .cd-brand__sw { display: flex; align-items: center; gap: 10px; padding: 10px; background: #fff; border: 1px solid var(--color-line); border-radius: var(--radius-md); }
-    .cd-brand__chip { width: 40px; height: 40px; border-radius: 6px; border: 1px solid var(--color-line); flex-shrink: 0; }
-    .cd-brand__chip--empty { background-image: repeating-linear-gradient(45deg, #e5e7eb 0 6px, #f3f4f6 6px 12px) !important; }
-    .cd-brand__lbl > strong { display: block; font-size: 13px; }
-    .cd-brand__lbl > code { font-size: 12px; color: var(--color-mute); }
+    .cd__portal-row { margin: 4px 0 4px; }
   `],
 })
 export class CompanyDetailComponent implements OnInit {
   @Input() id!: string;
 
   private api = inject(ApiService);
-  private router = inject(Router);
   private confirm = inject(ConfirmDialogService);
   private toast = inject(ToastService);
   private auth = inject(AuthService);
@@ -313,21 +198,6 @@ export class CompanyDetailComponent implements OnInit {
   admins = signal<AdminRow[]>([]);
   loadingAdmins = signal(false);
   showPicker = signal(false);
-
-  groups = signal<GroupRow[]>([]);
-  loadingGroups = signal(false);
-  showCreateGroup = signal(false);
-
-  brandingView = computed(() => {
-    const c = this.company();
-    return {
-      hasLogo: !!c?.logoKey,
-      logoKey: c?.logoKey ?? null,
-      primary: c?.brandPrimary ?? null,
-      primaryDark: c?.brandPrimaryDark ?? null,
-      accent: c?.brandAccent ?? null,
-    };
-  });
 
   name = '';
   contactEmail = '';
@@ -354,51 +224,8 @@ export class CompanyDetailComponent implements OnInit {
       this.contactEmail = c.contactEmail ?? '';
       this.description = c.description ?? '';
       await this.loadAdmins();
-      await this.loadGroups();
     } finally {
       this.loading.set(false);
-    }
-  }
-
-  private async loadGroups(): Promise<void> {
-    this.loadingGroups.set(true);
-    try {
-      const res = await this.api.listCompanyGroups(this.id);
-      const rows = (res.data ?? []) as Array<{
-        id: string;
-        name: string;
-        mode?: 'SIMPLE' | 'COMPLETE' | null;
-        category?: string | null;
-        memberCount?: number | null;
-      }>;
-      // TODO(follow-up): add category filter chips here (plan line 789).
-      this.groups.set(rows.map((r) => ({
-        id: r.id,
-        name: r.name,
-        mode: (r as { mode?: 'SIMPLE' | 'COMPLETE' }).mode ?? null,
-        category: r.category ?? null,
-        memberCount: r.memberCount ?? null,
-      })));
-    } finally {
-      this.loadingGroups.set(false);
-    }
-  }
-
-  async onGroupCreated(_g: { id: string }): Promise<void> {
-    this.showCreateGroup.set(false);
-    await this.loadGroups();
-  }
-
-  editGroup(g: GroupRow): void {
-    this.router.navigate(['/admin/groups/edit', g.id]);
-  }
-
-  categoryLabel(cat: string | null): string {
-    switch (cat) {
-      case 'futbol': return 'Fútbol';
-      case 'baloncesto': return 'Baloncesto';
-      case 'otros': return 'Otros';
-      default: return 'Sin categoría';
     }
   }
 

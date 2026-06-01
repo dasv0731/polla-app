@@ -1,5 +1,5 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { provideRouter, Router } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { CompanyDetailComponent } from './company-detail.component';
 import { ApiService } from '../../../core/api/api.service';
 import { ConfirmDialogService } from '../../../shared/ui/confirm-dialog.service';
@@ -22,7 +22,6 @@ describe('CompanyDetailComponent — shell + Tab General', () => {
     setCompanyStatus: jest.Mock;
     listCompanyMembers: jest.Mock;
     getUser: jest.Mock;
-    listCompanyGroups: jest.Mock;
   };
   let confirmMock: { ask: jest.Mock };
   let toastMock: { success: jest.Mock; error: jest.Mock };
@@ -36,7 +35,6 @@ describe('CompanyDetailComponent — shell + Tab General', () => {
       setCompanyStatus: jest.fn().mockResolvedValue({ data: { ok: true } }),
       listCompanyMembers: jest.fn().mockResolvedValue({ data: [] }),
       getUser: jest.fn().mockResolvedValue({ data: null }),
-      listCompanyGroups: jest.fn().mockResolvedValue({ data: [] }),
     };
     confirmMock = { ask: jest.fn().mockResolvedValue(true) };
     toastMock = { success: jest.fn(), error: jest.fn() };
@@ -155,7 +153,6 @@ describe('CompanyDetailComponent — Tab Admins', () => {
     getUser: jest.Mock;
     addCompanyAdmin: jest.Mock;
     removeCompanyAdmin: jest.Mock;
-    listCompanyGroups: jest.Mock;
   };
   let confirmMock: { ask: jest.Mock };
   let toastMock: { success: jest.Mock; error: jest.Mock };
@@ -177,7 +174,6 @@ describe('CompanyDetailComponent — Tab Admins', () => {
       })),
       addCompanyAdmin: jest.fn().mockResolvedValue({ data: { ok: true, message: 'Admin agregado' } }),
       removeCompanyAdmin: jest.fn().mockResolvedValue({ data: { ok: true, message: 'Admin removido' } }),
-      listCompanyGroups: jest.fn().mockResolvedValue({ data: [] }),
     };
     confirmMock = { ask: jest.fn().mockResolvedValue(true) };
     toastMock = { success: jest.fn(), error: jest.fn() };
@@ -285,182 +281,5 @@ describe('CompanyDetailComponent — Tab Admins', () => {
     const bob = component.admins().find(a => a.userId === 'u-bob')!;
     await component.removeAdmin(bob);
     expect(toastMock.error).toHaveBeenCalled();
-  });
-});
-
-describe('CompanyDetailComponent — Tab Grupos', () => {
-  let fixture: ComponentFixture<CompanyDetailComponent>;
-  let component: CompanyDetailComponent;
-  let apiMock: {
-    getCompany: jest.Mock;
-    listCompanyMembers: jest.Mock;
-    getUser: jest.Mock;
-    listCompanyGroups: jest.Mock;
-  };
-  let routerMock: { navigate: jest.Mock };
-  let toastMock: { success: jest.Mock; error: jest.Mock };
-  let confirmMock: { ask: jest.Mock };
-  let authMock: { user: () => { sub: string } | null };
-
-  const baseCompany = {
-    id: 'c1', name: 'Coca-Cola', status: 'ACTIVE',
-    contactEmail: null, description: null, logoKey: null,
-    brandPrimary: null, brandPrimaryDark: null, brandAccent: null,
-    createdAt: '2026-01-15T00:00:00Z',
-  };
-
-  function setup(groups: Array<Record<string, unknown>>) {
-    apiMock = {
-      getCompany: jest.fn().mockResolvedValue({ data: baseCompany }),
-      listCompanyMembers: jest.fn().mockResolvedValue({ data: [] }),
-      getUser: jest.fn().mockResolvedValue({ data: { sub: 'x', handle: 'x', email: 'x@x.com', avatarKey: null } }),
-      listCompanyGroups: jest.fn().mockResolvedValue({ data: groups }),
-    };
-    routerMock = { navigate: jest.fn() };
-    toastMock = { success: jest.fn(), error: jest.fn() };
-    confirmMock = { ask: jest.fn().mockResolvedValue(true) };
-    authMock = { user: () => ({ sub: 'u-caller' }) };
-
-    TestBed.configureTestingModule({
-      imports: [CompanyDetailComponent],
-      providers: [
-        provideRouter([]),
-        { provide: ApiService, useValue: apiMock },
-        { provide: ConfirmDialogService, useValue: confirmMock },
-        { provide: ToastService, useValue: toastMock },
-        { provide: AuthService, useValue: authMock },
-      ],
-    });
-    const realRouter = TestBed.inject(Router);
-    jest.spyOn(realRouter, 'navigate').mockImplementation(routerMock.navigate);
-    fixture = TestBed.createComponent(CompanyDetailComponent);
-    component = fixture.componentInstance;
-    component.id = 'c1';
-  }
-
-  it('ngOnInit loads groups and populates groups() signal with mode', async () => {
-    setup([
-      { id: 'g1', name: 'Mundialista', mode: 'SIMPLE', category: 'futbol', memberCount: 12 },
-      { id: 'g2', name: 'NBA', mode: 'COMPLETE', category: 'baloncesto', memberCount: null },
-    ]);
-    await component.ngOnInit();
-    expect(apiMock.listCompanyGroups).toHaveBeenCalledWith('c1');
-    expect(component.groups().length).toBe(2);
-    expect(component.groups()[0].name).toBe('Mundialista');
-    expect(component.groups()[0].mode).toBe('SIMPLE');
-    expect(component.groups()[1].mode).toBe('COMPLETE');
-  });
-
-  it('editGroup navigates to /admin/groups/edit/:id', async () => {
-    setup([{ id: 'g1', name: 'Mundialista', category: 'futbol', memberCount: 10 }]);
-    await component.ngOnInit();
-    component.editGroup(component.groups()[0]);
-    expect(routerMock.navigate).toHaveBeenCalledWith(['/admin/groups/edit', 'g1']);
-  });
-
-  it('onGroupCreated reloads groups and closes modal', async () => {
-    setup([{ id: 'g1', name: 'Mundialista', category: 'futbol', memberCount: 10 }]);
-    await component.ngOnInit();
-    component.showCreateGroup.set(true);
-    await component.onGroupCreated({ id: 'g2' });
-    expect(apiMock.listCompanyGroups).toHaveBeenCalledTimes(2);
-    expect(component.showCreateGroup()).toBe(false);
-  });
-
-  it('empty state shown when no groups', async () => {
-    setup([]);
-    await component.ngOnInit();
-    expect(component.groups().length).toBe(0);
-  });
-});
-
-describe('CompanyDetailComponent — Tab Branding', () => {
-  let fixture: ComponentFixture<CompanyDetailComponent>;
-  let component: CompanyDetailComponent;
-  let apiMock: {
-    getCompany: jest.Mock;
-    listCompanyMembers: jest.Mock;
-    getUser: jest.Mock;
-    listCompanyGroups: jest.Mock;
-  };
-  let toastMock: { success: jest.Mock; error: jest.Mock };
-  let confirmMock: { ask: jest.Mock };
-  let authMock: { user: () => { sub: string } | null };
-
-  function setup(branding: { logoKey?: string | null; brandPrimary?: string | null; brandPrimaryDark?: string | null; brandAccent?: string | null }) {
-    const company = {
-      id: 'c1', name: 'Coca-Cola', status: 'ACTIVE',
-      contactEmail: null, description: null,
-      logoKey: branding.logoKey ?? null,
-      brandPrimary: branding.brandPrimary ?? null,
-      brandPrimaryDark: branding.brandPrimaryDark ?? null,
-      brandAccent: branding.brandAccent ?? null,
-      createdAt: '2026-01-15T00:00:00Z',
-    };
-
-    apiMock = {
-      getCompany: jest.fn().mockResolvedValue({ data: company }),
-      listCompanyMembers: jest.fn().mockResolvedValue({ data: [] }),
-      getUser: jest.fn().mockResolvedValue({ data: { sub: 'x', handle: 'x', email: 'x@x.com', avatarKey: null } }),
-      listCompanyGroups: jest.fn().mockResolvedValue({ data: [] }),
-    };
-    toastMock = { success: jest.fn(), error: jest.fn() };
-    confirmMock = { ask: jest.fn().mockResolvedValue(true) };
-    authMock = { user: () => ({ sub: 'u-caller' }) };
-
-    TestBed.configureTestingModule({
-      imports: [CompanyDetailComponent],
-      providers: [
-        provideRouter([]),
-        { provide: ApiService, useValue: apiMock },
-        { provide: ConfirmDialogService, useValue: confirmMock },
-        { provide: ToastService, useValue: toastMock },
-        { provide: AuthService, useValue: authMock },
-      ],
-    });
-    fixture = TestBed.createComponent(CompanyDetailComponent);
-    component = fixture.componentInstance;
-    component.id = 'c1';
-  }
-
-  it('brandingView reflects null fields when company has no branding', async () => {
-    setup({});
-    await component.ngOnInit();
-    const v = component.brandingView();
-    expect(v.hasLogo).toBe(false);
-    expect(v.logoKey).toBeNull();
-    expect(v.primary).toBeNull();
-    expect(v.primaryDark).toBeNull();
-    expect(v.accent).toBeNull();
-  });
-
-  it('brandingView reflects all 4 branding fields when set', async () => {
-    setup({
-      logoKey: 'companies/c1/logo.png',
-      brandPrimary: '#E41E26',
-      brandPrimaryDark: '#A0151B',
-      brandAccent: '#FFCC00',
-    });
-    await component.ngOnInit();
-    const v = component.brandingView();
-    expect(v.hasLogo).toBe(true);
-    expect(v.logoKey).toBe('companies/c1/logo.png');
-    expect(v.primary).toBe('#E41E26');
-    expect(v.primaryDark).toBe('#A0151B');
-    expect(v.accent).toBe('#FFCC00');
-  });
-
-  it('tab branding renders without invoking any mutation', async () => {
-    setup({ logoKey: 'k', brandPrimary: '#000' });
-    await component.ngOnInit();
-    component.tab.set('branding');
-    fixture.detectChanges();
-    // no mutation method should be present on the branding-tab API surface
-    expect((apiMock as Record<string, unknown>)['updateCompany']).toBeUndefined();
-    expect((apiMock as Record<string, unknown>)['setCompanyStatus']).toBeUndefined();
-    expect((apiMock as Record<string, unknown>)['addCompanyAdmin']).toBeUndefined();
-    expect((apiMock as Record<string, unknown>)['removeCompanyAdmin']).toBeUndefined();
-    // getCompany is the only read invoked — rendering branding triggers no further calls
-    expect(apiMock.getCompany).toHaveBeenCalled();
   });
 });

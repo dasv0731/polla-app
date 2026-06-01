@@ -100,6 +100,9 @@ import { UserAvatarComponent } from '../user-avatar/user-avatar.component';
             </div>
           }
         </div>
+        <button type="button" class="lsb__logout" (click)="logout()" aria-label="Cerrar sesión">
+          <app-icon name="logout" size="md" /><span class="lsb__t">Cerrar sesión</span>
+        </button>
       </div>
 
       <!-- MOBILE BOTTOM-NAV (5 items + Más) - hidden on desktop via CSS -->
@@ -156,6 +159,10 @@ import { UserAvatarComponent } from '../user-avatar/user-avatar.component';
           <span>Admin</span>
         </a>
       }
+      <button type="button" class="more-sheet__item more-sheet__item--danger" (click)="moreOpen.set(false); logout()">
+        <app-icon name="logout" size="md" />
+        <span>Cerrar sesión</span>
+      </button>
     </app-more-sheet>
   `,
   styles: [`
@@ -295,6 +302,27 @@ import { UserAvatarComponent } from '../user-avatar/user-avatar.component';
       box-shadow: inset 0 0 0 2px var(--color-primary-green);
       color: #fff;
     }
+
+    /* Botón de cerrar sesión directo en el área inferior del sidebar */
+    .lsb__logout {
+      color: rgba(255,255,255,0.7);
+      display: flex; align-items: center; gap: 14px;
+      width: 48px; height: 44px;
+      justify-content: center;
+      border-radius: 8px;
+      background: transparent; border: 0; cursor: pointer;
+      font: inherit;
+      flex-shrink: 0; white-space: nowrap;
+      transition: width 0.15s ease, background 0.15s ease, color 0.15s ease, padding 0.15s ease;
+    }
+    .lsb:hover .lsb__logout { width: auto; justify-content: flex-start; padding: 0 14px; margin: 0 8px; }
+    .lsb__logout:hover { background: rgba(210,63,63,0.18); color: #fff; }
+    .lsb__logout:focus-visible {
+      outline: none;
+      box-shadow: inset 0 0 0 2px var(--color-primary-green);
+      color: #fff;
+    }
+
     .lsb__av {
       width: 32px; height: 32px;
       border-radius: 50%;
@@ -388,6 +416,7 @@ import { UserAvatarComponent } from '../user-avatar/user-avatar.component';
       outline-offset: -2px;
       background: var(--color-green-5, rgba(2,204,116,0.06));
     }
+    .more-sheet__item--danger { color: var(--color-lost, #d23f3f); }
     .more-sheet__badge {
       margin-left: auto;
       background: var(--color-lost, #d23f3f);

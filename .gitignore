@@ -51,3 +51,4 @@ src/amplify_outputs.json
 .claude/
 .agents/
 skills-lock.json
+.superpowers/

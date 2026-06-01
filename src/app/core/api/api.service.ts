@@ -427,8 +427,16 @@ export class ApiService {
     brandPrimary?: string | null;
     brandPrimaryDark?: string | null;
     brandAccent?: string | null;
+    prize1st?: string | null;
+    prize2nd?: string | null;
+    prize3rd?: string | null;
+    deptPrize1st?: string | null;
+    deptPrize2nd?: string | null;
+    deptPrize3rd?: string | null;
   }) {
-    return apiClient.mutations.updateCompany(input);
+    return (apiClient as unknown as {
+      mutations: { updateCompany: (i: typeof input) => Promise<{ data?: { ok: boolean; message: string } | null }> };
+    }).mutations.updateCompany(input);
   }
 
   setCompanyStatus(input: { id: string; status: 'ACTIVE' | 'DISABLED' }) {
@@ -509,6 +517,63 @@ export class ApiService {
         ],
       },
       limit: 10,
+    });
+  }
+
+  /** Invita a un jefe de departamento por email. Devuelve inviteId + code. */
+  inviteDepartmentHead(input: { companyId: string; email: string }) {
+    return (apiClient as unknown as {
+      mutations: { inviteDepartmentHead: (i: { companyId: string; email: string }) => Promise<{ data?: { ok: boolean; inviteId: string; code: string } | null }> };
+    }).mutations.inviteDepartmentHead(input);
+  }
+
+  /** Revoca una invitación de jefe (PENDING → REVOKED). */
+  revokeDepartmentInvite(inviteId: string) {
+    return (apiClient as unknown as {
+      mutations: { revokeDepartmentInvite: (i: { inviteId: string }) => Promise<{ data?: { ok: boolean } | null }> };
+    }).mutations.revokeDepartmentInvite({ inviteId });
+  }
+
+  /** El jefe acepta su invitación con el código y crea su departamento. */
+  acceptDepartmentInvite(input: { code: string; name: string; mode: 'SIMPLE' | 'COMPLETE'; category?: string | null }) {
+    return (apiClient as unknown as {
+      mutations: { acceptDepartmentInvite: (i: typeof input) => Promise<{ data?: { groupId: string; joinCode: string } | null }> };
+    }).mutations.acceptDepartmentInvite(input);
+  }
+
+  /** Ranking corporativo (3 niveles) de una empresa. */
+  companyRanking(companyId: string) {
+    return (apiClient as unknown as {
+      queries: { companyRanking: (i: { companyId: string }) => Promise<{ data?: {
+        individual: Array<{ userId: string; handle: string; points: number; department: string }>;
+        departments: Array<{ groupId: string; name: string; points: number; members: number }>;
+      } | null }> };
+    }).queries.companyRanking({ companyId });
+  }
+
+  /** Detecta la empresa del empleado: su grupo con companyId. Devuelve el companyId o null. */
+  async findMyCompanyId(userId: string): Promise<string | null> {
+    const ms = (await apiClient.models.Membership.list({ filter: { userId: { eq: userId } } })).data ?? [];
+    for (const m of ms) {
+      const gid = (m as { groupId?: string } | null)?.groupId;
+      if (!gid) continue;
+      const g = (await apiClient.models.Group.get({ id: gid })).data as { companyId?: string | null } | null;
+      if (g?.companyId) return g.companyId;
+    }
+    return null;
+  }
+
+  /** Invitaciones de jefe de una empresa. */
+  listDepartmentInvites(companyId: string) {
+    return (apiClient as unknown as {
+      models: { DepartmentInvite: { list: (i: { filter: { companyId: { eq: string } } }) => Promise<{ data?: Array<{ id: string; companyId: string; invitedEmail: string; code: string; status: string; createdAt: string }> | null }> } };
+    }).models.DepartmentInvite.list({ filter: { companyId: { eq: companyId } } });
+  }
+
+  /** Empresas donde `userId` es company-admin (role ADMIN). */
+  listMyCompanyAdminships(userId: string) {
+    return apiClient.models.CompanyMember.list({
+      filter: { and: [{ userId: { eq: userId } }, { role: { eq: 'ADMIN' } }] },
     });
   }
 
