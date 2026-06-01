@@ -108,7 +108,19 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
-    await signIn({ username: email, password });
+    try {
+      await signIn({ username: email, password });
+    } catch (e) {
+      // UserAlreadyAuthenticatedException: quedó una sesión colgada (p.ej. un
+      // registro que murió en el paso de perfil dejó tokens en el navegador).
+      // Limpiamos esa sesión y reintentamos el signIn una vez.
+      if ((e as { name?: string })?.name === 'UserAlreadyAuthenticatedException') {
+        await signOut();
+        await signIn({ username: email, password });
+      } else {
+        throw e;
+      }
+    }
     await this.loadUser();
   }
 
