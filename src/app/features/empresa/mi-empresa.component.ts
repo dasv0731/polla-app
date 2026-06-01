@@ -1,9 +1,18 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { ToastService } from '../../core/notifications/toast.service';
+import { humanizeError } from '../../core/notifications/domain-errors';
 
 interface Row { userId: string; handle: string; points: number; department: string }
 interface Dept { groupId: string; name: string; points: number; members: number }
+interface Reto {
+  id: string;
+  prompt: string;
+  optionA: string; optionB: string; optionC: string; optionD: string;
+  points: number;
+  answered: boolean;
+}
 
 @Component({
   standalone: true,
@@ -70,6 +79,34 @@ interface Dept { groupId: string; name: string; points: number; members: number 
             </table>
           }
         </div>
+
+        <div class="me-card">
+          <h2 class="me-card__title">🎯 Retos</h2>
+          @if (retos().length === 0) {
+            <p class="text-mute">No hay retos abiertos.</p>
+          } @else {
+            <ul class="me-retos" role="list">
+              @for (q of retos(); track q.id) {
+                <li class="me-reto">
+                  <div class="me-reto__head">
+                    <strong class="me-reto__prompt">{{ q.prompt }}</strong>
+                    <span class="pill pill--green">{{ q.points }} pts</span>
+                  </div>
+                  <div class="me-reto__opts">
+                    <button type="button" class="btn-wf me-reto__opt" [disabled]="answering() === q.id"
+                            (click)="answer(q.id, 'A')"><b>A.</b> {{ q.optionA }}</button>
+                    <button type="button" class="btn-wf me-reto__opt" [disabled]="answering() === q.id"
+                            (click)="answer(q.id, 'B')"><b>B.</b> {{ q.optionB }}</button>
+                    <button type="button" class="btn-wf me-reto__opt" [disabled]="answering() === q.id"
+                            (click)="answer(q.id, 'C')"><b>C.</b> {{ q.optionC }}</button>
+                    <button type="button" class="btn-wf me-reto__opt" [disabled]="answering() === q.id"
+                            (click)="answer(q.id, 'D')"><b>D.</b> {{ q.optionD }}</button>
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+        </div>
       }
     </section>
   `,
@@ -102,15 +139,26 @@ interface Dept { groupId: string; name: string; points: number; members: number 
     }
     .me-empty > strong { display: block; margin-bottom: 6px; font-size: 15px; }
     .me-empty > p { margin: 0; }
+    .me-retos { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+    .me-reto { border: 1px solid var(--wf-line-2); border-radius: 12px; padding: 14px 16px; }
+    .me-reto__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+    .me-reto__prompt { font-size: 15px; }
+    .me-reto__opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+    .me-reto__opt { justify-content: flex-start; text-align: left; }
+    .me-reto__opt b { color: var(--wf-ink-3); margin-right: 6px; }
+    .me-reto__opt:not(:disabled):hover { border-color: var(--pa-brand, var(--wf-green)); }
   `],
 })
 export class MiEmpresaComponent implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
+  private toast = inject(ToastService);
 
   companyId = signal<string | null>(null);
   individual = signal<Row[]>([]);
   departments = signal<Dept[]>([]);
+  retos = signal<Reto[]>([]);
+  answering = signal<string | null>(null);
   brand = signal<string>('#e23744');
   loading = signal(true);
 
@@ -122,10 +170,44 @@ export class MiEmpresaComponent implements OnInit {
     if (cid) {
       const c = (await this.api.getCompany(cid)).data as { brandPrimary?: string | null } | null;
       if (c?.brandPrimary) this.brand.set(c.brandPrimary);
-      const res = await this.api.companyRanking(cid);
-      this.individual.set(res.data?.individual ?? []);
-      this.departments.set(res.data?.departments ?? []);
+      await this.loadRanking(cid);
+      await this.loadRetos(cid);
     }
     this.loading.set(false);
+  }
+
+  private async loadRanking(cid: string) {
+    const res = await this.api.companyRanking(cid);
+    this.individual.set(res.data?.individual ?? []);
+    this.departments.set(res.data?.departments ?? []);
+  }
+
+  private async loadRetos(cid: string) {
+    const res = await this.api.listOpenCompanyTrivia(cid);
+    const open = (res.data ?? []).filter((q) => q.answered === false);
+    this.retos.set(open as Reto[]);
+  }
+
+  async answer(questionId: string, selectedOption: 'A' | 'B' | 'C' | 'D') {
+    if (this.answering()) return;
+    this.answering.set(questionId);
+    try {
+      const res = await this.api.answerCompanyTrivia({ questionId, selectedOption });
+      const r = res.data;
+      if (r?.isCorrect) {
+        this.toast.success(`¡Correcto! +${r.pointsEarned} pts`);
+      } else {
+        this.toast.info('Incorrecto');
+      }
+      const cid = this.companyId();
+      if (cid) {
+        await this.loadRetos(cid);
+        await this.loadRanking(cid);
+      }
+    } catch (e) {
+      this.toast.error(humanizeError(e));
+    } finally {
+      this.answering.set(null);
+    }
   }
 }
