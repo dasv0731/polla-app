@@ -17,11 +17,13 @@ export const empresaRoutes: Routes = [
     component: EmpresaShellComponent,
     canActivate: [companyAdminGuard],
     children: [
-      { path: '', loadComponent: () => import('./empresa-resumen.component').then((m) => m.EmpresaResumenComponent) },
+      { path: '', loadComponent: () => import('./empresa-dashboard.component').then((m) => m.EmpresaDashboardComponent) },
       { path: 'departamentos', loadComponent: () => import('./empresa-departamentos.component').then((m) => m.EmpresaDepartamentosComponent) },
+      { path: 'empleados', loadComponent: () => import('./empresa-empleados.component').then((m) => m.EmpresaEmpleadosComponent) },
       { path: 'jefes', loadComponent: () => import('./empresa-jefes.component').then((m) => m.EmpresaJefesComponent) },
       { path: 'premios', loadComponent: () => import('./empresa-premios.component').then((m) => m.EmpresaPremiosComponent) },
       { path: 'branding', loadComponent: () => import('./empresa-branding.component').then((m) => m.EmpresaBrandingComponent) },
+      { path: 'trivias', loadComponent: () => import('./empresa-trivias.component').then((m) => m.EmpresaTriviasComponent) },
     ],
   },
 ];

@@ -18,15 +18,19 @@ import { map } from 'rxjs';
 
       <nav class="emp-subnav" aria-label="Portal de empresa">
         <a [routerLink]="['/empresa', id()]" routerLinkActive="is-active"
-           [routerLinkActiveOptions]="{ exact: true }" class="emp-subnav__item">Resumen</a>
+           [routerLinkActiveOptions]="{ exact: true }" class="emp-subnav__item">Dashboard</a>
         <a [routerLink]="['/empresa', id(), 'departamentos']" routerLinkActive="is-active"
            class="emp-subnav__item">Departamentos</a>
+        <a [routerLink]="['/empresa', id(), 'empleados']" routerLinkActive="is-active"
+           class="emp-subnav__item">Empleados</a>
         <a [routerLink]="['/empresa', id(), 'jefes']" routerLinkActive="is-active"
            class="emp-subnav__item">Jefes</a>
         <a [routerLink]="['/empresa', id(), 'premios']" routerLinkActive="is-active"
            class="emp-subnav__item">Premios</a>
         <a [routerLink]="['/empresa', id(), 'branding']" routerLinkActive="is-active"
            class="emp-subnav__item">Branding</a>
+        <a [routerLink]="['/empresa', id(), 'trivias']" routerLinkActive="is-active"
+           class="emp-subnav__item">Trivias</a>
       </nav>
 
       <router-outlet />
