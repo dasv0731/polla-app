@@ -413,9 +413,22 @@ export class ApiService {
     name: string;
     contactEmail?: string;
     description?: string;
-    firstAdminUserId: string;
+    firstAdminUserId?: string;
   }) {
     return apiClient.mutations.createCompany(input);
+  }
+
+  /** Super-admin: invita al company-admin (RRHH) por email. added=true si ya era usuario (agregado directo); si no, devuelve code. */
+  inviteCompanyAdmin(input: { companyId: string; email: string }) {
+    return (apiClient as unknown as {
+      mutations: { inviteCompanyAdmin: (i: { companyId: string; email: string }) => Promise<{ data?: { added: boolean; code: string } | null }> };
+    }).mutations.inviteCompanyAdmin(input);
+  }
+  /** RRHH acepta su invitación de admin con el código. */
+  acceptCompanyAdminInvite(code: string) {
+    return (apiClient as unknown as {
+      mutations: { acceptCompanyAdminInvite: (i: { code: string }) => Promise<{ data?: { companyId: string } | null }> };
+    }).mutations.acceptCompanyAdminInvite({ code });
   }
 
   updateCompany(input: {
