@@ -84,7 +84,7 @@ interface CompanyRow {
 
       @if (showCreate()) {
         <app-create-company-modal
-          (close)="showCreate.set(false)"
+          (close)="onModalClose()"
           (created)="onCreated($event)" />
       }
     </section>
@@ -123,6 +123,10 @@ export class CompaniesListComponent implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
+    await this.load();
+  }
+
+  private async load(): Promise<void> {
     try {
       const res = await this.api.listCompanies();
       const data = (res.data ?? []) as CompanyRow[];
@@ -135,6 +139,13 @@ export class CompaniesListComponent implements OnInit {
   onCreated(id: string): void {
     this.showCreate.set(false);
     void this.router.navigate(['/admin/companies', id]);
+  }
+
+  /** Modal closed without navigating (e.g. invite-code path). A company may
+   *  have been created — reload the list so it shows up. */
+  onModalClose(): void {
+    this.showCreate.set(false);
+    void this.load();
   }
 
   formatDate(iso: string): string {
