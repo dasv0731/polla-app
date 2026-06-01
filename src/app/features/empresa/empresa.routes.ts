@@ -8,6 +8,10 @@ export const empresaRoutes: Routes = [
     loadComponent: () => import('./aceptar-invitacion.component').then((m) => m.AceptarInvitacionComponent),
   },
   {
+    path: 'admin-invitacion',
+    loadComponent: () => import('./aceptar-admin.component').then((m) => m.AceptarAdminComponent),
+  },
+  {
     path: '',
     canActivate: [companyAdminGuard],
     loadComponent: () => import('./empresa-home.component').then((m) => m.EmpresaHomeComponent),
